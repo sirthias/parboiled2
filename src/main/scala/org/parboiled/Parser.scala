@@ -72,24 +72,25 @@ object Parser {
       e match {
         case Apply(Select(This(typeName), termName), List(Literal(Constant(cnst: Char)))) ⇒
           // CharRule
-          //          println("--- CharRule ---")
           reify {
             val p = c.prefix.splice
             p.ch(p.nextCh(), c.Expr[Char](Literal(Constant(cnst))).splice)
           }
         case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒
-          // Composition
+          // Composition - seq
           reify {
             transform(a).splice && transform(arg).splice
+          }
+        case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$bar$bar\")" ⇒
+          // Composition - firstOf
+          reify {
+            transform(a).splice || transform(arg).splice
           }
         case x ⇒
           println("ERROR: " + x)
           reify { false }
       }
     }
-
-    //println("r.tree: " + showRaw(r.tree))
-    //transform(r.tree)
 
     transform(r.tree)
   }

@@ -22,7 +22,7 @@ package org.parboiled
  */
 sealed abstract class Rule private () {
   def ~(that: Rule): Rule
-  def |(that: Rule): Rule
+  def ||(that: Rule): Rule
 }
 
 object Rule {
