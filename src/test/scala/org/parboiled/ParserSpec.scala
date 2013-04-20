@@ -19,13 +19,19 @@ package org.parboiled
 import org.specs2.mutable.Specification
 
 class ParserSpec extends Specification {
-
   class TestParser(_input: ParserInput) extends Parser(_input) {
+    def X = rule { 'x' }
     def ABC = rule { 'a' ~ 'b' ~ 'c' }
     def DEF = rule { "def" }
   }
 
   "The new parboiled parser" should {
+    only("successfully recognize single char")
+
+    "successfully recognize single char" in {
+      new TestParser("x").X must beTrue
+      new TestParser("y").X must beFalse
+    }
 
     "successfully recognize valid input" in {
       new TestParser("abc").ABC must beTrue

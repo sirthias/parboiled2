@@ -19,11 +19,27 @@ package org.parboiled
 import scala.reflect.macros.Context
 
 abstract class Parser(input: ParserInput) {
+  private var cursor: Int = 0
 
   def rule(r: Rule): Boolean = macro Parser.ruleImpl
 
   implicit def charRule(c: Char) = Rule()
   implicit def stringRule(stringLiteral: String) = macro Parser.stringRuleImpl
+
+  def ch(c: Option[Char], trgC: Char): Boolean = {
+    c match {
+      case Some(x) ⇒
+        if (x == trgC) {
+          cursor += 1
+          true
+        } else false
+      case None ⇒ false
+    }
+  }
+
+  def nextCh(): Option[Char] = {
+    if (cursor < input.length) Some(input.charAt(cursor)) else None
+  }
 }
 
 object Parser {
@@ -52,12 +68,24 @@ object Parser {
   def ruleImpl(c: ParserContext)(r: c.Expr[Rule]): c.Expr[Boolean] = {
     import c.universe._
 
-    println("rule: " + show(r.tree))
-    //println("rule: " + showRaw(r.tree))
-
-    reify {
-      false
+    def transform(e: Tree): c.Expr[Boolean] = {
+      e match {
+        case Apply(Select(This(typeName), termName), List(Literal(Constant(cnst: Char)))) ⇒
+          // CharRule
+          reify {
+            val p = c.prefix.splice
+            p.ch(p.nextCh(), c.Expr[Char](Literal(Constant(cnst))).splice)
+          }
+        case x ⇒
+          println("ERROR: " + x)
+          reify { false }
+      }
     }
+
+    //println("r.tree: " + showRaw(r.tree))
+    //transform(r.tree)
+
+    transform(r.tree)
   }
 
   private def fail(errorMsg: String) = throw new GrammarException(errorMsg)
