@@ -26,8 +26,6 @@ class ParserSpec extends Specification {
   }
 
   "The new parboiled parser" should {
-    only("successfully recognize single char")
-
     "successfully recognize single char" in {
       new TestParser("x").X must beTrue
       new TestParser("y").X must beFalse
@@ -35,9 +33,6 @@ class ParserSpec extends Specification {
 
     "successfully recognize valid input" in {
       new TestParser("abc").ABC must beTrue
-    }
-
-    "successfully recognize valid input" in {
       new TestParser("acb").ABC must beFalse
     }
 
@@ -49,9 +44,9 @@ class ParserSpec extends Specification {
     "disallow compilation of an illegal string rule" in {
       CompilerError.verify(
         """class TestParser(_input: ParserInput) extends Parser(_input) {
-             val string = "def"
-             def Illegal = rule { string } // not allowed, strings must be given as literals
-           }""",
+                 val string = "def"
+                 def Illegal = rule { string } // not allowed, strings must be given as literals
+               }""",
         "Strings in rule definitions have to be literals")
     }
   }
