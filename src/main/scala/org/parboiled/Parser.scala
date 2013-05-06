@@ -70,11 +70,11 @@ object Parser {
 
     def transform(e: Tree): c.Expr[Boolean] = {
       e match {
-        case Apply(Select(This(typeName), termName), List(Literal(Constant(cnst: Char)))) ⇒
+        case Apply(Select(This(typeName), termName), List(cnstChar @ Literal(Constant(_: Char)))) ⇒
           // CharRule
           reify {
             val p = c.prefix.splice
-            p.ch(p.nextCh(), c.Expr[Char](Literal(Constant(cnst))).splice)
+            p.ch(p.nextCh(), c.Expr[Char](cnstChar).splice)
           }
         case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒
           // Composition - seq
