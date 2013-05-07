@@ -19,27 +19,23 @@ package org.parboiled
 import scala.reflect.macros.Context
 
 abstract class Parser(input: ParserInput) {
-  private var cursor: Int = 0
+  private var _cursor: Int = 0
+  val EOI: Char = '\uFFFF'
 
   def rule(r: Rule): Boolean = macro Parser.ruleImpl
 
   implicit def charRule(c: Char) = Rule()
   implicit def stringRule(stringLiteral: String) = macro Parser.stringRuleImpl
 
-  def ch(c: Option[Char], trgC: Char): Boolean = {
-    c match {
-      case Some(x) ⇒
-        if (x == trgC) {
-          cursor += 1
-          true
-        } else false
-      case None ⇒ false
-    }
-  }
+  def matchChar(char: Char, targetChar: Char): Boolean =
+    char != EOI && char == targetChar
 
-  def nextCh(): Option[Char] = {
-    if (cursor < input.length) Some(input.charAt(cursor)) else None
-  }
+  def nextCh(): Char =
+    if (_cursor < input.length) input.charAt(_cursor) else EOI
+
+  def advanceCursor() = _cursor += 1
+  def cursor_=(v: Int) = _cursor = v
+  def cursor = _cursor
 }
 
 object Parser {
@@ -74,17 +70,26 @@ object Parser {
           // CharRule
           reify {
             val p = c.prefix.splice
-            p.ch(p.nextCh(), c.Expr[Char](cnstChar).splice)
+            val targetChar = c.Expr[Char](cnstChar).splice
+            val res = p.matchChar(p.nextCh(), targetChar)
+            if (res) p.advanceCursor()
+            res
           }
         case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒
           // Composition - seq
           reify {
-            transform(a).splice && transform(arg).splice
+            val p = c.prefix.splice
+            val cursorPos = p.cursor
+            if (transform(a).splice) transform(arg).splice
+            else { p.cursor = cursorPos; false }
           }
         case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$bar$bar\")" ⇒
           // Composition - firstOf
           reify {
-            transform(a).splice || transform(arg).splice
+            val p = c.prefix.splice
+            val cursorPos = p.cursor
+            if (transform(a).splice) true
+            else { p.cursor = cursorPos; transform(arg).splice }
           }
         case x ⇒
           println("ERROR: " + x)
