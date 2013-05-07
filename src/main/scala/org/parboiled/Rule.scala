@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz
+ * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ package org.parboiled
  */
 sealed abstract class Rule private () {
   def ~(that: Rule): Rule
-  def |(that: Rule): Rule
+  def ||(that: Rule): Rule
 }
 
 object Rule {

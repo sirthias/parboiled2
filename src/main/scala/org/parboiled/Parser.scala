@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz
+ * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,20 @@ package org.parboiled
 import scala.reflect.macros.Context
 
 abstract class Parser(input: ParserInput) {
+  private var _cursor: Int = 0
+  val EOI: Char = '\uFFFF'
 
   def rule(r: Rule): Boolean = macro Parser.ruleImpl
 
   implicit def charRule(c: Char) = Rule()
   implicit def stringRule(stringLiteral: String) = macro Parser.stringRuleImpl
+
+  def nextCh(): Char =
+    if (_cursor < input.length) input.charAt(_cursor) else EOI
+
+  def advanceCursor() = _cursor += 1
+  def cursor_=(v: Int) = _cursor = v
+  def cursor = _cursor
 }
 
 object Parser {
@@ -52,12 +61,44 @@ object Parser {
   def ruleImpl(c: ParserContext)(r: c.Expr[Rule]): c.Expr[Boolean] = {
     import c.universe._
 
-    println("rule: " + show(r.tree))
-    //println("rule: " + showRaw(r.tree))
-
-    reify {
-      false
+    def transform(e: Tree): c.Expr[Boolean] = {
+      e match {
+        case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if argTermName.decoded == "EOI" ⇒
+          // CharRule(EOI)
+          reify {
+            val p = c.prefix.splice
+            p.nextCh() == p.EOI
+          }
+        case Apply(Select(This(typeName), termName), List(cnstChar @ Literal(Constant(_: Char)))) ⇒
+          // CharRule(AnyChar)
+          reify {
+            val p = c.prefix.splice
+            val targetChar = c.Expr[Char](cnstChar).splice
+            (p.nextCh() == targetChar) && { p.advanceCursor(); true }
+          }
+        case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒
+          // Composition - seq
+          reify {
+            val p = c.prefix.splice
+            val cursorPos = p.cursor
+            if (transform(a).splice) transform(arg).splice
+            else { p.cursor = cursorPos; false }
+          }
+        case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$bar$bar\")" ⇒
+          // Composition - firstOf
+          reify {
+            val p = c.prefix.splice
+            val cursorPos = p.cursor
+            if (transform(a).splice) true
+            else { p.cursor = cursorPos; transform(arg).splice }
+          }
+        case x ⇒
+          println("ERROR: " + x)
+          reify { false }
+      }
     }
+
+    transform(r.tree)
   }
 
   private def fail(errorMsg: String) = throw new GrammarException(errorMsg)
