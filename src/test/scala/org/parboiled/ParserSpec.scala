@@ -20,11 +20,11 @@ import org.specs2.mutable.Specification
 
 class ParserSpec extends Specification {
   class TestParser(_input: ParserInput) extends Parser(_input) {
-    def X = rule { 'x' }
-    def ABC = rule { 'a' ~ 'b' ~ 'c' }
-    def ABCfirstOf = rule { 'a' || 'b' || 'c' }
+    def X = rule { 'x' ~ EOI }
+    def ABC = rule { 'a' ~ 'b' ~ 'c' ~ EOI }
+    def ABCfirstOf = rule { ('a' || 'b' || 'c') ~ EOI }
     def DEF = rule { "def" }
-    def combination1 = rule { ('a' || 'b' || 'c') ~ ('d' || 'e') ~ 'f' }
+    def combination1 = rule { ('a' || 'b' || 'c') ~ ('d' || 'e') ~ 'f' ~ EOI }
   }
 
   "The new parboiled parser" should {

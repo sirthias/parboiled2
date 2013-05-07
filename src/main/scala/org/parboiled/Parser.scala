@@ -27,9 +27,6 @@ abstract class Parser(input: ParserInput) {
   implicit def charRule(c: Char) = Rule()
   implicit def stringRule(stringLiteral: String) = macro Parser.stringRuleImpl
 
-  def matchChar(char: Char, targetChar: Char): Boolean =
-    char != EOI && char == targetChar
-
   def nextCh(): Char =
     if (_cursor < input.length) input.charAt(_cursor) else EOI
 
@@ -66,14 +63,18 @@ object Parser {
 
     def transform(e: Tree): c.Expr[Boolean] = {
       e match {
+        case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if argTermName.decoded == "EOI" ⇒
+          // CharRule(EOI)
+          reify {
+            val p = c.prefix.splice
+            p.nextCh() == p.EOI
+          }
         case Apply(Select(This(typeName), termName), List(cnstChar @ Literal(Constant(_: Char)))) ⇒
-          // CharRule
+          // CharRule(AnyChar)
           reify {
             val p = c.prefix.splice
             val targetChar = c.Expr[Char](cnstChar).splice
-            val res = p.matchChar(p.nextCh(), targetChar)
-            if (res) p.advanceCursor()
-            res
+            (p.nextCh() == targetChar) && { p.advanceCursor(); true }
           }
         case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒
           // Composition - seq
