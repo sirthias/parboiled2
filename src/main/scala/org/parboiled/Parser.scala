@@ -17,6 +17,7 @@
 package org.parboiled
 
 import org.parboiled.optree._
+import scala.reflect.macros.Context
 
 abstract class Parser(input: ParserInput) {
   private var _cursor: Int = 0
@@ -36,8 +37,11 @@ abstract class Parser(input: ParserInput) {
 }
 
 object Parser {
-  def ruleImpl(c: OpTree.ParserContext)(r: c.Expr[Rule]): c.Expr[Boolean] = {
-    val opTree = OpTree.fromAst(c)(r.tree)
-    OpTree.toAst(c)(opTree)
+  type ParserContext = Context { type PrefixType = Parser }
+
+  def ruleImpl(c: ParserContext)(r: c.Expr[Rule]): c.Expr[Boolean] = {
+    val opTreeContext = new OpTreeContext[c.type](c)
+    val opTree = opTreeContext.parse(r.tree)
+    opTree.render
   }
 }
