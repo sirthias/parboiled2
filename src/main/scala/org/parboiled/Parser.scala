@@ -18,6 +18,8 @@ package org.parboiled
 
 import scala.reflect.macros.Context
 
+import org.parboiled.optree._
+
 abstract class Parser(input: ParserInput) {
   private var _cursor: Int = 0
   val EOI: Char = '\uFFFF'
@@ -58,49 +60,65 @@ object Parser {
     c.Expr[Rule](tree)
   }
 
-  def ruleImpl(c: ParserContext)(r: c.Expr[Rule]): c.Expr[Boolean] = {
+  def transformToOpTree(c: ParserContext)(e: c.Tree): Expression = {
     import c.universe._
 
-    def transform(e: Tree): c.Expr[Boolean] = {
-      e match {
-        case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if argTermName.decoded == "EOI" ⇒
-          // CharRule(EOI)
-          reify {
-            val p = c.prefix.splice
-            p.nextCh() == p.EOI
-          }
-        case Apply(Select(This(typeName), termName), List(cnstChar @ Literal(Constant(_: Char)))) ⇒
-          // CharRule(AnyChar)
-          reify {
-            val p = c.prefix.splice
-            val targetChar = c.Expr[Char](cnstChar).splice
-            (p.nextCh() == targetChar) && { p.advanceCursor(); true }
-          }
-        case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒
-          // Composition - seq
-          reify {
-            val p = c.prefix.splice
-            val cursorPos = p.cursor
-            if (transform(a).splice) transform(arg).splice
-            else { p.cursor = cursorPos; false }
-          }
-        case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$bar$bar\")" ⇒
-          // Composition - firstOf
-          reify {
-            val p = c.prefix.splice
-            val cursorPos = p.cursor
-            if (transform(a).splice) true
-            else { p.cursor = cursorPos; transform(arg).splice }
-          }
-        case x ⇒
-          println("ERROR: " + x)
-          reify { false }
-      }
-    }
+    e match {
+      case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if argTermName.decoded == "EOI" ⇒
+        EOI
 
-    transform(r.tree)
+      case Apply(Select(This(typeName), termName), List(Literal(Constant(x: Char)))) ⇒
+        LiteralChar(x)
+
+      case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒
+        Sequence(transformToOpTree(c)(a), transformToOpTree(c)(arg))
+
+      case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$bar$bar\")" ⇒
+        FirstOf(transformToOpTree(c)(a), transformToOpTree(c)(arg))
+
+      case x ⇒
+        throw new Exception("transformToOpTree, unexpected: " + x)
+    }
+  }
+
+  def transformToAst(c: ParserContext)(e: Expression): c.Expr[Boolean] = {
+    import c.universe._
+
+    e match {
+      case EOI ⇒ reify {
+        val p = c.prefix.splice
+        p.nextCh() == p.EOI
+      }
+
+      case LiteralChar(targetChar: Char) ⇒ reify {
+        val p = c.prefix.splice
+        val tc = c.literal(targetChar).splice
+        (p.nextCh() == tc) && { p.advanceCursor(); true }
+      }
+
+      case Sequence(lhs: Expression, rhs: Expression) ⇒ reify {
+        val p = c.prefix.splice
+        val cursorPos = p.cursor
+        if (transformToAst(c)(lhs).splice) transformToAst(c)(rhs).splice
+        else { p.cursor = cursorPos; false }
+      }
+
+      case FirstOf(lhs: Expression, rhs: Expression) ⇒ reify {
+        val p = c.prefix.splice
+        val cursorPos = p.cursor
+        if (transformToAst(c)(lhs).splice) true
+        else { p.cursor = cursorPos; transformToAst(c)(rhs).splice }
+      }
+
+      case x ⇒
+        throw new Exception("transformToAst, unexpected: " + x)
+    }
+  }
+
+  def ruleImpl(c: ParserContext)(r: c.Expr[Rule]): c.Expr[Boolean] = {
+    val opTree = transformToOpTree(c)(r.tree)
+    transformToAst(c)(opTree)
   }
 
   private def fail(errorMsg: String) = throw new GrammarException(errorMsg)
-
 }
