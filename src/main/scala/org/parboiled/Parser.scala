@@ -27,12 +27,12 @@ abstract class Parser(input: ParserInput) {
   def rule(r: Rule): Boolean = macro Parser.ruleImpl
 
   implicit def charRule(c: Char) = Rule()
-  implicit def stringRule(stringLiteral: String) = macro Parser.stringRuleImpl
+  implicit def stringRule(stringLiteral: String) = Rule()
 
-  def nextCh(): Char =
-    if (_cursor < input.length) input.charAt(_cursor) else EOI
+  def nextChar(): Char =
+    if (_cursor < input.length) { val nextCh = input.charAt(_cursor); _cursor += 1; nextCh }
+    else EOI
 
-  def advanceCursor() = _cursor += 1
   def cursor_=(v: Int) = _cursor = v
   def cursor = _cursor
 }
@@ -42,30 +42,18 @@ object Parser {
 
   type ParserContext = Context { type PrefixType = Parser }
 
-  /**
-   * Expands a string literal to a corresponding rule definition,
-   * e.g. "abc" is expanded to `'a' ~ 'b' ~ 'c'`.
-   */
-  def stringRuleImpl(c: ParserContext)(stringLiteral: c.Expr[String]): c.Expr[Rule] = {
-    import c.universe._
-    val chars = stringLiteral match {
-      case Expr(Literal(Constant("")))        ⇒ fail("String literal in rule definitions must not be empty")
-      case Expr(Literal(Constant(s: String))) ⇒ s.toList
-      case _                                  ⇒ fail("Strings in rule definitions have to be literals")
-    }
-    def wrap(char: Char) = Apply(Select(c.prefix.tree, newTermName("charRule")), List(Literal(Constant(char))))
-    val tree = chars.tail.foldLeft(wrap(chars.head)) {
-      case (acc, char) ⇒ Apply(Select(acc, newTermName("$tilde")), List(wrap(char)))
-    }
-    c.Expr[Rule](tree)
-  }
-
   def transformToOpTree(c: ParserContext)(e: c.Tree): Expression = {
     import c.universe._
 
     e match {
       case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if argTermName.decoded == "EOI" ⇒
         EOI
+
+      case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if termName.decoded == "stringRule" ⇒
+        fail("Strings in rule definitions have to be literals")
+
+      case Apply(Select(This(typeName), termName), List(Literal(Constant(x: String)))) ⇒
+        LiteralString(x)
 
       case Apply(Select(This(typeName), termName), List(Literal(Constant(x: Char)))) ⇒
         LiteralChar(x)
@@ -77,7 +65,7 @@ object Parser {
         FirstOf(transformToOpTree(c)(a), transformToOpTree(c)(arg))
 
       case x ⇒
-        throw new Exception("transformToOpTree, unexpected: " + x)
+        fail("transformToOpTree, unexpected: " + showRaw(x))
     }
   }
 
@@ -87,13 +75,21 @@ object Parser {
     e match {
       case EOI ⇒ reify {
         val p = c.prefix.splice
-        p.nextCh() == p.EOI
+        p.nextChar == p.EOI
+      }
+
+      case LiteralString(targetString: String) ⇒ reify {
+        val p = c.prefix.splice
+        val cursorPos = p.cursor
+        val ts = c.literal(targetString).splice
+        if (ts forall (_ == p.nextChar)) true
+        else { p.cursor = cursorPos; false }
       }
 
       case LiteralChar(targetChar: Char) ⇒ reify {
         val p = c.prefix.splice
         val tc = c.literal(targetChar).splice
-        (p.nextCh() == tc) && { p.advanceCursor(); true }
+        p.nextChar == tc
       }
 
       case Sequence(lhs: Expression, rhs: Expression) ⇒ reify {
@@ -111,7 +107,7 @@ object Parser {
       }
 
       case x ⇒
-        throw new Exception("transformToAst, unexpected: " + x)
+        fail("transformToAst, unexpected: " + x)
     }
   }
 
