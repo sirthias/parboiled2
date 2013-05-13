@@ -39,9 +39,10 @@ abstract class Parser(input: ParserInput) {
 object Parser {
   type ParserContext = Context { type PrefixType = Parser }
 
-  def ruleImpl(c: ParserContext)(r: c.Expr[Rule]): c.Expr[Boolean] = {
-    val opTreeContext = new OpTreeContext[c.type](c)
-    val opTree = opTreeContext.parse(r.tree)
+  def ruleImpl(ctx: ParserContext)(r: ctx.Expr[Rule]): ctx.Expr[Boolean] = {
+    val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
+    import opTreeCtx._
+    val opTree = OpTree(r.tree)
     opTree.render
   }
 }
