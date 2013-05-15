@@ -21,7 +21,6 @@ import scala.reflect.macros.Context
 
 abstract class Parser(input: ParserInput) {
   private var _cursor: Int = 0
-  val EOI: Char = '\uFFFF'
 
   def rule(r: Rule): Boolean = macro Parser.ruleImpl
 
@@ -29,20 +28,27 @@ abstract class Parser(input: ParserInput) {
   implicit def stringRule(stringLiteral: String) = Rule()
 
   def nextChar(): Char =
-    if (_cursor < input.length) { val nextCh = input.charAt(_cursor); _cursor += 1; nextCh }
-    else EOI
+    if (_cursor < input.length) {
+      val nextCh = input.charAt(_cursor)
+      _cursor += 1
+      nextCh
+    } else EOI
 
-  def cursor_=(v: Int) = _cursor = v
-  def cursor = _cursor
+  type Mark = Int
+  def mark: Mark = _cursor
+  def reset(mark: Mark): Unit = _cursor = mark
+
+  def EOI = Parser.EOI
 }
 
 object Parser {
+  val EOI: Char = '\uFFFF'
+
   type ParserContext = Context { type PrefixType = Parser }
 
   def ruleImpl(ctx: ParserContext)(r: ctx.Expr[Rule]): ctx.Expr[Boolean] = {
     val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
-    import opTreeCtx._
-    val opTree = OpTree(r.tree)
+    val opTree = opTreeCtx.OpTree(r.tree)
     opTree.render
   }
 }

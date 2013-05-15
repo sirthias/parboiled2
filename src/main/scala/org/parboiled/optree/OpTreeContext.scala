@@ -6,7 +6,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   import c.universe._
 
   abstract class OpTree {
-    def render(): c.universe.Expr[Boolean]
+    def render(): Expr[Boolean]
   }
 
   sealed trait OpTreeCompanion extends PartialFunction[c.Tree, OpTree] {
@@ -16,7 +16,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object OpTree {
-    def apply(tree: c.universe.Tree): OpTree =
+    def apply(tree: Tree): OpTree =
       (EOI
         orElse LiteralString
         orElse LiteralChar
@@ -26,7 +26,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case object EOI extends OpTree with OpTreeCompanion {
-    def render(): c.universe.Expr[Boolean] = reify {
+    def render(): Expr[Boolean] = reify {
       val p = c.prefix.splice
       p.nextChar == p.EOI
     }
@@ -37,12 +37,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralString(s: String) extends OpTree {
-    def render(): c.universe.Expr[Boolean] = reify {
+    def render(): Expr[Boolean] = reify {
       val p = c.prefix.splice
-      val cursorPos = p.cursor
+      val mark = p.mark
       val ts = c.literal(s).splice
       if (ts forall (_ == p.nextChar)) true
-      else { p.cursor = cursorPos; false }
+      else { p.reset(mark); false }
     }
   }
 
@@ -53,7 +53,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    def render: c.universe.Expr[Boolean] = reify {
+    def render: Expr[Boolean] = reify {
       val p = c.prefix.splice
       val tc = c.literal(ch).splice
       p.nextChar == tc
@@ -83,11 +83,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   //  case class NotPredicate(n: OpTree) extends OpTree
 
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render: c.universe.Expr[Boolean] = reify {
+    def render: Expr[Boolean] = reify {
       val p = c.prefix.splice
-      val cursorPos = p.cursor
+      val mark = p.mark
       if (lhs.render.splice) rhs.render.splice
-      else { p.cursor = cursorPos; false }
+      else { p.reset(mark); false }
     }
   }
 
@@ -102,11 +102,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render: c.universe.Expr[Boolean] = reify {
+    def render: Expr[Boolean] = reify {
       val p = c.prefix.splice
-      val cursorPos = p.cursor
+      val mark = p.mark
       if (lhs.render.splice) true
-      else { p.cursor = cursorPos; rhs.render.splice }
+      else { p.reset(mark); rhs.render.splice }
     }
   }
 
