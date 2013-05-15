@@ -5,14 +5,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
   import c.universe._
 
+  type FromTree[T <: OpTree] = PartialFunction[Tree, T]
+
   abstract class OpTree {
     def render(): Expr[Boolean]
   }
 
-  sealed trait OpTreeCompanion extends PartialFunction[c.Tree, OpTree] {
-    val fromTree: PartialFunction[c.Tree, OpTree]
-    def isDefinedAt(tree: c.Tree) = fromTree.isDefinedAt(tree)
-    def apply(tree: c.Tree) = fromTree.apply(tree)
+  sealed trait OpTreeCompanion extends FromTree[OpTree] {
+    val fromTree: FromTree[OpTree]
+    def isDefinedAt(tree: Tree) = fromTree.isDefinedAt(tree)
+    def apply(tree: Tree) = fromTree.apply(tree)
   }
 
   object OpTree {
@@ -31,7 +33,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       p.nextChar == p.EOI
     }
 
-    val fromTree: PartialFunction[c.Tree, EOI.type] = {
+    val fromTree: FromTree[EOI.type] = {
       case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if argTermName.decoded == "EOI" ⇒ EOI
     }
   }
@@ -47,7 +49,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object LiteralString extends OpTreeCompanion {
-    val fromTree: PartialFunction[c.Tree, LiteralString] = {
+    val fromTree: FromTree[LiteralString] = {
       case Apply(Select(This(typeName), termName), List(Literal(Constant(s: String)))) ⇒ LiteralString(s)
     }
   }
@@ -61,7 +63,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object LiteralChar extends OpTreeCompanion {
-    val fromTree: PartialFunction[c.Tree, LiteralChar] = {
+    val fromTree: FromTree[LiteralChar] = {
       case Apply(Select(This(typeName), termName), List(Literal(Constant(ch: Char)))) ⇒ LiteralChar(ch)
     }
   }
@@ -92,7 +94,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object Sequence extends OpTreeCompanion {
-    val fromTree: PartialFunction[c.Tree, Sequence] = {
+    val fromTree: FromTree[Sequence] = {
       case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒ {
         val lhs = OpTree(a)
         val rhs = OpTree(arg)
@@ -111,7 +113,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object FirstOf extends OpTreeCompanion {
-    val fromTree: PartialFunction[c.Tree, FirstOf] = {
+    val fromTree: FromTree[FirstOf] = {
       case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$bar$bar\")" ⇒ {
         val lhs = OpTree(a)
         val rhs = OpTree(arg)
