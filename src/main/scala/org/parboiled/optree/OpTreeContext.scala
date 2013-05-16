@@ -23,10 +23,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   object OpTree extends OpTreeCompanion {
     val fromTree: FromTree[OpTree] = {
-      case x ⇒ (LiteralString
+      (LiteralString
         orElse LiteralChar
         orElse Sequence
-        orElse FirstOf).applyOrElse(x, (t: Tree) ⇒ c.abort(c.enclosingPosition, "Invalid rule definition: " + t))
+        orElse FirstOf
+        orElse { case x ⇒ c.abort(c.enclosingPosition, "Invalid rule definition: " + x) })
     }
   }
 
