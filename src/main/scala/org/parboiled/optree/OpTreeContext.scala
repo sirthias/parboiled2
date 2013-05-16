@@ -15,16 +15,19 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     val fromTree: FromTree[OpTree]
     def isDefinedAt(tree: Tree) = fromTree.isDefinedAt(tree)
     def apply(tree: Tree) = fromTree.apply(tree)
+    override def applyOrElse[A <: Tree, B >: OpTree](x: A, default: A ⇒ B): B = fromTree.applyOrElse(x, default)
   }
 
   object OpTree {
-    def apply(tree: Tree): OpTree =
+    private val fromTree: FromTree[OpTree] =
       (EOI
         orElse LiteralString
         orElse LiteralChar
         orElse Sequence
-        orElse FirstOf //orElse c.abort(c.enclosingPosition, "Invalid rule definition: " + tree)
-        )(tree)
+        orElse FirstOf)
+
+    def apply(tree: Tree): OpTree =
+      fromTree.applyOrElse(tree, (t: Tree) ⇒ c.abort(c.enclosingPosition, "Invalid rule definition: " + t))
   }
 
   case object EOI extends OpTree with OpTreeCompanion {
