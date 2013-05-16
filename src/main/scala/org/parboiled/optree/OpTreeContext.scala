@@ -56,10 +56,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    def render: Expr[Boolean] = reify {
+    def render(): Expr[Boolean] = reify {
       val p = c.prefix.splice
       val tc = c.literal(ch).splice
-      p.nextChar == tc
+      p.nextChar() == tc
     }
   }
 
@@ -91,10 +91,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
   // the stack size for all rules with sequences that are more than two elements long.
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render: Expr[Boolean] = reify {
+    def render(): Expr[Boolean] = reify {
       val p = c.prefix.splice
       val mark = p.mark
-      if (lhs.render.splice) rhs.render.splice
+      if (lhs.render().splice) rhs.render().splice
       else { p.reset(mark); false }
     }
   }
@@ -110,11 +110,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render: Expr[Boolean] = reify {
+    def render(): Expr[Boolean] = reify {
       val p = c.prefix.splice
       val mark = p.mark
-      if (lhs.render.splice) true
-      else { p.reset(mark); rhs.render.splice }
+      if (lhs.render().splice) true
+      else { p.reset(mark); rhs.render().splice }
     }
   }
 
