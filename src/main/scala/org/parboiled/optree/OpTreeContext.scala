@@ -35,12 +35,20 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val p = c.prefix.splice
       val mark = p.mark
       val ts = c.literal(s).splice
-      if (ts forall (_ == p.nextChar)) true
-      else { p.reset(mark); false }
+      var ix = 0
+      while (ix < ts.length && p.nextChar() == ts.charAt(ix)) ix += 1
+      if (ix == ts.length) true
+      else {
+        p.reset(mark)
+        false
+      }
     }
   }
 
   object LiteralString extends OpTreeCompanion {
+    // TODO: expand string literal into sequence of LiteralChars for all strings below a certain threshold
+    // number of characters (i.e. we "unroll" short strings with, say, less than 16 chars)
+
     val fromTree: FromTree[LiteralString] = {
       case Apply(Select(This(typeName), termName), List(Literal(Constant(s: String)))) ⇒ LiteralString(s)
     }
