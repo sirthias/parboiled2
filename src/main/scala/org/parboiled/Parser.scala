@@ -16,91 +16,41 @@
 
 package org.parboiled
 
+import org.parboiled.optree._
 import scala.reflect.macros.Context
 
-abstract class Parser(input: ParserInput) {
+abstract class Parser {
+  def input: ParserInput
+
   private var _cursor: Int = 0
-  val EOI: Char = '\uFFFF'
 
   def rule(r: Rule): Boolean = macro Parser.ruleImpl
 
   implicit def charRule(c: Char) = Rule()
-  implicit def stringRule(stringLiteral: String) = macro Parser.stringRuleImpl
+  implicit def stringRule(stringLiteral: String) = Rule()
 
-  def nextCh(): Char =
-    if (_cursor < input.length) input.charAt(_cursor) else EOI
+  def nextChar(): Char =
+    if (_cursor < input.length) {
+      val nextCh = input.charAt(_cursor)
+      _cursor += 1
+      nextCh
+    } else EOI
 
-  def advanceCursor() = _cursor += 1
-  def cursor_=(v: Int) = _cursor = v
-  def cursor = _cursor
+  type Mark = Int
+  def mark: Mark = _cursor
+  def reset(mark: Mark): Unit = _cursor = mark
+
+  def EOI = Parser.EOI
 }
 
 object Parser {
-  class GrammarException(_msg: String) extends RuntimeException(_msg)
+  val EOI: Char = '\uFFFF'
 
   type ParserContext = Context { type PrefixType = Parser }
 
-  /**
-   * Expands a string literal to a corresponding rule definition,
-   * e.g. "abc" is expanded to `'a' ~ 'b' ~ 'c'`.
-   */
-  def stringRuleImpl(c: ParserContext)(stringLiteral: c.Expr[String]): c.Expr[Rule] = {
-    import c.universe._
-    val chars = stringLiteral match {
-      case Expr(Literal(Constant("")))        ⇒ fail("String literal in rule definitions must not be empty")
-      case Expr(Literal(Constant(s: String))) ⇒ s.toList
-      case _                                  ⇒ fail("Strings in rule definitions have to be literals")
-    }
-    def wrap(char: Char) = Apply(Select(c.prefix.tree, newTermName("charRule")), List(Literal(Constant(char))))
-    val tree = chars.tail.foldLeft(wrap(chars.head)) {
-      case (acc, char) ⇒ Apply(Select(acc, newTermName("$tilde")), List(wrap(char)))
-    }
-    c.Expr[Rule](tree)
+  def ruleImpl(ctx: ParserContext)(r: ctx.Expr[Rule]): ctx.Expr[Boolean] = {
+    val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
+    val opTree = opTreeCtx.OpTree(r.tree)
+    opTree.render
   }
-
-  def ruleImpl(c: ParserContext)(r: c.Expr[Rule]): c.Expr[Boolean] = {
-    import c.universe._
-
-    def transform(e: Tree): c.Expr[Boolean] = {
-      e match {
-        case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if argTermName.decoded == "EOI" ⇒
-          // CharRule(EOI)
-          reify {
-            val p = c.prefix.splice
-            p.nextCh() == p.EOI
-          }
-        case Apply(Select(This(typeName), termName), List(cnstChar @ Literal(Constant(_: Char)))) ⇒
-          // CharRule(AnyChar)
-          reify {
-            val p = c.prefix.splice
-            val targetChar = c.Expr[Char](cnstChar).splice
-            (p.nextCh() == targetChar) && { p.advanceCursor(); true }
-          }
-        case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒
-          // Composition - seq
-          reify {
-            val p = c.prefix.splice
-            val cursorPos = p.cursor
-            if (transform(a).splice) transform(arg).splice
-            else { p.cursor = cursorPos; false }
-          }
-        case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$bar$bar\")" ⇒
-          // Composition - firstOf
-          reify {
-            val p = c.prefix.splice
-            val cursorPos = p.cursor
-            if (transform(a).splice) true
-            else { p.cursor = cursorPos; transform(arg).splice }
-          }
-        case x ⇒
-          println("ERROR: " + x)
-          reify { false }
-      }
-    }
-
-    transform(r.tree)
-  }
-
-  private def fail(errorMsg: String) = throw new GrammarException(errorMsg)
-
 }
