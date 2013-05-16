@@ -50,7 +50,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     // number of characters (i.e. we "unroll" short strings with, say, less than 16 chars)
 
     val fromTree: FromTree[LiteralString] = {
-      case Apply(Select(This(typeName), termName), List(Literal(Constant(s: String)))) ⇒ LiteralString(s)
+      case Apply(Select(This(_), Decoded("stringRule")), List(Literal(Constant(s: String)))) ⇒ LiteralString(s)
     }
   }
 
@@ -100,7 +100,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   object Sequence extends OpTreeCompanion {
     val fromTree: FromTree[Sequence] = {
-      case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$tilde\")" ⇒ {
+      case Apply(Select(a, Decoded("~")), List(arg)) ⇒ {
         val lhs = OpTree(a)
         val rhs = OpTree(arg)
         Sequence(lhs, rhs)
@@ -119,7 +119,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   object FirstOf extends OpTreeCompanion {
     val fromTree: FromTree[FirstOf] = {
-      case Apply(Select(a, n), List(arg)) if show(n) == "newTermName(\"$bar$bar\")" ⇒ {
+      case Apply(Select(a, Decoded("||")), List(arg)) ⇒ {
         val lhs = OpTree(a)
         val rhs = OpTree(arg)
         FirstOf(lhs, rhs)
