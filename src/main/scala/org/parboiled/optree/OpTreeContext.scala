@@ -85,6 +85,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   //
   //  case class NotPredicate(n: OpTree) extends OpTree
 
+  // TODO: Having sequence be a simple (lhs, rhs) model causes us to allocate a mark on the stack
+  // for every sequence concatenation. If we modeled sequences as a Seq[OpTree] we would be able to
+  // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
+  // the stack size for all rules with sequences that are more than two elements long.
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
     def render: Expr[Boolean] = reify {
       val p = c.prefix.splice
