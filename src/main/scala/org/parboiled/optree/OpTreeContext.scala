@@ -7,6 +7,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   type FromTree[T <: OpTree] = PartialFunction[Tree, T]
 
+  object Decoded {
+    def unapply(name: Name): Option[String] = Some(name.decoded)
+  }
+
   abstract class OpTree {
     def render(): Expr[Boolean]
   }
@@ -20,25 +24,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   object OpTree {
     private val fromTree: FromTree[OpTree] =
-      (EOI
-        orElse LiteralString
+      (LiteralString
         orElse LiteralChar
         orElse Sequence
         orElse FirstOf)
 
     def apply(tree: Tree): OpTree =
       fromTree.applyOrElse(tree, (t: Tree) ⇒ c.abort(c.enclosingPosition, "Invalid rule definition: " + t))
-  }
-
-  case object EOI extends OpTree with OpTreeCompanion {
-    def render(): Expr[Boolean] = reify {
-      val p = c.prefix.splice
-      p.nextChar == p.EOI
-    }
-
-    val fromTree: FromTree[EOI.type] = {
-      case Apply(Select(This(typeName), termName), List(Select(This(argTypeName), argTermName))) if argTermName.decoded == "EOI" ⇒ EOI
-    }
   }
 
   case class LiteralString(s: String) extends OpTree {
@@ -67,7 +59,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   object LiteralChar extends OpTreeCompanion {
     val fromTree: FromTree[LiteralChar] = {
-      case Apply(Select(This(typeName), termName), List(Literal(Constant(ch: Char)))) ⇒ LiteralChar(ch)
+      case Apply(Select(This(_), Decoded("charRule")), List(Select(This(_), Decoded("EOI")))) ⇒ LiteralChar(Parser.EOI)
+      case Apply(Select(This(_), Decoded("charRule")), List(Literal(Constant(ch: Char))))     ⇒ LiteralChar(ch)
     }
   }
 
