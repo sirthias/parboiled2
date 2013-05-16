@@ -19,18 +19,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     val fromTree: FromTree[OpTree]
     def isDefinedAt(tree: Tree) = fromTree.isDefinedAt(tree)
     def apply(tree: Tree) = fromTree.apply(tree)
-    override def applyOrElse[A <: Tree, B >: OpTree](x: A, default: A ⇒ B): B = fromTree.applyOrElse(x, default)
   }
 
-  object OpTree {
-    private val fromTree: FromTree[OpTree] =
-      (LiteralString
+  object OpTree extends OpTreeCompanion {
+    val fromTree: FromTree[OpTree] = {
+      case x ⇒ (LiteralString
         orElse LiteralChar
         orElse Sequence
-        orElse FirstOf)
-
-    def apply(tree: Tree): OpTree =
-      fromTree.applyOrElse(tree, (t: Tree) ⇒ c.abort(c.enclosingPosition, "Invalid rule definition: " + t))
+        orElse FirstOf).applyOrElse(x, (t: Tree) ⇒ c.abort(c.enclosingPosition, "Invalid rule definition: " + t))
+    }
   }
 
   case class LiteralString(s: String) extends OpTree {
