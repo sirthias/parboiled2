@@ -19,7 +19,9 @@ package org.parboiled
 import org.parboiled.optree._
 import scala.reflect.macros.Context
 
-abstract class Parser(input: ParserInput) {
+abstract class Parser {
+  def input: ParserInput
+
   private var _cursor: Int = 0
 
   def rule(r: Rule): Boolean = macro Parser.ruleImpl

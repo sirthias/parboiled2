@@ -19,7 +19,7 @@ package org.parboiled
 import org.specs2.mutable.Specification
 
 class ParserSpec extends Specification {
-  class TestParser(_input: ParserInput) extends Parser(_input) {
+  class TestParser(val input: ParserInput) extends Parser {
     def X = rule { 'x' ~ EOI }
     def ABC = rule { 'a' ~ 'b' ~ 'c' ~ EOI }
     def ABCfirstOf = rule { ('a' || 'b' || 'c') ~ EOI }
