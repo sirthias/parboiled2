@@ -1,0 +1,4 @@
+<plugin>
+    <name>value-class-instantiation-plugin</name>
+    <classname>parboiled.plugins.ValueClassInstantiationPlugin</classname>
+</plugin>
