@@ -26,6 +26,6 @@ August 2013: Extensions (unrolling of left-recursions, continuation-parsing)
 Notes
 -----
 
-The project is a candidate to `GSoC'13 Scala Projects` (http://www.scala-lang.org/gsoc2013)
+The project is accepted to Google Summer of Code 2013 (http://www.scala-lang.org/gsoc2013)
 
 Google Groups thread related to the project: https://groups.google.com/forum/?fromgroups=#!topic/scala-language/sXC-f88Adiw
