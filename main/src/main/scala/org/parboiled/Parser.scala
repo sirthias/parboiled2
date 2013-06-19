@@ -49,9 +49,11 @@ object Parser {
   type ParserContext = Context { type PrefixType = Parser }
 
   def ruleImpl(ctx: ParserContext)(r: ctx.Expr[Rule]): ctx.Expr[Rule] = {
-    //    val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
-    //    val opTree = opTreeCtx.OpTree(r.tree)
-    //    opTree.render
-    ctx.universe.reify { new Rule(true) || new Rule(false) }
+    val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
+    val opTree = opTreeCtx.OpTree(r.tree)
+
+    println(s"OpTree: ${opTree.show()}")
+
+    opTree.render
   }
 }

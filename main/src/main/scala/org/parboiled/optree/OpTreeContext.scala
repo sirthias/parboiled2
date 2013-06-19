@@ -12,7 +12,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   abstract class OpTree {
-    def render(): Expr[Boolean]
+    def show(): String
+    def render(): Expr[Rule]
   }
 
   sealed trait OpTreeCompanion extends FromTree[OpTree] {
@@ -25,24 +26,41 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     val fromTree: FromTree[OpTree] = {
       (LiteralString
         orElse LiteralChar
+        orElse OpRule
         orElse Sequence
         orElse FirstOf
-        orElse { case x ⇒ c.abort(c.enclosingPosition, "Invalid rule definition: " + x) })
+        orElse { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: ${x} (${showRaw(x)})") })
+    }
+  }
+
+  case class OpRule(className: String, methodName: String) extends OpTree {
+    def show(): String =
+      s"OpRule(${className}.${methodName})"
+
+    def render(): Expr[Rule] =
+      c.Expr[Rule](Select(This(newTypeName(className)), newTermName(methodName)))
+  }
+
+  object OpRule extends OpTreeCompanion {
+    val fromTree: FromTree[OpRule] = {
+      case x @ Select(This(Decoded(className)), Decoded(methodName)) ⇒ {
+        //println(showRaw(x))
+        OpRule(className, methodName)
+      }
     }
   }
 
   case class LiteralString(s: String) extends OpTree {
-    def render(): Expr[Boolean] = reify {
+    def show(): String = s"LiteralString(${s})"
+
+    def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
       val ts = c.literal(s).splice
       var ix = 0
       while (ix < ts.length && p.nextChar() == ts.charAt(ix)) ix += 1
-      if (ix == ts.length) true
-      else {
-        p.reset(mark)
-        false
-      }
+      if (ix == ts.length) Rule.success
+      else { p.reset(mark); Rule.failure }
     }
   }
 
@@ -56,10 +74,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    def render(): Expr[Boolean] = reify {
+    def show(): String = {
+      val chRep = if (ch == Parser.EOI) "EOI" else ch
+      s"LiteralChar(${chRep})"
+    }
+
+    def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val tc = c.literal(ch).splice
-      p.nextChar() == tc
+      new Rule(p.nextChar() == tc)
     }
   }
 
@@ -91,11 +114,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
   // the stack size for all rules with sequences that are more than two elements long.
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render(): Expr[Boolean] = reify {
+    def show(): String = s"Sequence(${lhs.show()}, ${rhs.show()})"
+
+    def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
-      if (lhs.render().splice) rhs.render().splice
-      else { p.reset(mark); false }
+      if (lhs.render().splice.isMatched) rhs.render().splice
+      else { p.reset(mark); Rule.failure }
     }
   }
 
@@ -110,10 +135,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render(): Expr[Boolean] = reify {
+    def show(): String = s"FirstOf(${lhs.show()}, ${rhs.show()})"
+
+    def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
-      if (lhs.render().splice) true
+      if (lhs.render().splice.isMatched) Rule.success
       else { p.reset(mark); rhs.render().splice }
     }
   }

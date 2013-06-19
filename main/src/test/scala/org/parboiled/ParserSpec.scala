@@ -34,34 +34,34 @@ class ParserSpec extends Specification {
 
     "successfully recognize single char" in {
       new TestParser("x").X.isMatched must beTrue
-      //new TestParser("y").X.isMatched must beFalse
+      new TestParser("y").X.isMatched must beFalse
     }
 
     "successfully recognize valid input - seq combinator rule" in {
       new TestParser("abc").ABC.isMatched must beTrue
-      //new TestParser("acb").ABC.isMatched must beFalse
+      new TestParser("acb").ABC.isMatched must beFalse
     }
 
-    //    "successfully recognize valid input - firstOf combinator rule" in {
-    //      new TestParser("a").ABCfirstOf.isMatched must beTrue
-    //      new TestParser("b").ABCfirstOf.isMatched must beTrue
-    //      new TestParser("c").ABCfirstOf.isMatched must beTrue
-    //      new TestParser("d").ABCfirstOf.isMatched must beFalse
-    //    }
-    //
-    //    "successfully recognize valid input - complex rule" in {
-    //      new TestParser("adf").combination1.isMatched must beTrue
-    //      new TestParser("bdf").combination1.isMatched must beTrue
-    //      new TestParser("aef").combination1.isMatched must beTrue
-    //      new TestParser("cef").combination1.isMatched must beTrue
-    //      new TestParser("adx").combination1.isMatched must beFalse
-    //      new TestParser("bbb").combination1.isMatched must beFalse
-    //    }
-    //
-    //    "properly expand string literals to a sequence of char rules" in {
-    //      new TestParser("def").DEF.isMatched must beTrue
-    //      new TestParser("dfe").DEF.isMatched must beFalse
-    //    }
+    "successfully recognize valid input - firstOf combinator rule" in {
+      new TestParser("a").ABCfirstOf.isMatched must beTrue
+      new TestParser("b").ABCfirstOf.isMatched must beTrue
+      new TestParser("c").ABCfirstOf.isMatched must beTrue
+      new TestParser("d").ABCfirstOf.isMatched must beFalse
+    }
+
+    "successfully recognize valid input - complex rule" in {
+      new TestParser("adf").combination1.isMatched must beTrue
+      new TestParser("bdf").combination1.isMatched must beTrue
+      new TestParser("aef").combination1.isMatched must beTrue
+      new TestParser("cef").combination1.isMatched must beTrue
+      new TestParser("adx").combination1.isMatched must beFalse
+      new TestParser("bbb").combination1.isMatched must beFalse
+    }
+
+    "properly expand string literals to a sequence of char rules" in {
+      new TestParser("def").DEF.isMatched must beTrue
+      new TestParser("dfe").DEF.isMatched must beFalse
+    }
 
     // TODO: Fix this test
     //    "disallow compilation of an illegal string rule" in {

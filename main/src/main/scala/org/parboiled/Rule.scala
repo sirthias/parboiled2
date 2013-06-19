@@ -29,4 +29,8 @@ object Rule {
   class NotAvailableAtRuntimeException extends RuntimeException
 
   def apply(): Rule = throw new NotAvailableAtRuntimeException
+
+  val failure = new Rule(false)
+
+  val success = new Rule(true)
 }
