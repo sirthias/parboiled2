@@ -2,18 +2,22 @@ import sbt._
 import Keys._
 
 object build extends Build {
+  lazy val sharedSettings = Seq(
+    scalaVersion := "2.10.2"
+  )
+
   lazy val root = Project(
     id = "root",
     base = file("."),
     aggregate = Seq(plugin, main)
-  )
+  ) settings (sharedSettings: _*)
 
   // This subproject contains a Scala compiler plugin that checks for
   // value class boxing after Erasure.
   lazy val plugin = Project(
       id   = "plugin",
       base = file("plugin")
-    )
+    ) settings (sharedSettings: _*)
 
   // NOTE: If warns are required each time `test` or `compile` is run, then possible settings:
   // https://github.com/alexander-myltsev/parboiled2/commit/52cf666d681d719981fe00485fe25121f8ce9f53#commitcomment-3456157
@@ -39,5 +43,5 @@ object build extends Build {
   lazy val main = Project(
     id   = "main",
     base = file("main")
-  ) settings (pluginSettings: _*)
+  ) settings (sharedSettings ++ pluginSettings: _*)
 }
