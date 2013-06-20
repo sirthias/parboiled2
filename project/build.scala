@@ -6,6 +6,11 @@ object build extends Build {
     scalaVersion := "2.10.2"
   )
 
+  // configure prompt to show current project
+  override lazy val settings = super.settings :+ {
+    shellPrompt := { s => Project.extract(s).currentProject.id + " > " }
+  }
+
   lazy val root = Project(
     id = "root",
     base = file("."),
