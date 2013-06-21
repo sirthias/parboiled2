@@ -12,7 +12,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   abstract class OpTree {
-    def render(): Expr[Boolean]
+    def render(): Expr[Rule]
   }
 
   sealed trait OpTreeCompanion extends FromTree[OpTree] {
@@ -22,27 +22,34 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object OpTree extends OpTreeCompanion {
-    val fromTree: FromTree[OpTree] = {
-      (LiteralString
-        orElse LiteralChar
-        orElse Sequence
-        orElse FirstOf
-        orElse { case x ⇒ c.abort(c.enclosingPosition, "Invalid rule definition: " + x) })
+    val fromTree: FromTree[OpTree] =
+      LiteralString orElse
+        LiteralChar orElse
+        RuleCall orElse
+        Sequence orElse
+        FirstOf orElse
+        { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x (${showRaw(x)})") }
+  }
+
+  case class RuleCall(methodCall: Select) extends OpTree {
+    def render(): Expr[Rule] = c.Expr[Rule](methodCall)
+  }
+
+  object RuleCall extends OpTreeCompanion {
+    val fromTree: FromTree[RuleCall] = {
+      case x @ Select(This(Decoded(className)), Decoded(methodName)) ⇒ RuleCall(x)
     }
   }
 
   case class LiteralString(s: String) extends OpTree {
-    def render(): Expr[Boolean] = reify {
+    def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
       val ts = c.literal(s).splice
       var ix = 0
       while (ix < ts.length && p.nextChar() == ts.charAt(ix)) ix += 1
-      if (ix == ts.length) true
-      else {
-        p.reset(mark)
-        false
-      }
+      if (ix == ts.length) Rule.success
+      else { p.reset(mark); Rule.failure }
     }
   }
 
@@ -56,10 +63,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    def render(): Expr[Boolean] = reify {
+    def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val tc = c.literal(ch).splice
-      p.nextChar() == tc
+      Rule(p.nextChar() == tc)
     }
   }
 
@@ -91,11 +98,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
   // the stack size for all rules with sequences that are more than two elements long.
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render(): Expr[Boolean] = reify {
+    def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
-      if (lhs.render().splice) rhs.render().splice
-      else { p.reset(mark); false }
+      if (lhs.render().splice.matched) rhs.render().splice
+      else { p.reset(mark); Rule.failure }
     }
   }
 
@@ -110,10 +117,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render(): Expr[Boolean] = reify {
+    def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
-      if (lhs.render().splice) true
+      if (lhs.render().splice.matched) Rule.success
       else { p.reset(mark); rhs.render().splice }
     }
   }

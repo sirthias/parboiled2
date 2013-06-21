@@ -16,8 +16,6 @@ startYear := Some(2009)
 
 licenses := Seq("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 
-scalaVersion := "2.10.1"
-
 scalacOptions ++= Seq(
   "-unchecked",
   "-deprecation",
@@ -27,7 +25,7 @@ scalacOptions ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scala-lang"  %  "scala-reflect"  % "2.10.1"  % "compile",
+  "org.scala-lang"  %  "scala-reflect"  % "2.10.2"  % "compile",
   "org.specs2"      %% "specs2"         % "1.14"    % "test"
 )
 
