@@ -31,15 +31,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x (${showRaw(x)})") }
   }
 
-  case class RuleCall(className: String, methodName: String) extends OpTree {
-
-    def render(): Expr[Rule] =
-      c.Expr[Rule](Select(This(newTypeName(className)), newTermName(methodName)))
+  case class RuleCall(methodCall: Select) extends OpTree {
+    def render(): Expr[Rule] = c.Expr[Rule](methodCall)
   }
 
   object RuleCall extends OpTreeCompanion {
     val fromTree: FromTree[RuleCall] = {
-      case Select(This(Decoded(className)), Decoded(methodName)) ⇒ RuleCall(className, methodName)
+      case x @ Select(This(Decoded(className)), Decoded(methodName)) ⇒ RuleCall(x)
     }
   }
 
