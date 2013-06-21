@@ -12,7 +12,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   abstract class OpTree {
-    def show(): String
     def render(): Expr[Rule]
   }
 
@@ -34,8 +33,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class OpRule(className: String, methodName: String) extends OpTree {
-    def show(): String =
-      s"OpRule(${className}.${methodName})"
 
     def render(): Expr[Rule] =
       c.Expr[Rule](Select(This(newTypeName(className)), newTermName(methodName)))
@@ -43,16 +40,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   object OpRule extends OpTreeCompanion {
     val fromTree: FromTree[OpRule] = {
-      case x @ Select(This(Decoded(className)), Decoded(methodName)) ⇒ {
-        //println(showRaw(x))
-        OpRule(className, methodName)
-      }
+      case x @ Select(This(Decoded(className)), Decoded(methodName)) ⇒ OpRule(className, methodName)
     }
   }
 
   case class LiteralString(s: String) extends OpTree {
-    def show(): String = s"LiteralString(${s})"
-
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
@@ -74,11 +66,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    def show(): String = {
-      val chRep = if (ch == Parser.EOI) "EOI" else ch
-      s"LiteralChar(${chRep})"
-    }
-
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val tc = c.literal(ch).splice
@@ -114,8 +101,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
   // the stack size for all rules with sequences that are more than two elements long.
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def show(): String = s"Sequence(${lhs.show()}, ${rhs.show()})"
-
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
@@ -135,8 +120,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def show(): String = s"FirstOf(${lhs.show()}, ${rhs.show()})"
-
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
