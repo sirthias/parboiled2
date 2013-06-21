@@ -82,7 +82,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val tc = c.literal(ch).splice
-      new Rule(p.nextChar() == tc)
+      Rule(p.nextChar() == tc)
     }
   }
 
@@ -119,7 +119,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
-      if (lhs.render().splice.isMatched) rhs.render().splice
+      if (lhs.render().splice.matched) rhs.render().splice
       else { p.reset(mark); Rule.failure }
     }
   }
@@ -140,7 +140,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
       val mark = p.mark
-      if (lhs.render().splice.isMatched) Rule.success
+      if (lhs.render().splice.matched) Rule.success
       else { p.reset(mark); rhs.render().splice }
     }
   }
