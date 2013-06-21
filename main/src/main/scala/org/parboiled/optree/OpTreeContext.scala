@@ -25,21 +25,21 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     val fromTree: FromTree[OpTree] =
       LiteralString orElse
         LiteralChar orElse
-        OpRule orElse
+        RuleCall orElse
         Sequence orElse
         FirstOf orElse
         { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x (${showRaw(x)})") }
   }
 
-  case class OpRule(className: String, methodName: String) extends OpTree {
+  case class RuleCall(className: String, methodName: String) extends OpTree {
 
     def render(): Expr[Rule] =
       c.Expr[Rule](Select(This(newTypeName(className)), newTermName(methodName)))
   }
 
-  object OpRule extends OpTreeCompanion {
-    val fromTree: FromTree[OpRule] = {
-      case x @ Select(This(Decoded(className)), Decoded(methodName)) ⇒ OpRule(className, methodName)
+  object RuleCall extends OpTreeCompanion {
+    val fromTree: FromTree[RuleCall] = {
+      case Select(This(Decoded(className)), Decoded(methodName)) ⇒ RuleCall(className, methodName)
     }
   }
 
