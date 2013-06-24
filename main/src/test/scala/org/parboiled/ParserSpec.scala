@@ -28,35 +28,39 @@ class ParserSpec extends Specification {
   }
 
   "The new parboiled parser" should {
+    "dummy test: check value class instantiation" in {
+      println(new TestParser("x").X)
+    }
+
     "successfully recognize single char" in {
-      new TestParser("x").X must beTrue
-      new TestParser("y").X must beFalse
+      new TestParser("x").X.matched must beTrue
+      new TestParser("y").X.matched must beFalse
     }
 
     "successfully recognize valid input - seq combinator rule" in {
-      new TestParser("abc").ABC must beTrue
-      new TestParser("acb").ABC must beFalse
+      new TestParser("abc").ABC.matched must beTrue
+      new TestParser("acb").ABC.matched must beFalse
     }
 
     "successfully recognize valid input - firstOf combinator rule" in {
-      new TestParser("a").ABCfirstOf must beTrue
-      new TestParser("b").ABCfirstOf must beTrue
-      new TestParser("c").ABCfirstOf must beTrue
-      new TestParser("d").ABCfirstOf must beFalse
+      new TestParser("a").ABCfirstOf.matched must beTrue
+      new TestParser("b").ABCfirstOf.matched must beTrue
+      new TestParser("c").ABCfirstOf.matched must beTrue
+      new TestParser("d").ABCfirstOf.matched must beFalse
     }
 
     "successfully recognize valid input - complex rule" in {
-      new TestParser("adf").combination1 must beTrue
-      new TestParser("bdf").combination1 must beTrue
-      new TestParser("aef").combination1 must beTrue
-      new TestParser("cef").combination1 must beTrue
-      new TestParser("adx").combination1 must beFalse
-      new TestParser("bbb").combination1 must beFalse
+      new TestParser("adf").combination1.matched must beTrue
+      new TestParser("bdf").combination1.matched must beTrue
+      new TestParser("aef").combination1.matched must beTrue
+      new TestParser("cef").combination1.matched must beTrue
+      new TestParser("adx").combination1.matched must beFalse
+      new TestParser("bbb").combination1.matched must beFalse
     }
 
     "properly expand string literals to a sequence of char rules" in {
-      new TestParser("def").DEF must beTrue
-      new TestParser("dfe").DEF must beFalse
+      new TestParser("def").DEF.matched must beTrue
+      new TestParser("dfe").DEF.matched must beFalse
     }
 
     // TODO: Fix this test

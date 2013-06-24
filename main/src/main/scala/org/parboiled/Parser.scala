@@ -24,7 +24,7 @@ abstract class Parser {
 
   private var _cursor: Int = 0
 
-  def rule(r: Rule): Boolean = macro Parser.ruleImpl
+  def rule(r: Rule): Rule = macro Parser.ruleImpl
 
   implicit def charRule(c: Char) = Rule()
   implicit def stringRule(stringLiteral: String) = Rule()
@@ -48,9 +48,9 @@ object Parser {
 
   type ParserContext = Context { type PrefixType = Parser }
 
-  def ruleImpl(ctx: ParserContext)(r: ctx.Expr[Rule]): ctx.Expr[Boolean] = {
+  def ruleImpl(ctx: ParserContext)(r: ctx.Expr[Rule]): ctx.Expr[Rule] = {
     val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
     val opTree = opTreeCtx.OpTree(r.tree)
-    opTree.render
+    opTree.render()
   }
 }

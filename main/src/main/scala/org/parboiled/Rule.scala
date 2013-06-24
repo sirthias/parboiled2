@@ -20,13 +20,19 @@ package org.parboiled
  * Phantom type for which no instance can be created.
  * Only used for type-checking during compile-time.
  */
-sealed abstract class Rule private () {
-  def ~(that: Rule): Rule
-  def ||(that: Rule): Rule
+class Rule private (val matched: Boolean) extends AnyVal {
+  def ~(that: Rule): Rule = new Rule(this.matched && that.matched)
+  def ||(that: Rule): Rule = new Rule(this.matched || that.matched)
 }
 
 object Rule {
   class NotAvailableAtRuntimeException extends RuntimeException
 
+  def apply(matched: Boolean): Rule = new Rule(matched)
+
   def apply(): Rule = throw new NotAvailableAtRuntimeException
+
+  val failure = new Rule(false)
+
+  val success = new Rule(true)
 }
