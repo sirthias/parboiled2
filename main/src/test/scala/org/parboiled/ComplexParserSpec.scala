@@ -24,7 +24,7 @@ class ComplexParserSpec extends Specification {
     def complexRule = rule { ABC ~ ABC ~ EOI }
   }
 
-  "The new parboiled parser" should {
+  "A complex parboiled parser" should {
     "successfully recognize complex rule" in {
       new TestParser("abcabc").complexRule.matched must beTrue
       new TestParser("abcbc").complexRule.matched must beFalse
