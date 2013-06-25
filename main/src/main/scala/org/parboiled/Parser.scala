@@ -32,6 +32,7 @@ abstract class Parser {
   def zeroOrMore(r: Rule) = Rule()
   def oneOrMore(r: Rule) = Rule()
   def optional(r: Rule) = Rule()
+  def &(r: Rule): Rule = Rule()
 
   def nextChar(): Char =
     if (_cursor < input.length) {

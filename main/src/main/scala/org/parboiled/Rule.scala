@@ -16,19 +16,19 @@
 
 package org.parboiled
 
-class NotAvailableAtRuntimeException extends RuntimeException
-
 /**
  * Phantom type for which no instance can be created.
  * Only used for type-checking during compile-time.
  */
 class Rule private (val matched: Boolean) extends AnyVal {
-  def ~(that: Rule): Rule = throw new NotAvailableAtRuntimeException
-  def ||(that: Rule): Rule = throw new NotAvailableAtRuntimeException
-  def unary_!() = Rule()
+  def ~(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
+  def ||(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
+  def unary_!(): Rule = throw new Rule.NotAvailableAtRuntimeException
 }
 
 object Rule {
+  class NotAvailableAtRuntimeException extends RuntimeException
+
   def apply(matched: Boolean): Rule = new Rule(matched)
 
   def apply(): Rule = throw new NotAvailableAtRuntimeException

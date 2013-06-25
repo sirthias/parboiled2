@@ -33,6 +33,8 @@ class ParserSpec extends Specification {
     def ABOptional = rule { optional("a") ~ optional("b") ~ EOI }
     def NotA = rule { !"a" ~ EOI }
     def NotASeqB = rule { !"a" ~ "b" ~ EOI }
+    def AndA = rule { &("a") ~ EOI }
+    def AndASeqA = rule { &("a") ~ "a" ~ EOI }
   }
 
   "The new parboiled parser" should {
@@ -96,19 +98,34 @@ class ParserSpec extends Specification {
       new TestParser("b").AOptional.matched must beFalse
     }
 
-    "successfully recognize valid input - `not` combinator rule" in {
+    "successfully recognize valid input - `not-predicate` combinator rule" in {
       new TestParser("").NotA.matched must beTrue
       new TestParser("a").NotA.matched must beFalse
       new TestParser("aa").NotA.matched must beFalse
       new TestParser("b").NotA.matched must beFalse
     }
 
-    "successfully recognize valid input - `not` rule sequenced by `charRule` rule" in {
+    "successfully recognize valid input - `not-predicate` rule sequenced by `charRule` rule" in {
       new TestParser("").NotASeqB.matched must beFalse
       new TestParser("a").NotASeqB.matched must beFalse
       new TestParser("aa").NotASeqB.matched must beFalse
       new TestParser("b").NotASeqB.matched must beTrue
       new TestParser("bb").NotASeqB.matched must beFalse
+    }
+
+    "successfully recognize valid input - `and-predicate` combinator rule" in {
+      new TestParser("").AndA.matched must beFalse
+      new TestParser("a").AndA.matched must beFalse
+      new TestParser("aa").AndA.matched must beFalse
+      new TestParser("b").AndA.matched must beFalse
+    }
+
+    "successfully recognize valid input - `and-predicate` rule sequenced by `charRule` rule" in {
+      new TestParser("").AndASeqA.matched must beFalse
+      new TestParser("a").AndASeqA.matched must beTrue
+      new TestParser("aa").AndASeqA.matched must beFalse
+      new TestParser("b").AndASeqA.matched must beFalse
+      new TestParser("bb").AndASeqA.matched must beFalse
     }
 
     // TODO: Move to integration tests

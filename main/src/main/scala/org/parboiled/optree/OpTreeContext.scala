@@ -1,6 +1,7 @@
 package org.parboiled
 package optree
 
+// TODO: Consider how to link e.g. "zeroOrMore" Scala AST parsing and corresponding DSL combinator `zeroOrMore`
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
   import c.universe._
@@ -37,6 +38,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         Optional orElse
         OneOrMore orElse
         ZeroOrMore orElse
+        AndPredicate orElse
         RuleCall orElse
         { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x - ${showRaw(x)}") }
   }
@@ -122,7 +124,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  //  case class AndPredicate(n: OpTree) extends OpTree
+  // TODO: To call `NotPredicate` twice is a little bit inefficient.
+  // On the other hand write almost the same code like in `NotPredicate.render` is evil.
+  // Do we need memoization?
+  class AndPredicate(op: OpTree) extends NotPredicate(NotPredicate(op))
+
+  object AndPredicate extends OpTreeCompanion {
+    val fromTree: FromTree[AndPredicate] = {
+      case Apply(Select(This(_), Decoded("&")), List(arg)) ⇒ new AndPredicate(OpTree(arg))
+    }
+  }
 
   case class NotPredicate(op: OpTree) extends OpTree {
     def render(): Expr[Rule] = reify {
