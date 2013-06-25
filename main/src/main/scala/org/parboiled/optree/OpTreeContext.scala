@@ -15,6 +15,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(): Expr[Rule]
   }
 
+  case object EmptyString extends OpTree {
+    def render(): Expr[Rule] = reify {
+      Rule.success
+    }
+  }
+
   sealed trait OpTreeCompanion extends FromTree[OpTree] {
     val fromTree: FromTree[OpTree]
     def isDefinedAt(tree: Tree) = fromTree.isDefinedAt(tree)
@@ -87,10 +93,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   //  case class Grouping(n: OpTree) extends OpTree
 
   case class Optional(op: OpTree) extends OpTree {
-    def render(): Expr[Rule] = reify {
-      val _ = op.render().splice.matched
-      Rule.success
-    }
+    def render(): Expr[Rule] = FirstOf(op, EmptyString).render()
   }
 
   object Optional extends OpTreeCompanion {
