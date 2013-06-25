@@ -112,15 +112,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class OneOrMore() extends OpTree {
-    def render(): Expr[Rule] = reify {
-      Rule(???)
-    }
+  case class OneOrMore(op: OpTree) extends OpTree {
+    def render(): Expr[Rule] = Sequence(op, ZeroOrMore(op)).render() //
   }
 
   object OneOrMore extends OpTreeCompanion {
     val fromTree: FromTree[OneOrMore] = {
-      case Apply(Select(This(_), Decoded("oneOrMore")), List(arg)) ⇒ OneOrMore()
+      case Apply(Select(This(_), Decoded("oneOrMore")), List(arg)) ⇒ OneOrMore(OpTree(arg))
     }
   }
 
