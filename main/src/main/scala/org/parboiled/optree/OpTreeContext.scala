@@ -28,7 +28,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         RuleCall orElse
         Sequence orElse
         FirstOf orElse
-        { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x (${showRaw(x)})") }
+        Optional orElse
+        OneOrMore orElse
+        ZeroOrMore orElse
+        { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x - ${showRaw(x)}") }
   }
 
   case class RuleCall(methodCall: Select) extends OpTree {
@@ -78,19 +81,49 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   //  case class CharacterClass(chars: Array[Char]) extends OpTree
-  //
+
   //  case class AnyCharacter() extends OpTree
-  //
+
   //  case class Grouping(n: OpTree) extends OpTree
-  //
-  //  case class Optional(n: OpTree) extends OpTree
-  //
-  //  case class ZeroOrOne(n: OpTree) extends OpTree
-  //
-  //  case class OneOrMore(n: OpTree) extends OpTree
-  //
+
+  case class Optional() extends OpTree {
+    def render(): Expr[Rule] = reify {
+      Rule(???)
+    }
+  }
+
+  object Optional extends OpTreeCompanion {
+    val fromTree: FromTree[Optional] = {
+      case Apply(Select(This(_), Decoded("optional")), List(arg)) ⇒ Optional()
+    }
+  }
+
+  case class ZeroOrMore() extends OpTree {
+    def render(): Expr[Rule] = reify {
+      Rule(???)
+    }
+  }
+
+  object ZeroOrMore extends OpTreeCompanion {
+    val fromTree: FromTree[ZeroOrMore] = {
+      case Apply(Select(This(_), Decoded("zeroOrMore")), List(arg)) ⇒ ZeroOrMore()
+    }
+  }
+
+  case class OneOrMore() extends OpTree {
+    def render(): Expr[Rule] = reify {
+      Rule(???)
+    }
+  }
+
+  object OneOrMore extends OpTreeCompanion {
+    val fromTree: FromTree[OneOrMore] = {
+      case Apply(Select(This(_), Decoded("oneOrMore")), List(arg)) ⇒ OneOrMore()
+    }
+  }
+
   //  case class AndPredicate(n: OpTree) extends OpTree
-  //
+
   //  case class NotPredicate(n: OpTree) extends OpTree
 
   // TODO: Having sequence be a simple (lhs, rhs) model causes us to allocate a mark on the stack

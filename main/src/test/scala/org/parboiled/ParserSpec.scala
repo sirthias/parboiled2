@@ -74,6 +74,7 @@ class ParserSpec extends Specification {
       new TestParser("b").AOneOrMore.matched must beFalse
     }
 
+    // TODO: Move to integration tests
     "successfully recognize valid input - oneOrMore and seq combinator rules" in {
       new TestParser("").ABOneOrMore.matched must beFalse
       new TestParser("aa").ABOneOrMore.matched must beFalse
@@ -93,6 +94,7 @@ class ParserSpec extends Specification {
       new TestParser("b").AOptional.matched must beFalse
     }
 
+    // TODO: Move to integration tests
     "successfully recognize valid input - optional and seq combinator rules" in {
       new TestParser("").ABOptional.matched must beTrue
       new TestParser("aa").ABOptional.matched must beFalse
