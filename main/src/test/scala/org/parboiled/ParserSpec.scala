@@ -31,6 +31,8 @@ class ParserSpec extends Specification {
     def ABOneOrMore = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
     def AOptional = rule { optional("a") ~ EOI }
     def ABOptional = rule { optional("a") ~ optional("b") ~ EOI }
+    def NotA = rule { !"a" ~ EOI }
+    def NotASeqB = rule { !"a" ~ "b" ~ EOI }
   }
 
   "The new parboiled parser" should {
@@ -39,26 +41,26 @@ class ParserSpec extends Specification {
       new TestParser("y").X.matched must beFalse
     }
 
-    "successfully recognize valid input - seq combinator rule" in {
+    "successfully recognize valid input - `seq` combinator rule" in {
       new TestParser("abc").ABC.matched must beTrue
       new TestParser("acb").ABC.matched must beFalse
     }
 
-    "successfully recognize valid input - firstOf combinator rule" in {
+    "successfully recognize valid input - `firstOf` combinator rule" in {
       new TestParser("a").ABCfirstOf.matched must beTrue
       new TestParser("b").ABCfirstOf.matched must beTrue
       new TestParser("c").ABCfirstOf.matched must beTrue
       new TestParser("d").ABCfirstOf.matched must beFalse
     }
 
-    "successfully recognize valid input - zeroOrMore combinator rule" in {
+    "successfully recognize valid input - `zeroOrMore` combinator rule" in {
       new TestParser("").AZeroOrMore.matched must beTrue
       new TestParser("a").AZeroOrMore.matched must beTrue
       new TestParser("aa").AZeroOrMore.matched must beTrue
       new TestParser("b").AZeroOrMore.matched must beFalse
     }
 
-    "successfully recognize valid input - zeroOrMore and seq combinator rules" in {
+    "successfully recognize valid input - `zeroOrMore` and `seq` combinator rules" in {
       new TestParser("").ABZeroOrMore.matched must beTrue
       new TestParser("aa").ABZeroOrMore.matched must beTrue
       new TestParser("b").ABZeroOrMore.matched must beTrue
@@ -67,7 +69,7 @@ class ParserSpec extends Specification {
       new TestParser("ba").ABZeroOrMore.matched must beFalse
     }
 
-    "successfully recognize valid input - oneOrMore combinator rule" in {
+    "successfully recognize valid input - `oneOrMore` combinator rule" in {
       new TestParser("").AOneOrMore.matched must beFalse
       new TestParser("a").AOneOrMore.matched must beTrue
       new TestParser("aa").AOneOrMore.matched must beTrue
@@ -75,7 +77,7 @@ class ParserSpec extends Specification {
     }
 
     // TODO: Move to integration tests
-    "successfully recognize valid input - oneOrMore and seq combinator rules" in {
+    "successfully recognize valid input - `oneOrMore` and `seq` combinator rules" in {
       new TestParser("").ABOneOrMore.matched must beFalse
       new TestParser("aa").ABOneOrMore.matched must beFalse
       new TestParser("b").ABOneOrMore.matched must beFalse
@@ -87,15 +89,30 @@ class ParserSpec extends Specification {
       new TestParser("ba").ABOneOrMore.matched must beFalse
     }
 
-    "successfully recognize valid input - optional combinator rule" in {
+    "successfully recognize valid input - `optional` combinator rule" in {
       new TestParser("").AOptional.matched must beTrue
       new TestParser("a").AOptional.matched must beTrue
       new TestParser("aa").AOptional.matched must beFalse
       new TestParser("b").AOptional.matched must beFalse
     }
 
+    "successfully recognize valid input - `not` combinator rule" in {
+      new TestParser("").NotA.matched must beTrue
+      new TestParser("a").NotA.matched must beFalse
+      new TestParser("aa").NotA.matched must beFalse
+      new TestParser("b").NotA.matched must beFalse
+    }
+
+    "successfully recognize valid input - `not` rule sequenced by `charRule` rule" in {
+      new TestParser("").NotASeqB.matched must beFalse
+      new TestParser("a").NotASeqB.matched must beFalse
+      new TestParser("aa").NotASeqB.matched must beFalse
+      new TestParser("b").NotASeqB.matched must beTrue
+      new TestParser("bb").NotASeqB.matched must beFalse
+    }
+
     // TODO: Move to integration tests
-    "successfully recognize valid input - optional and seq combinator rules" in {
+    "successfully recognize valid input - `optional` and `seq` combinator rules" in {
       new TestParser("").ABOptional.matched must beTrue
       new TestParser("aa").ABOptional.matched must beFalse
       new TestParser("b").ABOptional.matched must beTrue
@@ -107,7 +124,7 @@ class ParserSpec extends Specification {
       new TestParser("ba").ABOptional.matched must beFalse
     }
 
-    "successfully recognize valid input - combination rule" in {
+    "successfully recognize valid input - combination of rules" in {
       new TestParser("adf").combination.matched must beTrue
       new TestParser("bdf").combination.matched must beTrue
       new TestParser("aef").combination.matched must beTrue

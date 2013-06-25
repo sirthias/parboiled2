@@ -31,12 +31,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     val fromTree: FromTree[OpTree] =
       LiteralString orElse
         LiteralChar orElse
-        RuleCall orElse
+        NotPredicate orElse
         Sequence orElse
         FirstOf orElse
         Optional orElse
         OneOrMore orElse
         ZeroOrMore orElse
+        RuleCall orElse
         { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x - ${showRaw(x)}") }
   }
 
@@ -123,7 +124,21 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   //  case class AndPredicate(n: OpTree) extends OpTree
 
-  //  case class NotPredicate(n: OpTree) extends OpTree
+  case class NotPredicate(op: OpTree) extends OpTree {
+    def render(): Expr[Rule] = reify {
+      val p = c.prefix.splice
+      val mark = p.mark
+      val res = op.render().splice.matched
+      p.reset(mark)
+      Rule(!res)
+    }
+  }
+
+  object NotPredicate extends OpTreeCompanion {
+    val fromTree: FromTree[NotPredicate] = {
+      case Apply(Select(arg, Decoded("unary_!")), List()) ⇒ NotPredicate(OpTree(arg))
+    }
+  }
 
   // TODO: Having sequence be a simple (lhs, rhs) model causes us to allocate a mark on the stack
   // for every sequence concatenation. If we modeled sequences as a Seq[OpTree] we would be able to
