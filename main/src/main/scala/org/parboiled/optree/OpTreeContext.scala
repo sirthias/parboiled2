@@ -98,15 +98,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class ZeroOrMore() extends OpTree {
+  case class ZeroOrMore(op: OpTree) extends OpTree {
     def render(): Expr[Rule] = reify {
-      Rule(???)
+      while (op.render().splice.matched) {}
+      Rule.success
     }
   }
 
   object ZeroOrMore extends OpTreeCompanion {
     val fromTree: FromTree[ZeroOrMore] = {
-      case Apply(Select(This(_), Decoded("zeroOrMore")), List(arg)) ⇒ ZeroOrMore()
+      case Apply(Select(This(_), Decoded("zeroOrMore")), List(arg)) ⇒ ZeroOrMore(OpTree(arg))
     }
   }
 
