@@ -86,15 +86,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   //  case class Grouping(n: OpTree) extends OpTree
 
-  case class Optional() extends OpTree {
+  case class Optional(op: OpTree) extends OpTree {
     def render(): Expr[Rule] = reify {
-      Rule(???)
+      val _ = op.render().splice.matched
+      Rule.success
     }
   }
 
   object Optional extends OpTreeCompanion {
     val fromTree: FromTree[Optional] = {
-      case Apply(Select(This(_), Decoded("optional")), List(arg)) ⇒ Optional()
+      case Apply(Select(This(_), Decoded("optional")), List(arg)) ⇒ Optional(OpTree(arg))
     }
   }
 
