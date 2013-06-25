@@ -92,13 +92,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   //  case class Grouping(n: OpTree) extends OpTree
 
-  case class Optional(op: OpTree) extends OpTree {
-    def render(): Expr[Rule] = FirstOf(op, EmptyString).render()
-  }
+  class Optional(op: OpTree) extends FirstOf(op, EmptyString)
 
   object Optional extends OpTreeCompanion {
     val fromTree: FromTree[Optional] = {
-      case Apply(Select(This(_), Decoded("optional")), List(arg)) ⇒ Optional(OpTree(arg))
+      case Apply(Select(This(_), Decoded("optional")), List(arg)) ⇒ new Optional(OpTree(arg))
     }
   }
 
@@ -115,13 +113,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class OneOrMore(op: OpTree) extends OpTree {
-    def render(): Expr[Rule] = Sequence(op, ZeroOrMore(op)).render() //
-  }
+  class OneOrMore(op: OpTree) extends Sequence(op, ZeroOrMore(op))
 
   object OneOrMore extends OpTreeCompanion {
     val fromTree: FromTree[OneOrMore] = {
-      case Apply(Select(This(_), Decoded("oneOrMore")), List(arg)) ⇒ OneOrMore(OpTree(arg))
+      case Apply(Select(This(_), Decoded("oneOrMore")), List(arg)) ⇒ new OneOrMore(OpTree(arg))
     }
   }
 
