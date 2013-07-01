@@ -95,7 +95,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   //  case class Grouping(n: OpTree) extends OpTree
 
-  class Optional(op: OpTree) extends FirstOf(op, EmptyString)
+  class Optional(op: OpTree) extends OpTree {
+    def render(): Expr[Rule] = FirstOf(op, EmptyString).render()
+  }
 
   object Optional extends OpTreeCompanion {
     val fromTree: FromTree[Optional] = {
@@ -124,10 +126,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  // TODO: To call `NotPredicate` twice is a little bit inefficient.
-  // On the other hand write almost the same code like in `NotPredicate.render` is evil.
-  // Do we need memoization?
-  class AndPredicate(op: OpTree) extends NotPredicate(NotPredicate(op))
+  // NOTE: Is there a way to mix-in
+  class AndPredicate(op: OpTree) extends OpTree {
+    def render(): Expr[Rule] = NotPredicate(NotPredicate(op)).render()
+  }
 
   object AndPredicate extends OpTreeCompanion {
     val fromTree: FromTree[AndPredicate] = {
