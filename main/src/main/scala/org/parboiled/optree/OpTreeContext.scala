@@ -1,6 +1,7 @@
 package org.parboiled
 package optree
 
+// TODO: Consider how to link e.g. "zeroOrMore" Scala AST parsing and corresponding DSL combinator `zeroOrMore`
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
   import c.universe._
@@ -15,6 +16,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(): Expr[Rule]
   }
 
+  case object EmptyString extends OpTree {
+    def render(): Expr[Rule] = reify {
+      Rule.success
+    }
+  }
+
   sealed trait OpTreeCompanion extends FromTree[OpTree] {
     val fromTree: FromTree[OpTree]
     def isDefinedAt(tree: Tree) = fromTree.isDefinedAt(tree)
@@ -25,10 +32,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     val fromTree: FromTree[OpTree] =
       LiteralString orElse
         LiteralChar orElse
-        RuleCall orElse
+        NotPredicate orElse
         Sequence orElse
         FirstOf orElse
-        { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x (${showRaw(x)})") }
+        Optional orElse
+        OneOrMore orElse
+        ZeroOrMore orElse
+        AndPredicate orElse
+        RuleCall orElse
+        { case x ⇒ c.abort(c.enclosingPosition, s"Invalid rule definition: $x - ${showRaw(x)}") }
   }
 
   case class RuleCall(methodCall: Select) extends OpTree {
@@ -78,20 +90,68 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   //  case class CharacterClass(chars: Array[Char]) extends OpTree
-  //
+
   //  case class AnyCharacter() extends OpTree
-  //
+
   //  case class Grouping(n: OpTree) extends OpTree
-  //
-  //  case class Optional(n: OpTree) extends OpTree
-  //
-  //  case class ZeroOrOne(n: OpTree) extends OpTree
-  //
-  //  case class OneOrMore(n: OpTree) extends OpTree
-  //
-  //  case class AndPredicate(n: OpTree) extends OpTree
-  //
-  //  case class NotPredicate(n: OpTree) extends OpTree
+
+  class Optional(op: OpTree) extends OpTree {
+    def render(): Expr[Rule] = FirstOf(op, EmptyString).render()
+  }
+
+  object Optional extends OpTreeCompanion {
+    val fromTree: FromTree[Optional] = {
+      case Apply(Select(This(_), Decoded("optional")), List(arg)) ⇒ new Optional(OpTree(arg))
+    }
+  }
+
+  case class ZeroOrMore(op: OpTree) extends OpTree {
+    def render(): Expr[Rule] = reify {
+      while (op.render().splice.matched) {}
+      Rule.success
+    }
+  }
+
+  object ZeroOrMore extends OpTreeCompanion {
+    val fromTree: FromTree[ZeroOrMore] = {
+      case Apply(Select(This(_), Decoded("zeroOrMore")), List(arg)) ⇒ ZeroOrMore(OpTree(arg))
+    }
+  }
+
+  class OneOrMore(op: OpTree) extends Sequence(op, ZeroOrMore(op))
+
+  object OneOrMore extends OpTreeCompanion {
+    val fromTree: FromTree[OneOrMore] = {
+      case Apply(Select(This(_), Decoded("oneOrMore")), List(arg)) ⇒ new OneOrMore(OpTree(arg))
+    }
+  }
+
+  // NOTE: Is there a way to mix-in
+  class AndPredicate(op: OpTree) extends OpTree {
+    def render(): Expr[Rule] = NotPredicate(NotPredicate(op)).render()
+  }
+
+  object AndPredicate extends OpTreeCompanion {
+    val fromTree: FromTree[AndPredicate] = {
+      case Apply(Select(This(_), Decoded("&")), List(arg)) ⇒ new AndPredicate(OpTree(arg))
+    }
+  }
+
+  case class NotPredicate(op: OpTree) extends OpTree {
+    def render(): Expr[Rule] = reify {
+      val p = c.prefix.splice
+      val mark = p.mark
+      val res = op.render().splice.matched
+      p.reset(mark)
+      Rule(!res)
+    }
+  }
+
+  object NotPredicate extends OpTreeCompanion {
+    val fromTree: FromTree[NotPredicate] = {
+      case Apply(Select(arg, Decoded("unary_!")), List()) ⇒ NotPredicate(OpTree(arg))
+    }
+  }
 
   // TODO: Having sequence be a simple (lhs, rhs) model causes us to allocate a mark on the stack
   // for every sequence concatenation. If we modeled sequences as a Seq[OpTree] we would be able to

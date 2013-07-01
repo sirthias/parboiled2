@@ -29,6 +29,11 @@ abstract class Parser {
   implicit def charRule(c: Char) = Rule()
   implicit def stringRule(stringLiteral: String) = Rule()
 
+  def zeroOrMore(r: Rule) = Rule()
+  def oneOrMore(r: Rule) = Rule()
+  def optional(r: Rule) = Rule()
+  def &(r: Rule): Rule = Rule()
+
   def nextChar(): Char =
     if (_cursor < input.length) {
       val nextCh = input.charAt(_cursor)

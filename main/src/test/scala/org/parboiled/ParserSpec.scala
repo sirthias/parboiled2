@@ -24,38 +24,130 @@ class ParserSpec extends Specification {
     def ABC = rule { 'a' ~ 'b' ~ 'c' ~ EOI }
     def ABCfirstOf = rule { ('a' || 'b' || 'c') ~ EOI }
     def DEF = rule { "def" }
-    def combination1 = rule { ('a' || 'b' || 'c') ~ ('d' || 'e') ~ 'f' ~ EOI }
+    def combination = rule { ('a' || 'b' || 'c') ~ ('d' || 'e') ~ 'f' ~ EOI }
+    def AZeroOrMore = rule { zeroOrMore("a") ~ EOI }
+    def ABZeroOrMore = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
+    def AOneOrMore = rule { oneOrMore("a") ~ EOI }
+    def ABOneOrMore = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
+    def AOptional = rule { optional("a") ~ EOI }
+    def ABOptional = rule { optional("a") ~ optional("b") ~ EOI }
+    def NotA = rule { !"a" ~ EOI }
+    def NotASeqB = rule { !"a" ~ "b" ~ EOI }
+    def AndA = rule { &("a") ~ EOI }
+    def AndASeqA = rule { &("a") ~ "a" ~ EOI }
   }
 
   "The new parboiled parser" should {
-    "dummy test: check value class instantiation" in {
-      println(new TestParser("x").X)
-    }
-
     "successfully recognize single char" in {
       new TestParser("x").X.matched must beTrue
       new TestParser("y").X.matched must beFalse
     }
 
-    "successfully recognize valid input - seq combinator rule" in {
+    "successfully recognize valid input - `seq` combinator rule" in {
       new TestParser("abc").ABC.matched must beTrue
       new TestParser("acb").ABC.matched must beFalse
     }
 
-    "successfully recognize valid input - firstOf combinator rule" in {
+    "successfully recognize valid input - `firstOf` combinator rule" in {
       new TestParser("a").ABCfirstOf.matched must beTrue
       new TestParser("b").ABCfirstOf.matched must beTrue
       new TestParser("c").ABCfirstOf.matched must beTrue
       new TestParser("d").ABCfirstOf.matched must beFalse
     }
 
-    "successfully recognize valid input - complex rule" in {
-      new TestParser("adf").combination1.matched must beTrue
-      new TestParser("bdf").combination1.matched must beTrue
-      new TestParser("aef").combination1.matched must beTrue
-      new TestParser("cef").combination1.matched must beTrue
-      new TestParser("adx").combination1.matched must beFalse
-      new TestParser("bbb").combination1.matched must beFalse
+    "successfully recognize valid input - `zeroOrMore` combinator rule" in {
+      new TestParser("").AZeroOrMore.matched must beTrue
+      new TestParser("a").AZeroOrMore.matched must beTrue
+      new TestParser("aa").AZeroOrMore.matched must beTrue
+      new TestParser("b").AZeroOrMore.matched must beFalse
+    }
+
+    "successfully recognize valid input - `zeroOrMore` and `seq` combinator rules" in {
+      new TestParser("").ABZeroOrMore.matched must beTrue
+      new TestParser("aa").ABZeroOrMore.matched must beTrue
+      new TestParser("b").ABZeroOrMore.matched must beTrue
+      new TestParser("bb").ABZeroOrMore.matched must beTrue
+      new TestParser("ab").ABZeroOrMore.matched must beTrue
+      new TestParser("ba").ABZeroOrMore.matched must beFalse
+    }
+
+    "successfully recognize valid input - `oneOrMore` combinator rule" in {
+      new TestParser("").AOneOrMore.matched must beFalse
+      new TestParser("a").AOneOrMore.matched must beTrue
+      new TestParser("aa").AOneOrMore.matched must beTrue
+      new TestParser("b").AOneOrMore.matched must beFalse
+    }
+
+    // TODO: Move to integration tests
+    "successfully recognize valid input - `oneOrMore` and `seq` combinator rules" in {
+      new TestParser("").ABOneOrMore.matched must beFalse
+      new TestParser("aa").ABOneOrMore.matched must beFalse
+      new TestParser("b").ABOneOrMore.matched must beFalse
+      new TestParser("bb").ABOneOrMore.matched must beFalse
+      new TestParser("ab").ABOneOrMore.matched must beTrue
+      new TestParser("aab").ABOneOrMore.matched must beTrue
+      new TestParser("abb").ABOneOrMore.matched must beTrue
+      new TestParser("aabb").ABOneOrMore.matched must beTrue
+      new TestParser("ba").ABOneOrMore.matched must beFalse
+    }
+
+    "successfully recognize valid input - `optional` combinator rule" in {
+      new TestParser("").AOptional.matched must beTrue
+      new TestParser("a").AOptional.matched must beTrue
+      new TestParser("aa").AOptional.matched must beFalse
+      new TestParser("b").AOptional.matched must beFalse
+    }
+
+    "successfully recognize valid input - `not-predicate` combinator rule" in {
+      new TestParser("").NotA.matched must beTrue
+      new TestParser("a").NotA.matched must beFalse
+      new TestParser("aa").NotA.matched must beFalse
+      new TestParser("b").NotA.matched must beFalse
+    }
+
+    "successfully recognize valid input - `not-predicate` rule sequenced by `charRule` rule" in {
+      new TestParser("").NotASeqB.matched must beFalse
+      new TestParser("a").NotASeqB.matched must beFalse
+      new TestParser("aa").NotASeqB.matched must beFalse
+      new TestParser("b").NotASeqB.matched must beTrue
+      new TestParser("bb").NotASeqB.matched must beFalse
+    }
+
+    "successfully recognize valid input - `and-predicate` combinator rule" in {
+      new TestParser("").AndA.matched must beFalse
+      new TestParser("a").AndA.matched must beFalse
+      new TestParser("aa").AndA.matched must beFalse
+      new TestParser("b").AndA.matched must beFalse
+    }
+
+    "successfully recognize valid input - `and-predicate` rule sequenced by `charRule` rule" in {
+      new TestParser("").AndASeqA.matched must beFalse
+      new TestParser("a").AndASeqA.matched must beTrue
+      new TestParser("aa").AndASeqA.matched must beFalse
+      new TestParser("b").AndASeqA.matched must beFalse
+      new TestParser("bb").AndASeqA.matched must beFalse
+    }
+
+    // TODO: Move to integration tests
+    "successfully recognize valid input - `optional` and `seq` combinator rules" in {
+      new TestParser("").ABOptional.matched must beTrue
+      new TestParser("aa").ABOptional.matched must beFalse
+      new TestParser("b").ABOptional.matched must beTrue
+      new TestParser("bb").ABOptional.matched must beFalse
+      new TestParser("ab").ABOptional.matched must beTrue
+      new TestParser("aab").ABOptional.matched must beFalse
+      new TestParser("abb").ABOptional.matched must beFalse
+      new TestParser("aabb").ABOptional.matched must beFalse
+      new TestParser("ba").ABOptional.matched must beFalse
+    }
+
+    "successfully recognize valid input - combination of rules" in {
+      new TestParser("adf").combination.matched must beTrue
+      new TestParser("bdf").combination.matched must beTrue
+      new TestParser("aef").combination.matched must beTrue
+      new TestParser("cef").combination.matched must beTrue
+      new TestParser("adx").combination.matched must beFalse
+      new TestParser("bbb").combination.matched must beFalse
     }
 
     "properly expand string literals to a sequence of char rules" in {
