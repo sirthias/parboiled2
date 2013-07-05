@@ -22,9 +22,9 @@ class ParserSpec extends Specification {
   class TestParser(val input: ParserInput) extends Parser {
     def X = rule { 'x' ~ EOI }
     def ABC = rule { 'a' ~ 'b' ~ 'c' ~ EOI }
-    def ABCfirstOf = rule { ('a' || 'b' || 'c') ~ EOI }
+    def ABCfirstOf = rule { (ch('a') | 'b' | 'c') ~ EOI }
     def DEF = rule { "def" }
-    def combination = rule { ('a' || 'b' || 'c') ~ ('d' || 'e') ~ 'f' ~ EOI }
+    def combination = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
     def AZeroOrMore = rule { zeroOrMore("a") ~ EOI }
     def ABZeroOrMore = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
     def AOneOrMore = rule { oneOrMore("a") ~ EOI }
