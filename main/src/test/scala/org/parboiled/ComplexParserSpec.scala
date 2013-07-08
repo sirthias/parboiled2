@@ -19,18 +19,17 @@ package org.parboiled
 import org.specs2.mutable.Specification
 
 class ComplexParserSpec extends Specification {
-  class TestParser(val input: ParserInput) extends Parser {
-    def ABC = rule { 'a' ~ 'b' ~ 'c' }
-    def complexRule = rule { ABC ~ ABC ~ EOI }
-  }
-
   "A complex parboiled parser" should {
     "successfully recognize complex rule" in {
-      new TestParser("abcabc").complexRule.matched must beTrue
-      new TestParser("abcbc").complexRule.matched must beFalse
-      new TestParser("abcbc").complexRule.matched must beFalse
-      new TestParser("abc").complexRule.matched must beFalse
-      new TestParser("y").complexRule.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        private def ABC = rule { 'a' ~ 'b' ~ 'c' }
+        def complexRule = rule { ABC ~ ABC ~ EOI }
+      }
+      test("abcabc").complexRule.matched must beTrue
+      test("abcbc").complexRule.matched must beFalse
+      test("abcbc").complexRule.matched must beFalse
+      test("abc").complexRule.matched must beFalse
+      test("y").complexRule.matched must beFalse
     }
   }
 }

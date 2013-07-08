@@ -19,140 +19,167 @@ package org.parboiled
 import org.specs2.mutable.Specification
 
 class ParserSpec extends Specification {
-  class TestParser(val input: ParserInput) extends Parser {
-    def X = rule { 'x' ~ EOI }
-    def ABC = rule { 'a' ~ 'b' ~ 'c' ~ EOI }
-    def ABCfirstOf = rule { (ch('a') | 'b' | 'c') ~ EOI }
-    def DEF = rule { "def" }
-    def combination = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
-    def AZeroOrMore = rule { zeroOrMore("a") ~ EOI }
-    def ABZeroOrMore = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
-    def AOneOrMore = rule { oneOrMore("a") ~ EOI }
-    def ABOneOrMore = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
-    def AOptional = rule { optional("a") ~ EOI }
-    def ABOptional = rule { optional("a") ~ optional("b") ~ EOI }
-    def NotA = rule { !"a" ~ EOI }
-    def NotASeqB = rule { !"a" ~ "b" ~ EOI }
-    def AndA = rule { &("a") ~ EOI }
-    def AndASeqA = rule { &("a") ~ "a" ~ EOI }
-  }
-
   "The new parboiled parser" should {
     "successfully recognize single char" in {
-      new TestParser("x").X.matched must beTrue
-      new TestParser("y").X.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def X = rule { 'x' ~ EOI }
+      }
+      test("x").X.matched must beTrue
+      test("y").X.matched must beFalse
     }
 
     "successfully recognize valid input - `seq` combinator rule" in {
-      new TestParser("abc").ABC.matched must beTrue
-      new TestParser("acb").ABC.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def ABC = rule { 'a' ~ 'b' ~ 'c' ~ EOI }
+      }
+      test("abc").ABC.matched must beTrue
+      test("acb").ABC.matched must beFalse
     }
 
     "successfully recognize valid input - `firstOf` combinator rule" in {
-      new TestParser("a").ABCfirstOf.matched must beTrue
-      new TestParser("b").ABCfirstOf.matched must beTrue
-      new TestParser("c").ABCfirstOf.matched must beTrue
-      new TestParser("d").ABCfirstOf.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def ABCfirstOf = rule { (ch('a') | 'b' | 'c') ~ EOI }
+      }
+      test("a").ABCfirstOf.matched must beTrue
+      test("b").ABCfirstOf.matched must beTrue
+      test("c").ABCfirstOf.matched must beTrue
+      test("d").ABCfirstOf.matched must beFalse
     }
 
     "successfully recognize valid input - `zeroOrMore` combinator rule" in {
-      new TestParser("").AZeroOrMore.matched must beTrue
-      new TestParser("a").AZeroOrMore.matched must beTrue
-      new TestParser("aa").AZeroOrMore.matched must beTrue
-      new TestParser("b").AZeroOrMore.matched must beFalse
-    }
-
-    "successfully recognize valid input - `zeroOrMore` and `seq` combinator rules" in {
-      new TestParser("").ABZeroOrMore.matched must beTrue
-      new TestParser("aa").ABZeroOrMore.matched must beTrue
-      new TestParser("b").ABZeroOrMore.matched must beTrue
-      new TestParser("bb").ABZeroOrMore.matched must beTrue
-      new TestParser("ab").ABZeroOrMore.matched must beTrue
-      new TestParser("ba").ABZeroOrMore.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def AZeroOrMore = rule { zeroOrMore("a") ~ EOI }
+      }
+      test("").AZeroOrMore.matched must beTrue
+      test("a").AZeroOrMore.matched must beTrue
+      test("aa").AZeroOrMore.matched must beTrue
+      test("b").AZeroOrMore.matched must beFalse
     }
 
     "successfully recognize valid input - `oneOrMore` combinator rule" in {
-      new TestParser("").AOneOrMore.matched must beFalse
-      new TestParser("a").AOneOrMore.matched must beTrue
-      new TestParser("aa").AOneOrMore.matched must beTrue
-      new TestParser("b").AOneOrMore.matched must beFalse
-    }
-
-    // TODO: Move to integration tests
-    "successfully recognize valid input - `oneOrMore` and `seq` combinator rules" in {
-      new TestParser("").ABOneOrMore.matched must beFalse
-      new TestParser("aa").ABOneOrMore.matched must beFalse
-      new TestParser("b").ABOneOrMore.matched must beFalse
-      new TestParser("bb").ABOneOrMore.matched must beFalse
-      new TestParser("ab").ABOneOrMore.matched must beTrue
-      new TestParser("aab").ABOneOrMore.matched must beTrue
-      new TestParser("abb").ABOneOrMore.matched must beTrue
-      new TestParser("aabb").ABOneOrMore.matched must beTrue
-      new TestParser("ba").ABOneOrMore.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def AOneOrMore = rule { oneOrMore("a") ~ EOI }
+      }
+      test("").AOneOrMore.matched must beFalse
+      test("a").AOneOrMore.matched must beTrue
+      test("aa").AOneOrMore.matched must beTrue
+      test("b").AOneOrMore.matched must beFalse
     }
 
     "successfully recognize valid input - `optional` combinator rule" in {
-      new TestParser("").AOptional.matched must beTrue
-      new TestParser("a").AOptional.matched must beTrue
-      new TestParser("aa").AOptional.matched must beFalse
-      new TestParser("b").AOptional.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def AOptional = rule { optional("a") ~ EOI }
+      }
+      test("").AOptional.matched must beTrue
+      test("a").AOptional.matched must beTrue
+      test("aa").AOptional.matched must beFalse
+      test("b").AOptional.matched must beFalse
     }
 
     "successfully recognize valid input - `not-predicate` combinator rule" in {
-      new TestParser("").NotA.matched must beTrue
-      new TestParser("a").NotA.matched must beFalse
-      new TestParser("aa").NotA.matched must beFalse
-      new TestParser("b").NotA.matched must beFalse
-    }
-
-    "successfully recognize valid input - `not-predicate` rule sequenced by `charRule` rule" in {
-      new TestParser("").NotASeqB.matched must beFalse
-      new TestParser("a").NotASeqB.matched must beFalse
-      new TestParser("aa").NotASeqB.matched must beFalse
-      new TestParser("b").NotASeqB.matched must beTrue
-      new TestParser("bb").NotASeqB.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def NotA = rule { !"a" ~ EOI }
+      }
+      test("").NotA.matched must beTrue
+      test("a").NotA.matched must beFalse
+      test("aa").NotA.matched must beFalse
+      test("b").NotA.matched must beFalse
     }
 
     "successfully recognize valid input - `and-predicate` combinator rule" in {
-      new TestParser("").AndA.matched must beFalse
-      new TestParser("a").AndA.matched must beFalse
-      new TestParser("aa").AndA.matched must beFalse
-      new TestParser("b").AndA.matched must beFalse
-    }
-
-    "successfully recognize valid input - `and-predicate` rule sequenced by `charRule` rule" in {
-      new TestParser("").AndASeqA.matched must beFalse
-      new TestParser("a").AndASeqA.matched must beTrue
-      new TestParser("aa").AndASeqA.matched must beFalse
-      new TestParser("b").AndASeqA.matched must beFalse
-      new TestParser("bb").AndASeqA.matched must beFalse
-    }
-
-    // TODO: Move to integration tests
-    "successfully recognize valid input - `optional` and `seq` combinator rules" in {
-      new TestParser("").ABOptional.matched must beTrue
-      new TestParser("aa").ABOptional.matched must beFalse
-      new TestParser("b").ABOptional.matched must beTrue
-      new TestParser("bb").ABOptional.matched must beFalse
-      new TestParser("ab").ABOptional.matched must beTrue
-      new TestParser("aab").ABOptional.matched must beFalse
-      new TestParser("abb").ABOptional.matched must beFalse
-      new TestParser("aabb").ABOptional.matched must beFalse
-      new TestParser("ba").ABOptional.matched must beFalse
-    }
-
-    "successfully recognize valid input - combination of rules" in {
-      new TestParser("adf").combination.matched must beTrue
-      new TestParser("bdf").combination.matched must beTrue
-      new TestParser("aef").combination.matched must beTrue
-      new TestParser("cef").combination.matched must beTrue
-      new TestParser("adx").combination.matched must beFalse
-      new TestParser("bbb").combination.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def AndA = rule { &("a") ~ EOI }
+      }
+      test("").AndA.matched must beFalse
+      test("a").AndA.matched must beFalse
+      test("aa").AndA.matched must beFalse
+      test("b").AndA.matched must beFalse
     }
 
     "properly expand string literals to a sequence of char rules" in {
-      new TestParser("def").DEF.matched must beTrue
-      new TestParser("dfe").DEF.matched must beFalse
+      case class test(input: ParserInput) extends Parser {
+        def DEF = rule { "def" }
+      }
+      test("def").DEF.matched must beTrue
+      test("dfe").DEF.matched must beFalse
+    }
+
+    "pass integration tests" in {
+      "successfully recognize valid input - combination of rules" in {
+        case class test(input: ParserInput) extends Parser {
+          def combination = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
+        }
+        test("adf").combination.matched must beTrue
+        test("bdf").combination.matched must beTrue
+        test("aef").combination.matched must beTrue
+        test("cef").combination.matched must beTrue
+        test("adx").combination.matched must beFalse
+        test("bbb").combination.matched must beFalse
+      }
+
+      "successfully recognize valid input - `zeroOrMore` and `seq` combinator rules" in {
+        case class test(input: ParserInput) extends Parser {
+          def ABZeroOrMore = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
+        }
+        test("").ABZeroOrMore.matched must beTrue
+        test("aa").ABZeroOrMore.matched must beTrue
+        test("b").ABZeroOrMore.matched must beTrue
+        test("bb").ABZeroOrMore.matched must beTrue
+        test("ab").ABZeroOrMore.matched must beTrue
+        test("ba").ABZeroOrMore.matched must beFalse
+      }
+
+      "successfully recognize valid input - `and-predicate` rule sequenced by `charRule` rule" in {
+        case class test(input: ParserInput) extends Parser {
+          def AndASeqA = rule { &("a") ~ "a" ~ EOI }
+        }
+        test("").AndASeqA.matched must beFalse
+        test("a").AndASeqA.matched must beTrue
+        test("aa").AndASeqA.matched must beFalse
+        test("b").AndASeqA.matched must beFalse
+        test("bb").AndASeqA.matched must beFalse
+      }
+
+      "successfully recognize valid input - `optional` and `seq` combinator rules" in {
+        case class test(input: ParserInput) extends Parser {
+          def ABOptional = rule { optional("a") ~ optional("b") ~ EOI }
+        }
+        test("").ABOptional.matched must beTrue
+        test("aa").ABOptional.matched must beFalse
+        test("b").ABOptional.matched must beTrue
+        test("bb").ABOptional.matched must beFalse
+        test("ab").ABOptional.matched must beTrue
+        test("aab").ABOptional.matched must beFalse
+        test("abb").ABOptional.matched must beFalse
+        test("aabb").ABOptional.matched must beFalse
+        test("ba").ABOptional.matched must beFalse
+      }
+
+      "successfully recognize valid input - `not-predicate` rule sequenced by `charRule` rule" in {
+        case class test(input: ParserInput) extends Parser {
+          def NotASeqB = rule { !"a" ~ "b" ~ EOI }
+        }
+        test("").NotASeqB.matched must beFalse
+        test("a").NotASeqB.matched must beFalse
+        test("aa").NotASeqB.matched must beFalse
+        test("b").NotASeqB.matched must beTrue
+        test("bb").NotASeqB.matched must beFalse
+      }
+
+      "successfully recognize valid input - `oneOrMore` and `seq` combinator rules" in {
+        case class test(input: ParserInput) extends Parser {
+          def ABOneOrMore = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
+        }
+        test("").ABOneOrMore.matched must beFalse
+        test("aa").ABOneOrMore.matched must beFalse
+        test("b").ABOneOrMore.matched must beFalse
+        test("bb").ABOneOrMore.matched must beFalse
+        test("ab").ABOneOrMore.matched must beTrue
+        test("aab").ABOneOrMore.matched must beTrue
+        test("abb").ABOneOrMore.matched must beTrue
+        test("aabb").ABOneOrMore.matched must beTrue
+        test("ba").ABOneOrMore.matched must beFalse
+      }
     }
 
     // TODO: Fix this test
