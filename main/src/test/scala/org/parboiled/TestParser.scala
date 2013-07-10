@@ -1,3 +1,7 @@
+package org.parboiled
+
+import org.specs2.specification.Scope
+
 /*
  * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
  *
@@ -14,24 +18,15 @@
  * limitations under the License.
  */
 
-package org.parboiled
+abstract class TestParser extends Parser with Scope {
+  var input: ParserInput = _
+  def testRule: Rule
 
-import org.specs2.mutable.Specification
-
-class ComplexParserSpec extends Specification {
-  def Match = beTrue
-  def Mismatch = beFalse
-
-  "A complex parboiled parser" should {
-    "successfully recognize complex rule" in new TestParser {
-      private def ABC = rule { 'a' ~ 'b' ~ 'c' }
-      def testRule = rule { ABC ~ ABC ~ EOI }
-
-      parse("abcabc") must Match
-      parse("abcbc") must Mismatch
-      parse("abcbc") must Mismatch
-      parse("abc") must Mismatch
-      parse("y") must Mismatch
-    }
+  def parse(input: String) = {
+    this.input = input
+    val marker = mark
+    val matched = testRule.matched
+    reset(marker)
+    matched
   }
 }

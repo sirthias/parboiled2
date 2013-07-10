@@ -17,28 +17,15 @@
 package org.parboiled
 
 import org.specs2.mutable.Specification
-import org.specs2.specification.Scope
 
 class ParserSpec extends Specification {
-  abstract class TestParser extends Parser with Scope {
-    var input: ParserInput = _
-    def testRule: Rule
-
-    def parse(input: String) = {
-      this.input = input
-      val marker = mark
-      val matched = testRule.matched
-      reset(marker)
-      matched
-    }
-
-    def Match = beTrue
-    def Mismatch = beFalse
-  }
+  def Match = beTrue
+  def Mismatch = beFalse
 
   "The new parboiled parser" should {
     "successfully recognize single char" in new TestParser {
       def testRule = rule { 'x' }
+      beTrue
       parse("x") must Match
       parse("y") must Mismatch
     }
