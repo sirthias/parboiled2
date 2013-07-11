@@ -1,7 +1,3 @@
-package org.parboiled
-
-import org.specs2.specification.Scope
-
 /*
  * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
  *
@@ -17,6 +13,16 @@ import org.specs2.specification.Scope
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package org.parboiled
+
+import org.specs2.specification.Scope
+import org.specs2.mutable.Specification
+
+trait TestParserComponent { _: Specification ⇒
+  def Match = beTrue
+  def Mismatch = beFalse
+}
 
 abstract class TestParser extends Parser with Scope {
   var input: ParserInput = _

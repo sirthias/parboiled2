@@ -18,10 +18,7 @@ package org.parboiled
 
 import org.specs2.mutable.Specification
 
-class ParserSpec extends Specification {
-  def Match = beTrue
-  def Mismatch = beFalse
-
+class ParserSpec extends Specification with TestParserComponent {
   "The new parboiled parser" should {
     "successfully recognize single char" in new TestParser {
       def testRule = rule { 'x' }

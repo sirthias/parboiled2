@@ -35,10 +35,7 @@ abstract class SimpleCalculator extends TestParser {
   def Digit = rule { (ch('0') | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') }
 }
 
-class SimpleCalculatorSpec extends Specification {
-  def Match = beTrue
-  def Mismatch = beFalse
-
+class SimpleCalculatorSpec extends Specification with TestParserComponent {
   "A SimpleCalculator" should {
     "successfully recognize expression" in new SimpleCalculator {
       def testRule = InputLine
