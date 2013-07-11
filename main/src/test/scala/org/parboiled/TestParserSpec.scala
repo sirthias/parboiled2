@@ -19,20 +19,20 @@ package org.parboiled
 import org.specs2.specification.Scope
 import org.specs2.mutable.Specification
 
-trait TestParserComponent { _: Specification ⇒
-  def Match = beTrue
-  def Mismatch = beFalse
-}
+abstract class TestParserSpec extends Specification {
+  trait TestParser extends Parser with Scope {
+    def Match = beTrue ^^ (parse(_))
+    def Mismatch = beFalse ^^ (parse(_))
 
-abstract class TestParser extends Parser with Scope {
-  var input: ParserInput = _
-  def testRule: Rule
+    var input: ParserInput = _
+    def testRule: Rule
 
-  def parse(input: String) = {
-    this.input = input
-    val marker = mark
-    val matched = testRule.matched
-    reset(marker)
-    matched
+    def parse(input: String) = {
+      this.input = input
+      val marker = mark
+      val matched = testRule.matched
+      reset(marker)
+      matched
+    }
   }
 }

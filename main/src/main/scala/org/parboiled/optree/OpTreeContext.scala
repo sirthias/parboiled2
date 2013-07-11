@@ -134,7 +134,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       reify {
         val p = c.prefix.splice
         var mark = p.mark
-        while ({ mark = p.mark; op.render().splice.matched }) {}
+        while (op.render().splice.matched) { mark = p.mark }
         p.reset(mark)
         Rule.success
       }

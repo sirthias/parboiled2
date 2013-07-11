@@ -16,43 +16,41 @@
 
 package org.parboiled
 
-import org.specs2.mutable.Specification
+class SimpleCalculatorSpec extends TestParserSpec {
+  // SimpleCalculator from https://github.com/sirthias/parboiled/blob/master/examples-scala/src/main/scala/org/parboiled/examples/calculators/SimpleCalculator0.scala
+  abstract class SimpleCalculator extends TestParser {
+    def InputLine = rule { Expression ~ EOI }
 
-// SimpleCalculator from https://github.com/sirthias/parboiled/blob/master/examples-scala/src/main/scala/org/parboiled/examples/calculators/SimpleCalculator0.scala
-abstract class SimpleCalculator extends TestParser {
-  def InputLine = rule { Expression ~ EOI }
+    def Expression: Rule = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
 
-  def Expression: Rule = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
+    def Term = rule { Factor ~ zeroOrMore((ch('*') | '/') ~ Factor) }
 
-  def Term = rule { Factor ~ zeroOrMore((ch('*') | '/') ~ Factor) }
+    def Factor = rule { Digits | Parens }
 
-  def Factor = rule { Digits | Parens }
+    def Parens = rule { "(" ~ Expression ~ ")" }
 
-  def Parens = rule { "(" ~ Expression ~ ")" }
+    def Digits = rule { oneOrMore(Digit) }
 
-  def Digits = rule { oneOrMore(Digit) }
+    def Digit = rule { (ch('0') | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') }
+  }
 
-  def Digit = rule { (ch('0') | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') }
-}
-
-class SimpleCalculatorSpec extends Specification with TestParserComponent {
   "A SimpleCalculator" should {
     "successfully recognize expression" in new SimpleCalculator {
       def testRule = InputLine
 
-      parse("1") must Match
-      parse("1+2") must Match
-      parse("1+2*3") must Match
-      parse("1*2+3") must Match
-      parse("1*(2+3)") must Match
-      parse("1*((2+3))") must Match
+      "1" must Match
+      "1+2" must Match
+      "1+2*3" must Match
+      "1*2+3" must Match
+      "1*(2+3)" must Match
+      "1*((2+3))" must Match
 
-      parse("*1") must Mismatch
-      parse("+1") must Mismatch
-      parse("()") must Mismatch
-      parse("(()") must Mismatch
-      parse("())") must Mismatch
-      parse("(1+)2") must Mismatch
+      "*1" must Mismatch
+      "+1" must Mismatch
+      "()" must Mismatch
+      "(()" must Mismatch
+      "())" must Mismatch
+      "(1+)2" must Mismatch
     }
   }
 }
