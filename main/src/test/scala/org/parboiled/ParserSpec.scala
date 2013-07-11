@@ -22,7 +22,6 @@ class ParserSpec extends Specification with TestParserComponent {
   "The new parboiled parser" should {
     "successfully recognize single char" in new TestParser {
       def testRule = rule { 'x' }
-      beTrue
       parse("x") must Match
       parse("y") must Mismatch
     }
@@ -43,7 +42,6 @@ class ParserSpec extends Specification with TestParserComponent {
 
     "successfully recognize valid input - `zeroOrMore` combinator rule" in new TestParser {
       def testRule = rule { zeroOrMore("a") }
-      parse("") must Match
       parse("a") must Match
       parse("aa") must Match
       parse("b") must Match
@@ -51,7 +49,6 @@ class ParserSpec extends Specification with TestParserComponent {
 
     "successfully recognize valid input - `oneOrMore` combinator rule" in new TestParser {
       def testRule = rule { oneOrMore("a") }
-      parse("") must Mismatch
       parse("a") must Match
       parse("aa") must Match
       parse("b") must Mismatch
@@ -61,7 +58,6 @@ class ParserSpec extends Specification with TestParserComponent {
       def testRule = rule { optional("a") }
       parse("") must Match
       parse("a") must Match
-      parse("aa") must Match
       parse("b") must Match
     }
 
@@ -75,7 +71,6 @@ class ParserSpec extends Specification with TestParserComponent {
 
     "successfully recognize valid input - `and-predicate` combinator rule" in new TestParser {
       def testRule = rule { &("a") }
-      parse("") must Mismatch
       parse("a") must Match
       parse("aa") must Match
       parse("b") must Mismatch
