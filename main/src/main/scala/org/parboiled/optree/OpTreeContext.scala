@@ -1,7 +1,6 @@
 package org.parboiled
 package optree
 
-// TODO: Consider how to link e.g. "zeroOrMore" Scala AST parsing and corresponding DSL combinator `zeroOrMore`
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
   import c.universe._
@@ -131,9 +130,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class ZeroOrMore(op: OpTree) extends OpTree {
-    def render(): Expr[Rule] = reify {
-      while (op.render().splice.matched) {}
-      Rule.success
+    def render(): Expr[Rule] = {
+      reify {
+        val p = c.prefix.splice
+        var mark = p.mark
+        while ({ mark = p.mark; op.render().splice.matched }) {}
+        p.reset(mark)
+        Rule.success
+      }
     }
   }
   object ZeroOrMore extends Modifier.Companion {
