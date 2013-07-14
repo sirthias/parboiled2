@@ -18,11 +18,25 @@ package org.parboiled2
 
 import org.parboiled2.optree._
 import scala.reflect.macros.Context
+import scala.collection.mutable.ArrayBuffer
+
+case class ParserError(mark: Parser#Mark, expected: String)
 
 abstract class Parser {
   def input: ParserInput
 
-  private var _cursor: Int = 0
+  private val _errors = new ArrayBuffer[ParserError]()
+  var trackErrors = true
+  type ErrorMark = Int
+  def errorsMark: ErrorMark = _errors.size
+  def resetErrors(mark: ErrorMark) = _errors.reduceToSize(mark)
+  def errors(): Seq[ParserError] = _errors
+
+  def addError(parserError: ParserError) =
+    if (trackErrors)
+      _errors += parserError
+
+  private var _mark: Mark = Mark(0, 0, 0)
 
   def rule(r: Rule): Rule = macro Parser.ruleImpl
 
@@ -35,15 +49,20 @@ abstract class Parser {
   def &(r: Rule): Rule = Rule()
 
   def nextChar(): Char =
-    if (_cursor < input.length) {
-      val nextCh = input.charAt(_cursor)
-      _cursor += 1
+    if (_mark.cursor < input.length) {
+      if (input.charAt(_mark.cursor) == '\n') {
+        _mark.line += 1
+        _mark.column = 0
+      }
+      val nextCh = input.charAt(_mark.cursor)
+      _mark.cursor += 1
+      _mark.column += 1
       nextCh
     } else EOI
 
-  type Mark = Int
-  def mark: Mark = _cursor
-  def reset(mark: Mark): Unit = _cursor = mark
+  case class Mark(var line: Int, var column: Int, var cursor: Int)
+  def mark(): Mark = Mark(_mark.line, _mark.column, _mark.cursor)
+  def reset(mark: Mark): Unit = _mark = mark
 
   def EOI = Parser.EOI
 }

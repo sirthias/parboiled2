@@ -49,4 +49,3 @@ object ParserInput {
 
   implicit def apply(chars: Array[Char]): ParserInput = apply(new String(chars))
 }
-
