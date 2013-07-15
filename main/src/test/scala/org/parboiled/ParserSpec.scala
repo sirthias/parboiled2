@@ -16,55 +16,144 @@
 
 package org.parboiled
 
-import org.specs2.mutable.Specification
-
-class ParserSpec extends Specification {
-  class TestParser(val input: ParserInput) extends Parser {
-    def X = rule { 'x' ~ EOI }
-    def ABC = rule { 'a' ~ 'b' ~ 'c' ~ EOI }
-    def ABCfirstOf = rule { ('a' || 'b' || 'c') ~ EOI }
-    def DEF = rule { "def" }
-    def combination1 = rule { ('a' || 'b' || 'c') ~ ('d' || 'e') ~ 'f' ~ EOI }
-  }
-
+class ParserSpec extends TestParserSpec {
   "The new parboiled parser" should {
-    "dummy test: check value class instantiation" in {
-      println(new TestParser("x").X)
+    "successfully recognize single char" in new TestParser {
+      def testRule = rule { 'x' }
+      "x" must Match
+      "y" must Mismatch
     }
 
-    "successfully recognize single char" in {
-      new TestParser("x").X.matched must beTrue
-      new TestParser("y").X.matched must beFalse
+    "successfully recognize valid input - `seq` combinator rule" in new TestParser {
+      def testRule = rule { 'a' ~ 'b' }
+      "ab" must Match
+      "ac" must Mismatch
+      "bb" must Mismatch
     }
 
-    "successfully recognize valid input - seq combinator rule" in {
-      new TestParser("abc").ABC.matched must beTrue
-      new TestParser("acb").ABC.matched must beFalse
+    "successfully recognize valid input - `firstOf` combinator rule" in new TestParser {
+      def testRule = rule { (ch('a') | 'b') }
+      "a" must Match
+      "b" must Match
+      "c" must Mismatch
     }
 
-    "successfully recognize valid input - firstOf combinator rule" in {
-      new TestParser("a").ABCfirstOf.matched must beTrue
-      new TestParser("b").ABCfirstOf.matched must beTrue
-      new TestParser("c").ABCfirstOf.matched must beTrue
-      new TestParser("d").ABCfirstOf.matched must beFalse
+    "successfully recognize valid input - `zeroOrMore` combinator rule" in new TestParser {
+      def testRule = rule { zeroOrMore("a") }
+      "a" must Match
+      "aa" must Match
+      "b" must Match
     }
 
-    "successfully recognize valid input - complex rule" in {
-      new TestParser("adf").combination1.matched must beTrue
-      new TestParser("bdf").combination1.matched must beTrue
-      new TestParser("aef").combination1.matched must beTrue
-      new TestParser("cef").combination1.matched must beTrue
-      new TestParser("adx").combination1.matched must beFalse
-      new TestParser("bbb").combination1.matched must beFalse
+    "successfully recognize valid input - `oneOrMore` combinator rule" in new TestParser {
+      def testRule = rule { oneOrMore("a") }
+      "a" must Match
+      "aa" must Match
+      "b" must Mismatch
     }
 
-    "properly expand string literals to a sequence of char rules" in {
-      new TestParser("def").DEF.matched must beTrue
-      new TestParser("dfe").DEF.matched must beFalse
+    "successfully recognize valid input - `optional` combinator rule" in new TestParser {
+      def testRule = rule { optional("a") }
+      "" must Match
+      "a" must Match
+      "b" must Match
+    }
+
+    "successfully recognize valid input - `not-predicate` combinator rule" in new TestParser {
+      def testRule = rule { !"a" }
+      "" must Match
+      "a" must Mismatch
+      "aa" must Mismatch
+      "b" must Match
+    }
+
+    "successfully recognize valid input - `and-predicate` combinator rule" in new TestParser {
+      def testRule = rule { &("a") }
+      "a" must Match
+      "aa" must Match
+      "b" must Mismatch
+    }
+
+    "successfully recognize EOI" in new TestParser {
+      def testRule = rule { EOI }
+      "" must Match
+      "x" must Mismatch
+    }
+
+    "properly expand string literals to a sequence of char rules" in new TestParser {
+      def testRule = rule { "def" }
+      "def" must Match
+      "dfe" must Mismatch
+    }
+
+    "pass integration tests" in {
+      "successfully recognize valid input - combination of rules" in new TestParser {
+        def testRule = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
+        "adf" must Match
+        "bdf" must Match
+        "aef" must Match
+        "cef" must Match
+        "adx" must Mismatch
+        "bbb" must Mismatch
+      }
+
+      "successfully recognize valid input - `zeroOrMore` and `seq` combinator rules" in new TestParser {
+        def testRule = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
+        "" must Match
+        "aa" must Match
+        "b" must Match
+        "bb" must Match
+        "ab" must Match
+        "ba" must Mismatch
+      }
+
+      "successfully recognize valid input - `and-predicate` rule sequenced by `charRule` rule" in new TestParser {
+        def testRule = rule { &("a") ~ "a" ~ EOI }
+        "" must Mismatch
+        "a" must Match
+        "aa" must Mismatch
+        "b" must Mismatch
+        "bb" must Mismatch
+      }
+
+      "successfully recognize valid input - `optional` and `seq` combinator rules" in new TestParser {
+        def testRule = rule { optional("a") ~ optional("b") ~ EOI }
+        "" must Match
+        "aa" must Mismatch
+        "b" must Match
+        "bb" must Mismatch
+        "ab" must Match
+        "aab" must Mismatch
+        "abb" must Mismatch
+        "aabb" must Mismatch
+        "ba" must Mismatch
+      }
+
+      "successfully recognize valid input - `not-predicate` rule sequenced by `charRule` rule" in new TestParser {
+        def testRule = rule { !"a" ~ "b" ~ EOI }
+        "" must Mismatch
+        "a" must Mismatch
+        "aa" must Mismatch
+        "b" must Match
+        "bb" must Mismatch
+      }
+
+      "successfully recognize valid input - `oneOrMore` and `seq` combinator rules" in new TestParser {
+        def testRule = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
+        "" must Mismatch
+        "aa" must Mismatch
+        "b" must Mismatch
+        "bb" must Mismatch
+        "ab" must Match
+        "aab" must Match
+        "abb" must Match
+        "aabb" must Match
+        "ba" must Mismatch
+      }
     }
 
     // TODO: Fix this test
-    //    "disallow compilation of an illegal string rule" in {
+    //    "disallow compilation of an illegal string rule" in new TestParser {
     //      CompilerError.verify(
     //        """class TestParser(_input: ParserInput) extends Parser(_input) {
     //                       val string = "def"

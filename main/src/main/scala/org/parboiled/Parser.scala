@@ -26,8 +26,13 @@ abstract class Parser {
 
   def rule(r: Rule): Rule = macro Parser.ruleImpl
 
-  implicit def charRule(c: Char) = Rule()
-  implicit def stringRule(stringLiteral: String) = Rule()
+  implicit def ch(c: Char) = Rule()
+  implicit def str(s: String) = Rule()
+
+  def zeroOrMore(r: Rule) = Rule()
+  def oneOrMore(r: Rule) = Rule()
+  def optional(r: Rule) = Rule()
+  def &(r: Rule): Rule = Rule()
 
   def nextChar(): Char =
     if (_cursor < input.length) {
