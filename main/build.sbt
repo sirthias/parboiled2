@@ -26,6 +26,7 @@ scalacOptions ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.scala-lang"  %  "scala-reflect"  % "2.10.2"  % "compile",
+  "com.chuusai"     %% "shapeless"      % "1.2.4"   % "compile",
   "org.specs2"      %% "specs2"         % "1.14"    % "test"
 )
 

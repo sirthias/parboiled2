@@ -21,8 +21,9 @@ package org.parboiled
  * Only used for type-checking during compile-time.
  */
 class Rule private (val matched: Boolean) extends AnyVal {
-  def ~(that: Rule): Rule = new Rule(this.matched && that.matched)
-  def ||(that: Rule): Rule = new Rule(this.matched || that.matched)
+  def ~(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
+  def |(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
+  def unary_!(): Rule = throw new Rule.NotAvailableAtRuntimeException
 }
 
 object Rule {
