@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled
+package org.parboiled2
 
 /**
  * Phantom type for which no instance can be created.

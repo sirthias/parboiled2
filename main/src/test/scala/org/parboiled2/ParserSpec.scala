@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled
+package org.parboiled2
 
 class ParserSpec extends TestParserSpec {
   "The new parboiled parser" should {

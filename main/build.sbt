@@ -6,7 +6,7 @@ version := "2.0.0-SNAPSHOT"
 
 homepage := Some(new URL("http://parboiled.org"))
 
-organization := "org.parboiled"
+organization := "org.parboiled2"
 
 organizationHomepage := Some(new URL("http://parboiled.org"))
 
