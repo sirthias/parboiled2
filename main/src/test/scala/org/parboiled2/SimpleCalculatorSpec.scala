@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled
+package org.parboiled2
 
 class SimpleCalculatorSpec extends TestParserSpec {
   // SimpleCalculator from https://github.com/sirthias/parboiled/blob/master/examples-scala/src/main/scala/org/parboiled/examples/calculators/SimpleCalculator0.scala

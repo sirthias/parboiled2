@@ -1,4 +1,4 @@
-package org.parboiled
+package org.parboiled2
 package optree
 
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {

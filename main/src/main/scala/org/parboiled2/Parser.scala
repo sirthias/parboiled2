@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.parboiled
+package org.parboiled2
 
-import org.parboiled.optree._
+import org.parboiled2.optree._
 import scala.reflect.macros.Context
 
 abstract class Parser {
