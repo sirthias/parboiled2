@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled
+package org.parboiled2
 
 import java.nio.charset.Charset
 

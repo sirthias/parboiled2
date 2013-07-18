@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled
+package org.parboiled2
 
 import org.specs2.specification.Scope
 import org.specs2.mutable.Specification
