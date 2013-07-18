@@ -1,10 +1,25 @@
 import sbt._
 import Keys._
+import com.typesafe.sbt.SbtScalariform
+import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 
 object build extends Build {
+  lazy val formatSettings = SbtScalariform.scalariformSettings ++ Seq(
+    ScalariformKeys.preferences in Compile := formattingPreferences,
+    ScalariformKeys.preferences in Test    := formattingPreferences
+  )
+
+  import scalariform.formatter.preferences._
+  def formattingPreferences =
+    FormattingPreferences()
+      .setPreference(RewriteArrowSymbols, true)
+      .setPreference(AlignParameters, true)
+      .setPreference(AlignSingleLineCaseStatements, true)
+      .setPreference(DoubleIndentClassDeclaration, true)
+
   lazy val sharedSettings = Seq(
     scalaVersion := "2.10.2"
-  )
+  ) ++ formatSettings
 
   // configure prompt to show current project
   override lazy val settings = super.settings :+ {
@@ -44,9 +59,14 @@ object build extends Build {
       }
     )
 
-  // A regular module with the application code.
   lazy val main = Project(
     id   = "main",
     base = file("main")
-  ) settings (sharedSettings ++ pluginSettings: _*)
+  ).settings(sharedSettings ++ pluginSettings: _*)
+
+  lazy val examples = Project(
+    id = "examples",
+    base = file("examples")
+  ).settings(sharedSettings ++ pluginSettings: _*)
+   .dependsOn(main)
 }

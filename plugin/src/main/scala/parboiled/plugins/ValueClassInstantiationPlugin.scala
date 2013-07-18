@@ -1,4 +1,4 @@
-package parboiled.plugins
+package parboiled2.plugins
 
 import scala.tools.nsc.{ Global, Phase }
 import scala.tools.nsc.plugins.{ Plugin, PluginComponent }
@@ -26,9 +26,9 @@ class ValueClassInstantiationPlugin(val global: Global) extends Plugin {
 
     class ValueClassInstantiationTraverser(unit: CompilationUnit) extends Traverser {
       override def traverse(tree: Tree): Unit = tree match {
-        case New(tpt) if afterTyper(tpt.tpe.typeSymbol.isDerivedValueClass) =>
+        case New(tpt) if afterTyper(tpt.tpe.typeSymbol.isDerivedValueClass) ⇒
           unit.warning(tree.pos, s"Value class `${tpt.tpe.typeSymbol.fullName}` instantiated!")
-        case _ =>
+        case _ ⇒
           super.traverse(tree)
       }
     }

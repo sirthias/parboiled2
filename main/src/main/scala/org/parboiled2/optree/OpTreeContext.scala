@@ -61,8 +61,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
   // the stack size for all rules with sequences that are more than two elements long.
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    val lhsStr = c.Expr[String](Literal(Constant(lhs.toString)))
-    val rhsStr = c.Expr[String](Literal(Constant(rhs.toString)))
+    lazy val lhsStr = c.Expr[String](Literal(Constant(lhs.toString)))
+    lazy val rhsStr = c.Expr[String](Literal(Constant(rhs.toString)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
@@ -84,8 +84,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   object Sequence extends Combinator.Companion("~")
 
   case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    val lhsStr = c.Expr[String](Literal(Constant(lhs.toString)))
-    val rhsStr = c.Expr[String](Literal(Constant(rhs.toString)))
+    lazy val lhsStr = c.Expr[String](Literal(Constant(lhs.toString)))
+    lazy val rhsStr = c.Expr[String](Literal(Constant(rhs.toString)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
@@ -108,7 +108,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   object FirstOf extends Combinator.Companion("|")
 
   case class LiteralString(s: String) extends OpTree {
-    val lsStr = c.Expr[String](Literal(Constant(s)))
+    lazy val lsStr = c.Expr[String](Literal(Constant(s)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
@@ -133,7 +133,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    val lcStr = c.Expr[Char](Literal(Constant(ch)))
+    lazy val lcStr = c.Expr[Char](Literal(Constant(ch)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
@@ -209,7 +209,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class AndPredicate(op: OpTree) extends Predicate {
-    val apStr = c.Expr[String](Literal(Constant(op.toString)))
+    lazy val apStr = c.Expr[String](Literal(Constant(op.toString)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
@@ -228,7 +228,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class NotPredicate(op: OpTree) extends Predicate {
-    val npStr = c.Expr[String](Literal(Constant(op.toString)))
+    lazy val npStr = c.Expr[String](Literal(Constant(op.toString)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
@@ -248,7 +248,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class RuleCall(methodCall: Tree) extends OpTree {
-    val rcStr = c.Expr[String](Literal(Constant(methodCall.toString)))
+    lazy val rcStr = c.Expr[String](Literal(Constant(methodCall.toString)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
