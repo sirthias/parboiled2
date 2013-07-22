@@ -2,6 +2,7 @@ package calculators.v2
 
 import org.parboiled2._
 import scala.annotation.tailrec
+import org.parboiled.scala.parserunners.ReportingParseRunner
 
 class SimpleCalculator(val input: ParserInput) extends Parser {
   def InputLine = rule { Expression ~ EOI }
@@ -22,14 +23,19 @@ class SimpleCalculator(val input: ParserInput) extends Parser {
 object CalculatorExpressionVerifier {
   @tailrec
   def repl(): Unit = {
-    print("Enter expression for calculator > ")
+    print("--------------------------------------\n")
+    print("Enter expression for calculator (v2) > ")
     val inputLine = readLine()
     if (inputLine != "") {
       val simpleCalc = new SimpleCalculator(inputLine)
       if (simpleCalc.InputLine.matched) {
         println("Expression is valid")
       } else {
-        println(s"Expression is not valid. Errors: ${simpleCalc.errors() mkString "\n"}")
+        val errUtils = new ErrorUtils {
+          def parser = simpleCalc
+          def targetRule = simpleCalc.InputLine
+        }
+        println(s"[v2] Expression is not valid. Error: ${errUtils.parseErrors}")
       }
       repl()
     }

@@ -61,22 +61,36 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
   // the stack size for all rules with sequences that are more than two elements long.
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    lazy val lhsStr = c.Expr[String](Literal(Constant(lhs.toString)))
-    lazy val rhsStr = c.Expr[String](Literal(Constant(rhs.toString)))
+    lazy val lhsStr = c.Expr[String](Literal(Constant(show(lhs))))
+    lazy val rhsStr = c.Expr[String](Literal(Constant(show(rhs))))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
+
+      p.tab += 1
+      p.debug(s"Sequence(${lhsStr.splice}, ${rhsStr.splice})", ">> ")
+
       val mark = p.mark
       val lhsSplice = lhs.render().splice
       if (lhsSplice.matched) {
         val rhsSplice = rhs.render().splice
-        if (!rhsSplice.matched) {
-          p.addError(ParserError(mark, s"Sequence(${lhsStr.splice}, ${rhsStr.splice})")) // rhs failed
+        if (rhsSplice.matched) {
+          // success
+        } else {
+          // rhs failed
+          p.reset(mark)
         }
+
+        p.debug(s"${rhsSplice.matched} - ${p.mark}", "|  ")
+        p.tab -= 1
+
         Rule(rhsSplice.matched)
       } else {
+        // lhs failed
         p.reset(mark)
-        p.addError(ParserError(mark, s"Sequence(${lhsStr.splice}, ${rhsStr.splice})")) // lhs failed
+        p.debug(s"${false} - ${p.mark}", "|  ")
+
+        p.tab -= 1
         Rule.failure
       }
     }
@@ -84,23 +98,33 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   object Sequence extends Combinator.Companion("~")
 
   case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    lazy val lhsStr = c.Expr[String](Literal(Constant(lhs.toString)))
-    lazy val rhsStr = c.Expr[String](Literal(Constant(rhs.toString)))
+    lazy val lhsStr = c.Expr[String](Literal(Constant(show(lhs))))
+    lazy val rhsStr = c.Expr[String](Literal(Constant(show(rhs))))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-      val errorsMark = p.errorsMark
+
+      p.tab += 1
+      p.debug(s"FirstOf(${lhsStr.splice}, ${rhsStr.splice})", ">> ")
+
       val mark = p.mark
       val matched = lhs.render().splice.matched
-      if (matched) Rule.success
-      else {
+      if (matched) {
+        p.debug(s"${true} - ${p.mark}", "|  ")
+        p.tab -= 1
+
+        Rule.success
+      } else {
         p.reset(mark)
         val rhsSplice = rhs.render().splice
-        if (!rhsSplice.matched) {
-          p.addError(ParserError(mark, s"FirstOf(${lhsStr.splice}, ${rhsStr.splice})"))
+        if (rhsSplice.matched) {
+          // success
         } else {
-          p.resetErrors(errorsMark)
+          // failed
+          p.reset(mark)
         }
+        p.debug(s"${matched} - ${p.mark}", "|  ")
+        p.tab -= 1
         Rule(rhsSplice.matched)
       }
     }
@@ -112,14 +136,26 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
+
+      p.tab += 1
+      p.debug(s"LiteralString('${lsStr.splice}')", ">> ")
+
       val mark = p.mark
       val ts = c.literal(s).splice
       var ix = 0
       while (ix < ts.length && p.nextChar() == ts.charAt(ix)) ix += 1
-      if (ix == ts.length) Rule.success
-      else {
+      if (ix == ts.length) {
+        p.debug(s"${true} - ${p.mark}", "|  ")
+        p.tab -= 1
+        Rule.success
+      } else {
+        // failed
+        if (p.collecting && mark == p.errorMark()) {
+          p.addError(lsStr.splice)
+        }
         p.reset(mark)
-        p.addError(ParserError(mark, s"LiteralString(${lsStr.splice})"))
+        p.debug(s"${false} - ${p.mark}", "|  ")
+        p.tab -= 1
         Rule.failure
       }
     }
@@ -133,16 +169,26 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    lazy val lcStr = c.Expr[Char](Literal(Constant(ch)))
+    lazy val lcStr = c.Expr[String](Literal(Constant(ch.toString)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
+      p.tab += 1
+      p.debug(s"LiteralChar(${lcStr.splice})", ">> ")
+
       val mark = p.mark
       val tc = c.literal(ch).splice
       val matched = p.nextChar() == tc
       if (!matched) {
-        p.addError(ParserError(mark, s"LiteralChar(${lcStr.splice})"))
+        // failed
+        if (p.collecting && mark == p.errorMark()) {
+          p.addError(lcStr.splice)
+        }
+        p.reset(mark)
       }
+      p.debug(s"$matched - ${p.mark}", "|  ")
+
+      p.tab -= 1
       Rule(matched)
     }
   }
@@ -154,12 +200,19 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class Optional(op: OpTree) extends OpTree {
+    lazy val optStr = c.Expr[String](Literal(Constant(showRaw(op))))
+
     def render(): Expr[Rule] = {
       reify {
         val p = c.prefix.splice
         val mark = p.mark
         val matched = op.render().splice.matched
-        if (!matched) p.reset(mark)
+        if (!matched) {
+          if (p.collecting && mark == p.errorMark()) {
+            p.addError(optStr.splice)
+          }
+          p.reset(mark)
+        }
         Rule.success
       }
     }
@@ -171,14 +224,21 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class ZeroOrMore(op: OpTree) extends OpTree {
+    lazy val zomStr = c.Expr[String](Literal(Constant(show(op))))
+
     def render(): Expr[Rule] = {
       reify {
         val p = c.prefix.splice
+
+        p.tab += 1
+        p.debug(s"ZeroOrMore(${zomStr.splice})", ">> ")
+
         var mark = p.mark
-        p.trackErrors = false
         while (op.render().splice.matched) { mark = p.mark }
-        p.trackErrors = true
         p.reset(mark)
+        p.debug(s"${true} - ${p.mark}", "|  ")
+        p.tab -= 1
+
         Rule.success
       }
     }
@@ -209,15 +269,17 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class AndPredicate(op: OpTree) extends Predicate {
-    lazy val apStr = c.Expr[String](Literal(Constant(op.toString)))
+    lazy val apStr = c.Expr[String](Literal(Constant(show(op))))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-      val mark = p.mark
+      p.tab += 1
+      p.debug(s"AndPredicate(${apStr.splice}})", ">> ")
+
       val matched = renderMatch().splice
-      if (!matched) {
-        p.addError(ParserError(mark, s"AndPredicate(${apStr.splice}})"))
-      }
+      p.debug(s"$matched - ${p.mark}", "|  ")
+
+      p.tab -= 1
       Rule(matched)
     }
   }
@@ -228,15 +290,18 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class NotPredicate(op: OpTree) extends Predicate {
-    lazy val npStr = c.Expr[String](Literal(Constant(op.toString)))
+    lazy val npStr = c.Expr[String](Literal(Constant(show(op))))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-      val mark = p.mark
+
+      p.tab += 1
+      p.debug(s"NotPredictate(${npStr.splice}", ">> ")
+
       val matched = !renderMatch().splice
-      if (!matched) {
-        p.addError(ParserError(mark, s"NotPredictate(${npStr.splice})"))
-      }
+      p.debug(s"$matched - ${p.mark}", "|  ")
+
+      p.tab -= 1
       Rule(matched)
     }
   }
@@ -248,15 +313,31 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class RuleCall(methodCall: Tree) extends OpTree {
-    lazy val rcStr = c.Expr[String](Literal(Constant(methodCall.toString)))
+    lazy val rcStr = {
+      // NOTE: Decomposition is required
+      val Select(This(tpName), termName) = methodCall
+      c.Expr[String](Literal(Constant((s"$tpName.$termName"))))
+    }
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-      val mark = p.mark
+
+      p.tab += 1
+      p.debug(s"RuleCall(${rcStr.splice})", ">> ")
+
+      val mark = p.mark()
+      val errMark = p.errorMarker()
+
       val spl = c.Expr[Rule](methodCall).splice
-      if (!spl.matched) {
-        p.addError(ParserError(mark, s"RuleCall(${rcStr.splice}})"))
+      val matched = spl.matched
+
+      if (!matched && p.collecting && mark == p.errorMark()) {
+        p.resetErrorMarker(errMark)
+        p.addError(rcStr.splice)
       }
+      p.debug(s"$matched - ${p.mark}", "|  ")
+
+      p.tab -= 1
       Rule(spl.matched)
     }
   }

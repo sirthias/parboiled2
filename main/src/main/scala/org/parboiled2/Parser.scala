@@ -20,23 +20,44 @@ import org.parboiled2.optree._
 import scala.reflect.macros.Context
 import scala.collection.mutable.ArrayBuffer
 
-case class ParserError(mark: Parser#Mark, expected: String)
+case class ParserError(mark: Parser#Mark, actual: Char, expected: Seq[String])
 
 abstract class Parser {
   def input: ParserInput
 
-  private val _errors = new ArrayBuffer[ParserError]()
-  var trackErrors = true
-  type ErrorMark = Int
-  def errorsMark: ErrorMark = _errors.size
-  def resetErrors(mark: ErrorMark) = _errors.reduceToSize(mark)
-  def errors(): Seq[ParserError] = _errors
+  def debug = false
 
-  def addError(parserError: ParserError) =
-    if (trackErrors)
-      _errors += parserError
+  var tab = 0
+  def debug(str: String, delim: String): Unit = {
+    if (debug) {
+      println(s"${"\t" * tab}$delim$str")
+    }
+  }
 
-  private var _mark: Mark = Mark(0, 0, 0)
+  private var _collecting = false
+  def collecting: Boolean = _collecting
+  def collecting_=(v: Boolean) { _collecting = v }
+
+  private val _expectedValues = ArrayBuffer[String]()
+  def error(): Option[ParserError] = {
+    if (_errorMark.cursor == input.length) None
+    else Some(ParserError(errorMark(), input.charAt(_errorMark.cursor), _expectedValues))
+  }
+
+  type ErrorMarker = Int
+  def addError(expectedValue: String) = {
+    debug(s"error added: $expectedValue", "!!!")
+    _expectedValues += expectedValue
+  }
+
+  def errorMarker(): ErrorMarker =
+    _expectedValues.size
+
+  def resetErrorMarker(errorMarker: ErrorMarker): Unit =
+    _expectedValues.reduceToSize(errorMarker)
+
+  private val _mark: Mark = new Mark(0, 0, 0)
+  private val _errorMark: Mark = new Mark(0, 0, 0)
 
   def rule(r: Rule): Rule = macro Parser.ruleImpl
 
@@ -60,9 +81,23 @@ abstract class Parser {
       nextCh
     } else EOI
 
-  case class Mark(var line: Int, var column: Int, var cursor: Int)
+  case class Mark(var line: Int, var column: Int, var cursor: Int) {
+    def >(that: Mark): Boolean = this.cursor > that.cursor
+    def ==(that: Mark): Boolean = this.cursor == that.cursor
+    def <(that: Mark) = !(this == that && this > that)
+    def <~(that: Mark) = {
+      this.cursor = that.cursor
+      this.line = that.line
+      this.column = that.column
+    }
+  }
   def mark(): Mark = Mark(_mark.line, _mark.column, _mark.cursor)
-  def reset(mark: Mark): Unit = _mark = mark
+  def errorMark(): Mark = Mark(_errorMark.line, _errorMark.column, _errorMark.cursor)
+  def reset(mark: Mark): Unit = {
+    if (!_collecting && mark > _errorMark)
+      _errorMark <~ mark
+    _mark <~ mark
+  }
 
   def EOI = Parser.EOI
 }

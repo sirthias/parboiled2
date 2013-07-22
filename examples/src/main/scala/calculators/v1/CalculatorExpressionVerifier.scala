@@ -27,7 +27,7 @@ object CalculatorExpressionVerifier {
 
   @tailrec
   def repl(): Unit = {
-    print("Enter expression for calculator > ")
+    print("Enter expression for calculator (v1) > ")
     val inputLine = readLine()
     if (inputLine != "") {
       val result = ReportingParseRunner(simpleCalc.InputLine).run(inputLine)
