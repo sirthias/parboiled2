@@ -1,4 +1,4 @@
-package calculators.v1
+package org.parboiled2.calculators.v1
 
 import org.parboiled.scala._
 import org.parboiled.scala.parserunners.ReportingParseRunner

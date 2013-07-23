@@ -1,4 +1,4 @@
-package calculators.v2
+package org.parboiled2.calculators.v2
 
 import org.parboiled2._
 import scala.annotation.tailrec
