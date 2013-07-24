@@ -20,7 +20,7 @@ import org.parboiled2.optree._
 import scala.reflect.macros.Context
 import scala.collection.mutable.ArrayBuffer
 
-case class ParserError(mark: Parser#Mark, actual: Char, expected: Seq[String])
+case class ParserError(mark: Parser#Mark, actualChar: Char, expectedRules: Seq[String])
 
 abstract class Parser {
   def input: ParserInput
@@ -28,9 +28,9 @@ abstract class Parser {
   def debug = false
 
   var tab = 0
-  def debug(str: String, delim: String): Unit = {
+  def debug(message: String, delim: String): Unit = {
     if (debug) {
-      println(s"${"\t" * tab}$delim$str")
+      println(s"${"\t" * tab}$delim$message")
     }
   }
 
@@ -39,10 +39,7 @@ abstract class Parser {
   def collecting_=(v: Boolean) { _collecting = v }
 
   private val _expectedValues = ArrayBuffer[String]()
-  def error(): Option[ParserError] = {
-    if (_errorMark.cursor == input.length) None
-    else Some(ParserError(errorMark(), input.charAt(_errorMark.cursor), _expectedValues))
-  }
+  def expectedValues = _expectedValues
 
   type ErrorMarker = Int
   def addError(expectedValue: String) = {

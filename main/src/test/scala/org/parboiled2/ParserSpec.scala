@@ -19,48 +19,48 @@ package org.parboiled2
 class ParserSpec extends TestParserSpec {
   "The new parboiled parser" should {
     "successfully recognize single char" in new TestParser {
-      def testRule = rule { 'x' }
+      def targetRule = rule { 'x' }
       "x" must Match
       "y" must Mismatch
     }
 
     "successfully recognize valid input - `seq` combinator rule" in new TestParser {
-      def testRule = rule { 'a' ~ 'b' }
+      def targetRule = rule { 'a' ~ 'b' }
       "ab" must Match
       "ac" must Mismatch
       "bb" must Mismatch
     }
 
     "successfully recognize valid input - `firstOf` combinator rule" in new TestParser {
-      def testRule = rule { (ch('a') | 'b') }
+      def targetRule = rule { (ch('a') | 'b') }
       "a" must Match
       "b" must Match
       "c" must Mismatch
     }
 
     "successfully recognize valid input - `zeroOrMore` combinator rule" in new TestParser {
-      def testRule = rule { zeroOrMore("a") }
+      def targetRule = rule { zeroOrMore("a") }
       "a" must Match
       "aa" must Match
       "b" must Match
     }
 
     "successfully recognize valid input - `oneOrMore` combinator rule" in new TestParser {
-      def testRule = rule { oneOrMore("a") }
+      def targetRule = rule { oneOrMore("a") }
       "a" must Match
       "aa" must Match
       "b" must Mismatch
     }
 
     "successfully recognize valid input - `optional` combinator rule" in new TestParser {
-      def testRule = rule { optional("a") }
+      def targetRule = rule { optional("a") }
       "" must Match
       "a" must Match
       "b" must Match
     }
 
     "successfully recognize valid input - `not-predicate` combinator rule" in new TestParser {
-      def testRule = rule { !"a" }
+      def targetRule = rule { !"a" }
       "" must Match
       "a" must Mismatch
       "aa" must Mismatch
@@ -68,27 +68,27 @@ class ParserSpec extends TestParserSpec {
     }
 
     "successfully recognize valid input - `and-predicate` combinator rule" in new TestParser {
-      def testRule = rule { &("a") }
+      def targetRule = rule { &("a") }
       "a" must Match
       "aa" must Match
       "b" must Mismatch
     }
 
     "successfully recognize EOI" in new TestParser {
-      def testRule = rule { EOI }
+      def targetRule = rule { EOI }
       "" must Match
       "x" must Mismatch
     }
 
     "properly expand string literals to a sequence of char rules" in new TestParser {
-      def testRule = rule { "def" }
+      def targetRule = rule { "def" }
       "def" must Match
       "dfe" must Mismatch
     }
 
     "pass integration tests" in {
       "successfully recognize valid input - combination of rules" in new TestParser {
-        def testRule = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
+        def targetRule = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
         "adf" must Match
         "bdf" must Match
         "aef" must Match
@@ -98,7 +98,7 @@ class ParserSpec extends TestParserSpec {
       }
 
       "successfully recognize valid input - `zeroOrMore` and `seq` combinator rules" in new TestParser {
-        def testRule = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
+        def targetRule = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
         "" must Match
         "aa" must Match
         "b" must Match
@@ -108,7 +108,7 @@ class ParserSpec extends TestParserSpec {
       }
 
       "successfully recognize valid input - `and-predicate` rule sequenced by `charRule` rule" in new TestParser {
-        def testRule = rule { &("a") ~ "a" ~ EOI }
+        def targetRule = rule { &("a") ~ "a" ~ EOI }
         "" must Mismatch
         "a" must Match
         "aa" must Mismatch
@@ -117,7 +117,7 @@ class ParserSpec extends TestParserSpec {
       }
 
       "successfully recognize valid input - `optional` and `seq` combinator rules" in new TestParser {
-        def testRule = rule { optional("a") ~ optional("b") ~ EOI }
+        def targetRule = rule { optional("a") ~ optional("b") ~ EOI }
         "" must Match
         "aa" must Mismatch
         "b" must Match
@@ -130,7 +130,7 @@ class ParserSpec extends TestParserSpec {
       }
 
       "successfully recognize valid input - `not-predicate` rule sequenced by `charRule` rule" in new TestParser {
-        def testRule = rule { !"a" ~ "b" ~ EOI }
+        def targetRule = rule { !"a" ~ "b" ~ EOI }
         "" must Mismatch
         "a" must Mismatch
         "aa" must Mismatch
@@ -139,7 +139,7 @@ class ParserSpec extends TestParserSpec {
       }
 
       "successfully recognize valid input - `oneOrMore` and `seq` combinator rules" in new TestParser {
-        def testRule = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
+        def targetRule = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
         "" must Mismatch
         "aa" must Mismatch
         "b" must Mismatch

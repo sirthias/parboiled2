@@ -169,7 +169,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    lazy val lcStr = c.Expr[String](Literal(Constant(ch.toString)))
+    lazy val lcStr = c.Expr[String](Literal(Constant(s"'$ch'")))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice

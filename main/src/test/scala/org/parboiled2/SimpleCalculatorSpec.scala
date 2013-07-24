@@ -36,7 +36,7 @@ class SimpleCalculatorSpec extends TestParserSpec {
 
   "A SimpleCalculator" should {
     "successfully recognize expression" in new SimpleCalculator {
-      def testRule = InputLine
+      def targetRule = InputLine
 
       "1" must Match
       "1+2" must Match

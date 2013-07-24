@@ -1,68 +1,97 @@
+/*
+ * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.parboiled2
 
 class ErrorReportingSpec extends SimpleCalculatorSpec {
   "Error reporting" should {
-    "compose error messages for simple expression" in new TestParser {
-      def testRule = rule { oneOrMore("x") ~ ch('a') ~ 'b' ~ 'e' }
+    "compose error messages for simple expression" in new TestParser with ErrorUtils {
+      def targetRule = rule { oneOrMore("x") ~ ch('a') ~ 'b' ~ 'e' }
+      def parser = this
 
       "xxxace" must Mismatch
-      val errs = errors()
-      errs must not be empty
-      errs(0) mustEqual ParserError(Mark(0, 4, 4), "LiteralChar(b)")
-      errs(1) mustEqual ParserError(Mark(0, 0, 0), "Sequence(Sequence(Sequence(LiteralString(x),ZeroOrMore(LiteralString(x))),LiteralChar(a)), LiteralChar(b))")
-      errs(2) mustEqual ParserError(Mark(0, 0, 0), "Sequence(Sequence(Sequence(Sequence(LiteralString(x),ZeroOrMore(LiteralString(x))),LiteralChar(a)),LiteralChar(b)), LiteralChar(e))")
+      error must beSome
+      error map { err =>
+        err.mark mustEqual Mark(0, 4, 4)
+        err.expectedRules must haveTheSameElementsAs(List("b"))
+      }
     }
 
-    "compose error messages for simple calculator" in new SimpleCalculator {
-      def testRule: Rule = InputLine
+    "compose error messages for simple calculator" in new SimpleCalculator with ErrorUtils {
+      def targetRule = InputLine
+      def parser = this
 
-      //"1+2*(3+5))-5" must Mismatch
       "3+*5" must Mismatch
-      val errs = errors()
-      errs must not be empty
-      errs(0) mustEqual ParserError(Mark(0, 1, 1), s"LiteralChar(${this.EOI})")
-      errs(1) mustEqual ParserError(Mark(0, 0, 0), s"Sequence(RuleCall(SimpleCalculator.this.Expression), LiteralChar(${this.EOI}))")
+      error must beSome
+      error map { err =>
+        err.mark mustEqual Mark(0, 2, 2)
+        err.expectedRules must haveTheSameElementsAs(List("SimpleCalculator.Term"))
+      }
     }
 
     "track lines numbers" in {
-      "zero line" in new TestParser {
-        def testRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+      "zero line" in new TestParser with ErrorUtils {
+        def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+        def parser = this
 
         "x\nb\nc" must Mismatch
-        val errs = errors()
-        errs(0).mark must_== Mark(0, 0, 0)
+        error must beSome
+        error map { err =>
+          err.mark mustEqual Mark(0, 0, 0)
+        }
       }
 
-      "first line" in new TestParser {
-        def testRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+      "first line" in new TestParser with ErrorUtils {
+        def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+        def parser = this
 
         "a\nx\nc" must Mismatch
-        val errs = errors()
-        errs(0).mark must_== Mark(1, 1, 2)
+        error must beSome
+        error map { err =>
+          err.mark mustEqual Mark(1, 1, 2)
+        }
       }
 
-      "second line" in new TestParser {
-        def testRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+      "second line" in new TestParser with ErrorUtils {
+        def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+        def parser = this
 
         "a\nb\nx" must Mismatch
-        val errs = errors()
-        errs(0).mark must_== Mark(2, 1, 4)
+        error must beSome
+        error map { err =>
+          err.mark mustEqual Mark(2, 1, 4)
+        }
       }
     }
 
     "correctly process FirstOf" in {
-      "producing no errors for first alternative" in new TestParser {
-        def testRule: Rule = rule { ch('a') | 'b' }
+      "producing no errors for first alternative" in new TestParser with ErrorUtils {
+        def targetRule: Rule = rule { ch('a') | 'b' }
+        def parser = this
 
-        "a" must Match
-        errors must be empty
+        "aaa" must Match
+        error must beNone
       }
 
-      "producing no errors for second alternative" in new TestParser {
-        def testRule: Rule = rule { ch('a') | 'b' }
+      "producing no errors for second alternative" in new TestParser with ErrorUtils {
+        def targetRule: Rule = rule { ch('a') | 'b' }
+        def parser = this
 
         "b" must Match
-        errors must be empty
+        error must beNone
       }
     }
   }

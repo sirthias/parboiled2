@@ -25,12 +25,12 @@ abstract class TestParserSpec extends Specification {
     def Mismatch = beFalse ^^ (parse(_))
 
     var input: ParserInput = _
-    def testRule: Rule
+    def targetRule: Rule
 
     def parse(input: String) = {
       this.input = input
       val marker = mark
-      val matched = testRule.matched
+      val matched = targetRule.matched
       reset(marker)
       matched
     }
