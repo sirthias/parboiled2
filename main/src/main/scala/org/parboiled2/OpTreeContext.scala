@@ -1,5 +1,4 @@
 package org.parboiled2
-package optree
 
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
@@ -66,10 +65,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-
-      p.tab += 1
-      p.debug(s"Sequence(${lhsStr.splice}, ${rhsStr.splice})", ">> ")
-
       val mark = p.mark
       val lhsSplice = lhs.render().splice
       if (lhsSplice.matched) {
@@ -80,17 +75,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           // rhs failed
           p.reset(mark)
         }
-
-        p.debug(s"${rhsSplice.matched} - ${p.mark}", "|  ")
-        p.tab -= 1
-
         Rule(rhsSplice.matched)
       } else {
         // lhs failed
         p.reset(mark)
-        p.debug(s"${false} - ${p.mark}", "|  ")
-
-        p.tab -= 1
         Rule.failure
       }
     }
@@ -103,16 +91,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-
-      p.tab += 1
-      p.debug(s"FirstOf(${lhsStr.splice}, ${rhsStr.splice})", ">> ")
-
       val mark = p.mark
       val matched = lhs.render().splice.matched
       if (matched) {
-        p.debug(s"${true} - ${p.mark}", "|  ")
-        p.tab -= 1
-
         Rule.success
       } else {
         p.reset(mark)
@@ -123,8 +104,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           // failed
           p.reset(mark)
         }
-        p.debug(s"${matched} - ${p.mark}", "|  ")
-        p.tab -= 1
         Rule(rhsSplice.matched)
       }
     }
@@ -136,17 +115,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-
-      p.tab += 1
-      p.debug(s"LiteralString('${lsStr.splice}')", ">> ")
-
       val mark = p.mark
       val ts = c.literal(s).splice
       var ix = 0
       while (ix < ts.length && p.nextChar() == ts.charAt(ix)) ix += 1
       if (ix == ts.length) {
-        p.debug(s"${true} - ${p.mark}", "|  ")
-        p.tab -= 1
         Rule.success
       } else {
         // failed
@@ -154,8 +127,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           p.addError(lsStr.splice)
         }
         p.reset(mark)
-        p.debug(s"${false} - ${p.mark}", "|  ")
-        p.tab -= 1
         Rule.failure
       }
     }
@@ -173,9 +144,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-      p.tab += 1
-      p.debug(s"LiteralChar(${lcStr.splice})", ">> ")
-
       val mark = p.mark
       val tc = c.literal(ch).splice
       val matched = p.nextChar() == tc
@@ -186,9 +154,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         }
         p.reset(mark)
       }
-      p.debug(s"$matched - ${p.mark}", "|  ")
-
-      p.tab -= 1
       Rule(matched)
     }
   }
@@ -229,16 +194,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(): Expr[Rule] = {
       reify {
         val p = c.prefix.splice
-
-        p.tab += 1
-        p.debug(s"ZeroOrMore(${zomStr.splice})", ">> ")
-
         var mark = p.mark
         while (op.render().splice.matched) { mark = p.mark }
         p.reset(mark)
-        p.debug(s"${true} - ${p.mark}", "|  ")
-        p.tab -= 1
-
         Rule.success
       }
     }
@@ -273,13 +231,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-      p.tab += 1
-      p.debug(s"AndPredicate(${apStr.splice}})", ">> ")
-
       val matched = renderMatch().splice
-      p.debug(s"$matched - ${p.mark}", "|  ")
-
-      p.tab -= 1
       Rule(matched)
     }
   }
@@ -294,14 +246,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-
-      p.tab += 1
-      p.debug(s"NotPredictate(${npStr.splice}", ">> ")
-
       val matched = !renderMatch().splice
-      p.debug(s"$matched - ${p.mark}", "|  ")
-
-      p.tab -= 1
       Rule(matched)
     }
   }
@@ -321,23 +266,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-
-      p.tab += 1
-      p.debug(s"RuleCall(${rcStr.splice})", ">> ")
-
       val mark = p.mark()
       val errMark = p.errorMarker()
-
       val spl = c.Expr[Rule](methodCall).splice
       val matched = spl.matched
-
       if (!matched && p.collecting && mark == p.errorMark()) {
         p.resetErrorMarker(errMark)
         p.addError(rcStr.splice)
       }
-      p.debug(s"$matched - ${p.mark}", "|  ")
-
-      p.tab -= 1
       Rule(spl.matched)
     }
   }

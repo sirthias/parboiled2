@@ -16,34 +16,21 @@
 
 package org.parboiled2
 
-import org.parboiled2.optree._
 import scala.reflect.macros.Context
 import scala.collection.mutable.ArrayBuffer
 
-case class ParserError(mark: Parser#Mark, actualChar: Char, expectedRules: Seq[String])
+case class ParseError(line: Int, column: Int, actualChar: Char, expectedRules: Seq[String], input: ParserInput)
 
 abstract class Parser {
   def input: ParserInput
 
-  def debug = false
-
-  var tab = 0
-  def debug(message: String, delim: String): Unit = {
-    if (debug) {
-      println(s"${"\t" * tab}$delim$message")
-    }
-  }
-
-  private var _collecting = false
-  def collecting: Boolean = _collecting
-  def collecting_=(v: Boolean) { _collecting = v }
+  var collecting = false
 
   private val _expectedValues = ArrayBuffer[String]()
   def expectedValues = _expectedValues
 
   type ErrorMarker = Int
   def addError(expectedValue: String) = {
-    debug(s"error added: $expectedValue", "!!!")
     _expectedValues += expectedValue
   }
 
@@ -53,10 +40,36 @@ abstract class Parser {
   def resetErrorMarker(errorMarker: ErrorMarker): Unit =
     _expectedValues.reduceToSize(errorMarker)
 
-  private val _mark: Mark = new Mark(0, 0, 0)
-  private val _errorMark: Mark = new Mark(0, 0, 0)
+  type Mark = Int
+  private var _mark: Mark = 0
+  private var _errorMark: Mark = 0
 
   def rule(r: Rule): Rule = macro Parser.ruleImpl
+
+  def run(rule: ⇒ Rule): Either[ParseError, Unit] = {
+    if (rule.matched) Right(Unit)
+    else {
+      collecting = true
+      val _ = rule.matched
+      collecting = false
+      val errMark = errorMark()
+      val actualChar =
+        if (errMark == input.length) EOI
+        else input.charAt(errMark)
+
+      if (errMark == 0) {
+        Left(ParseError(0, 0, actualChar, expectedValues, input))
+      } else {
+        val prefixString = input.sliceString(0, errMark)
+        val line = prefixString.count(_ == '\n')
+        val prevEol = prefixString.lastIndexOf('\n', errMark - 1)
+        val column =
+          if (prevEol != -1) errMark - prevEol
+          else errMark
+        Left(ParseError(line, column, actualChar, expectedValues, input))
+      }
+    }
+  }
 
   implicit def ch(c: Char) = Rule()
   implicit def str(s: String) = Rule()
@@ -67,33 +80,18 @@ abstract class Parser {
   def &(r: Rule): Rule = Rule()
 
   def nextChar(): Char =
-    if (_mark.cursor < input.length) {
-      if (input.charAt(_mark.cursor) == '\n') {
-        _mark.line += 1
-        _mark.column = 0
-      }
-      val nextCh = input.charAt(_mark.cursor)
-      _mark.cursor += 1
-      _mark.column += 1
+    if (_mark < input.length) {
+      val nextCh = input.charAt(_mark)
+      _mark += 1
       nextCh
     } else EOI
 
-  case class Mark(var line: Int, var column: Int, var cursor: Int) {
-    def >(that: Mark): Boolean = this.cursor > that.cursor
-    def ==(that: Mark): Boolean = this.cursor == that.cursor
-    def <(that: Mark) = !(this == that && this > that)
-    def <~(that: Mark) = {
-      this.cursor = that.cursor
-      this.line = that.line
-      this.column = that.column
-    }
-  }
-  def mark(): Mark = Mark(_mark.line, _mark.column, _mark.cursor)
-  def errorMark(): Mark = Mark(_errorMark.line, _errorMark.column, _errorMark.cursor)
+  def mark(): Mark = _mark
+  def errorMark(): Mark = _errorMark
   def reset(mark: Mark): Unit = {
-    if (!_collecting && mark > _errorMark)
-      _errorMark <~ mark
-    _mark <~ mark
+    if (!collecting && mark > _errorMark)
+      _errorMark = mark
+    _mark = mark
   }
 
   def EOI = Parser.EOI

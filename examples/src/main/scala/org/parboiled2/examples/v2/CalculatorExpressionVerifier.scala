@@ -44,14 +44,9 @@ object CalculatorExpressionVerifier {
     val inputLine = readLine()
     if (inputLine != "") {
       val simpleCalc = new SimpleCalculator(inputLine)
-      if (simpleCalc.InputLine.matched) {
-        println("Expression is valid")
-      } else {
-        val errUtils = new ErrorUtils {
-          def parser = simpleCalc
-          def targetRule = simpleCalc.InputLine
-        }
-        println(s"[v2] Expression is not valid. Error: ${errUtils.printError}")
+      simpleCalc.run(simpleCalc.InputLine) match {
+        case Right(_) => println("Expression is valid")
+        case Left(err) => println(s"Expression is not valid. Error: ${ErrorUtils.formatError(err)}")
       }
       repl()
     }

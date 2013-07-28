@@ -18,80 +18,85 @@ package org.parboiled2
 
 class ErrorReportingSpec extends SimpleCalculatorSpec {
   "Error reporting" should {
-    "compose error messages for simple expression" in new TestParser with ErrorUtils {
+    "compose error messages for simple expression" in new TestParser with ParserRunner {
       def targetRule = rule { oneOrMore("x") ~ ch('a') ~ 'b' ~ 'e' }
       def parser = this
 
       "xxxace" must Mismatch
-      error must beSome
-      error map { err =>
-        err.mark mustEqual Mark(0, 4, 4)
-        err.expectedRules must haveTheSameElementsAs(List("b"))
+      run must beLeft
+      run.left map { err =>
+        err.line must_== 0
+        err.column must_== 4
+        err.expectedRules must haveTheSameElementsAs(List("'b'"))
       }
     }
 
-    "compose error messages for simple calculator" in new SimpleCalculator with ErrorUtils {
+    "compose error messages for simple calculator" in new SimpleCalculator with ParserRunner {
       def targetRule = InputLine
       def parser = this
 
       "3+*5" must Mismatch
-      error must beSome
-      error map { err =>
-        err.mark mustEqual Mark(0, 2, 2)
+      run must beLeft
+      run.left map { err =>
+        err.line must_== 0
+        err.column must_== 2
         err.expectedRules must haveTheSameElementsAs(List("SimpleCalculator.Term"))
       }
     }
 
     "track lines numbers" in {
-      "zero line" in new TestParser with ErrorUtils {
+      "zero line" in new TestParser with ParserRunner {
         def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
         def parser = this
 
         "x\nb\nc" must Mismatch
-        error must beSome
-        error map { err =>
-          err.mark mustEqual Mark(0, 0, 0)
+        run must beLeft
+        run.left map { err =>
+          err.line must_== 0
+          err.column must_== 0
         }
       }
 
-      "first line" in new TestParser with ErrorUtils {
+      "first line" in new TestParser with ParserRunner {
         def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
         def parser = this
 
         "a\nx\nc" must Mismatch
-        error must beSome
-        error map { err =>
-          err.mark mustEqual Mark(1, 1, 2)
+        run must beLeft
+        run.left map { err =>
+          err.line must_== 1
+          err.column must_== 1
         }
       }
 
-      "second line" in new TestParser with ErrorUtils {
+      "second line" in new TestParser with ParserRunner {
         def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
         def parser = this
 
         "a\nb\nx" must Mismatch
-        error must beSome
-        error map { err =>
-          err.mark mustEqual Mark(2, 1, 4)
+        run must beLeft
+        run.left map { err =>
+          err.line must_== 2
+          err.column must_== 1
         }
       }
     }
 
     "correctly process FirstOf" in {
-      "producing no errors for first alternative" in new TestParser with ErrorUtils {
+      "producing no errors for first alternative" in new TestParser with ParserRunner {
         def targetRule: Rule = rule { ch('a') | 'b' }
         def parser = this
 
         "aaa" must Match
-        error must beNone
+        run must beRight
       }
 
-      "producing no errors for second alternative" in new TestParser with ErrorUtils {
+      "producing no errors for second alternative" in new TestParser with ParserRunner {
         def targetRule: Rule = rule { ch('a') | 'b' }
         def parser = this
 
         "b" must Match
-        error must beNone
+        run must beRight
       }
     }
   }
