@@ -26,6 +26,7 @@ case class RuleStack(frames: Seq[RuleFrame])
 
 sealed trait RuleFrame
 case class SequenceFrame() extends RuleFrame
+case class CharacterClassFrame(from: Char, to: Char) extends RuleFrame
 case class FirstOfFrame() extends RuleFrame
 case class StringFrame(string: String) extends RuleFrame
 case class CharFrame(char: Char) extends RuleFrame
@@ -56,17 +57,15 @@ abstract class Parser {
       collecting = true
       val _ = rule.matched
       collecting = false
-      val errMark = errorMark()
-
-      if (errMark == 0) {
+      if (errorMark == 0) {
         Left(ParseError(InputPosition(0, 0), expectedRules))
       } else {
-        val prefixString = input.sliceString(0, errMark)
+        val prefixString = input.sliceString(0, errorMark)
         val line = prefixString.count(_ == '\n')
-        val prevEol = prefixString.lastIndexOf('\n', errMark - 1)
+        val prevEol = prefixString.lastIndexOf('\n', errorMark - 1)
         val column =
-          if (prevEol != -1) errMark - prevEol
-          else errMark
+          if (prevEol != -1) errorMark - prevEol
+          else errorMark
         Left(ParseError(InputPosition(line, column), expectedRules))
       }
     }
@@ -87,8 +86,8 @@ abstract class Parser {
       nextCh
     } else EOI
 
-  def mark(): Mark = _mark
-  def errorMark(): Mark = _errorMark
+  def mark: Mark = _mark
+  def errorMark: Mark = _errorMark
   def reset(mark: Mark): Unit = {
     if (!collecting && mark > _errorMark)
       _errorMark = mark

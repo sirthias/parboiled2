@@ -33,7 +33,7 @@ class SimpleCalculator(val input: ParserInput) extends Parser {
 
   def Digits = rule { oneOrMore(Digit) }
 
-  def Digit = rule { (ch('0') | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') }
+  def Digit = rule { "0" - "9" }
 }
 
 object CalculatorExpressionVerifier {
@@ -45,8 +45,8 @@ object CalculatorExpressionVerifier {
     if (inputLine != "") {
       val simpleCalc = new SimpleCalculator(inputLine)
       simpleCalc.run(simpleCalc.InputLine) match {
-        case Right(_) => println("Expression is valid")
-        case Left(err) => println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
+        case Right(_)  ⇒ println("Expression is valid")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
       }
       repl()
     }

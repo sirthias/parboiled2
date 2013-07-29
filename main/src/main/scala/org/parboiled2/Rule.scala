@@ -23,6 +23,7 @@ package org.parboiled2
 class Rule private (val matched: Boolean) extends AnyVal {
   def ~(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
   def |(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
+  def -(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
   def unary_!(): Rule = throw new Rule.NotAvailableAtRuntimeException
 }
 
