@@ -65,9 +65,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
+      if (p.collecting)
+        p.currentCallStack.push(SequenceFrame())
       val mark = p.mark
       val lhsSplice = lhs.render().splice
-      if (lhsSplice.matched) {
+      val res = if (lhsSplice.matched) {
         val rhsSplice = rhs.render().splice
         if (rhsSplice.matched) {
           // success
@@ -81,6 +83,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         p.reset(mark)
         Rule.failure
       }
+      if (p.collecting)
+        p.currentCallStack.pop()
+      res
     }
   }
   object Sequence extends Combinator.Companion("~")
@@ -91,9 +96,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
+      if (p.collecting)
+        p.currentCallStack.push(FirstOfFrame())
       val mark = p.mark
       val matched = lhs.render().splice.matched
-      if (matched) {
+      val res = if (matched) {
         Rule.success
       } else {
         p.reset(mark)
@@ -106,12 +113,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         }
         Rule(rhsSplice.matched)
       }
+      if (p.collecting)
+        p.currentCallStack.pop()
+      res
     }
   }
   object FirstOf extends Combinator.Companion("|")
 
   case class LiteralString(s: String) extends OpTree {
-    lazy val lsStr = c.Expr[String](Literal(Constant(s)))
+    lazy val lsStr = c.Expr[String](Literal(Constant(s"'$s'")))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
@@ -124,7 +134,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       } else {
         // failed
         if (p.collecting && mark == p.errorMark()) {
-          p.addError(lsStr.splice)
+          p.expectedRules += RuleStack(StringFrame(lsStr.splice) +: p.currentCallStack)
         }
         p.reset(mark)
         Rule.failure
@@ -140,7 +150,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class LiteralChar(ch: Char) extends OpTree {
-    lazy val lcStr = c.Expr[String](Literal(Constant(s"'$ch'")))
+    lazy val lcStr = c.Expr[Char](Literal(Constant(ch)))
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
@@ -150,7 +160,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       if (!matched) {
         // failed
         if (p.collecting && mark == p.errorMark()) {
-          p.addError(lcStr.splice)
+          p.expectedRules += RuleStack(CharFrame(lcStr.splice) +: p.currentCallStack)
         }
         p.reset(mark)
       }
@@ -170,14 +180,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(): Expr[Rule] = {
       reify {
         val p = c.prefix.splice
+        if (p.collecting)
+          p.currentCallStack.push(OptionalFrame())
         val mark = p.mark
         val matched = op.render().splice.matched
         if (!matched) {
-          if (p.collecting && mark == p.errorMark()) {
-            p.addError(optStr.splice)
-          }
           p.reset(mark)
         }
+        if (p.collecting)
+          p.currentCallStack.pop()
         Rule.success
       }
     }
@@ -194,9 +205,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(): Expr[Rule] = {
       reify {
         val p = c.prefix.splice
+        if (p.collecting)
+          p.currentCallStack.push(ZeroOrMoreFrame())
         var mark = p.mark
         while (op.render().splice.matched) { mark = p.mark }
         p.reset(mark)
+        if (p.collecting)
+          p.currentCallStack.pop()
         Rule.success
       }
     }
@@ -231,7 +246,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
+      if (p.collecting)
+        p.currentCallStack.push(AndPredicateFrame())
       val matched = renderMatch().splice
+      if (p.collecting)
+        p.currentCallStack.pop()
       Rule(matched)
     }
   }
@@ -246,7 +265,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
+      if (p.collecting)
+        p.currentCallStack.push(NotPredicateFrame())
       val matched = !renderMatch().splice
+      if (p.collecting)
+        p.currentCallStack.pop()
       Rule(matched)
     }
   }
@@ -266,14 +289,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
     def render(): Expr[Rule] = reify {
       val p = c.prefix.splice
-      val mark = p.mark()
-      val errMark = p.errorMarker()
+      if (p.collecting)
+        p.currentCallStack.push(RuleCallFrame(rcStr.splice))
       val spl = c.Expr[Rule](methodCall).splice
-      val matched = spl.matched
-      if (!matched && p.collecting && mark == p.errorMark()) {
-        p.resetErrorMarker(errMark)
-        p.addError(rcStr.splice)
-      }
+      if (p.collecting)
+        p.currentCallStack.pop()
       Rule(spl.matched)
     }
   }

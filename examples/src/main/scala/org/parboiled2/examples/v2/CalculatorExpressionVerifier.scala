@@ -46,7 +46,7 @@ object CalculatorExpressionVerifier {
       val simpleCalc = new SimpleCalculator(inputLine)
       simpleCalc.run(simpleCalc.InputLine) match {
         case Right(_) => println("Expression is valid")
-        case Left(err) => println(s"Expression is not valid. Error: ${ErrorUtils.formatError(err)}")
+        case Left(err) => println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
       }
       repl()
     }

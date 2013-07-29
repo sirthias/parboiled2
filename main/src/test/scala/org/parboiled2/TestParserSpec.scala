@@ -34,5 +34,7 @@ abstract class TestParserSpec extends Specification {
       reset(marker)
       matched
     }
+
+    lazy val run = super.run(targetRule)
   }
 }

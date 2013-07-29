@@ -18,27 +18,31 @@ package org.parboiled2
 
 import scala.reflect.macros.Context
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.Stack
 
-case class ParseError(line: Int, column: Int, actualChar: Char, expectedRules: Seq[String], input: ParserInput)
+case class ParseError(position: InputPosition, errorRules: Seq[RuleStack])
+case class InputPosition(line: Int, column: Int)
+case class RuleStack(frames: Seq[RuleFrame])
+
+sealed trait RuleFrame
+case class SequenceFrame() extends RuleFrame
+case class FirstOfFrame() extends RuleFrame
+case class StringFrame(string: String) extends RuleFrame
+case class CharFrame(char: Char) extends RuleFrame
+case class RuleCallFrame(name: String) extends RuleFrame
+case class OptionalFrame() extends RuleFrame
+case class ZeroOrMoreFrame() extends RuleFrame
+case class OneOrMoreFrame() extends RuleFrame
+case class AndPredicateFrame() extends RuleFrame
+case class NotPredicateFrame() extends RuleFrame
 
 abstract class Parser {
   def input: ParserInput
 
   var collecting = false
 
-  private val _expectedValues = ArrayBuffer[String]()
-  def expectedValues = _expectedValues
-
-  type ErrorMarker = Int
-  def addError(expectedValue: String) = {
-    _expectedValues += expectedValue
-  }
-
-  def errorMarker(): ErrorMarker =
-    _expectedValues.size
-
-  def resetErrorMarker(errorMarker: ErrorMarker): Unit =
-    _expectedValues.reduceToSize(errorMarker)
+  val currentCallStack = Stack[RuleFrame]()
+  val expectedRules = ArrayBuffer[RuleStack]()
 
   type Mark = Int
   private var _mark: Mark = 0
@@ -53,12 +57,9 @@ abstract class Parser {
       val _ = rule.matched
       collecting = false
       val errMark = errorMark()
-      val actualChar =
-        if (errMark == input.length) EOI
-        else input.charAt(errMark)
 
       if (errMark == 0) {
-        Left(ParseError(0, 0, actualChar, expectedValues, input))
+        Left(ParseError(InputPosition(0, 0), expectedRules))
       } else {
         val prefixString = input.sliceString(0, errMark)
         val line = prefixString.count(_ == '\n')
@@ -66,7 +67,7 @@ abstract class Parser {
         val column =
           if (prevEol != -1) errMark - prevEol
           else errMark
-        Left(ParseError(line, column, actualChar, expectedValues, input))
+        Left(ParseError(InputPosition(line, column), expectedRules))
       }
     }
   }
