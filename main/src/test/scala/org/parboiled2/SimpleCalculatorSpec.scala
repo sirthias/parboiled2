@@ -31,26 +31,26 @@ class SimpleCalculatorSpec extends TestParserSpec {
 
     def Digits = rule { oneOrMore(Digit) }
 
-    def Digit = rule { (ch('0') | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9') }
+    def Digit = rule { "0" - "9" }
   }
 
   "A SimpleCalculator" should {
     "successfully recognize expression" in new SimpleCalculator {
       def targetRule = InputLine
 
-      "1" must Match
-      "1+2" must Match
-      "1+2*3" must Match
-      "1*2+3" must Match
-      "1*(2+3)" must Match
-      "1*((2+3))" must Match
+      "1" must beMatched
+      "1+2" must beMatched
+      "1+2*3" must beMatched
+      "1*2+3" must beMatched
+      "1*(2+3)" must beMatched
+      "1*((2+3))" must beMatched
 
-      "*1" must Mismatch
-      "+1" must Mismatch
-      "()" must Mismatch
-      "(()" must Mismatch
-      "())" must Mismatch
-      "(1+)2" must Mismatch
+      "*1" must beMismatched
+      "+1" must beMismatched
+      "()" must beMismatched
+      "(()" must beMismatched
+      "())" must beMismatched
+      "(1+)2" must beMismatched
     }
   }
 }

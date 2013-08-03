@@ -23,6 +23,13 @@ sealed abstract class ParserInput {
   def length: Int
   def sliceString(start: Int, end: Int): String
   override def toString: String = sliceString(0, length)
+
+  /**
+   * @param line starts at 1
+   *
+   * @return
+   */
+  def getLine(line: Int): String = toString.split('\n')(line - 1)
 }
 
 // bimorphic ParserInput implementation

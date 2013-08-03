@@ -17,86 +17,68 @@
 package org.parboiled2
 
 class ErrorReportingSpec extends SimpleCalculatorSpec {
+  import RuleFrame._
+
   "Error reporting" should {
     "compose error messages for simple expression" in new TestParser {
       def targetRule = rule { oneOrMore("x") ~ ch('a') ~ 'b' ~ 'e' }
-      def parser = this
 
-      "xxxace" must Mismatch
-      run must beLeft
-      run.left map { err =>
-        err.position.line must_== 0
-        err.position.column must_== 4
-        //err.expectedRules must haveTheSameElementsAs(List("'b'")) // TODO: Fix veryfying of RulesStack
-      }
+      parse("xxxace") ===
+        Left(ParseError(Position(4, 1, 5), Seq(RuleStack(Seq(LiteralChar('b'), Sequence(), Sequence("targetRule"))))))
     }
 
     "compose error messages for simple calculator" in new SimpleCalculator {
       def targetRule = InputLine
-      def parser = this
 
-      "3+*5" must Mismatch
-      run must beLeft
-      run.left map { err =>
-        err.position.line must_== 0
-        err.position.column must_== 2
-        //err.expectedRules must haveTheSameElementsAs(List("SimpleCalculator.Term")) // TODO: Fix veryfying of RulesStack
-      }
+      "3+*5" must beMismatchedWithError(
+        ParseError(Position(2, 1, 3), Seq(
+          RuleStack(Seq(CharacterClass('0','9',"Digit"), RuleCall("","SimpleCalculator.Digit"), Sequence("Digits"),
+            RuleCall("","SimpleCalculator.Digits"), FirstOf("Factor"), RuleCall("","SimpleCalculator.Factor"),
+            Sequence("Term"), RuleCall("","SimpleCalculator.Term"), Sequence(),
+            ZeroOrMore(), Sequence("Expression"), RuleCall("","SimpleCalculator.Expression"), Sequence("InputLine"))),
+          RuleStack(Seq(LiteralString("(",""), Sequence(), Sequence("Parens"), RuleCall("","SimpleCalculator.Parens"),
+            FirstOf("Factor"), RuleCall("","SimpleCalculator.Factor"), Sequence("Term"),
+            RuleCall("","SimpleCalculator.Term"), Sequence(), ZeroOrMore(), Sequence("Expression"),
+            RuleCall("","SimpleCalculator.Expression"), Sequence("InputLine"))))))
     }
 
     "track lines numbers" in {
-      "zero line" in new TestParser {
-        def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
-        def parser = this
-
-        "x\nb\nc" must Mismatch
-        run must beLeft
-        run.left map { err =>
-          err.position.line must_== 0
-          err.position.column must_== 0
-        }
-      }
-
       "first line" in new TestParser {
         def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
-        def parser = this
 
-        "a\nx\nc" must Mismatch
-        run must beLeft
-        run.left map { err =>
-          err.position.line must_== 1
-          err.position.column must_== 1
-        }
+        "x\nb\nc" must beMismatchedWithError(ParseError(Position(0, 1, 1), Seq(
+          RuleStack(Seq(LiteralString("a\n"), Sequence(), Sequence("targetRule")))
+        )))
       }
 
       "second line" in new TestParser {
         def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
-        def parser = this
 
-        "a\nb\nx" must Mismatch
-        run must beLeft
-        run.left map { err =>
-          err.position.line must_== 2
-          err.position.column must_== 1
-        }
+        "a\nx\nc" must beMismatchedWithError(ParseError(Position(2, 2, 1), Seq(
+          RuleStack(Seq(LiteralString("b\n"), Sequence(), Sequence("targetRule")))
+        )))
+      }
+
+      "third line" in new TestParser {
+        def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+
+        "a\nb\nx" must beMismatchedWithError(ParseError(Position(4, 3, 1), Seq(
+          RuleStack(Seq(LiteralString("c"), Sequence("targetRule")))
+        )))
       }
     }
 
     "correctly process FirstOf" in {
       "producing no errors for first alternative" in new TestParser {
         def targetRule: Rule = rule { ch('a') | 'b' }
-        def parser = this
 
-        "aaa" must Match
-        run must beRight
+        "aaa" must beMatched
       }
 
       "producing no errors for second alternative" in new TestParser {
         def targetRule: Rule = rule { ch('a') | 'b' }
-        def parser = this
 
-        "b" must Match
-        run must beRight
+        "b" must beMatched
       }
     }
   }

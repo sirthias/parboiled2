@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled2.calculators.v1
+package org.parboiled2.examples.v1
 
 import org.parboiled.scala._
 import org.parboiled.scala.parserunners.ReportingParseRunner

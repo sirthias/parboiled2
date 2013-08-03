@@ -21,20 +21,16 @@ import org.specs2.mutable.Specification
 
 abstract class TestParserSpec extends Specification {
   trait TestParser extends Parser with Scope {
-    def Match = beTrue ^^ (parse(_))
-    def Mismatch = beFalse ^^ (parse(_))
+    def beMatched = beTrue ^^ ((input: String) ⇒ parse(input).isRight)
+    def beMismatched = beTrue ^^ ((input: String) ⇒ parse(input).isLeft)
+    def beMismatchedWithError(pe: ParseError) = ((input: String) ⇒ parse(input) === Left(pe))
 
     var input: ParserInput = _
     def targetRule: Rule
 
-    def parse(input: String) = {
+    def parse(input: String): Result = {
       this.input = input
-      val marker = mark
-      val matched = targetRule.matched
-      reset(marker)
-      matched
+      run(_.targetRule)
     }
-
-    lazy val run = super.run(targetRule)
   }
 }

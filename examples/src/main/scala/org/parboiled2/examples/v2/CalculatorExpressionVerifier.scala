@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled2.calculators.v2
+package org.parboiled2.examples.v2
 
 import org.parboiled2._
 import scala.annotation.tailrec
@@ -44,7 +44,7 @@ object CalculatorExpressionVerifier {
     val inputLine = readLine()
     if (inputLine != "") {
       val simpleCalc = new SimpleCalculator(inputLine)
-      simpleCalc.run(simpleCalc.InputLine) match {
+      simpleCalc.run(_.InputLine) match {
         case Right(_)  ⇒ println("Expression is valid")
         case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
       }
