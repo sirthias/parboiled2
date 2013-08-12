@@ -9,13 +9,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object OpTree {
+    def abort(pos: Position, message: String) =
+      c.abort(pos, message)
+
     def apply(tree: Tree): OpTree = tree match {
       case Combinator(x @ (Sequence() | FirstOf())) ⇒ x.opTree.get
       case Modifier(x @ (LiteralString() | LiteralChar() | Optional() | ZeroOrMore() | OneOrMore() | AndPredicate())) ⇒ x.opTree.get
       case RuleCall(x) ⇒ x
       case NotPredicate(x) ⇒ x
       case CharacterClass(x) ⇒ x
-      case _ ⇒ c.abort(tree.pos, s"Invalid rule definition: $tree\n${showRaw(tree)}")
+      case _ ⇒ abort(tree.pos, s"Invalid rule definition: $tree\n${showRaw(tree)}")
     }
   }
 
@@ -56,25 +59,19 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class CharacterClass(lowerStr: LiteralString, upperStr: LiteralString) extends OpTree {
-    require(lowerStr.s.length == 1, "lower bound must be a single char string")
-    require(upperStr.s.length == 1, "upper bound must be a single char string")
-    val lower = lowerStr.s.charAt(0)
-    val upper = upperStr.s.charAt(0)
-    require(lower <= upper, "lower bound must not be > upper bound")
-
+  case class CharacterClass(lowerBound: Char, upperBound: Char) extends OpTree {
     def render(ruleName: String): Expr[Rule] = reify {
       try {
         val p = c.prefix.splice
         val char = p.nextChar()
-        if (c.literal(lower).splice <= char && char <= c.literal(upper).splice) Rule.success
+        if (c.literal(lowerBound).splice <= char && char <= c.literal(upperBound).splice) Rule.success
         else {
           p.onCharMismatch()
           Rule.failure
         }
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.CharacterClass(c.literal(lower).splice, c.literal(upper).splice, c.literal(ruleName).splice))
+          e.save(RuleFrame.CharacterClass(c.literal(lowerBound).splice, c.literal(upperBound).splice, c.literal(ruleName).splice))
       }
     }
   }
@@ -83,7 +80,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case Apply(Select(Modifier(lhsTM @ LiteralString()), Decoded("-")), List(Modifier(rhsTM @ LiteralString()))) ⇒
         val lhs = LiteralString.fromTreeMatch(lhsTM)
         val rhs = LiteralString.fromTreeMatch(rhsTM)
-        Some(apply(lhs, rhs))
+        if (lhs.s.length != 1)
+          OpTree.abort(tree.pos, "lower bound must be a single char string")
+        if (rhs.s.length != 1)
+          OpTree.abort(tree.pos, "upper bound must be a single char string")
+        val lowerBoundChar = lhs.s.charAt(0)
+        val upperBoundChar = rhs.s.charAt(0)
+        if (lowerBoundChar > upperBoundChar)
+          OpTree.abort(tree.pos, "lower bound must not be > upper bound")
+        Some(apply(lowerBoundChar, upperBoundChar))
       case _ ⇒ None
     }
   }

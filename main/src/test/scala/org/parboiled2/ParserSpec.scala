@@ -74,6 +74,17 @@ class ParserSpec extends TestParserSpec {
       "b" must beMismatched
     }
 
+    "successfully recognize valid input - `character-class` rule" in new TestParser {
+      def targetRule = rule { "1" - "5" }
+      "1" must beMatched
+      "3" must beMatched
+      "5" must beMatched
+      "" must beMismatched
+      "0" must beMismatched
+      "a" must beMismatched
+      "8" must beMismatched
+    }
+
     "successfully recognize EOI" in new TestParser {
       def targetRule = rule { EOI }
       "" must beMatched
@@ -151,6 +162,17 @@ class ParserSpec extends TestParserSpec {
         "ba" must beMismatched
       }
     }
+
+    // TODO: Fix this test
+    // "disallow compilation of an illegal `character-class` rule" in new TestParser {
+    //   def targetRule = rule { "00" - "5" }
+    //   def targetRule = rule { "0" - "55" }
+    //   def targetRule = rule { "" - "5" }
+    //   def targetRule = rule { "0" - "" }
+    //   def targetRule = rule { "5" - "1" }
+    //   def startDigit = rule { "1" }
+    //   def targetRule = rule { startDigit - "9" }
+    // }
 
     // TODO: Fix this test
     //    "disallow compilation of an illegal string rule" in new TestParser {
