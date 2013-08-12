@@ -19,138 +19,160 @@ package org.parboiled2
 class ParserSpec extends TestParserSpec {
   "The new parboiled parser" should {
     "successfully recognize single char" in new TestParser {
-      def testRule = rule { 'x' }
-      "x" must Match
-      "y" must Mismatch
+      def targetRule = rule { 'x' }
+      "x" must beMatched
+      "y" must beMismatched
     }
 
     "successfully recognize valid input - `seq` combinator rule" in new TestParser {
-      def testRule = rule { 'a' ~ 'b' }
-      "ab" must Match
-      "ac" must Mismatch
-      "bb" must Mismatch
+      def targetRule = rule { 'a' ~ 'b' }
+      "ab" must beMatched
+      "ac" must beMismatched
+      "bb" must beMismatched
     }
 
     "successfully recognize valid input - `firstOf` combinator rule" in new TestParser {
-      def testRule = rule { (ch('a') | 'b') }
-      "a" must Match
-      "b" must Match
-      "c" must Mismatch
+      def targetRule = rule { ch('a') | 'b' }
+      "a" must beMatched
+      "b" must beMatched
+      "c" must beMismatched
     }
 
     "successfully recognize valid input - `zeroOrMore` combinator rule" in new TestParser {
-      def testRule = rule { zeroOrMore("a") }
-      "a" must Match
-      "aa" must Match
-      "b" must Match
+      def targetRule = rule { zeroOrMore("a") }
+      "a" must beMatched
+      "aa" must beMatched
+      "b" must beMatched
     }
 
     "successfully recognize valid input - `oneOrMore` combinator rule" in new TestParser {
-      def testRule = rule { oneOrMore("a") }
-      "a" must Match
-      "aa" must Match
-      "b" must Mismatch
+      def targetRule = rule { oneOrMore("a") }
+      "a" must beMatched
+      "aa" must beMatched
+      "b" must beMismatched
     }
 
     "successfully recognize valid input - `optional` combinator rule" in new TestParser {
-      def testRule = rule { optional("a") }
-      "" must Match
-      "a" must Match
-      "b" must Match
+      def targetRule = rule { optional("a") }
+      "" must beMatched
+      "a" must beMatched
+      "b" must beMatched
     }
 
     "successfully recognize valid input - `not-predicate` combinator rule" in new TestParser {
-      def testRule = rule { !"a" }
-      "" must Match
-      "a" must Mismatch
-      "aa" must Mismatch
-      "b" must Match
+      def targetRule = rule { !"a" }
+      "" must beMatched
+      "a" must beMismatched
+      "aa" must beMismatched
+      "b" must beMatched
     }
 
     "successfully recognize valid input - `and-predicate` combinator rule" in new TestParser {
-      def testRule = rule { &("a") }
-      "a" must Match
-      "aa" must Match
-      "b" must Mismatch
+      def targetRule = rule { &("a") }
+      "a" must beMatched
+      "aa" must beMatched
+      "b" must beMismatched
+    }
+
+    "successfully recognize valid input - `character-class` rule" in new TestParser {
+      def targetRule = rule { "1" - "5" }
+      "1" must beMatched
+      "3" must beMatched
+      "5" must beMatched
+      "" must beMismatched
+      "0" must beMismatched
+      "a" must beMismatched
+      "8" must beMismatched
     }
 
     "successfully recognize EOI" in new TestParser {
-      def testRule = rule { EOI }
-      "" must Match
-      "x" must Mismatch
+      def targetRule = rule { EOI }
+      "" must beMatched
+      "x" must beMismatched
     }
 
     "properly expand string literals to a sequence of char rules" in new TestParser {
-      def testRule = rule { "def" }
-      "def" must Match
-      "dfe" must Mismatch
+      def targetRule = rule { "def" }
+      "def" must beMatched
+      "dfe" must beMismatched
     }
 
     "pass integration tests" in {
       "successfully recognize valid input - combination of rules" in new TestParser {
-        def testRule = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
-        "adf" must Match
-        "bdf" must Match
-        "aef" must Match
-        "cef" must Match
-        "adx" must Mismatch
-        "bbb" must Mismatch
+        def targetRule = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
+        "adf" must beMatched
+        "bdf" must beMatched
+        "aef" must beMatched
+        "cef" must beMatched
+        "adx" must beMismatched
+        "bbb" must beMismatched
       }
 
       "successfully recognize valid input - `zeroOrMore` and `seq` combinator rules" in new TestParser {
-        def testRule = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
-        "" must Match
-        "aa" must Match
-        "b" must Match
-        "bb" must Match
-        "ab" must Match
-        "ba" must Mismatch
+        def targetRule = rule { zeroOrMore("a") ~ zeroOrMore("b") ~ EOI }
+        "" must beMatched
+        "aa" must beMatched
+        "b" must beMatched
+        "bb" must beMatched
+        "ab" must beMatched
+        "ba" must beMismatched
       }
 
       "successfully recognize valid input - `and-predicate` rule sequenced by `charRule` rule" in new TestParser {
-        def testRule = rule { &("a") ~ "a" ~ EOI }
-        "" must Mismatch
-        "a" must Match
-        "aa" must Mismatch
-        "b" must Mismatch
-        "bb" must Mismatch
+        def targetRule = rule { &("a") ~ "a" ~ EOI }
+        "" must beMismatched
+        "a" must beMatched
+        "aa" must beMismatched
+        "b" must beMismatched
+        "bb" must beMismatched
       }
 
       "successfully recognize valid input - `optional` and `seq` combinator rules" in new TestParser {
-        def testRule = rule { optional("a") ~ optional("b") ~ EOI }
-        "" must Match
-        "aa" must Mismatch
-        "b" must Match
-        "bb" must Mismatch
-        "ab" must Match
-        "aab" must Mismatch
-        "abb" must Mismatch
-        "aabb" must Mismatch
-        "ba" must Mismatch
+        def targetRule = rule { optional("a") ~ optional("b") ~ EOI }
+        "" must beMatched
+        "aa" must beMismatched
+        "b" must beMatched
+        "bb" must beMismatched
+        "ab" must beMatched
+        "aab" must beMismatched
+        "abb" must beMismatched
+        "aabb" must beMismatched
+        "ba" must beMismatched
       }
 
       "successfully recognize valid input - `not-predicate` rule sequenced by `charRule` rule" in new TestParser {
-        def testRule = rule { !"a" ~ "b" ~ EOI }
-        "" must Mismatch
-        "a" must Mismatch
-        "aa" must Mismatch
-        "b" must Match
-        "bb" must Mismatch
+        def targetRule = rule { !"a" ~ "b" ~ EOI }
+        "" must beMismatched
+        "a" must beMismatched
+        "aa" must beMismatched
+        "b" must beMatched
+        "bb" must beMismatched
       }
 
       "successfully recognize valid input - `oneOrMore` and `seq` combinator rules" in new TestParser {
-        def testRule = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
-        "" must Mismatch
-        "aa" must Mismatch
-        "b" must Mismatch
-        "bb" must Mismatch
-        "ab" must Match
-        "aab" must Match
-        "abb" must Match
-        "aabb" must Match
-        "ba" must Mismatch
+        def targetRule = rule { oneOrMore("a") ~ oneOrMore("b") ~ EOI }
+        "" must beMismatched
+        "aa" must beMismatched
+        "b" must beMismatched
+        "bb" must beMismatched
+        "ab" must beMatched
+        "aab" must beMatched
+        "abb" must beMatched
+        "aabb" must beMatched
+        "ba" must beMismatched
       }
     }
+
+    // TODO: Fix this test
+    // "disallow compilation of an illegal `character-class` rule" in new TestParser {
+    //   def targetRule = rule { "00" - "5" }
+    //   def targetRule = rule { "0" - "55" }
+    //   def targetRule = rule { "" - "5" }
+    //   def targetRule = rule { "0" - "" }
+    //   def targetRule = rule { "5" - "1" }
+    //   def startDigit = rule { "1" }
+    //   def targetRule = rule { startDigit - "9" }
+    // }
 
     // TODO: Fix this test
     //    "disallow compilation of an illegal string rule" in new TestParser {

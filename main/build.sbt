@@ -1,5 +1,3 @@
-import scalariform.formatter.preferences._
-
 name := "parboiled"
 
 version := "2.0.0-SNAPSHOT"
@@ -29,11 +27,3 @@ libraryDependencies ++= Seq(
   "com.chuusai"     %% "shapeless"      % "1.2.4"   % "compile",
   "org.specs2"      %% "specs2"         % "1.14"    % "test"
 )
-
-scalariformSettings
-
-ScalariformKeys.preferences := FormattingPreferences()
-  .setPreference(RewriteArrowSymbols, true)
-  .setPreference(AlignParameters, true)
-  .setPreference(AlignSingleLineCaseStatements, true)
-  .setPreference(DoubleIndentClassDeclaration, true)

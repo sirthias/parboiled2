@@ -21,17 +21,22 @@ package org.parboiled2
  * Only used for type-checking during compile-time.
  */
 class Rule private (val matched: Boolean) extends AnyVal {
-  def ~(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
-  def |(that: Rule): Rule = throw new Rule.NotAvailableAtRuntimeException
-  def unary_!(): Rule = throw new Rule.NotAvailableAtRuntimeException
+  import Rule.notAvailable
+
+  def ~(that: Rule): Rule = notAvailable
+  def |(that: Rule): Rule = notAvailable
+  def -(that: Rule): Rule = notAvailable
+  def unary_!(): Rule = notAvailable
 }
 
 object Rule {
-  class NotAvailableAtRuntimeException extends RuntimeException
+  class NotAvailableAtRuntimeException private[Rule] () extends RuntimeException
+
+  private def notAvailable: Nothing = throw new NotAvailableAtRuntimeException
 
   def apply(matched: Boolean): Rule = new Rule(matched)
 
-  def apply(): Rule = throw new NotAvailableAtRuntimeException
+  def apply(): Rule = notAvailable
 
   val failure = new Rule(false)
 
