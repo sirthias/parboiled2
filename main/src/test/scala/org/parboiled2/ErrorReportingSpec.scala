@@ -20,7 +20,7 @@ class ErrorReportingSpec extends SimpleCalculatorSpec {
   import RuleFrame._
 
   "Error reporting" should {
-    "compose error messages for simple expression" in new TestParser {
+    "compose error messages for simple expression" in new TestParser0 {
       def targetRule = rule { oneOrMore("x") ~ ch('a') ~ 'b' ~ 'e' }
 
       parse("xxxace") ===
@@ -32,51 +32,47 @@ class ErrorReportingSpec extends SimpleCalculatorSpec {
 
       "3+*5" must beMismatchedWithError(
         ParseError(Position(2, 1, 3), Seq(
-          RuleStack(Seq(CharacterClass('0','9',"Digit"), RuleCall("","SimpleCalculator.Digit"), Sequence("Digits"),
-            RuleCall("","SimpleCalculator.Digits"), FirstOf("Factor"), RuleCall("","SimpleCalculator.Factor"),
-            Sequence("Term"), RuleCall("","SimpleCalculator.Term"), Sequence(),
-            ZeroOrMore(), Sequence("Expression"), RuleCall("","SimpleCalculator.Expression"), Sequence("InputLine"))),
-          RuleStack(Seq(LiteralString("(",""), Sequence(), Sequence("Parens"), RuleCall("","SimpleCalculator.Parens"),
-            FirstOf("Factor"), RuleCall("","SimpleCalculator.Factor"), Sequence("Term"),
-            RuleCall("","SimpleCalculator.Term"), Sequence(), ZeroOrMore(), Sequence("Expression"),
-            RuleCall("","SimpleCalculator.Expression"), Sequence("InputLine"))))))
+          RuleStack(Seq(CharacterClass('0', '9', "Digit"), RuleCall("", "SimpleCalculator.Digit"), OneOrMore("Digits"),
+            RuleCall("", "SimpleCalculator.Digits"), FirstOf("Factor"), RuleCall("", "SimpleCalculator.Factor"),
+            Sequence("Term"), RuleCall("", "SimpleCalculator.Term"), Sequence(),
+            ZeroOrMore(), Sequence("Expression"), RuleCall("", "SimpleCalculator.Expression"), Sequence("InputLine"))),
+          RuleStack(Seq(LiteralString("(", ""), Sequence(), Sequence("Parens"), RuleCall("", "SimpleCalculator.Parens"),
+            FirstOf("Factor"), RuleCall("", "SimpleCalculator.Factor"), Sequence("Term"), RuleCall("", "SimpleCalculator.Term"),
+            Sequence(), ZeroOrMore(), Sequence("Expression"), RuleCall("", "SimpleCalculator.Expression"), Sequence("InputLine"))))))
     }
 
     "track lines numbers" in {
-      "first line" in new TestParser {
-        def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+      "first line" in new TestParser0 {
+        def targetRule = rule { str("a\n") ~ "b\n" ~ "c" }
 
         "x\nb\nc" must beMismatchedWithError(ParseError(Position(0, 1, 1), Seq(
-          RuleStack(Seq(LiteralString("a\n"), Sequence(), Sequence("targetRule")))
-        )))
+          RuleStack(Seq(LiteralString("a\n"), Sequence(), Sequence("targetRule"))))))
       }
 
-      "second line" in new TestParser {
-        def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+      "second line" in new TestParser0 {
+        def targetRule = rule { str("a\n") ~ "b\n" ~ "c" }
 
         "a\nx\nc" must beMismatchedWithError(ParseError(Position(2, 2, 1), Seq(
-          RuleStack(Seq(LiteralString("b\n"), Sequence(), Sequence("targetRule")))
-        )))
+          RuleStack(Seq(LiteralString("b\n"), Sequence(), Sequence("targetRule"))))))
       }
 
-      "third line" in new TestParser {
-        def targetRule: Rule = rule { str("a\n") ~ "b\n" ~ "c" }
+      "third line" in new TestParser0 {
+        def targetRule = rule { str("a\n") ~ "b\n" ~ "c" }
 
         "a\nb\nx" must beMismatchedWithError(ParseError(Position(4, 3, 1), Seq(
-          RuleStack(Seq(LiteralString("c"), Sequence("targetRule")))
-        )))
+          RuleStack(Seq(LiteralString("c"), Sequence("targetRule"))))))
       }
     }
 
     "correctly process FirstOf" in {
-      "producing no errors for first alternative" in new TestParser {
-        def targetRule: Rule = rule { ch('a') | 'b' }
+      "producing no errors for first alternative" in new TestParser0 {
+        def targetRule = rule { ch('a') | 'b' }
 
         "aaa" must beMatched
       }
 
-      "producing no errors for second alternative" in new TestParser {
-        def targetRule: Rule = rule { ch('a') | 'b' }
+      "producing no errors for second alternative" in new TestParser0 {
+        def targetRule = rule { ch('a') | 'b' }
 
         "b" must beMatched
       }

@@ -16,29 +16,36 @@
 
 package org.parboiled2
 
-/**
- * Phantom type for which no instance can be created.
- * Only used for type-checking during compile-time.
- */
-class Rule private (val matched: Boolean) extends AnyVal {
-  import Rule.notAvailable
+import shapeless._
 
-  def ~(that: Rule): Rule = notAvailable
-  def |(that: Rule): Rule = notAvailable
-  def -(that: Rule): Rule = notAvailable
-  def unary_!(): Rule = notAvailable
+// TODO: model as value class wrapping a `matched: Boolean`
+// This would give us a (small) performance benefit since we'd save the comparison to the predefined
+// `Matched` and `Mismatched` objects.
+// However, https://issues.scala-lang.org/browse/SI-6260 is quite a serious problem for this design,
+// so until this issue is fixed we better stick to this non-value-class-based model
+sealed abstract class Rule[L <: HList] {
+  import Rule.notAvailableAtRuntime
+
+  def ~[R <: HList](that: Rule[R])(implicit p: Prepender[L, R]): Rule[p.Out] = notAvailableAtRuntime
+  def |[R >: L <: HList](that: Rule[R]): Rule[R] = notAvailableAtRuntime
+  def unary_!(): Rule0 = notAvailableAtRuntime
+
+  def matched: Boolean = this eq Rule.Matched
+  def mismatched: Boolean = this eq Rule.Mismatched
 }
 
-object Rule {
+private[parboiled2] object Rule {
   class NotAvailableAtRuntimeException private[Rule] () extends RuntimeException
 
-  private def notAvailable: Nothing = throw new NotAvailableAtRuntimeException
+  def notAvailableAtRuntime: Nothing = throw new NotAvailableAtRuntimeException
 
-  def apply(matched: Boolean): Rule = new Rule(matched)
+  private object Matched extends Rule[Nothing]
+  private object Mismatched extends Rule[Nothing]
 
-  def apply(): Rule = notAvailable
+  def apply[L <: HList](): Rule[L] = notAvailableAtRuntime
 
-  val failure = new Rule(false)
+  def apply[L <: HList](m: Boolean): Rule[L] = if (m) matched else mismatched
 
-  val success = new Rule(true)
+  def matched[L <: HList]: Rule[L] = Matched.asInstanceOf[Rule[L]]
+  def mismatched[L <: HList]: Rule[L] = Mismatched.asInstanceOf[Rule[L]]
 }

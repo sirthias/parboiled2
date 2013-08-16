@@ -23,7 +23,7 @@ import org.parboiled.scala.parserunners.ReportingParseRunner
 class SimpleCalculator(val input: ParserInput) extends Parser {
   def InputLine = rule { Expression ~ EOI }
 
-  def Expression: Rule = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
+  def Expression: Rule0 = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
 
   def Term = rule { Factor ~ zeroOrMore((ch('*') | '/') ~ Factor) }
 
