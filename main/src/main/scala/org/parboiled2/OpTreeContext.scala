@@ -23,7 +23,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
   import c.universe._
 
-  type RuleX = Rule[_ <: HList]
+  type RuleX = Rule[_ <: HList, _ <: HList]
 
   abstract class OpTree {
     def render(ruleName: String = ""): Expr[RuleX]
@@ -49,6 +49,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
         case Apply(Apply(TypeApply(Select(This(_), Decoded("oneOrMore")), _), List(arg)), _) ⇒ OneOrMore(OpTree(arg))
 
+        case Apply(Apply(TypeApply(Select(This(_), Decoded("capture")), _), List(arg)), _) ⇒ Capture(OpTree(arg))
+
         case Apply(Select(This(_), Decoded("&")), List(arg)) ⇒ AndPredicate(OpTree(arg))
 
         case x @ Select(This(_), _) ⇒ RuleCall(x)
@@ -56,7 +58,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
         case Apply(Select(arg, Decoded("unary_!")), List()) ⇒ NotPredicate(OpTree(arg))
 
-        case Apply(Select(Apply(Select(This(_), Decoded("PimpedString")), List(Literal(Constant(l: String)))),
+        case Apply(Apply(TypeApply(Select(Select(Apply(Apply(TypeApply(Select(This(_), Decoded("pimpActionOp")), _),
+          List(r)), _), Decoded("~>")), Decoded("apply")), _), List(f)), _) ⇒ Action(OpTree(r), f)
+
+        case Apply(Apply(TypeApply(Select(This(_), Decoded("push")), _), List(arg)), _) ⇒ PushAction(arg)
+
+        case Apply(Select(Apply(Select(This(_), Decoded("pimpString")), List(Literal(Constant(l: String)))),
           Decoded("-")), List(Literal(Constant(r: String)))) ⇒ CharacterClass(l, r, tree.pos)
 
         case _ ⇒ c.abort(tree.pos, s"Invalid rule definition: $tree\n${showRaw(tree)}")
@@ -198,6 +205,32 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.OneOrMore(c.literal(ruleName).splice))
       }
+    }
+  }
+
+  case class Capture(op: OpTree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      val p = c.prefix.splice
+      val mark = p.inputStartMark
+      val result = op.render().splice
+      if (result.matched)
+        p.valueStack.push(p.sliceInput(mark))
+      result
+    }
+  }
+
+  case class Action(op: OpTree, f: Tree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      op.render().splice
+    }
+  }
+
+  case class PushAction(arg: Tree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      //val p = c.prefix.splice
+      //val value = c.Expr[Any](arg).splice
+      //p.valueStack.push(value)
+      Rule.matched
     }
   }
 

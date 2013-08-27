@@ -44,9 +44,9 @@ abstract class Parser extends RuleDSL {
 
   private[parboiled2] val valueStack = new ValueStack
 
-  def rule[L <: HList](r: Rule[L]): Rule[L] = macro ruleImpl[L]
+  def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
 
-  def run[L <: HList](rule: this.type ⇒ Rule[L]): Result[L] = {
+  def run[L <: HList](rule: this.type ⇒ RuleN[L]): Result[L] = {
     def runRule(errorRuleStackIx: Int = -1): Boolean = {
       cursor = -1
       valueStack.clear()
@@ -89,6 +89,9 @@ abstract class Parser extends RuleDSL {
     valueStack.top = (mark.value & 0x00000000FFFFFFFF).toInt
   }
 
+  private[parboiled2] def inputStartMark: Int = cursor
+  private[parboiled2] def sliceInput(start: Int): String = input.sliceString(start, cursor)
+
   private[parboiled2] def onCharMismatch(): Boolean = {
     if (currentErrorRuleStackIx != -1 && cursor == errorIndex) {
       if (mismatchesAtErrorIndex < currentErrorRuleStackIx) mismatchesAtErrorIndex += 1
@@ -109,12 +112,12 @@ object Parser {
 
   type ParserContext = Context { type PrefixType = Parser }
 
-  def ruleImpl[L <: HList: ctx.WeakTypeTag](ctx: ParserContext)(r: ctx.Expr[Rule[L]]): ctx.Expr[Rule[L]] = {
+  def ruleImpl[I <: HList: ctx.WeakTypeTag, O <: HList: ctx.WeakTypeTag](ctx: ParserContext)(r: ctx.Expr[Rule[I, O]]): ctx.Expr[Rule[I, O]] = {
     val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
     val opTree = opTreeCtx.OpTree(r.tree)
     val ruleName = ctx.enclosingMethod.asInstanceOf[ctx.universe.DefDef].name.toString
     ctx.universe.reify {
-      opTree.render(ruleName).splice.asInstanceOf[Rule[L]]
+      opTree.render(ruleName).splice.asInstanceOf[Rule[I, O]]
     }
   }
 

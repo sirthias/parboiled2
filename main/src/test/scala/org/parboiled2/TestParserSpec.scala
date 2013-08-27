@@ -29,7 +29,7 @@ abstract class TestParserSpec extends Specification {
     def beMismatchedWithError(pe: ParseError) = (input: String) ⇒ parse(input) === Left(pe)
 
     var input: ParserInput = _
-    def targetRule: Rule[L]
+    def targetRule: RuleN[L]
 
     def parse(input: String): Result[L] = {
       this.input = input
