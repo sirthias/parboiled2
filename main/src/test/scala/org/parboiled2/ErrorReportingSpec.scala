@@ -32,13 +32,13 @@ class ErrorReportingSpec extends SimpleCalculatorSpec {
 
       "3+*5" must beMismatchedWithError(
         ParseError(Position(2, 1, 3), Seq(
-          RuleStack(Seq(CharacterClass('0', '9', "Digit"), RuleCall("", "SimpleCalculator.Digit"), OneOrMore("Digits"),
-            RuleCall("", "SimpleCalculator.Digits"), FirstOf("Factor"), RuleCall("", "SimpleCalculator.Factor"),
-            Sequence("Term"), RuleCall("", "SimpleCalculator.Term"), Sequence(),
-            ZeroOrMore(), Sequence("Expression"), RuleCall("", "SimpleCalculator.Expression"), Sequence("InputLine"))),
-          RuleStack(Seq(LiteralString("(", ""), Sequence(), Sequence("Parens"), RuleCall("", "SimpleCalculator.Parens"),
-            FirstOf("Factor"), RuleCall("", "SimpleCalculator.Factor"), Sequence("Term"), RuleCall("", "SimpleCalculator.Term"),
-            Sequence(), ZeroOrMore(), Sequence("Expression"), RuleCall("", "SimpleCalculator.Expression"), Sequence("InputLine"))))))
+          RuleStack(Seq(CharacterClass('0', '9', "Digit"), RuleCall("", "SimpleCalculator.this.Digit"), OneOrMore("Digits"),
+            RuleCall("", "SimpleCalculator.this.Digits"), FirstOf("Factor"), RuleCall("", "SimpleCalculator.this.Factor"),
+            Sequence("Term"), RuleCall("", "SimpleCalculator.this.Term"), Sequence(),
+            ZeroOrMore(), Sequence("Expression"), RuleCall("", "SimpleCalculator.this.Expression"), Sequence("InputLine"))),
+          RuleStack(Seq(LiteralString("(", ""), Sequence(), Sequence("Parens"), RuleCall("", "SimpleCalculator.this.Parens"),
+            FirstOf("Factor"), RuleCall("", "SimpleCalculator.this.Factor"), Sequence("Term"), RuleCall("", "SimpleCalculator.this.Term"),
+            Sequence(), ZeroOrMore(), Sequence("Expression"), RuleCall("", "SimpleCalculator.this.Expression"), Sequence("InputLine"))))))
     }
 
     "track lines numbers" in {
