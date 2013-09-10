@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package org.parboiled2.examples.v1
+package org.parboiled2.examples.v2
 
-import org.parboiled.scala._
-import org.parboiled.scala.parserunners.ReportingParseRunner
+import org.parboiled2._
 import scala.annotation.tailrec
-import org.parboiled.errors.ErrorUtils
 
-// NOTE: https://github.com/sirthias/parboiled/blob/master/examples-scala/src/main/scala/org/parboiled/examples/calculators/SimpleCalculator0.scala
-class SimpleCalculator extends Parser {
+class SimpleCalculator0(val input: ParserInput) extends Parser {
   def InputLine = rule { Expression ~ EOI }
 
-  def Expression: Rule0 = rule { Term ~ zeroOrMore(anyOf("+-") ~ Term) }
+  def Expression: Rule0 = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
 
-  def Term = rule { Factor ~ zeroOrMore(anyOf("*/") ~ Factor) }
+  def Term = rule { Factor ~ zeroOrMore((ch('*') | '/') ~ Factor) }
 
   def Factor = rule { Digits | Parens }
 
@@ -38,19 +35,15 @@ class SimpleCalculator extends Parser {
   def Digit = rule { "0" - "9" }
 }
 
-object CalculatorExpressionVerifier {
-  val simpleCalc = new SimpleCalculator
-
+object SimpleCalculator0 {
   @tailrec
   def repl(): Unit = {
-    print("Enter expression for calculator (v1) > ")
-    val inputLine = readLine()
+    val inputLine = readLine("--------------------------------------\nEnter expression for calculator (v2) > ")
     if (inputLine != "") {
-      val result = ReportingParseRunner(simpleCalc.InputLine).run(inputLine)
-      if (result.matched) {
-        println("Expression is valid")
-      } else {
-        println(s"Expression is not valid. Errors: ${ErrorUtils.printParseErrors(result)}")
+      val simpleCalc = new SimpleCalculator0(inputLine)
+      simpleCalc.run(_.InputLine) match {
+        case Right(_)  ⇒ println("Expression is valid")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
       }
       repl()
     }
