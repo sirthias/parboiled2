@@ -83,14 +83,15 @@ abstract class Parser extends RuleDSL {
     } else EOI
   }
 
-  private[parboiled2] def mark: Mark = new Mark(cursor.toLong << 32 + valueStack.top)
+  private[parboiled2] def mark: Mark = new Mark((cursor.toLong << 32) + valueStack.top)
   private[parboiled2] def reset(mark: Mark): Unit = {
     cursor = (mark.value >>> 32).toInt
     valueStack.top = (mark.value & 0x00000000FFFFFFFF).toInt
   }
 
   private[parboiled2] def inputStartMark: Int = cursor
-  private[parboiled2] def sliceInput(start: Int): String = input.sliceString(start, cursor)
+  private[parboiled2] def resetInputStartMark(mark: Int): Unit = cursor = mark
+  private[parboiled2] def sliceInput(start: Int): String = input.sliceString(start + 1, cursor + 1)
 
   private[parboiled2] def onCharMismatch(): Boolean = {
     if (currentErrorRuleStackIx != -1 && cursor == errorIndex) {

@@ -47,7 +47,7 @@ private[parboiled2] class ValueStack {
   @tailrec
   final def toHList[L <: HList](start: Int = 0, end: Int = top, prependTo: HList = HNil): L =
     if (start == end) prependTo.asInstanceOf[L]
-    else toHList[L](start, end - 1, ::(buffer(end), prependTo))
+    else toHList[L](start + 1, end, ::(buffer(start), prependTo))
 
   private def ensureSize(size: Int): Unit =
     if (buffer.length < size)
@@ -57,6 +57,8 @@ private[parboiled2] class ValueStack {
         System.arraycopy(buffer, 0, newBuffer, 0, buffer.length)
         buffer = newBuffer
       } else sys.error("ValueStack overflow")
+
+  override def toString() = s"VStck($top - ${buffer mkString " | "})"
 }
 
 private[parboiled2] object ValueStack {

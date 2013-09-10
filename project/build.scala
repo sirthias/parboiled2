@@ -18,7 +18,7 @@ object build extends Build {
       .setPreference(DoubleIndentClassDeclaration, true)
 
   lazy val sharedSettings = Seq(
-    scalaVersion := "2.10.2"
+    scalaVersion := "2.10.3-RC1"
   ) ++ formatSettings
 
   // configure prompt to show current project
