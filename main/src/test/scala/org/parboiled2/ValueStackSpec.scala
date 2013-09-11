@@ -52,6 +52,13 @@ class ValueStackSpec extends TestParserSpec {
       sideEffectedVar mustEqual "x"
     }
 
+    "handle `capture` of `ANY`" in new TestParser[String :: HNil] {
+      def targetRule = rule { capture(ANY) }
+
+      "x" must beMatchedBy("x")
+      s"$EOI" must beMismatched
+    }
+
     "work with custom AST nodes" in {
       case class CustomString(s: String)
 

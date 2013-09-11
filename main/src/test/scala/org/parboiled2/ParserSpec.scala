@@ -91,6 +91,13 @@ class ParserSpec extends TestParserSpec {
       "x" must beMismatched
     }
 
+    "successfully recognize ANY" in new TestParser0 {
+      def targetRule = rule { ANY }
+      "a" must beMatched
+      "Ж" must beMatched
+      s"$EOI" must beMismatched
+    }
+
     "properly expand string literals to a sequence of char rules" in new TestParser0 {
       def targetRule = rule { "def" }
       "def" must beMatched
@@ -106,6 +113,14 @@ class ParserSpec extends TestParserSpec {
         "cef" must beMatched
         "adx" must beMismatched
         "bbb" must beMismatched
+      }
+
+      "successfully recognize valid input - `oneOrMore` of `ANY` combinator rules" in new TestParser0 {
+        def targetRule = rule { oneOrMore(ANY) ~ EOI }
+
+        "a" must beMatched
+        "ЖЖ" must beMatched
+        s"ЖЖ$EOI" must beMatched
       }
 
       "successfully recognize valid input - `zeroOrMore` and `seq` combinator rules" in new TestParser0 {

@@ -44,7 +44,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           case _                       ⇒ c.abort(tree.pos, s"Unexpected function.tpe: ${f.tpe}\n${showRaw(f.tpe)}")
         }
 
-      // TODO: - DRY-up once we have the first complete implementation of all DSL elements
       tree match {
         case q"$lhs.~[$a, $b]($rhs)($c, $d)" ⇒ Sequence(OpTree(lhs), OpTree(rhs))
         case q"$lhs.|[$a, $b]($rhs)" ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
@@ -56,8 +55,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"$a.this.oneOrMore[$b, $c]($arg)($sequencer)" ⇒ OneOrMore(OpTree(arg), isForRule1(sequencer))
         case q"$a.this.capture[$b, $c]($arg)($d)" ⇒ Capture(OpTree(arg))
         case q"$a.this.&($arg)" ⇒ AndPredicate(OpTree(arg))
-        case x @ q"$a.this.$b" ⇒ RuleCall(x)
-        case x @ q"$a.this.$b(..$c)" ⇒ RuleCall(x)
+        case q"$a.this.ANY" ⇒ AnyChar
+        case q"$a.this.$b" ⇒ RuleCall(tree)
+        case q"$a.this.$b(..$c)" ⇒ RuleCall(tree)
         case q"$arg.unary_!()" ⇒ NotPredicate(OpTree(arg))
         case q"$a.this.pimpActionOp[$b,$c]($r)($d).~>.apply[..$e](${ f @ Function(_, _) })($g)" ⇒ Action(OpTree(r), f, argsTypes(f))
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
@@ -124,6 +124,18 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.LiteralChar(char, c.literal(ruleName).splice))
+      }
+    }
+  }
+
+  case object AnyChar extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      try {
+        val p = c.prefix.splice
+        Rule(p.nextChar() != EOI || p.onCharMismatch())
+      } catch {
+        case e: Parser.CollectingRuleStackException ⇒
+          e.save(RuleFrame.AnyChar(c.literal(ruleName).splice))
       }
     }
   }
