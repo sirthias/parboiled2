@@ -31,19 +31,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   object OpTree {
     def apply(tree: Tree): OpTree = {
-      def isRule1Optionalizer(optionalizer: Tree): Boolean =
-        optionalizer match {
-          case q"parboiled2.this.Optionalizer.forReduction[$l, $r]" ⇒ false
-          case q"parboiled2.this.Optionalizer.forRule0" ⇒ false
-          case q"parboiled2.this.Optionalizer.forRule1[$t]" ⇒ true
-          case _ ⇒ c.abort(tree.pos, "Unexpected type of `Optionalizer`: " + show(optionalizer))
-        }
-      def isRule1Sequencer(sequencer: Tree): Boolean = // how can we DRY this up against `isRule1Optionalizer`?
-        sequencer match {
-          case q"parboiled2.this.Sequencer.forReduction[$l, $r]" ⇒ false
-          case q"parboiled2.this.Sequencer.forRule0" ⇒ false
-          case q"parboiled2.this.Sequencer.forRule1[$t]" ⇒ true
-          case _ ⇒ c.abort(tree.pos, "Unexpected type of `Sequencer`: " + show(sequencer))
+      def isForRule1(t: Tree): Boolean =
+        t match {
+          case q"parboiled2.this.$a.forReduction[$b, $c]" ⇒ false
+          case q"parboiled2.this.$a.forRule0" ⇒ false
+          case q"parboiled2.this.$a.forRule1[$b]" ⇒ true
+          case _ ⇒ c.abort(tree.pos, "Unexpected Optionalizer/Sequencer: " + show(t))
         }
       def argsTypes(f: Tree): List[Type] =
         f.tpe match {
@@ -52,44 +45,23 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         }
 
       // TODO: - DRY-up once we have the first complete implementation of all DSL elements
-      //       - simplify via quasi-quote matching
       tree match {
-        case Apply(Apply(TypeApply(Select(lhs, Decoded("~")), _), List(rhs)), _)          ⇒ Sequence(OpTree(lhs), OpTree(rhs))
-
-        case Apply(TypeApply(Select(lhs, Decoded("|")), _), List(rhs))                    ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-
-        case Apply(Select(This(_), Decoded("str")), List(Literal(Constant(s: String))))   ⇒ LiteralString(s)
-
-        case Apply(Select(This(_), Decoded("ch")), List(Select(This(_), Decoded("EOI")))) ⇒ LiteralChar(EOI)
-
-        case Apply(Select(This(_), Decoded("ch")), List(Literal(Constant(c: Char))))      ⇒ LiteralChar(c)
-
-        case Apply(Apply(TypeApply(Select(This(_), Decoded("optional")), _), List(arg)), List(optionalizer)) ⇒
-          Optional(OpTree(arg), isRule1Optionalizer(optionalizer))
-
-        case Apply(Apply(TypeApply(Select(This(_), Decoded("zeroOrMore")), _), List(arg)), List(sequencer)) ⇒
-          ZeroOrMore(OpTree(arg), isRule1Sequencer(sequencer))
-
-        case Apply(Apply(TypeApply(Select(This(_), Decoded("oneOrMore")), _), List(arg)), List(sequencer)) ⇒
-          OneOrMore(OpTree(arg), isRule1Sequencer(sequencer))
-
-        case Apply(Apply(TypeApply(Select(This(_), Decoded("capture")), _), List(arg)), _) ⇒ Capture(OpTree(arg))
-
-        case Apply(Select(This(_), Decoded("&")), List(arg)) ⇒ AndPredicate(OpTree(arg))
-
-        case x @ Select(This(_), _) ⇒ RuleCall(x)
-        case x @ Apply(Select(This(_), _), _) ⇒ RuleCall(x)
-
-        case Apply(Select(arg, Decoded("unary_!")), List()) ⇒ NotPredicate(OpTree(arg))
-
-        case Apply(Apply(TypeApply(Select(Select(Apply(Apply(TypeApply(Select(This(_), Decoded("pimpActionOp")), _),
-          List(r)), _), Decoded("~>")), Decoded("apply")), _), List(f @ Function(_, _))), _) ⇒
-          Action(OpTree(r), f, argsTypes(f))
-
-        case Apply(Apply(TypeApply(Select(This(_), Decoded("push")), _), List(arg)), _) ⇒ PushAction(arg)
-
-        case Apply(Select(Apply(Select(This(_), Decoded("pimpString")), List(Literal(Constant(l: String)))),
-          Decoded("-")), List(Literal(Constant(r: String)))) ⇒ CharacterClass(l, r, tree.pos)
+        case q"$lhs.~[$a, $b]($rhs)($c, $d)" ⇒ Sequence(OpTree(lhs), OpTree(rhs))
+        case q"$lhs.|[$a, $b]($rhs)" ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
+        case q"$a.this.str(${ Literal(Constant(s: String)) })" ⇒ LiteralString(s)
+        case q"$a.this.ch($b.this.EOI)" ⇒ LiteralChar(EOI)
+        case q"$a.this.ch(${ Literal(Constant(c: Char)) })" ⇒ LiteralChar(c)
+        case q"$a.this.optional[$b, $c]($arg)($optionalizer)" ⇒ Optional(OpTree(arg), isForRule1(optionalizer))
+        case q"$a.this.zeroOrMore[$b, $c]($arg)($sequencer)" ⇒ ZeroOrMore(OpTree(arg), isForRule1(sequencer))
+        case q"$a.this.oneOrMore[$b, $c]($arg)($sequencer)" ⇒ OneOrMore(OpTree(arg), isForRule1(sequencer))
+        case q"$a.this.capture[$b, $c]($arg)($d)" ⇒ Capture(OpTree(arg))
+        case q"$a.this.&($arg)" ⇒ AndPredicate(OpTree(arg))
+        case x @ q"$a.this.$b" ⇒ RuleCall(x)
+        case x @ q"$a.this.$b(..$c)" ⇒ RuleCall(x)
+        case q"$arg.unary_!()" ⇒ NotPredicate(OpTree(arg))
+        case q"$a.this.pimpActionOp[$b,$c]($r)($d).~>.apply[..$e](${ f @ Function(_, _) })($g)" ⇒ Action(OpTree(r), f, argsTypes(f))
+        case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
+        case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒ CharacterClass(l, r, tree.pos)
 
         case _ ⇒ c.abort(tree.pos, s"Invalid rule definition: $tree\n${showRaw(tree)}")
       }
