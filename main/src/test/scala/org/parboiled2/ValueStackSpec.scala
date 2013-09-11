@@ -9,37 +9,37 @@ class ValueStackSpec extends TestParserSpec {
       def b = rule { a ~> (_.toInt) }
       def targetRule = b
 
-      "42" must beMatchedWith(42 :: HNil)
+      "42" must beMatchedBy(42)
     }
 
     "successfully pop two elements and push at once (reduction)" in new TestParser[Int :: HNil] {
-      def a = rule { capture("42") ~ capture("47") ~> ((x: String, y) => x.toInt + y.toInt) }
+      def a = rule { capture("42") ~ capture("47") ~> ((x: String, y) ⇒ x.toInt + y.toInt) }
       def targetRule = a
 
-      "4247" must beMatchedWith((42 + 47) :: HNil)
+      "4247" must beMatchedBy(42 + 47)
     }
 
     "successfully pop generic collection" in new TestParser[Int :: HNil] {
-      def a: Rule1[Seq[Int]] = rule { capture("42") ~> ((x: String) => List(x.toInt)) }
-      def targetRule = rule { a ~> ((x: Seq[Int]) => x.head) }
+      def a = rule { capture("42") ~> (x ⇒ List(x.toInt)) }
+      def targetRule = rule { a ~> ((x: Seq[Int]) ⇒ x.head) }
 
-      "42" must beMatchedWith(42 :: HNil)
+      "42" must beMatchedBy(42)
     }
 
     "successfully workout `zeroOrMore` reduction" in new TestParser[Int :: HNil] {
       def a = rule { "a" ~ push(1) }
-      def targetRule = rule { a ~ zeroOrMore(a ~> ((x: Int, y) => x + y)) }
+      def targetRule = rule { a ~ zeroOrMore(a ~> ((x: Int, y) ⇒ x + y)) }
 
-      "a" must beMatchedWith(1 :: HNil)
-      "aa" must beMatchedWith(2 :: HNil)
-      "aaa" must beMatchedWith(3 :: HNil)
+      "a" must beMatchedBy(1)
+      "aa" must beMatchedBy(2)
+      "aaa" must beMatchedBy(3)
     }
 
     "successfully workout `optional` reduction" in new TestParser[String :: HNil] {
-      def targetRule = rule { capture("x") ~ optional(capture("0" - "9") ~> ((x: String, y) => x + "+" + y)) }
+      def targetRule = rule { capture("x") ~ optional(capture("0" - "9") ~> ((_: String) + "+" + _)) }
 
-      "x" must beMatchedWith("x" :: HNil)
-      "x1" must beMatchedWith("x+1" :: HNil)
+      "x" must beMatchedBy("x")
+      "x1" must beMatchedBy("x+1")
     }
 
     "handle `pop` function of `Unit` result type" in new TestParser[HNil] {
@@ -53,45 +53,46 @@ class ValueStackSpec extends TestParserSpec {
     }
 
     "work with custom AST nodes" in {
-        case class CustomString(s: String)
+      case class CustomString(s: String)
 
-        "simple producing" in new TestParser[CustomString :: HNil] {
-          def a = rule { capture("a") ~> (CustomString(_)) }
-          def targetRule = a
+      "simple producing" in new TestParser[CustomString :: HNil] {
+        def a = rule { capture("a") ~> (CustomString(_)) }
+        def targetRule = a
 
-          "a" must beMatchedWith(CustomString("a") :: HNil)
-        }
+        "a" must beMatchedBy(CustomString("a"))
+      }
 
-        "`capture(optional(..))` combination" in new TestParser[CustomString :: HNil] {
-          def a = rule { capture(optional("a")) ~> (CustomString(_)) }
-          def targetRule = a
+      "`capture(optional(..))` combination" in new TestParser[CustomString :: HNil] {
+        def a = rule { capture(optional("a")) ~> (CustomString(_)) }
+        def targetRule = a
 
-          "b" must beMatchedWith(CustomString("") :: HNil)
-          "a" must beMatchedWith(CustomString("a") :: HNil)
-        }
+        "b" must beMatchedBy(CustomString(""))
+        "a" must beMatchedBy(CustomString("a"))
+      }
 
-        "`optional(capture(...))` combination" in new TestParser[CustomString :: HNil] {
-          def targetRule = rule { optional(capture("a")) ~> ((x: Option[String]) => CustomString(x.getOrElse("?"))) }
+      "`optional(capture(...))` combination" in new TestParser[CustomString :: HNil] {
+        def a = rule { optional(capture("a")) ~> (x ⇒ CustomString(x getOrElse "?")) }
+        def targetRule = a
 
-          "b" must beMatchedWith(CustomString("?") :: HNil)
-          "a" must beMatchedWith(CustomString("a") :: HNil)
-        }
+        "b" must beMatchedBy(CustomString("?"))
+        "a" must beMatchedBy(CustomString("a"))
+      }
 
-        "push nothing with raw `optional`" in new TestParser[CustomString :: HNil] {
-          def targetRule = rule { optional("-") ~ optional(capture("1")) ~>
-                                  ((x: Option[String]) => CustomString(x.getOrElse("?"))) }
+      "push nothing with raw `optional`" in new TestParser[CustomString :: HNil] {
+        def a = rule { optional("-") ~ optional(capture("1")) ~> (x ⇒ CustomString(x getOrElse "?")) }
+        def targetRule = a
 
-          "1" must beMatchedWith(CustomString("1") :: HNil)
-          "-1" must beMatchedWith(CustomString("1") :: HNil)
-          "a" must beMatchedWith(CustomString("?") :: HNil)
-          "-a" must beMatchedWith(CustomString("?") :: HNil)
-        }
+        "1" must beMatchedBy(CustomString("1"))
+        "-1" must beMatchedBy(CustomString("1"))
+        "a" must beMatchedBy(CustomString("?"))
+        "-a" must beMatchedBy(CustomString("?"))
+      }
     }
 
     "work with `push`" in new TestParser[Boolean :: HNil] {
-      def targetRule = rule { str("true") ~ push(true)  }
+      def targetRule = rule { str("true") ~ push(true) }
 
-      "true" must beMatchedWith(true :: HNil)
+      "true" must beMatchedBy(true)
     }
   }
 }

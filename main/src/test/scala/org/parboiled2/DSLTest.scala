@@ -20,6 +20,13 @@ import shapeless._
 
 // pure compile-time-only test
 class DSLTest(val input: ParserInput) extends Parser {
+
+  def ZeroOrMoreReduction_Checked: Rule[String :: HNil, String :: HNil] = ZeroOrMoreReduction
+  def ZeroOrMoreReduction = rule { zeroOrMore(capture("0" - "9") ~> ((x: String, y) ⇒ x + y)) }
+
+  def OptionalReduction_Checked: Rule[String :: HNil, String :: HNil] = OptionalReduction
+  def OptionalReduction = rule { optional(capture("0" - "9") ~> ((x: String, y) ⇒ x + y)) }
+
   def OpsTest1_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: Boolean :: Array[Char] :: HNil] = OpsTest1
   def OpsTest1 = rule { ComplexRule ~> (_.toCharArray) }
 
@@ -52,12 +59,4 @@ class DSLTest(val input: ParserInput) extends Parser {
 
   def DigitOptional_Checked: Rule1[Option[Int]] = DigitOptional
   def DigitOptional = rule { optional(Digit) }
-
-  // NOTE: `zeroOrMore` - reduction sample
-  def IntegerString_Checked: Rule[String :: HNil, String :: HNil] = IntegerString
-  def IntegerString = rule { zeroOrMore(capture("0" - "9") ~> ((x: String, y: String) => x + y))  }
-
-  // NOTE: `optional` - reduction sample
-  def DigitReduction_Checked: Rule[String :: HNil, String :: HNil] = DigitReduction
-  def DigitReduction = rule { optional(capture("0" - "9") ~> ((x: String, y: String) => x + y)) }
 }

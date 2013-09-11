@@ -24,10 +24,11 @@ abstract class TestParserSpec extends Specification {
   type TestParser0 = TestParser[HNil]
 
   abstract class TestParser[L <: HList] extends Parser with Scope {
-    def beMatched = beTrue ^^ (parse((_:String)).isRight)
-    def beMatchedWith[L <: HList](r: L) = parse((_:String)) === Right(r)
-    def beMismatched = beTrue ^^ (parse((_:String)).isLeft)
-    def beMismatchedWithError(pe: ParseError) = parse((_:String)) === Left(pe)
+    def beMatched = beTrue ^^ (parse(_: String).isRight)
+    def beMatchedWith(r: L) = parse(_: String) === Right(r)
+    def beMatchedBy[T](value: T)(implicit ev: (T :: HNil) <:< L) = beMatchedWith(value :: HNil)
+    def beMismatched = beTrue ^^ (parse(_: String).isLeft)
+    def beMismatchedWithError(pe: ParseError) = parse(_: String) === Left(pe)
 
     var input: ParserInput = _
     def targetRule: RuleN[L]

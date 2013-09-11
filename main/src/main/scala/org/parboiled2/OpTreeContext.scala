@@ -30,15 +30,29 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object OpTree {
-    def sequencerIsRule1(sequencer: Tree, pos: Position) = sequencer match {
-      case q"parboiled2.this.Sequencer.forReduction[$l, $r]" => false
-      case q"parboiled2.this.Sequencer.forRule0" ⇒ false
-      case q"parboiled2.this.Sequencer.forRule1[$t]" ⇒ true
-      case _ ⇒ c.abort(pos, s"Unexpected type of `Sequencer`: ${show(sequencer)}")
-    }
+    def apply(tree: Tree): OpTree = {
+      def isRule1Optionalizer(optionalizer: Tree): Boolean =
+        optionalizer match {
+          case q"parboiled2.this.Optionalizer.forReduction[$l, $r]" ⇒ false
+          case q"parboiled2.this.Optionalizer.forRule0" ⇒ false
+          case q"parboiled2.this.Optionalizer.forRule1[$t]" ⇒ true
+          case _ ⇒ c.abort(tree.pos, "Unexpected type of `Optionalizer`: " + show(optionalizer))
+        }
+      def isRule1Sequencer(sequencer: Tree): Boolean = // how can we DRY this up against `isRule1Optionalizer`?
+        sequencer match {
+          case q"parboiled2.this.Sequencer.forReduction[$l, $r]" ⇒ false
+          case q"parboiled2.this.Sequencer.forRule0" ⇒ false
+          case q"parboiled2.this.Sequencer.forRule1[$t]" ⇒ true
+          case _ ⇒ c.abort(tree.pos, "Unexpected type of `Sequencer`: " + show(sequencer))
+        }
+      def argsTypes(f: Tree): List[Type] =
+        f.tpe match {
+          case TypeRef(_, _, typeArgs) ⇒ typeArgs
+          case _                       ⇒ c.abort(tree.pos, s"Unexpected function.tpe: ${f.tpe}\n${showRaw(f.tpe)}")
+        }
 
-    // TODO: DRY-up once we have the first complete implementation of all DSL elements
-    def apply(tree: Tree): OpTree =
+      // TODO: - DRY-up once we have the first complete implementation of all DSL elements
+      //       - simplify via quasi-quote matching
       tree match {
         case Apply(Apply(TypeApply(Select(lhs, Decoded("~")), _), List(rhs)), _)          ⇒ Sequence(OpTree(lhs), OpTree(rhs))
 
@@ -50,25 +64,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
         case Apply(Select(This(_), Decoded("ch")), List(Literal(Constant(c: Char))))      ⇒ LiteralChar(c)
 
-        case Apply(Apply(TypeApply(Select(This(_), Decoded("optional")), _), List(arg)), List(optionalizer)) ⇒ {
-          val opIsRule1 = optionalizer match {
-            case q"parboiled2.this.Optionalizer.forReduction[$l, $r]" ⇒ false
-            case q"parboiled2.this.Optionalizer.forRule0" ⇒ false
-            case q"parboiled2.this.Optionalizer.forRule1[$t]" ⇒ true
-            case _ ⇒ c.abort(tree.pos, s"Unexpected type of `Optionalizer`: ${show(optionalizer)}")
-          }
-          Optional(OpTree(arg), opIsRule1)
-        }
+        case Apply(Apply(TypeApply(Select(This(_), Decoded("optional")), _), List(arg)), List(optionalizer)) ⇒
+          Optional(OpTree(arg), isRule1Optionalizer(optionalizer))
 
-        case Apply(Apply(TypeApply(Select(This(_), Decoded("zeroOrMore")), _), List(arg)), List(sequencer)) ⇒ {
-          val opIsRule1 = sequencerIsRule1(sequencer, tree.pos)
-          ZeroOrMore(OpTree(arg), opIsRule1)
-        }
+        case Apply(Apply(TypeApply(Select(This(_), Decoded("zeroOrMore")), _), List(arg)), List(sequencer)) ⇒
+          ZeroOrMore(OpTree(arg), isRule1Sequencer(sequencer))
 
-        case Apply(Apply(TypeApply(Select(This(_), Decoded("oneOrMore")), _), List(arg)), List(sequencer)) ⇒ {
-          val opIsRule1 = sequencerIsRule1(sequencer, tree.pos)
-          OneOrMore(OpTree(arg), opIsRule1)
-        }
+        case Apply(Apply(TypeApply(Select(This(_), Decoded("oneOrMore")), _), List(arg)), List(sequencer)) ⇒
+          OneOrMore(OpTree(arg), isRule1Sequencer(sequencer))
 
         case Apply(Apply(TypeApply(Select(This(_), Decoded("capture")), _), List(arg)), _) ⇒ Capture(OpTree(arg))
 
@@ -80,13 +83,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case Apply(Select(arg, Decoded("unary_!")), List()) ⇒ NotPredicate(OpTree(arg))
 
         case Apply(Apply(TypeApply(Select(Select(Apply(Apply(TypeApply(Select(This(_), Decoded("pimpActionOp")), _),
-          List(r)), _), Decoded("~>")), Decoded("apply")), _), List(f @ Function(_, _))), _) ⇒ {
-          val argsTypes = f.tpe match {
-            case TypeRef(_, _, typeArgs) ⇒ typeArgs
-            case _                       ⇒ c.abort(tree.pos, s"Unexpected function.tpe: ${f.tpe}\n${showRaw(f.tpe)}")
-          }
-          Action(OpTree(r), f, argsTypes)
-        }
+          List(r)), _), Decoded("~>")), Decoded("apply")), _), List(f @ Function(_, _))), _) ⇒
+          Action(OpTree(r), f, argsTypes(f))
 
         case Apply(Apply(TypeApply(Select(This(_), Decoded("push")), _), List(arg)), _) ⇒ PushAction(arg)
 
@@ -95,6 +93,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
         case _ ⇒ c.abort(tree.pos, s"Invalid rule definition: $tree\n${showRaw(tree)}")
       }
+    }
   }
 
   // TODO: Having sequence be a simple (lhs, rhs) model causes us to allocate a mark on the stack
@@ -115,11 +114,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        val mark = p.mark
+        val mark = p.markCursorAndValueStack
         val left = lhs.render().splice
         if (left.matched) left
         else {
-          p.reset(mark)
+          p.resetCursorAndValueStack(mark)
           rhs.render().splice
         }
       } catch {
@@ -162,13 +161,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       reify {
         try {
           val p = c.prefix.splice
-          val savedTop = p.valueStack.top
-          val inputStartMark = p.inputStartMark
+          val mark = p.markCursor
           if (op.render().splice.matched) {
             c.Expr[Unit](if (opIsRule1) q"p.valueStack.push(Some(p.valueStack.pop())) " else q"()").splice
           } else {
             c.Expr[Unit](if (opIsRule1) q"p.valueStack.push(None)" else q"()").splice
-            p.resetInputStartMark(inputStartMark)
+            p.resetCursor(mark)
           }
           Rule.matched
         } catch {
@@ -180,64 +178,77 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class ZeroOrMore(op: OpTree, opIsRule1: Boolean) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
-        val p = c.prefix.splice
-        var mark = p.mark
-        c.Expr[Unit](
-          if (opIsRule1) q"""
-            // TODO: If `scala.collection.immutable` is omitted then `scalac`
-            // can't find `VectorBuilder` type. Seems like `macro paradise` bug
-            val builder = new scala.collection.immutable.VectorBuilder[Any]
-            while (${op.render()}.matched) {
+    def render(ruleName: String): Expr[RuleX] = {
+      val block =
+        if (opIsRule1)
+          reify {
+            val p = c.prefix.splice
+            var mark = p.markCursorAndValueStack
+            val builder = new VectorBuilder[Any]
+            while (op.render().splice.matched) {
               builder += p.valueStack.pop()
-              mark = p.mark
+              mark = p.markCursorAndValueStack
             }
-            p.reset(mark)
+            p.resetCursorAndValueStack(mark)
             p.valueStack.push(builder.result())
-          """
-          else q"""
-            while (${op.render()}.matched)
-              mark = p.mark
-            p.reset(mark)
-          """
-        ).splice
-        Rule.matched
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.ZeroOrMore(c.literal(ruleName).splice))
+          }
+        else
+          reify {
+            val p = c.prefix.splice
+            var mark = p.markCursorAndValueStack
+            while (op.render().splice.matched)
+              mark = p.markCursorAndValueStack
+            p.resetCursorAndValueStack(mark)
+          }
+      reify {
+        try {
+          block.splice
+          Rule.matched
+        } catch {
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(RuleFrame.ZeroOrMore(c.literal(ruleName).splice))
+        }
       }
     }
-  } // """ -- stub comment to bring IDE styling to life
+  }
 
   case class OneOrMore(op: OpTree, opIsRule1: Boolean) extends OpTree {
-    // TODO: DRY up with `ZeroOrMore#render` implementation
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
-        val p = c.prefix.splice
-        val firstMark = p.mark
-        var mark = firstMark
-        c.Expr[Unit](
-          if (opIsRule1) q"""
-            // TODO: If `scala.collection.immutable` is omitted then `scalac`
-            // can't find `VectorBuilder` type. Seems like `macro paradise` bug
-            val builder = new scala.collection.immutable.VectorBuilder[Any]
-            while (${op.render()}.matched) {
+    def render(ruleName: String): Expr[RuleX] = {
+      val block =
+        if (opIsRule1)
+          reify {
+            val p = c.prefix.splice
+            val firstMark = p.markCursorAndValueStack
+            var mark = firstMark
+            val builder = new VectorBuilder[Any]
+            while (op.render().splice.matched) {
               builder += p.valueStack.pop()
-              mark = p.mark
+              mark = p.markCursorAndValueStack
             }
-            if (mark != firstMark)
+            if (mark != firstMark) {
+              p.resetCursorAndValueStack(mark)
               p.valueStack.push(builder.result())
-          """ else q"""
-            while (${op.render()}.matched)
-              mark = p.mark
-          """
-        ).splice // """ -- stub comment to bring IDE styling to life
-        p.reset(mark)
-        Rule(mark != firstMark)
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.OneOrMore(c.literal(ruleName).splice))
+              Rule.matched
+            } else Rule.mismatched
+          }
+        else
+          reify {
+            val p = c.prefix.splice
+            val firstMark = p.markCursorAndValueStack
+            var mark = firstMark
+            while (op.render().splice.matched)
+              mark = p.markCursorAndValueStack
+            if (mark != firstMark) {
+              p.resetCursorAndValueStack(mark)
+              Rule.matched
+            } else Rule.mismatched
+          }
+      reify {
+        try block.splice
+        catch {
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(RuleFrame.OneOrMore(c.literal(ruleName).splice))
+        }
       }
     }
   }
@@ -245,60 +256,54 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class Capture(op: OpTree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val p = c.prefix.splice
-      val inputStartMark = p.inputStartMark
+      val mark = p.markCursor
       val result = op.render().splice
-      if (result.matched) {
-        p.valueStack.push(p.sliceInput(inputStartMark))
-      }
+      if (result.matched) p.valueStack.push(p.sliceInput(mark))
       result
     }
   }
 
   case class Action(op: OpTree, function: Function, functionType: List[Type]) extends OpTree {
-    // NOTE: Kudos to http://stackoverflow.com/users/931323/ghik for these bits
-    // http://stackoverflow.com/questions/18486977/how-to-pass-arguments-to-a-function-of-arbitrary-number-of-parameters-via-macro
-
-    val functionTypeReversed = functionType.reverse // t1, t2, t3 -> r
-    val argsTypes = functionTypeReversed drop 1 // t3, t2, t1
-    val argNames = (argsTypes.size to 1 by -1) map (i ⇒ newTermName(s"value$i")) // v3, v2, v1
-    val args = argNames map (Ident(_))
-    val valDefs = (argsTypes zip argNames) map { // (t3, v3), (t2, v2) (t1, v1)
-      case (argType, argName) ⇒ q"val $argName = p.valueStack.pop().asInstanceOf[$argType]"
-    }
-    val functionResultType = functionTypeReversed.head
-
-    def render(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
-        val p = ${c.prefix}
-        val result = ${op.render()}
-        if (result.matched) {
-          ..$valDefs
-          ${
-            c.Expr[Unit](functionResultType match {
-              case TypeRef(_, sym, _) if sym.fullName == "scala.Unit" => q"$function(..${args.reverse})"
-              case _ => q"p.valueStack.push($function(..${args.reverse}))"
-            })
+    def render(ruleName: String): Expr[RuleX] = {
+      val argTypes = functionType dropRight 1
+      val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
+      val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
+      val functionParams = argNames map Ident.apply
+      val functionCall = functionType.last match {
+        case TypeRef(_, sym, _) if sym.fullName == "scala.Unit" ⇒ q"$function(..$functionParams)"
+        case _ ⇒ q"p.valueStack.push($function(..$functionParams))"
+      }
+      c.Expr[RuleX] {
+        q"""
+          val result = ${op.render()}
+          if (result.matched) {
+            val p = ${c.prefix}
+            ..${valDefs.reverse}
+            $functionCall
           }
-        }
-        result
-      """
-    )
+          result
+        """
+      }
+    }
   }
 
   case class PushAction(arg: Tree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
-      val p = ${c.prefix}
-      p.valueStack.push($arg)
-      Rule.matched
-    """)
+    def render(ruleName: String): Expr[RuleX] =
+      // for some reason `reify` doesn't seem to work here
+      c.Expr[RuleX](q"""
+        val p = ${c.prefix}
+        p.valueStack.push($arg)
+        Rule.matched
+      """)
   }
 
   abstract class Predicate extends OpTree {
     def op: OpTree
     def renderMatch(): Expr[RuleX] = reify {
       val p = c.prefix.splice
-      val mark = p.mark
+      val mark = p.markCursorAndValueStack
       val result = op.render().splice
-      p.reset(mark)
+      p.resetCursorAndValueStack(mark)
       result
     }
   }
