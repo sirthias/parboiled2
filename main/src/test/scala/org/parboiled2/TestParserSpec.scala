@@ -18,17 +18,22 @@ package org.parboiled2
 
 import org.specs2.specification.Scope
 import org.specs2.mutable.Specification
+import shapeless._
 
 abstract class TestParserSpec extends Specification {
-  trait TestParser extends Parser with Scope {
-    def beMatched = beTrue ^^ ((input: String) ⇒ parse(input).isRight)
-    def beMismatched = beTrue ^^ ((input: String) ⇒ parse(input).isLeft)
-    def beMismatchedWithError(pe: ParseError) = ((input: String) ⇒ parse(input) === Left(pe))
+  type TestParser0 = TestParser[HNil]
+
+  abstract class TestParser[L <: HList] extends Parser with Scope {
+    def beMatched = beTrue ^^ (parse(_: String).isRight)
+    def beMatchedWith(r: L) = parse(_: String) === Right(r)
+    def beMatchedBy[T](value: T)(implicit ev: (T :: HNil) <:< L) = beMatchedWith(value :: HNil)
+    def beMismatched = beTrue ^^ (parse(_: String).isLeft)
+    def beMismatchedWithError(pe: ParseError) = parse(_: String) === Left(pe)
 
     var input: ParserInput = _
-    def targetRule: Rule
+    def targetRule: RuleN[L]
 
-    def parse(input: String): Result = {
+    def parse(input: String): Result[L] = {
       this.input = input
       run(_.targetRule)
     }

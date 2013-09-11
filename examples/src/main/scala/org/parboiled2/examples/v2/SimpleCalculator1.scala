@@ -14,43 +14,49 @@
  * limitations under the License.
  */
 
-package org.parboiled2.examples.v1
+package org.parboiled2.examples.v2
 
-import org.parboiled.scala._
-import org.parboiled.scala.parserunners.ReportingParseRunner
+import org.parboiled2._
 import scala.annotation.tailrec
-import org.parboiled.errors.ErrorUtils
+import shapeless._
 
-// NOTE: https://github.com/sirthias/parboiled/blob/master/examples-scala/src/main/scala/org/parboiled/examples/calculators/SimpleCalculator0.scala
-class SimpleCalculator extends Parser {
+class SimpleCalculator1(val input: ParserInput) extends Parser {
   def InputLine = rule { Expression ~ EOI }
 
-  def Expression: Rule0 = rule { Term ~ zeroOrMore(anyOf("+-") ~ Term) }
+  def Expression: Rule1[Int] = rule {
+    Term ~ zeroOrMore(
+      (("+" ~ Term ~> ((_: Int) + _))
+        | "-" ~ Term ~> ((_: Int) - _))
+    )
+  }
 
-  def Term = rule { Factor ~ zeroOrMore(anyOf("*/") ~ Factor) }
+  def Term: Rule1[Int] = rule {
+    Factor ~ zeroOrMore(
+      "*" ~ Factor ~> ((_: Int) * _)
+        | "/" ~ Factor ~> ((_: Int) / _)
+    )
+  }
 
-  def Factor = rule { Digits | Parens }
+  def Factor = rule { Number | Parens }
 
   def Parens = rule { "(" ~ Expression ~ ")" }
+
+  def Number = rule { capture(Digits) ~> ((_: String).toInt) }
 
   def Digits = rule { oneOrMore(Digit) }
 
   def Digit = rule { "0" - "9" }
 }
 
-object CalculatorExpressionVerifier {
-  val simpleCalc = new SimpleCalculator
-
+object SimpleCalculator1 {
   @tailrec
   def repl(): Unit = {
-    print("Enter expression for calculator (v1) > ")
-    val inputLine = readLine()
+    val inputLine = readLine("--------------------------------------\nEnter expression for calculator (v2) > ")
     if (inputLine != "") {
-      val result = ReportingParseRunner(simpleCalc.InputLine).run(inputLine)
-      if (result.matched) {
-        println("Expression is valid")
-      } else {
-        println(s"Expression is not valid. Errors: ${ErrorUtils.printParseErrors(result)}")
+      val simpleCalc = new SimpleCalculator1(inputLine)
+      simpleCalc.run(_.InputLine) match {
+        case Right(x)  ⇒ println(s"Expression is valid. Result: ${x}")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
       }
       repl()
     }
