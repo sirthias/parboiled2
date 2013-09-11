@@ -18,12 +18,11 @@ package org.parboiled2.examples.v2
 
 import org.parboiled2._
 import scala.annotation.tailrec
-import org.parboiled.scala.parserunners.ReportingParseRunner
 
-class SimpleCalculator(val input: ParserInput) extends Parser {
+class SimpleCalculator0(val input: ParserInput) extends Parser {
   def InputLine = rule { Expression ~ EOI }
 
-  def Expression: Rule = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
+  def Expression: Rule0 = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
 
   def Term = rule { Factor ~ zeroOrMore((ch('*') | '/') ~ Factor) }
 
@@ -36,14 +35,12 @@ class SimpleCalculator(val input: ParserInput) extends Parser {
   def Digit = rule { "0" - "9" }
 }
 
-object CalculatorExpressionVerifier {
+object SimpleCalculator0 {
   @tailrec
   def repl(): Unit = {
-    print("--------------------------------------\n")
-    print("Enter expression for calculator (v2) > ")
-    val inputLine = readLine()
+    val inputLine = readLine("--------------------------------------\nEnter expression for calculator (v2) > ")
     if (inputLine != "") {
-      val simpleCalc = new SimpleCalculator(inputLine)
+      val simpleCalc = new SimpleCalculator0(inputLine)
       simpleCalc.run(_.InputLine) match {
         case Right(_)  ⇒ println("Expression is valid")
         case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")

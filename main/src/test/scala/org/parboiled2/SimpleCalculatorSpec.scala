@@ -18,10 +18,10 @@ package org.parboiled2
 
 class SimpleCalculatorSpec extends TestParserSpec {
   // SimpleCalculator from https://github.com/sirthias/parboiled/blob/master/examples-scala/src/main/scala/org/parboiled/examples/calculators/SimpleCalculator0.scala
-  abstract class SimpleCalculator extends TestParser {
+  abstract class SimpleCalculator extends TestParser0 {
     def InputLine = rule { Expression ~ EOI }
 
-    def Expression: Rule = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
+    def Expression: Rule0 = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
 
     def Term = rule { Factor ~ zeroOrMore((ch('*') | '/') ~ Factor) }
 
