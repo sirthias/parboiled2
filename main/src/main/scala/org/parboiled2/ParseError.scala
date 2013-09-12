@@ -30,6 +30,7 @@ object RuleFrame {
   case class FirstOf(name: String = "") extends RuleFrame
   case class LiteralString(string: String, name: String = "") extends RuleFrame
   case class LiteralChar(char: Char, name: String = "") extends RuleFrame
+  case class AnyChar(name: String = "") extends RuleFrame
   case class RuleCall(calledRule: String, name: String = "") extends RuleFrame
   case class Optional(name: String = "") extends RuleFrame
   case class ZeroOrMore(name: String = "") extends RuleFrame
