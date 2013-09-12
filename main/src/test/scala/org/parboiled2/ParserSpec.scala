@@ -24,6 +24,14 @@ class ParserSpec extends TestParserSpec {
       "y" must beMismatched
     }
 
+    "successfully recognize string provided by `val`" in new TestParser0 {
+      val aString = "a"
+      def targetRule = rule { aString }
+
+      "a" must beMatched
+      "b" must beMismatched
+    }
+
     "successfully recognize valid input - `seq` combinator rule" in new TestParser0 {
       def targetRule = rule { 'a' ~ 'b' }
       "ab" must beMatched

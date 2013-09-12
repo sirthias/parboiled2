@@ -47,7 +47,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       tree match {
         case q"$lhs.~[$a, $b]($rhs)($c, $d)" ⇒ Sequence(OpTree(lhs), OpTree(rhs))
         case q"$lhs.|[$a, $b]($rhs)" ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-        case q"$a.this.str(${ Literal(Constant(s: String)) })" ⇒ LiteralString(s)
+        case q"$a.this.str($b)" ⇒ LiteralString(b)
         case q"$a.this.ch($b.this.EOI)" ⇒ LiteralChar(EOI)
         case q"$a.this.ch(${ Literal(Constant(c: Char)) })" ⇒ LiteralChar(c)
         case q"$a.this.optional[$b, $c]($arg)($optionalizer)" ⇒ Optional(OpTree(arg), isForRule1(optionalizer))
@@ -100,9 +100,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class LiteralString(s: String) extends OpTree {
+  case class LiteralString(stringTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
-      val string = c.literal(s).splice
+      val string = c.Expr[String](stringTree match {
+        case Literal(Constant(_: String)) ⇒ stringTree
+        case q"$a.this.$b" ⇒ stringTree
+        case _ ⇒ c.abort(stringTree.pos, s"Invalid string source: $stringTree\n${showRaw(stringTree)}")
+      }).splice
       try {
         val p = c.prefix.splice
         var ix = 0
