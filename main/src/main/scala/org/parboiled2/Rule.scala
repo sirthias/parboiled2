@@ -112,6 +112,8 @@ abstract class RuleDSL {
 
   def EOI = org.parboiled2.EOI
 
+  def ANY: Rule0 = notAvailableAtRuntime
+
   implicit def pimpString(s: String): PimpedString = null
   sealed trait PimpedString {
     def -(other: String): Rule0
