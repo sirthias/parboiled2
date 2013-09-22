@@ -60,6 +60,7 @@ class ValueStackSpec extends TestParserSpec {
     }
 
     "work with custom AST nodes" in {
+      case class ParameterLess()
       case class CustomString(s: String)
 
       "simple producing" in new TestParser[CustomString :: HNil] {
@@ -94,6 +95,30 @@ class ValueStackSpec extends TestParserSpec {
         "a" must beMatchedBy(CustomString("?"))
         "-a" must beMatchedBy(CustomString("?"))
       }
+
+      "parameterless case class application" in new TestParser[ParameterLess :: HNil] {
+        def targetRule = rule { str("a") ~> ParameterLess }
+
+        "a" must beMatchedBy(ParameterLess())
+      }
+
+      "parameterful case class application" in new TestParser[CustomString :: HNil] {
+        def targetRule = rule { capture("a") ~> CustomString }
+
+        "a" must beMatchedBy(CustomString("a"))
+      }
+
+      "partially consumes values from value stack" in new TestParser[String :: CustomString :: HNil] {
+        def targetRule = rule { capture("a") ~ capture("b") ~> CustomString }
+
+        "ab" must beMatchedWith("a" :: CustomString("b") :: HNil)
+      }
+    }
+
+    "have growing order from left to right" in new TestParser[String :: Int :: HNil] {
+      def targetRule = rule { capture("a") ~ push(1) }
+
+      "a" must beMatchedWith("a" :: 1 :: HNil)
     }
 
     "work with `push`" in new TestParser[Boolean :: HNil] {
