@@ -38,31 +38,26 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           case q"parboiled2.this.$a.forRule1[$b]" ⇒ true
           case _ ⇒ c.abort(tree.pos, "Unexpected Optionalizer/Sequencer: " + show(t))
         }
-      def argsTypes(f: Tree): List[Type] =
-        f.tpe match {
-          case TypeRef(_, _, typeArgs) ⇒ typeArgs
-          case _                       ⇒ c.abort(tree.pos, s"Unexpected function.tpe: ${f.tpe}\n${showRaw(f.tpe)}")
-        }
 
       tree match {
-        case q"$lhs.~[$a, $b]($rhs)($c, $d)" ⇒ Sequence(OpTree(lhs), OpTree(rhs))
-        case q"$lhs.|[$a, $b]($rhs)" ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-        case q"$a.this.str(${ s@ Literal(Constant(_: String)) })" ⇒ LiteralString(s)
-        case q"$a.this.str(${t @ q"$b.this.$c"})" ⇒ LiteralString(t)
-        case q"$a.this.ch($b.this.EOI)" ⇒ LiteralChar(EOI)
-        case q"$a.this.ch(${ Literal(Constant(c: Char)) })" ⇒ LiteralChar(c)
+        case q"$lhs.~[$a, $b]($rhs)($c, $d)"                  ⇒ Sequence(OpTree(lhs), OpTree(rhs))
+        case q"$lhs.|[$a, $b]($rhs)"                          ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
+        case q"$a.this.str($s)"                               ⇒ LiteralString(s)
+        case q"$a.this.ch($c)"                                ⇒ LiteralChar(c)
         case q"$a.this.optional[$b, $c]($arg)($optionalizer)" ⇒ Optional(OpTree(arg), isForRule1(optionalizer))
-        case q"$a.this.zeroOrMore[$b, $c]($arg)($sequencer)" ⇒ ZeroOrMore(OpTree(arg), isForRule1(sequencer))
-        case q"$a.this.oneOrMore[$b, $c]($arg)($sequencer)" ⇒ OneOrMore(OpTree(arg), isForRule1(sequencer))
-        case q"$a.this.capture[$b, $c]($arg)($d)" ⇒ Capture(OpTree(arg))
-        case q"$a.this.&($arg)" ⇒ AndPredicate(OpTree(arg))
-        case q"$a.this.ANY" ⇒ AnyChar
-        case q"$a.this.$b" ⇒ RuleCall(tree)
-        case q"$a.this.$b(..$c)" ⇒ RuleCall(tree)
-        case q"$arg.unary_!()" ⇒ NotPredicate(OpTree(arg))
-        case q"$a.this.pimpActionOp[$b,$c]($r)($d).~>.apply[..$e](${ f @ Function(_, _) })($g)" ⇒ Action(OpTree(r), f, argsTypes(f))
+        case q"$a.this.zeroOrMore[$b, $c]($arg)($sequencer)"  ⇒ ZeroOrMore(OpTree(arg), isForRule1(sequencer))
+        case q"$a.this.oneOrMore[$b, $c]($arg)($sequencer)"   ⇒ OneOrMore(OpTree(arg), isForRule1(sequencer))
+        case q"$a.this.capture[$b, $c]($arg)($d)"             ⇒ Capture(OpTree(arg))
+        case q"$a.this.&($arg)"                               ⇒ AndPredicate(OpTree(arg))
+        case q"$a.this.ANY"                                   ⇒ AnyChar
+        case q"$a.this.$b"                                    ⇒ RuleCall(tree)
+        case q"$a.this.$b(..$c)"                              ⇒ RuleCall(tree)
+        case q"$a.unary_!()"                                  ⇒ NotPredicate(OpTree(a))
+        case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Arguments.$arity[..$ts])" ⇒
+          Action(OpTree(r), f, ts.map(_.tpe))
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
-        case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒ CharacterClass(l, r, tree.pos)
+        case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
+          CharacterClass(l, r, tree.pos)
 
         case _ ⇒ c.abort(tree.pos, s"Invalid rule definition: $tree\n${showRaw(tree)}")
       }
@@ -116,9 +111,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class LiteralChar(ch: Char) extends OpTree {
+  // NOTE: charTree:
+  // - EOI
+  // - literal Char
+  case class LiteralChar(charTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
-      val char = c.literal(ch).splice
+      val char = c.Expr[Char](charTree).splice
       try {
         val p = c.prefix.splice
         Rule(p.nextChar() == char || p.onCharMismatch())
@@ -248,15 +246,18 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class Action(op: OpTree, function: Function, functionType: List[Type]) extends OpTree {
+  // NOTE: applicant might be:
+  // - `Function(_, _)` in case of function application
+  // - `Ident(_)` in case of case class application
+  case class Action(op: OpTree, applicant: Tree, functionType: List[Type]) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = {
       val argTypes = functionType dropRight 1
       val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
       val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
       val functionParams = argNames map Ident.apply
       val functionCall = functionType.last match {
-        case TypeRef(_, sym, _) if sym.fullName == "scala.Unit" ⇒ q"$function(..$functionParams)"
-        case _ ⇒ q"p.valueStack.push($function(..$functionParams))"
+        case TypeRef(_, sym, _) if sym.fullName == "scala.Unit" ⇒ q"$applicant(..$functionParams)"
+        case _ ⇒ q"p.valueStack.push($applicant(..$functionParams))"
       }
       c.Expr[RuleX] {
         q"""
