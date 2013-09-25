@@ -14,27 +14,33 @@
  * limitations under the License.
  */
 
-package org.parboiled2.examples.v2
+package org.parboiled2.examples
 
 import org.parboiled2._
 import scala.annotation.tailrec
 import shapeless._
 
-class ABCParser (val input: ParserInput) extends Parser {
-  def InputLine = rule { &(A ~ "c") ~ oneOrMore("a") ~ B ~ !("a" | "b" | "c") ~ EOI }
+class PascalNestedComments(val input: ParserInput) extends Parser {
+  def InputLine = rule { C ~ EOI }
 
-  def A: Rule0 = rule { "a" ~ optional(A) ~ "b" }
+  def BeginComment = rule { "(*" }
 
-  def B: Rule0 = rule { "b" ~ optional(B) ~ "c" }
+  def EndComment = rule { "*)" }
+
+  def C: Rule0 = rule { BeginComment ~ zeroOrMore(N) ~ EndComment }
+
+  def N = rule { C | (!BeginComment ~ !EndComment ~ Z) }
+
+  def Z = rule { "a" - "z" | "A" - "Z" | "0" - "9" }
 }
 
-object ABCParser {
+object PascalNestedComments {
   @tailrec
   def repl(): Unit = {
-    val inputLine = readLine("--------------------------------------\nEnter expression for abc-parser (v2) > ")
+    val inputLine = readLine("--------------------------------------\nEnter expression for Pascal-nested-comments parser (v2) > ")
     if (inputLine != "") {
-      val abcParser = new ABCParser(inputLine)
-      abcParser.run(_.InputLine) match {
+      val pascalNestedComments = new PascalNestedComments(inputLine)
+      pascalNestedComments.run(_.InputLine) match {
         case Right(_)  ⇒ println("Expression is valid")
         case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
       }
