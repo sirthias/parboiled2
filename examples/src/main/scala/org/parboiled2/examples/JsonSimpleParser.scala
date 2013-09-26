@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled2.examples.v2
+package org.parboiled2.examples
 
 abstract class JSonTerm
 case class JSonObject(members: Seq[JSonPair]) extends JSonTerm

@@ -14,34 +14,46 @@
  * limitations under the License.
  */
 
-package org.parboiled2.examples.v2
+package org.parboiled2.examples
 
 import org.parboiled2._
 import scala.annotation.tailrec
 import shapeless._
 
-class PascalNestedComments(val input: ParserInput) extends Parser {
-  def InputLine = rule { C ~ EOI }
+class SimpleCalculator1(val input: ParserInput) extends Parser {
+  def InputLine = rule { Expression ~ EOI }
 
-  def BeginComment = rule { "(*" }
+  def Expression: Rule1[Int] = rule {
+    Term ~ zeroOrMore(
+      (("+" ~ Term ~> ((_: Int) + _))
+        | "-" ~ Term ~> ((_: Int) - _)))
+  }
 
-  def EndComment = rule { "*)" }
+  def Term: Rule1[Int] = rule {
+    Factor ~ zeroOrMore(
+      "*" ~ Factor ~> ((_: Int) * _)
+        | "/" ~ Factor ~> ((_: Int) / _))
+  }
 
-  def C: Rule0 = rule { BeginComment ~ zeroOrMore(N) ~ EndComment }
+  def Factor = rule { Number | Parens }
 
-  def N = rule { C | (!BeginComment ~ !EndComment ~ Z) }
+  def Parens = rule { "(" ~ Expression ~ ")" }
 
-  def Z = rule { "a" - "z" | "A" - "Z" | "0" - "9" }
+  def Number = rule { capture(Digits) ~> ((_: String).toInt) }
+
+  def Digits = rule { oneOrMore(Digit) }
+
+  def Digit = rule { "0" - "9" }
 }
 
-object PascalNestedComments {
+object SimpleCalculator1 {
   @tailrec
   def repl(): Unit = {
-    val inputLine = readLine("--------------------------------------\nEnter expression for Pascal-nested-comments parser (v2) > ")
+    val inputLine = readLine("--------------------------------------\nEnter expression for calculator (v2) > ")
     if (inputLine != "") {
-      val pascalNestedComments = new PascalNestedComments(inputLine)
-      pascalNestedComments.run(_.InputLine) match {
-        case Right(_)  ⇒ println("Expression is valid")
+      val simpleCalc = new SimpleCalculator1(inputLine)
+      simpleCalc.run(_.InputLine) match {
+        case Right(x)  ⇒ println(s"Expression is valid. Result: ${x}")
         case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
       }
       repl()

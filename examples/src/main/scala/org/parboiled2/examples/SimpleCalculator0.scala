@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.parboiled2.examples.v2
+package org.parboiled2.examples
 
 import org.parboiled2._
 import scala.annotation.tailrec
