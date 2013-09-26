@@ -14,48 +14,60 @@
  * limitations under the License.
  */
 
-package org.parboiled2.examples.v2
+package org.parboiled2.examples
 
 import org.parboiled2._
 import scala.annotation.tailrec
 import shapeless._
 
-class SimpleCalculator1(val input: ParserInput) extends Parser {
+abstract class Expr
+
+case class Num(value: Int) extends Expr
+
+case class BinOp(operator: Char, lhs: Expr, rhs: Expr) extends Expr
+
+class SimpleCalculator2(val input: ParserInput) extends Parser {
   def InputLine = rule { Expression ~ EOI }
 
-  def Expression: Rule1[Int] = rule {
+  def Expression: Rule1[Expr] = rule {
     Term ~ zeroOrMore(
-      (("+" ~ Term ~> ((_: Int) + _))
-        | "-" ~ Term ~> ((_: Int) - _))
-    )
+      "+" ~ Term ~> (BinOp('+', (_: Expr), _))
+        | "-" ~ Term ~> (BinOp('-', (_: Expr), _)))
   }
 
-  def Term: Rule1[Int] = rule {
+  def Term: Rule1[Expr] = rule {
     Factor ~ zeroOrMore(
-      "*" ~ Factor ~> ((_: Int) * _)
-        | "/" ~ Factor ~> ((_: Int) / _)
-    )
+      "*" ~ Factor ~> (BinOp('*', (_: Expr), _))
+        | "/" ~ Factor ~> (BinOp('/', (_: Expr), _)))
   }
 
   def Factor = rule { Number | Parens }
 
   def Parens = rule { "(" ~ Expression ~ ")" }
 
-  def Number = rule { capture(Digits) ~> ((_: String).toInt) }
+  def Number = rule { capture(Digits) ~> ((x: String) ⇒ Num(x.toInt)) }
 
   def Digits = rule { oneOrMore(Digit) }
 
   def Digit = rule { "0" - "9" }
 }
 
-object SimpleCalculator1 {
+object SimpleCalculator2 {
+  def interp(expr: Expr): Int = expr match {
+    case Num(v)             ⇒ v
+    case BinOp('+', e1, e2) ⇒ interp(e1) + interp(e2)
+    case BinOp('-', e1, e2) ⇒ interp(e1) - interp(e2)
+    case BinOp('*', e1, e2) ⇒ interp(e1) * interp(e2)
+    case BinOp('/', e1, e2) ⇒ interp(e1) / interp(e2)
+  }
+
   @tailrec
   def repl(): Unit = {
     val inputLine = readLine("--------------------------------------\nEnter expression for calculator (v2) > ")
     if (inputLine != "") {
-      val simpleCalc = new SimpleCalculator1(inputLine)
+      val simpleCalc = new SimpleCalculator2(inputLine)
       simpleCalc.run(_.InputLine) match {
-        case Right(x)  ⇒ println(s"Expression is valid. Result: ${x}")
+        case Right(x)  ⇒ println(s"Expression is valid. Result: ${x}. Value: ${interp(x.head)}")
         case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
       }
       repl()

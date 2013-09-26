@@ -26,6 +26,6 @@ object ErrorUtils {
     problem + ", "
     s"expected ${ruleStacks.map(x ⇒ RuleStack(x.frames.reverse)) mkString ("\n", "\n\n", "\n")} " +
       s"(line $line, column $col): \n" +
-      s"${input.getLine(line)}\n" + (" " * col) + '^'
+      s"${input.getLine(line)}\n" + (" " * (col - 1)) + '^'
   }
 }
