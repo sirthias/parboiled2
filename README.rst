@@ -1,6 +1,8 @@
 *********************************************************
-parboiled2: a Macro-Based PEG Parser Generator for Scala
+`parboiled2`_: a Macro-Based PEG Parser Generator for Scala
 *********************************************************
+
+.. _parboiled2: https://github.com/sirthias/parboiled2
 
 Motivation
 ==========
