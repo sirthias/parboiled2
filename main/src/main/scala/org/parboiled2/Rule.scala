@@ -213,74 +213,63 @@ object ActionOps {
 
   implicit def ops0[I <: HList, O <: HNil] = new ActionOps[I, O] { type Out = Ops0[I] }
   sealed trait Ops0[I <: HList] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, h.Out]
-    def apply[Z, R](f: Z ⇒ R)(implicit h: ToHList[R], args: Arguments._1[Z, R]): Rule[Z :: I, h.Out]
-    def apply[Y, Z, R](f: (Y, Z) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[Y, Z, R]): Rule[Y :: Z :: I, h.Out]
-    def apply[X, Y, Z, R](f: (X, Y, Z) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[X, Y, Z, R]): Rule[X :: Y :: Z :: I, h.Out]
-    def apply[W, X, Y, Z, R](f: (W, X, Y, Z) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[W, X, Y, Z, R]): Rule[W :: X :: Y :: Z :: I, h.Out]
-    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[V, W, X, Y, Z, R]): Rule[V :: W :: X :: Y :: Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], c: Capture[() ⇒ R]): Rule[I, h.Out]
+    def apply[Z, R](f: Z ⇒ R)(implicit h: ToHList[R], c: Capture[Z ⇒ R]): Rule[Z :: I, h.Out]
+    def apply[Y, Z, R](f: (Y, Z) ⇒ R)(implicit h: ToHList[R], c: Capture[(Y, Z) ⇒ R]): Rule[Y :: Z :: I, h.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z) ⇒ R)(implicit h: ToHList[R], c: Capture[(X, Y, Z) ⇒ R]): Rule[X :: Y :: Z :: I, h.Out]
+    def apply[W, X, Y, Z, R](f: (W, X, Y, Z) ⇒ R)(implicit h: ToHList[R], c: Capture[(W, X, Y, Z) ⇒ R]): Rule[W :: X :: Y :: Z :: I, h.Out]
+    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z) ⇒ R)(implicit h: ToHList[R], c: Capture[(V, W, X, Y, Z) ⇒ R]): Rule[V :: W :: X :: Y :: Z :: I, h.Out]
   }
   implicit def ops1[I <: HList, A] = new ActionOps[I, A :: HNil] { type Out = Ops1[I, A] }
   sealed trait Ops1[I <: HList, A] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, A :: h.Out]
-    def apply[R](f: A ⇒ R)(implicit h: ToHList[R], args: Arguments._1[A, R]): Rule[I, h.Out]
-    def apply[Z, R](f: (Z, A) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[Z, A, R]): Rule[Z :: I, h.Out]
-    def apply[Y, Z, R](f: (Y, Z, A) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[Y, Z, A, R]): Rule[Y :: Z :: I, h.Out]
-    def apply[X, Y, Z, R](f: (X, Y, Z, A) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[X, Y, Z, A, R]): Rule[X :: Y :: Z :: I, h.Out]
-    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[W, X, Y, Z, A, R]): Rule[W :: X :: Y :: Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], c: Capture[() ⇒ R]): Rule[I, A :: h.Out]
+    def apply[R](f: A ⇒ R)(implicit h: ToHList[R], c: Capture[A ⇒ R]): Rule[I, h.Out]
+    def apply[Z, R](f: (Z, A) ⇒ R)(implicit h: ToHList[R], c: Capture[(Z, A) ⇒ R]): Rule[Z :: I, h.Out]
+    def apply[Y, Z, R](f: (Y, Z, A) ⇒ R)(implicit h: ToHList[R], c: Capture[(Y, Z, A) ⇒ R]): Rule[Y :: Z :: I, h.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z, A) ⇒ R)(implicit h: ToHList[R], c: Capture[(X, Y, Z, A) ⇒ R]): Rule[X :: Y :: Z :: I, h.Out]
+    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A) ⇒ R)(implicit h: ToHList[R], c: Capture[(W, X, Y, Z, A) ⇒ R]): Rule[W :: X :: Y :: Z :: I, h.Out]
   }
   implicit def ops2[I <: HList, A, B] = new ActionOps[I, A :: B :: HNil] { type Out = Ops2[I, A, B] }
   sealed trait Ops2[I <: HList, A, B] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, A :: B :: h.Out]
-    def apply[R](f: B ⇒ R)(implicit h: ToHList[R], args: Arguments._1[B, R]): Rule[I, A :: h.Out]
-    def apply[R](f: (A, B) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[A, B, R]): Rule[I, h.Out]
-    def apply[Z, R](f: (Z, A, B) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[Z, A, B, R]): Rule[Z :: I, h.Out]
-    def apply[Y, Z, R](f: (Y, Z, A, B) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[Y, Z, A, B, R]): Rule[Y :: Z :: I, h.Out]
-    def apply[X, Y, Z, R](f: (X, Y, Z, A, B) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[X, Y, Z, A, B, R]): Rule[X :: Y :: Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], c: Capture[() ⇒ R]): Rule[I, A :: B :: h.Out]
+    def apply[R](f: B ⇒ R)(implicit h: ToHList[R], c: Capture[B ⇒ R]): Rule[I, A :: h.Out]
+    def apply[R](f: (A, B) ⇒ R)(implicit h: ToHList[R], c: Capture[(A, B) ⇒ R]): Rule[I, h.Out]
+    def apply[Z, R](f: (Z, A, B) ⇒ R)(implicit h: ToHList[R], c: Capture[(Z, A, B) ⇒ R]): Rule[Z :: I, h.Out]
+    def apply[Y, Z, R](f: (Y, Z, A, B) ⇒ R)(implicit h: ToHList[R], c: Capture[(Y, Z, A, B) ⇒ R]): Rule[Y :: Z :: I, h.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z, A, B) ⇒ R)(implicit h: ToHList[R], c: Capture[(X, Y, Z, A, B) ⇒ R]): Rule[X :: Y :: Z :: I, h.Out]
   }
   implicit def ops3[I <: HList, A, B, C] = new ActionOps[I, A :: B :: C :: HNil] { type Out = Ops3[I, A, B, C] }
   sealed trait Ops3[I <: HList, A, B, C] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, A :: B :: C :: h.Out]
-    def apply[R](f: C ⇒ R)(implicit h: ToHList[R], args: Arguments._1[C, R]): Rule[I, A :: B :: h.Out]
-    def apply[R](f: (B, C) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[B, C, R]): Rule[I, A :: h.Out]
-    def apply[R](f: (A, B, C) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[A, B, C, R]): Rule[I, h.Out]
-    def apply[Z, R](f: (Z, A, B, C) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[Z, A, B, C, R]): Rule[Z :: I, h.Out]
-    def apply[Y, Z, R](f: (Y, Z, A, B, C) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[Y, Z, A, B, C, R]): Rule[Y :: Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], c: Capture[() ⇒ R]): Rule[I, A :: B :: C :: h.Out]
+    def apply[R](f: C ⇒ R)(implicit h: ToHList[R], c: Capture[C ⇒ R]): Rule[I, A :: B :: h.Out]
+    def apply[R](f: (B, C) ⇒ R)(implicit h: ToHList[R], c: Capture[(B, C) ⇒ R]): Rule[I, A :: h.Out]
+    def apply[R](f: (A, B, C) ⇒ R)(implicit h: ToHList[R], c: Capture[(A, B, C) ⇒ R]): Rule[I, h.Out]
+    def apply[Z, R](f: (Z, A, B, C) ⇒ R)(implicit h: ToHList[R], c: Capture[(Z, A, B, C) ⇒ R]): Rule[Z :: I, h.Out]
+    def apply[Y, Z, R](f: (Y, Z, A, B, C) ⇒ R)(implicit h: ToHList[R], c: Capture[(Y, Z, A, B, C) ⇒ R]): Rule[Y :: Z :: I, h.Out]
   }
   implicit def ops4[I <: HList, A, B, C, D] = new ActionOps[I, A :: B :: C :: D :: HNil] { type Out = Ops4[I, A, B, C, D] }
   sealed trait Ops4[I <: HList, A, B, C, D] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, A :: B :: C :: D :: h.Out]
-    def apply[R](f: D ⇒ R)(implicit h: ToHList[R], args: Arguments._1[D, R]): Rule[I, A :: B :: C :: h.Out]
-    def apply[R](f: (C, D) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[C, D, R]): Rule[I, A :: B :: h.Out]
-    def apply[R](f: (B, C, D) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[B, C, D, R]): Rule[I, A :: h.Out]
-    def apply[R](f: (A, B, C, D) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[A, B, C, D, R]): Rule[I, h.Out]
-    def apply[Z, R](f: (Z, A, B, C, D) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[Z, A, B, C, D, R]): Rule[Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], c: Capture[() ⇒ R]): Rule[I, A :: B :: C :: D :: h.Out]
+    def apply[R](f: D ⇒ R)(implicit h: ToHList[R], c: Capture[D ⇒ R]): Rule[I, A :: B :: C :: h.Out]
+    def apply[R](f: (C, D) ⇒ R)(implicit h: ToHList[R], c: Capture[(C, D) ⇒ R]): Rule[I, A :: B :: h.Out]
+    def apply[R](f: (B, C, D) ⇒ R)(implicit h: ToHList[R], c: Capture[(B, C, D) ⇒ R]): Rule[I, A :: h.Out]
+    def apply[R](f: (A, B, C, D) ⇒ R)(implicit h: ToHList[R], c: Capture[(A, B, C, D) ⇒ R]): Rule[I, h.Out]
+    def apply[Z, R](f: (Z, A, B, C, D) ⇒ R)(implicit h: ToHList[R], c: Capture[(Z, A, B, C, D) ⇒ R]): Rule[Z :: I, h.Out]
   }
   implicit def ops[I <: HList, O <: HList, OI <: HList, A, B, C, D, E](implicit x: TakeRight5[O, OI, A, B, C, D, E]) = new ActionOps[I, O] { type Out = Ops[I, OI, A, B, C, D, E] }
   sealed trait Ops[I <: HList, OI <: HList, A, B, C, D, E] {
-    def apply[R](f: () ⇒ R)(implicit j: Join[OI, A :: B :: C :: D :: E :: HNil, R], args: Arguments._0[R]): Rule[I, j.Out]
-    def apply[R](f: E ⇒ R)(implicit j: Join[OI, A :: B :: C :: D :: HNil, R], args: Arguments._1[E, R]): Rule[I, j.Out]
-    def apply[R](f: (D, E) ⇒ R)(implicit j: Join[OI, A :: B :: C :: HNil, R], args: Arguments._2[D, E, R]): Rule[I, j.Out]
-    def apply[R](f: (C, D, E) ⇒ R)(implicit j: Join[OI, A :: B :: HNil, R], args: Arguments._3[C, D, E, R]): Rule[I, j.Out]
-    def apply[R](f: (B, C, D, E) ⇒ R)(implicit j: Join[OI, A :: HNil, R], args: Arguments._4[B, C, D, E, R]): Rule[I, j.Out]
-    def apply[R](f: (A, B, C, D, E) ⇒ R)(implicit j: Join[OI, HNil, R], args: Arguments._5[A, B, C, D, E, R]): Rule[I, j.Out]
+    def apply[R](f: () ⇒ R)(implicit j: Join[OI, A :: B :: C :: D :: E :: HNil, R], c: Capture[() ⇒ R]): Rule[I, j.Out]
+    def apply[R](f: E ⇒ R)(implicit j: Join[OI, A :: B :: C :: D :: HNil, R], c: Capture[E ⇒ R]): Rule[I, j.Out]
+    def apply[R](f: (D, E) ⇒ R)(implicit j: Join[OI, A :: B :: C :: HNil, R], c: Capture[(D, E) ⇒ R]): Rule[I, j.Out]
+    def apply[R](f: (C, D, E) ⇒ R)(implicit j: Join[OI, A :: B :: HNil, R], c: Capture[(C, D, E) ⇒ R]): Rule[I, j.Out]
+    def apply[R](f: (B, C, D, E) ⇒ R)(implicit j: Join[OI, A :: HNil, R], c: Capture[(B, C, D, E) ⇒ R]): Rule[I, j.Out]
+    def apply[R](f: (A, B, C, D, E) ⇒ R)(implicit j: Join[OI, HNil, R], c: Capture[(A, B, C, D, E) ⇒ R]): Rule[I, j.Out]
   }
 }
 
-object Arguments {
-  sealed trait _0[R]
-  sealed trait _1[A, R]
-  sealed trait _2[A, B, R]
-  sealed trait _3[A, B, C, R]
-  sealed trait _4[A, B, C, D, R]
-  sealed trait _5[A, B, C, D, E, R]
-
-  implicit def _0[R]: _0[R] = null
-  implicit def _1[A, R]: _1[A, R] = null
-  implicit def _2[A, B, R]: _2[A, B, R] = null
-  implicit def _3[A, B, C, R]: _3[A, B, C, R] = null
-  implicit def _4[A, B, C, D, R]: _4[A, B, C, D, R] = null
-  implicit def _5[A, B, C, D, E, R]: _5[A, B, C, D, E, R] = null
+sealed trait Capture[T]
+object Capture {
+  implicit def capture[T]: Capture[T] = null
 }
 
 // builds L1 ::: L2 ::: convert(R),
