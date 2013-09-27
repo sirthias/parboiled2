@@ -75,44 +75,89 @@ abstract class RuleDSL {
   implicit def ch(c: Char): Rule0 = notAvailableAtRuntime
   implicit def str(s: String): Rule0 = notAvailableAtRuntime
 
-  // runs its inner rule and succeeds even if the inner rule doesn't
-  // Resulting rule type:
-  //   if (inner rule == Rule0) Rule0
-  //   if (inner rule == Rule1[T]) Rule1[Option[T]]
-  //   if (inner rule == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+  /**
+   * Runs its inner rule and succeeds even if the inner rule doesn't.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Option[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
   def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Optionalizer[I, O]): Rule[o.In, o.Out] = notAvailableAtRuntime
 
-  // runs its inner rule until it fails, always succeeds
-  // Resulting rule type:
-  //   if (inner rule == Rule0) Rule0
-  //   if (inner rule == Rule1[T]) Rule1[Seq[T]]
-  //   if (inner rule == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+  /**
+   * Runs its inner rule until it fails, always succeeds.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Seq[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
   def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
 
-  // runs its inner rule until it fails, succeeds if its inner rule succeeded at least once
-  // Resulting rule type:
-  //   if (inner rule == Rule0) Rule0
-  //   if (inner rule == Rule1[T]) Rule1[Seq[T]]
-  //   if (inner rule == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+  /**
+   * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Seq[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
   def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
 
-  // runs its inner rule but resets the parser (cursor and value stack) afterwards
-  // succeeds only if its inner rule succeeded
+  /**
+   * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
+   * succeeds only if its inner rule succeeded.
+   */
   def &(r: Rule[_, _]): Rule0 = notAvailableAtRuntime
 
-  // pushes the input text matched by its inner rule onto the value stack
-  // after its inner rule has been run successfully
+  /**
+   * Pushes the input text matched by its inner rule onto the value stack
+   * after its inner rule has been run successfully.
+   */
   def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepender[O, String :: HNil]): Rule[I, p.Out] = notAvailableAtRuntime
 
-  // pushes the given value onto the value stack
-  // if (O == Unit) pushes nothing
-  // else if (O <: HList) pushes all values of the HList
-  // else pushes a single value of type O
-  def push[O](value: O)(implicit j: Join[HNil, HNil, O]): RuleN[j.Out] = notAvailableAtRuntime
+  /**
+   * Pushes the given value onto the value stack.
+   * If `T` is `Unit` nothing is pushed, if `T <: HList` all value of the HList is pushed as individual elements,
+   * otherwise a single value of type `T` is pushed.
+   */
+  def push[T](value: T)(implicit j: Join[HNil, HNil, T]): RuleN[j.Out] = notAvailableAtRuntime
 
+  /**
+   * Implements a semantic predicate. If the argument expression evaluates to `true` the created
+   * rule matches otherwise it doesn't.
+   */
+  def test(predicateResult: Boolean): Rule0 = notAvailableAtRuntime
+
+  /**
+   * Repeats the given sub rule `r` the given number of times thereby matching the given separator in between.
+   * I.e. if `times` is
+   *   <= 0, the produced rule is equivalent to `EMPTY`
+   *      1, the produced rule is equivalent to `r`
+   *      2, the produced rule is equivalent to `r ~ separator ~ r`
+   *      3, the produced rule is equivalent to `r ~ separator ~ r ~ separator ~ r`
+   *      etc.
+   *
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Seq[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
+  def nTimes[I <: HList, O <: HList](times: Int, r: Rule[I, O], separator: Rule0 = EMPTY)
+                                    (implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
+
+  /**
+   * Matches the EOI (end-of-input) character.
+   */
   def EOI = org.parboiled2.EOI
 
+  /**
+   * Matches any character except EOI.
+   */
   def ANY: Rule0 = notAvailableAtRuntime
+
+  /**
+   * Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
+   */
+  def EMPTY: Rule
 
   implicit def pimpString(s: String): PimpedString = null
   sealed trait PimpedString {
