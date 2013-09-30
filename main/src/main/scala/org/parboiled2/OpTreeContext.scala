@@ -277,13 +277,27 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class PushAction(arg: Tree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] =
+    def render(ruleName: String): Expr[RuleX] = {
+      def unrollArg(tree: Tree): List[Tree] = tree match {
+        // 1 :: "a" :: HNil ⇒ 1 :: unrollArg("a" :: HNil)
+        case Block(List(ValDef(_, _, _, q"$v")),
+          q"shapeless.this.HList.hlistOps[${ _ }]($innerBlock).::[${ _ }](${ _ })") ⇒ v :: unrollArg(innerBlock)
+        // 1 :: HNil ⇒ List(1)
+        case Block(List(ValDef(_, _, _, q"$v")), q"shapeless.HNil.::[${ _ }](${ _ })") ⇒ List(v)
+        // HNil
+        case q"shapeless.HNil" ⇒ List()
+        // Single element
+        case q"$v" ⇒ List(v)
+      }
+      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.valueStack.push($v)" }
+
       // for some reason `reify` doesn't seem to work here
       c.Expr[RuleX](q"""
         val p = ${c.prefix}
-        p.valueStack.push($arg)
+        ..$stackPushes
         Rule.matched
       """)
+    }
   }
 
   abstract class Predicate extends OpTree {
