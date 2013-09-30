@@ -55,7 +55,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"$a.unary_!()"                                  ⇒ NotPredicate(OpTree(a))
         case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Arguments.$arity[..$ts])" ⇒
           //case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[(..$tp)])" ⇒
-          Action(OpTree(r), f, ts.map(_.tpe))
+          f match {
+            case Ident(_)             ⇒ Action(OpTree(r), f, ts.map(_.tpe))
+            // TODO: Replace with quasiquotes when `q"function"` is fixed
+            // case q"$args ⇒ $body" ⇒ Action(OpTree(r), q"$args ⇒ ${OpTree(body).render()}", ts.map(_.tpe))
+            case Function(args, body) ⇒ Action(OpTree(r), Function(args, q"${OpTree(body).render()}"), ts.map(_.tpe))
+            case _                    ⇒ c.abort(tree.pos, s"Unexpected applicant type: $tree\n${showRaw(tree)}")
+          }
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
         case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
           CharacterClass(l, r, tree.pos)
@@ -256,19 +262,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
       val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
       val functionParams = argNames map Ident.apply
-      val functionCall = functionType.last match {
-        case TypeRef(_, sym, _) if sym.fullName == "scala.Unit" ⇒ q"$applicant(..$functionParams)"
-        case _ ⇒ q"p.valueStack.push($applicant(..$functionParams))"
-      }
       c.Expr[RuleX] {
         q"""
           val result = ${op.render()}
           if (result.matched) {
             val p = ${c.prefix}
             ..${valDefs.reverse}
-            $functionCall
+            $applicant(..$functionParams)
           }
-          result
+          else Rule.mismatched
         """
       }
     }
