@@ -54,6 +54,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"$a.this.$b(..$c)"                              ⇒ RuleCall(tree)
         case q"$a.unary_!()"                                  ⇒ NotPredicate(OpTree(a))
         case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Arguments.$arity[..$ts])" ⇒
+          //case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[(..$tp)])" ⇒
           Action(OpTree(r), f, ts.map(_.tpe))
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
         case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
