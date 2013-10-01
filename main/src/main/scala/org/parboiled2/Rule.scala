@@ -75,44 +75,88 @@ abstract class RuleDSL {
   implicit def ch(c: Char): Rule0 = notAvailableAtRuntime
   implicit def str(s: String): Rule0 = notAvailableAtRuntime
 
-  // runs its inner rule and succeeds even if the inner rule doesn't
-  // Resulting rule type:
-  //   if (inner rule == Rule0) Rule0
-  //   if (inner rule == Rule1[T]) Rule1[Option[T]]
-  //   if (inner rule == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+  /**
+   * Runs its inner rule and succeeds even if the inner rule doesn't.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Option[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
   def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Optionalizer[I, O]): Rule[o.In, o.Out] = notAvailableAtRuntime
 
-  // runs its inner rule until it fails, always succeeds
-  // Resulting rule type:
-  //   if (inner rule == Rule0) Rule0
-  //   if (inner rule == Rule1[T]) Rule1[Seq[T]]
-  //   if (inner rule == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+  /**
+   * Runs its inner rule until it fails, always succeeds.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Seq[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
   def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
 
-  // runs its inner rule until it fails, succeeds if its inner rule succeeded at least once
-  // Resulting rule type:
-  //   if (inner rule == Rule0) Rule0
-  //   if (inner rule == Rule1[T]) Rule1[Seq[T]]
-  //   if (inner rule == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+  /**
+   * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Seq[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
   def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
 
-  // runs its inner rule but resets the parser (cursor and value stack) afterwards
-  // succeeds only if its inner rule succeeded
+  /**
+   * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
+   * succeeds only if its inner rule succeeded.
+   */
   def &(r: Rule[_, _]): Rule0 = notAvailableAtRuntime
 
-  // pushes the input text matched by its inner rule onto the value stack
-  // after its inner rule has been run successfully
+  /**
+   * Pushes the input text matched by its inner rule onto the value stack
+   * after its inner rule has been run successfully.
+   */
   def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepender[O, String :: HNil]): Rule[I, p.Out] = notAvailableAtRuntime
 
-  // pushes the given value onto the value stack
-  // if (O == Unit) pushes nothing
-  // else if (O <: HList) pushes all values of the HList
-  // else pushes a single value of type O
-  def push[O](value: O)(implicit j: Join[HNil, HNil, O]): RuleN[j.Out] = notAvailableAtRuntime
+  /**
+   * Pushes the given value onto the value stack.
+   * If `T` is `Unit` nothing is pushed, if `T <: HList` all value of the HList is pushed as individual elements,
+   * otherwise a single value of type `T` is pushed.
+   */
+  def push[T](value: T)(implicit j: Join[HNil, HNil, HNil, T]): RuleN[j.Out] = notAvailableAtRuntime
 
+  /**
+   * Implements a semantic predicate. If the argument expression evaluates to `true` the created
+   * rule matches otherwise it doesn't.
+   */
+  def test(predicateResult: Boolean): Rule0 = notAvailableAtRuntime
+
+  /**
+   * Repeats the given sub rule `r` the given number of times thereby matching the given separator in between.
+   * I.e. if `times` is
+   *   <= 0, the produced rule is equivalent to `EMPTY`
+   *      1, the produced rule is equivalent to `r`
+   *      2, the produced rule is equivalent to `r ~ separator ~ r`
+   *      3, the produced rule is equivalent to `r ~ separator ~ r ~ separator ~ r`
+   *      etc.
+   *
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Seq[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
+  def nTimes[I <: HList, O <: HList](times: Int, r: Rule[I, O], separator: Rule0 = EMPTY)(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
+
+  /**
+   * Matches the EOI (end-of-input) character.
+   */
   def EOI = org.parboiled2.EOI
 
+  /**
+   * Matches any character except EOI.
+   */
   def ANY: Rule0 = notAvailableAtRuntime
+
+  /**
+   * Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
+   */
+  def EMPTY: Rule0 = notAvailableAtRuntime
 
   implicit def pimpString(s: String): PimpedString = null
   sealed trait PimpedString {
@@ -162,103 +206,193 @@ private[parboiled2] abstract class TailSwitch0_2 {
   implicit def iter3[L <: HList, LH, LT <: HList, T <: HList, TH, TT <: HList, R <: HList, RI <: HList, Out <: HList](implicit next: TailSwitch0[L, LT, T, TT, R, LH :: RI, Out]): TailSwitch0[L, LH :: LT, T, TH :: TT, R, RI, Out] = null
 }
 
+// TODO: Replace `Arguments` with `Capture[FunctionType]`
+// right after solution of https://groups.google.com/forum/#!topic/scala-language/kr8pjJkKW40
+//object ActionOps {
+//  private type SJoin[I <: HList, O <: HList, R] = Join[I, HNil, O, R]
+//
+//  implicit def ops0[I <: HList, O <: HNil] = new ActionOps[I, O] { type Out = Ops0[I] }
+//  sealed trait Ops0[I <: HList] {
+//    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, HNil, R], c: Capture[() ⇒ R]): Rule[j.In, j.Out]
+//    def apply[Z, R](f: Z ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Capture[Z ⇒ R]): Rule[j.In, j.Out]
+//    def apply[Y, Z, R](f: (Y, Z) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Capture[(Y, Z) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[X, Y, Z, R](f: (X, Y, Z) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: Capture[(X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[W, X, Y, Z, R](f: (W, X, Y, Z) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: Capture[(W, X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z) ⇒ R)(implicit j: SJoin[V :: W :: X :: Y :: Z :: I, HNil, R], c: Capture[(V, W, X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
+//  }
+//  implicit def ops1[I <: HList, A] = new ActionOps[I, A :: HNil] { type Out = Ops1[I, A] }
+//  sealed trait Ops1[I <: HList, A] {
+//    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Capture[() ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: A ⇒ R)(implicit j: SJoin[I, HNil, R], c: Capture[A ⇒ R]): Rule[j.In, j.Out]
+//    def apply[Z, R](f: (Z, A) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Capture[(Z, A) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[Y, Z, R](f: (Y, Z, A) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Capture[(Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[X, Y, Z, R](f: (X, Y, Z, A) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: Capture[(X, Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: Capture[(W, X, Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
+//  }
+//  implicit def ops2[I <: HList, A, B] = new ActionOps[I, A :: B :: HNil] { type Out = Ops2[I, A, B] }
+//  sealed trait Ops2[I <: HList, A, B] {
+//    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: Capture[() ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: B ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Capture[B ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (A, B) ⇒ R)(implicit j: SJoin[I, HNil, R], c: Capture[(A, B, R)]): Rule[j.In, j.Out]
+//    def apply[Z, R](f: (Z, A, B) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Capture[(Z, A, B) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[Y, Z, R](f: (Y, Z, A, B) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Capture[(Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[X, Y, Z, R](f: (X, Y, Z, A, B) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: Capture[(X, Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
+//  }
+//  implicit def ops3[I <: HList, A, B, C] = new ActionOps[I, A :: B :: C :: HNil] { type Out = Ops3[I, A, B, C] }
+//  sealed trait Ops3[I <: HList, A, B, C] {
+//    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: C :: HNil, R], c: Capture[() ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: C ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: Capture[C ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (B, C) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Capture[(B, C) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (A, B, C) ⇒ R)(implicit j: SJoin[I, HNil, R], c: Capture[(A, B, C) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[Z, R](f: (Z, A, B, C) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Capture[(Z, A, B, C) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[Y, Z, R](f: (Y, Z, A, B, C) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Capture[(Y, Z, A, B, C) ⇒ R]): Rule[j.In, j.Out]
+//  }
+//  implicit def ops4[I <: HList, A, B, C, D] = new ActionOps[I, A :: B :: C :: D :: HNil] { type Out = Ops4[I, A, B, C, D] }
+//  sealed trait Ops4[I <: HList, A, B, C, D] {
+//    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: HNil, R], c: Capture[() ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: D ⇒ R)(implicit j: SJoin[I, A :: B :: C :: HNil, R], c: Capture[D ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (C, D) ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: Capture[(C, D) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (B, C, D) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Capture[(B, C, D) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (A, B, C, D) ⇒ R)(implicit j: SJoin[I, HNil, R], c: Capture[(A, B, C, D) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[Z, R](f: (Z, A, B, C, D) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Capture[(Z, A, B, C, D) ⇒ R]): Rule[j.In, j.Out]
+//  }
+//  implicit def ops[I <: HList, O <: HList, OI <: HList, A, B, C, D, E](implicit x: TakeRight5[O, OI, A, B, C, D, E]) = new ActionOps[I, O] { type Out = Ops[I, OI, A, B, C, D, E] }
+//  sealed trait Ops[I <: HList, OI <: HList, A, B, C, D, E] {
+//    def apply[R](f: () ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: E :: HNil, R], c: Capture[() ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: E ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: HNil, R], c: Capture[E ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (D, E) ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: HNil, R], c: Capture[(D, E) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (C, D, E) ⇒ R)(implicit j: Join[I, OI, A :: B :: HNil, R], c: Capture[(C, D, E) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (B, C, D, E) ⇒ R)(implicit j: Join[I, OI, A :: HNil, R], c: Capture[(B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+//    def apply[R](f: (A, B, C, D, E) ⇒ R)(implicit j: SJoin[I, OI, R], c: Capture[(A, B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+//  }
+//}
+//
+//sealed trait Capture[T]
+//object Capture {
+//  implicit def capture[T]: Capture[T] = null
+//}
+
 sealed trait ActionOps[I <: HList, O <: HList] { type Out }
 object ActionOps {
-  private type ToHList[R] = Join[HNil, HNil, R]
+  private type SJoin[I <: HList, O <: HList, R] = Join[I, HNil, O, R]
 
   implicit def ops0[I <: HList, O <: HNil] = new ActionOps[I, O] { type Out = Ops0[I] }
   sealed trait Ops0[I <: HList] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, h.Out]
-    def apply[Z, R](f: Z ⇒ R)(implicit h: ToHList[R], args: Arguments._1[Z, R]): Rule[Z :: I, h.Out]
-    def apply[Y, Z, R](f: (Y, Z) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[Y, Z, R]): Rule[Y :: Z :: I, h.Out]
-    def apply[X, Y, Z, R](f: (X, Y, Z) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[X, Y, Z, R]): Rule[X :: Y :: Z :: I, h.Out]
-    def apply[W, X, Y, Z, R](f: (W, X, Y, Z) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[W, X, Y, Z, R]): Rule[W :: X :: Y :: Z :: I, h.Out]
-    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[V, W, X, Y, Z, R]): Rule[V :: W :: X :: Y :: Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, HNil, R], c: Arguments._1[R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: Z ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Arguments._2[Z, R]): Rule[j.In, j.Out]
+    def apply[Y, Z, R](f: (Y, Z) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Arguments._3[Y, Z, R]): Rule[j.In, j.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: Arguments._4[X, Y, Z, R]): Rule[j.In, j.Out]
+    def apply[W, X, Y, Z, R](f: (W, X, Y, Z) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: Arguments._5[W, X, Y, Z, R]): Rule[j.In, j.Out]
+    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z) ⇒ R)(implicit j: SJoin[V :: W :: X :: Y :: Z :: I, HNil, R], c: Arguments._6[V, W, X, Y, Z, R]): Rule[j.In, j.Out]
   }
   implicit def ops1[I <: HList, A] = new ActionOps[I, A :: HNil] { type Out = Ops1[I, A] }
   sealed trait Ops1[I <: HList, A] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, A :: h.Out]
-    def apply[R](f: A ⇒ R)(implicit h: ToHList[R], args: Arguments._1[A, R]): Rule[I, h.Out]
-    def apply[Z, R](f: (Z, A) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[Z, A, R]): Rule[Z :: I, h.Out]
-    def apply[Y, Z, R](f: (Y, Z, A) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[Y, Z, A, R]): Rule[Y :: Z :: I, h.Out]
-    def apply[X, Y, Z, R](f: (X, Y, Z, A) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[X, Y, Z, A, R]): Rule[X :: Y :: Z :: I, h.Out]
-    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[W, X, Y, Z, A, R]): Rule[W :: X :: Y :: Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Arguments._1[R]): Rule[j.In, j.Out]
+    def apply[R](f: A ⇒ R)(implicit j: SJoin[I, HNil, R], c: Arguments._2[A, R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: (Z, A) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Arguments._3[Z, A, R]): Rule[j.In, j.Out]
+    def apply[Y, Z, R](f: (Y, Z, A) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Arguments._4[Y, Z, A, R]): Rule[j.In, j.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z, A) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: Arguments._5[X, Y, Z, A, R]): Rule[j.In, j.Out]
+    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: Arguments._6[W, X, Y, Z, A, R]): Rule[j.In, j.Out]
   }
   implicit def ops2[I <: HList, A, B] = new ActionOps[I, A :: B :: HNil] { type Out = Ops2[I, A, B] }
   sealed trait Ops2[I <: HList, A, B] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, A :: B :: h.Out]
-    def apply[R](f: B ⇒ R)(implicit h: ToHList[R], args: Arguments._1[B, R]): Rule[I, A :: h.Out]
-    def apply[R](f: (A, B) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[A, B, R]): Rule[I, h.Out]
-    def apply[Z, R](f: (Z, A, B) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[Z, A, B, R]): Rule[Z :: I, h.Out]
-    def apply[Y, Z, R](f: (Y, Z, A, B) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[Y, Z, A, B, R]): Rule[Y :: Z :: I, h.Out]
-    def apply[X, Y, Z, R](f: (X, Y, Z, A, B) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[X, Y, Z, A, B, R]): Rule[X :: Y :: Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: Arguments._1[R]): Rule[j.In, j.Out]
+    def apply[R](f: B ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Arguments._2[B, R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B) ⇒ R)(implicit j: SJoin[I, HNil, R], c: Arguments._3[A, B, R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: (Z, A, B) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Arguments._4[Z, A, B, R]): Rule[j.In, j.Out]
+    def apply[Y, Z, R](f: (Y, Z, A, B) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Arguments._5[Y, Z, A, B, R]): Rule[j.In, j.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z, A, B) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: Arguments._6[X, Y, Z, A, B, R]): Rule[j.In, j.Out]
   }
   implicit def ops3[I <: HList, A, B, C] = new ActionOps[I, A :: B :: C :: HNil] { type Out = Ops3[I, A, B, C] }
   sealed trait Ops3[I <: HList, A, B, C] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, A :: B :: C :: h.Out]
-    def apply[R](f: C ⇒ R)(implicit h: ToHList[R], args: Arguments._1[C, R]): Rule[I, A :: B :: h.Out]
-    def apply[R](f: (B, C) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[B, C, R]): Rule[I, A :: h.Out]
-    def apply[R](f: (A, B, C) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[A, B, C, R]): Rule[I, h.Out]
-    def apply[Z, R](f: (Z, A, B, C) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[Z, A, B, C, R]): Rule[Z :: I, h.Out]
-    def apply[Y, Z, R](f: (Y, Z, A, B, C) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[Y, Z, A, B, C, R]): Rule[Y :: Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: C :: HNil, R], c: Arguments._1[R]): Rule[j.In, j.Out]
+    def apply[R](f: C ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: Arguments._2[C, R]): Rule[j.In, j.Out]
+    def apply[R](f: (B, C) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Arguments._3[B, C, R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B, C) ⇒ R)(implicit j: SJoin[I, HNil, R], c: Arguments._4[A, B, C, R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: (Z, A, B, C) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Arguments._5[Z, A, B, C, R]): Rule[j.In, j.Out]
+    def apply[Y, Z, R](f: (Y, Z, A, B, C) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Arguments._6[Y, Z, A, B, C, R]): Rule[j.In, j.Out]
   }
   implicit def ops4[I <: HList, A, B, C, D] = new ActionOps[I, A :: B :: C :: D :: HNil] { type Out = Ops4[I, A, B, C, D] }
   sealed trait Ops4[I <: HList, A, B, C, D] {
-    def apply[R](f: () ⇒ R)(implicit h: ToHList[R], args: Arguments._0[R]): Rule[I, A :: B :: C :: D :: h.Out]
-    def apply[R](f: D ⇒ R)(implicit h: ToHList[R], args: Arguments._1[D, R]): Rule[I, A :: B :: C :: h.Out]
-    def apply[R](f: (C, D) ⇒ R)(implicit h: ToHList[R], args: Arguments._2[C, D, R]): Rule[I, A :: B :: h.Out]
-    def apply[R](f: (B, C, D) ⇒ R)(implicit h: ToHList[R], args: Arguments._3[B, C, D, R]): Rule[I, A :: h.Out]
-    def apply[R](f: (A, B, C, D) ⇒ R)(implicit h: ToHList[R], args: Arguments._4[A, B, C, D, R]): Rule[I, h.Out]
-    def apply[Z, R](f: (Z, A, B, C, D) ⇒ R)(implicit h: ToHList[R], args: Arguments._5[Z, A, B, C, D, R]): Rule[Z :: I, h.Out]
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: HNil, R], c: Arguments._1[R]): Rule[j.In, j.Out]
+    def apply[R](f: D ⇒ R)(implicit j: SJoin[I, A :: B :: C :: HNil, R], c: Arguments._2[D, R]): Rule[j.In, j.Out]
+    def apply[R](f: (C, D) ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: Arguments._3[C, D, R]): Rule[j.In, j.Out]
+    def apply[R](f: (B, C, D) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Arguments._4[B, C, D, R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B, C, D) ⇒ R)(implicit j: SJoin[I, HNil, R], c: Arguments._5[A, B, C, D, R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: (Z, A, B, C, D) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Arguments._6[Z, A, B, C, D, R]): Rule[j.In, j.Out]
   }
   implicit def ops[I <: HList, O <: HList, OI <: HList, A, B, C, D, E](implicit x: TakeRight5[O, OI, A, B, C, D, E]) = new ActionOps[I, O] { type Out = Ops[I, OI, A, B, C, D, E] }
   sealed trait Ops[I <: HList, OI <: HList, A, B, C, D, E] {
-    def apply[R](f: () ⇒ R)(implicit j: Join[OI, A :: B :: C :: D :: E :: HNil, R], args: Arguments._0[R]): Rule[I, j.Out]
-    def apply[R](f: E ⇒ R)(implicit j: Join[OI, A :: B :: C :: D :: HNil, R], args: Arguments._1[E, R]): Rule[I, j.Out]
-    def apply[R](f: (D, E) ⇒ R)(implicit j: Join[OI, A :: B :: C :: HNil, R], args: Arguments._2[D, E, R]): Rule[I, j.Out]
-    def apply[R](f: (C, D, E) ⇒ R)(implicit j: Join[OI, A :: B :: HNil, R], args: Arguments._3[C, D, E, R]): Rule[I, j.Out]
-    def apply[R](f: (B, C, D, E) ⇒ R)(implicit j: Join[OI, A :: HNil, R], args: Arguments._4[B, C, D, E, R]): Rule[I, j.Out]
-    def apply[R](f: (A, B, C, D, E) ⇒ R)(implicit j: Join[OI, HNil, R], args: Arguments._5[A, B, C, D, E, R]): Rule[I, j.Out]
+    def apply[R](f: () ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: E :: HNil, R], c: Arguments._1[R]): Rule[j.In, j.Out]
+    def apply[R](f: E ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: HNil, R], c: Arguments._2[E, R]): Rule[j.In, j.Out]
+    def apply[R](f: (D, E) ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: HNil, R], c: Arguments._3[D, E, R]): Rule[j.In, j.Out]
+    def apply[R](f: (C, D, E) ⇒ R)(implicit j: Join[I, OI, A :: B :: HNil, R], c: Arguments._4[C, D, E, R]): Rule[j.In, j.Out]
+    def apply[R](f: (B, C, D, E) ⇒ R)(implicit j: Join[I, OI, A :: HNil, R], c: Arguments._5[B, C, D, E, R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B, C, D, E) ⇒ R)(implicit j: SJoin[I, OI, R], c: Arguments._6[A, B, C, D, E, R]): Rule[j.In, j.Out]
   }
 }
 
 object Arguments {
-  sealed trait _0[R]
-  sealed trait _1[A, R]
-  sealed trait _2[A, B, R]
-  sealed trait _3[A, B, C, R]
-  sealed trait _4[A, B, C, D, R]
-  sealed trait _5[A, B, C, D, E, R]
+  sealed trait _1[R]
+  sealed trait _2[A, R]
+  sealed trait _3[A, B, R]
+  sealed trait _4[A, B, C, R]
+  sealed trait _5[A, B, C, D, R]
+  sealed trait _6[A, B, C, D, E, R]
 
-  implicit def _0[R]: _0[R] = null
-  implicit def _1[A, R]: _1[A, R] = null
-  implicit def _2[A, B, R]: _2[A, B, R] = null
-  implicit def _3[A, B, C, R]: _3[A, B, C, R] = null
-  implicit def _4[A, B, C, D, R]: _4[A, B, C, D, R] = null
-  implicit def _5[A, B, C, D, E, R]: _5[A, B, C, D, E, R] = null
+  implicit def _1[R]: _1[R] = null
+  implicit def _2[A, R]: _2[A, R] = null
+  implicit def _3[A, B, R]: _3[A, B, R] = null
+  implicit def _4[A, B, C, R]: _4[A, B, C, R] = null
+  implicit def _5[A, B, C, D, R]: _5[A, B, C, D, R] = null
+  implicit def _6[A, B, C, D, E, R]: _6[A, B, C, D, E, R] = null
 }
 
-// builds L1 ::: L2 ::: convert(R),
-// whereby convert(R) =
-//   if (R == Unit) HNil
-//   else if (R <: HList) R
-//   else R :: HNil
-sealed trait Join[L1 <: HList, L2 <: HList, R] {
+// builds `In` and `Out` types according to this logic:
+//  if (R == Unit)
+//    In = I, Out = L1 ::: L2
+//  else if (R <: HList)
+//    In = I, Out = L1 ::: L2 ::: R
+//  else if (R <: Rule[I2, O2])
+//    In = TailSwitch[I2, L1 ::: L2, I], Out = TailSwitch[L1 ::: L2, I2, O2]
+//  else
+//    In = I, Out = L1 ::: L2 ::: R :: HNil
+sealed trait Join[I <: HList, L1 <: HList, L2 <: HList, R] {
+  type In <: HList
   type Out <: HList
 }
 object Join {
-  implicit def join[L1 <: HList, L2 <: HList, R, Out0 <: HList](implicit x: Join0[L1, L2, R, HNil, Out0]) = new Join[L1, L2, R] { type Out = Out0 }
+  implicit def join[I <: HList, L1 <: HList, L2 <: HList, R, In0 <: HList, Out0 <: HList](implicit x: Join0[I, L1, L2, R, HNil, In0, Out0]) = new Join[I, L1, L2, R] {
+    type In = In0
+    type Out = Out0
+  }
 }
-sealed trait Join0[L1 <: HList, L2 <: HList, R, Acc <: HList, Out <: HList]
+sealed trait Join0[I <: HList, L1 <: HList, L2 <: HList, R, Acc <: HList, In <: HList, Out <: HList]
 object Join0 extends LowerPriorityJoin0 {
-  implicit def terminate[Acc <: HList, Out0 <: HList](implicit x: Reverse0[HNil, Acc, Out0]): Join0[HNil, HNil, HNil, Acc, Out0] = null
-  implicit def iter1[H, T <: HList, L <: HList, R <: HList, Acc <: HList, Out0 <: HList](implicit x: Join0[T, L, R, H :: Acc, Out0]): Join0[H :: T, L, R, Acc, Out0] = null
-  implicit def iter2[H, T <: HList, R <: HList, Acc <: HList, Out0 <: HList](implicit x: Join0[HNil, T, R, H :: Acc, Out0]): Join0[HNil, H :: T, R, Acc, Out0] = null
-  implicit def iter3[H, T <: HList, Acc <: HList, Out0 <: HList](implicit x: Join0[HNil, HNil, T, H :: Acc, Out0]): Join0[HNil, HNil, H :: T, Acc, Out0] = null
-  implicit def convertUnit[L1 <: HList, L2 <: HList, Acc <: HList, Out0 <: HList](implicit x: Join0[L1, L2, HNil, Acc, Out0]): Join0[L1, L2, Unit, Acc, Out0] = null
+  // if R == Unit convert to HNil
+  implicit def forUnit[I <: HList, L1 <: HList, L2 <: HList, Acc <: HList, Out <: HList](implicit x: Join0[I, L1, L2, HNil, Acc, I, Out]): Join0[I, L1, L2, Unit, Acc, I, Out] = null
+
+  // if R <: HList and L1 non-empty move head of L1 to Acc
+  implicit def iter1[I <: HList, H, T <: HList, L2 <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: Join0[I, T, L2, R, H :: Acc, I, Out]): Join0[I, H :: T, L2, R, Acc, I, Out] = null
+
+  // if R <: HList and L1 empty and L2 non-empty move head of L2 to Acc
+  implicit def iter2[I <: HList, H, T <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: Join0[I, HNil, T, R, H :: Acc, I, Out]): Join0[I, HNil, H :: T, R, Acc, I, Out] = null
+
+  // if R <: HList and L1 and L2 empty set Out = reversePrepend Acc before R
+  implicit def terminate[I <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: ReversePrependAux[Acc, R, Out]): Join0[I, HNil, HNil, R, Acc, I, Out] = null
+
+  // if R <: Rule and L1 non-empty move head of L1 to Acc
+  implicit def iterRule1[I <: HList, L2 <: HList, I2 <: HList, O2 <: HList, In0 <: HList, Acc <: HList, Out0 <: HList, H, T <: HList](implicit x: Join0[I, T, L2, Rule[I2, O2], H :: Acc, In0, Out0]): Join0[I, H :: T, L2, Rule[I2, O2], HNil, In0, Out0] = null
+
+  // if R <: Rule and L1 empty and Acc non-empty move head of Acc to L2
+  implicit def iterRule2[I <: HList, L2 <: HList, I2 <: HList, O2 <: HList, In0 <: HList, Out0 <: HList, H, T <: HList](implicit x: Join0[I, HNil, H :: L2, Rule[I2, O2], T, In0, Out0]): Join0[I, HNil, L2, Rule[I2, O2], H :: T, In0, Out0] = null
+
+  // if R <: Rule and L1 and Acc empty set In and Out to tailswitches result
+  implicit def terminateRule[I <: HList, O <: HList, I2 <: HList, O2 <: HList, In <: HList, Out <: HList](implicit i: TailSwitch0[I2, I2, O, O, I, HNil, In], o: TailSwitch0[O, O, I2, I2, O2, HNil, Out]): Join0[I, HNil, O, Rule[I2, O2], HNil, In, Out] = null
 }
 private[parboiled2] abstract class LowerPriorityJoin0 {
-  implicit def convertAny[L1 <: HList, L2 <: HList, R, Acc <: HList, Out0 <: HList](implicit x: Join0[L1, L2, R :: HNil, Acc, Out0]): Join0[L1, L2, R, Acc, Out0] = null
+  // convert R to R :: HNil
+  implicit def forAny[I <: HList, L1 <: HList, L2 <: HList, R, Acc <: HList, Out <: HList](implicit x: Join0[I, L1, L2, R :: HNil, Acc, I, Out]): Join0[I, L1, L2, R, Acc, I, Out] = null
 }
 
 sealed trait Optionalizer[I <: HList, O <: HList] {
