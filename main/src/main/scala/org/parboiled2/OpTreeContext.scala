@@ -54,6 +54,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"$a.this.$b(..$c)"                              ⇒ RuleCall(tree)
         case q"$a.unary_!()"                                  ⇒ NotPredicate(OpTree(a))
         case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Arguments.$arity[..$ts])" ⇒
+          //case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[(..$tp)])" ⇒
           Action(OpTree(r), f, ts.map(_.tpe))
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
         case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
@@ -255,32 +256,57 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
       val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
       val functionParams = argNames map Ident.apply
-      val functionCall = functionType.last match {
-        case TypeRef(_, sym, _) if sym.fullName == "scala.Unit" ⇒ q"$applicant(..$functionParams)"
-        case _ ⇒ q"p.valueStack.push($applicant(..$functionParams))"
+
+      val bodyIfMatched = applicant match {
+        case Ident(_) ⇒ q"p.valueStack.push($applicant(..$functionParams)); Rule.matched"
+        // TODO: Replace with quasiquotes when `q"function"` is fixed
+        case Function(args, body) ⇒
+          // TODO: Reconsider type matching
+          // TODO: Replace `Function(..)` with `q""`. Seems like a `q""` bug
+          val bodyNew = functionType.last.toString match {
+            case tp if tp.startsWith("org.parboiled2.Rule") ⇒ q"${OpTree(body).render()}"
+            case tp if tp == "Unit" ⇒ q"$body; Rule.matched"
+            case _ ⇒ q"${PushAction(body).render()}"
+          }
+          q"${Function(args, bodyNew)}(..$functionParams)"
       }
+
       c.Expr[RuleX] {
         q"""
           val result = ${op.render()}
           if (result.matched) {
             val p = ${c.prefix}
             ..${valDefs.reverse}
-            $functionCall
+            $bodyIfMatched
           }
-          result
+          else Rule.mismatched
         """
       }
     }
   }
 
   case class PushAction(arg: Tree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] =
+    def render(ruleName: String): Expr[RuleX] = {
+      def unrollArg(tree: Tree): List[Tree] = tree match {
+        // 1 :: "a" :: HNil ⇒ 1 :: unrollArg("a" :: HNil)
+        case Block(List(ValDef(_, _, _, q"$v")),
+          q"shapeless.this.HList.hlistOps[${ _ }]($innerBlock).::[${ _ }](${ _ })") ⇒ v :: unrollArg(innerBlock)
+        // 1 :: HNil ⇒ List(1)
+        case Block(List(ValDef(_, _, _, q"$v")), q"shapeless.HNil.::[${ _ }](${ _ })") ⇒ List(v)
+        // HNil
+        case q"shapeless.HNil" ⇒ List()
+        // Single element
+        case q"$v" ⇒ List(v)
+      }
+      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.valueStack.push($v)" }
+
       // for some reason `reify` doesn't seem to work here
       c.Expr[RuleX](q"""
         val p = ${c.prefix}
-        p.valueStack.push($arg)
+        ..$stackPushes
         Rule.matched
       """)
+    }
   }
 
   abstract class Predicate extends OpTree {

@@ -121,10 +121,18 @@ class ValueStackSpec extends TestParserSpec {
       "a" must beMatchedWith("a" :: 1 :: HNil)
     }
 
-    "work with `push`" in new TestParser[Boolean :: HNil] {
-      def targetRule = rule { str("true") ~ push(true) }
+    "work with `push`" in {
+      "of arity 1" in new TestParser[Boolean :: HNil] {
+        def targetRule = rule { str("true") ~ push(true) }
 
-      "true" must beMatchedBy(true)
+        "true" must beMatchedBy(true)
+      }
+
+      "of arity 2+" in new TestParser[Boolean :: Int :: Double :: HNil] {
+        def targetRule = rule { str("true") ~ push(true :: 7 :: 42.0 :: HNil) }
+
+        "true" must beMatchedWith(true :: 7 :: 42.0 :: HNil)
+      }
     }
   }
 }
