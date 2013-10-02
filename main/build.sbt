@@ -14,7 +14,7 @@ startYear := Some(2009)
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 
-addCompilerPlugin("org.scala-lang.plugins" % "macro-paradise_2.10.3-RC1" % "2.0.0-SNAPSHOT")
+addCompilerPlugin("org.scala-lang.plugins" % "macro-paradise" % "2.0.0-SNAPSHOT" cross CrossVersion.full)
 
 licenses := Seq("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 
@@ -27,7 +27,7 @@ scalacOptions ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scala-lang"  %  "scala-reflect"  % "2.10.3-RC1"  % "compile",
-  "com.chuusai"     %% "shapeless"      % "1.2.4"       % "compile",
-  "org.specs2"      %% "specs2"         % "1.14"        % "test"
+  "org.scala-lang"  %  "scala-reflect"  % "2.10.3"  % "compile",
+  "com.chuusai"     %% "shapeless"      % "1.2.4"   % "compile",
+  "org.specs2"      %% "specs2"         % "1.14"    % "test"
 )
