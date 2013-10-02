@@ -53,8 +53,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"$a.this.$b"                                    ⇒ RuleCall(tree)
         case q"$a.this.$b(..$c)"                              ⇒ RuleCall(tree)
         case q"$a.unary_!()"                                  ⇒ NotPredicate(OpTree(a))
-        case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Arguments.$arity[..$ts])" ⇒
-          Action(OpTree(r), f, ts.map(_.tpe))
+        case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
+          Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
         case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
           CharacterClass(l, r, tree.pos)
@@ -253,21 +253,38 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = {
       val argTypes = functionType dropRight 1
       val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
-      val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
-      val functionParams = argNames map Ident.apply
-      val functionCall = functionType.last match {
-        case TypeRef(_, sym, _) if sym.fullName == "scala.Unit" ⇒ q"$applicant(..$functionParams)"
-        case _ ⇒ q"p.valueStack.push($applicant(..$functionParams))"
+
+      def bodyIfMatched(tree: Tree): Tree = tree match {
+        case Block(exprs, res) ⇒
+          q"..$exprs; ${bodyIfMatched(res)}"
+        case Ident(_) ⇒
+          val functionParams = argNames map Ident.apply
+          val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
+          q"..${valDefs.reverse}; p.valueStack.push($applicant(..$functionParams)); result"
+        case q"( ..$args ⇒ $body )" ⇒
+          val (exprs, res) = body match {
+            case Block(exps, rs) ⇒ (exps, rs)
+            case x               ⇒ (Nil, x)
+          }
+
+          // TODO: Reconsider type matching
+          val bodyNew = functionType.last.toString match {
+            case tp if tp.startsWith("org.parboiled2.Rule") ⇒ q"${OpTree(res).render()}"
+            case tp if tp == "Unit" ⇒ q"$res; result"
+            case _ ⇒ q"${PushAction(res).render()}"
+          }
+          val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.valueStack.pop().asInstanceOf[$t]" }
+          q"..${argsNew.reverse}; ..$exprs; $bodyNew"
       }
+
       c.Expr[RuleX] {
         q"""
           val result = ${op.render()}
           if (result.matched) {
             val p = ${c.prefix}
-            ..${valDefs.reverse}
-            $functionCall
+            ${bodyIfMatched(c.resetAllAttrs(applicant))}
           }
-          result
+          else result
         """
       }
     }

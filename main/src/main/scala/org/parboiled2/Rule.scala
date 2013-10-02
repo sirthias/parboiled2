@@ -18,6 +18,7 @@ package org.parboiled2
 
 import shapeless._
 import scala.annotation.unchecked.uncheckedVariance
+import scala.reflect.internal.annotations.compileTimeOnly
 
 /**
  * The general model of a parser rule.
@@ -35,33 +36,31 @@ sealed abstract class Rule[-I <: HList, +O <: HList] {
   // However, https://issues.scala-lang.org/browse/SI-6260 is quite a serious problem for this design,
   // so until this issue is fixed we better stick to this non-value-class-based model
 
-  import Rule.notAvailableAtRuntime
-
   // general concatenation of two rules,
   // e.g. (using an abbreviated HList notation):
   //   Rule[, A] ~ Rule[, B] = Rule[, A:B]
   //   Rule[A:B:C, D:E:F] ~ Rule[F, G:H] = Rule[A:B:C, D:E:G:H]
   //   Rule[A, B:C] ~ Rule[D:B:C, E:F] = Rule[D:A, E:F]
+  @compileTimeOnly("Calls to `~` must be inside `rule` macro")
   def ~[I2 <: HList, O2 <: HList](that: Rule[I2, O2])(implicit i: TailSwitch[I2, O @uncheckedVariance, I @uncheckedVariance],
-                                                      o: TailSwitch[O @uncheckedVariance, I2, O2]): Rule[i.Out, o.Out] = notAvailableAtRuntime
+                                                      o: TailSwitch[O @uncheckedVariance, I2, O2]): Rule[i.Out, o.Out] = ???
 
-  def |[I2 <: I, O2 >: O <: HList](that: Rule[I2, O2]): Rule[I2, O2] = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `|` must be inside `rule` macro")
+  def |[I2 <: I, O2 >: O <: HList](that: Rule[I2, O2]): Rule[I2, O2] = ???
 
-  def unary_!(): Rule0 = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `unary_!` must be inside `rule` macro")
+  def unary_!(): Rule0 = ???
 
   def matched: Boolean = this eq Rule.Matched
   def mismatched: Boolean = this eq Rule.Mismatched
 }
 
 private[parboiled2] object Rule {
-  class NotAvailableAtRuntimeException private[Rule] () extends RuntimeException
-
-  def notAvailableAtRuntime: Nothing = throw new NotAvailableAtRuntimeException
-
   private object Matched extends Rule0
   private object Mismatched extends Rule0
 
-  def apply[I <: HList, O <: HList](): Rule[I, O] = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `Rule` constructor must be inside `rule` macro")
+  def apply[I <: HList, O <: HList](): Rule[I, O] = ???
 
   def apply[I <: HList, O <: HList](m: Boolean): Rule[I, O] = if (m) matched else mismatched
 
@@ -70,10 +69,12 @@ private[parboiled2] object Rule {
 }
 
 abstract class RuleDSL {
-  import Rule.notAvailableAtRuntime
 
-  implicit def ch(c: Char): Rule0 = notAvailableAtRuntime
-  implicit def str(s: String): Rule0 = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `ch` must be inside `rule` macro")
+  implicit def ch(c: Char): Rule0 = ???
+
+  @compileTimeOnly("Calls to `str` must be inside `rule` macro")
+  implicit def str(s: String): Rule0 = ???
 
   /**
    * Runs its inner rule and succeeds even if the inner rule doesn't.
@@ -82,7 +83,8 @@ abstract class RuleDSL {
    *   if (r == Rule1[T]) Rule1[Option[T]]
    *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
    */
-  def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Optionalizer[I, O]): Rule[o.In, o.Out] = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `optional` must be inside `rule` macro")
+  def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Optionalizer[I, O]): Rule[o.In, o.Out] = ???
 
   /**
    * Runs its inner rule until it fails, always succeeds.
@@ -91,7 +93,8 @@ abstract class RuleDSL {
    *   if (r == Rule1[T]) Rule1[Seq[T]]
    *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
    */
-  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `zeroOrMore` must be inside `rule` macro")
+  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = ???
 
   /**
    * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
@@ -100,32 +103,37 @@ abstract class RuleDSL {
    *   if (r == Rule1[T]) Rule1[Seq[T]]
    *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
    */
-  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `oneOrMore` must be inside `rule` macro")
+  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = ???
 
   /**
    * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
    * succeeds only if its inner rule succeeded.
    */
-  def &(r: Rule[_, _]): Rule0 = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `&` must be inside `rule` macro")
+  def &(r: Rule[_, _]): Rule0 = ???
 
   /**
    * Pushes the input text matched by its inner rule onto the value stack
    * after its inner rule has been run successfully.
    */
-  def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepender[O, String :: HNil]): Rule[I, p.Out] = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `capture` must be inside `rule` macro")
+  def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepender[O, String :: HNil]): Rule[I, p.Out] = ???
 
   /**
    * Pushes the given value onto the value stack.
    * If `T` is `Unit` nothing is pushed, if `T <: HList` all value of the HList is pushed as individual elements,
    * otherwise a single value of type `T` is pushed.
    */
-  def push[T](value: T)(implicit j: Join[HNil, HNil, HNil, T]): RuleN[j.Out] = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `push` must be inside `rule` macro")
+  def push[T](value: T)(implicit j: Join[HNil, HNil, HNil, T]): RuleN[j.Out] = ???
 
   /**
    * Implements a semantic predicate. If the argument expression evaluates to `true` the created
    * rule matches otherwise it doesn't.
    */
-  def test(predicateResult: Boolean): Rule0 = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `test` must be inside `rule` macro")
+  def test(predicateResult: Boolean): Rule0 = ???
 
   /**
    * Repeats the given sub rule `r` the given number of times thereby matching the given separator in between.
@@ -140,8 +148,11 @@ abstract class RuleDSL {
    *   if (r == Rule0) Rule0
    *   if (r == Rule1[T]) Rule1[Seq[T]]
    *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   *
+   * @param separator default value is `EMPTY` rule
    */
-  def nTimes[I <: HList, O <: HList](times: Int, r: Rule[I, O], separator: Rule0 = EMPTY)(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `nTimes` must be inside `rule` macro")
+  def nTimes[I <: HList, O <: HList](times: Int, r: Rule[I, O], separator: Rule0 = null)(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = ???
 
   /**
    * Matches the EOI (end-of-input) character.
@@ -151,12 +162,14 @@ abstract class RuleDSL {
   /**
    * Matches any character except EOI.
    */
-  def ANY: Rule0 = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `ANY` must be inside `rule` macro")
+  def ANY: Rule0 = ???
 
   /**
    * Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
    */
-  def EMPTY: Rule0 = notAvailableAtRuntime
+  @compileTimeOnly("Calls to `EMPTY` must be inside `rule` macro")
+  def EMPTY: Rule0 = ???
 
   implicit def pimpString(s: String): PimpedString = null
   sealed trait PimpedString {
@@ -232,7 +245,7 @@ object ActionOps {
   sealed trait Ops2[I <: HList, A, B] {
     def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: Capture[() ⇒ R]): Rule[j.In, j.Out]
     def apply[R](f: B ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: Capture[B ⇒ R]): Rule[j.In, j.Out]
-    def apply[R](f: (A, B) ⇒ R)(j: SJoin[I, HNil, R], c: Capture[(A, B) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B) ⇒ R)(implicit j: SJoin[I, HNil, R], c: Capture[(A, B) ⇒ R]): Rule[j.In, j.Out]
     def apply[Z, R](f: (Z, A, B) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: Capture[(Z, A, B) ⇒ R]): Rule[j.In, j.Out]
     def apply[Y, Z, R](f: (Y, Z, A, B) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: Capture[(Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
     def apply[X, Y, Z, R](f: (X, Y, Z, A, B) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: Capture[(X, Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
