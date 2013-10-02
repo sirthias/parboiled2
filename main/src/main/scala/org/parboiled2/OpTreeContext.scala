@@ -44,12 +44,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"$lhs.|[$a, $b]($rhs)"                          ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
         case q"$a.this.str($s)"                               ⇒ LiteralString(s)
         case q"$a.this.ch($c)"                                ⇒ LiteralChar(c)
+        case q"$a.this.test($flag)"                           ⇒ SemanticPredicate(flag)
         case q"$a.this.optional[$b, $c]($arg)($optionalizer)" ⇒ Optional(OpTree(arg), isForRule1(optionalizer))
         case q"$a.this.zeroOrMore[$b, $c]($arg)($sequencer)"  ⇒ ZeroOrMore(OpTree(arg), isForRule1(sequencer))
         case q"$a.this.oneOrMore[$b, $c]($arg)($sequencer)"   ⇒ OneOrMore(OpTree(arg), isForRule1(sequencer))
         case q"$a.this.capture[$b, $c]($arg)($d)"             ⇒ Capture(OpTree(arg))
         case q"$a.this.&($arg)"                               ⇒ AndPredicate(OpTree(arg))
         case q"$a.this.ANY"                                   ⇒ AnyChar
+        case q"$a.this.EMPTY"                                 ⇒ Empty
         case q"$a.this.$b"                                    ⇒ RuleCall(tree)
         case q"$a.this.$b(..$c)"                              ⇒ RuleCall(tree)
         case q"$a.unary_!()"                                  ⇒ NotPredicate(OpTree(a))
@@ -94,6 +96,18 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           e.save(RuleFrame.FirstOf(c.literal(ruleName).splice))
       }
     }
+  }
+
+  case class SemanticPredicate(flagTree: Tree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
+      try {
+        val p = ${c.prefix}
+        Rule($flagTree || p.onCharMismatch())
+      } catch {
+        case e: Parser.CollectingRuleStackException ⇒
+          e.save(RuleFrame.SemanticPredicate($ruleName))
+      }
+    """)
   }
 
   case class LiteralString(stringTree: Tree) extends OpTree {
@@ -291,13 +305,27 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class PushAction(arg: Tree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] =
+    def render(ruleName: String): Expr[RuleX] = {
+      def unrollArg(tree: Tree): List[Tree] = tree match {
+        // 1 :: "a" :: HNil ⇒ 1 :: unrollArg("a" :: HNil)
+        case Block(List(ValDef(_, _, _, q"$v")),
+          q"shapeless.this.HList.hlistOps[${ _ }]($innerBlock).::[${ _ }](${ _ })") ⇒ v :: unrollArg(innerBlock)
+        // 1 :: HNil ⇒ List(1)
+        case Block(List(ValDef(_, _, _, q"$v")), q"shapeless.HNil.::[${ _ }](${ _ })") ⇒ List(v)
+        // HNil
+        case q"shapeless.HNil" ⇒ List()
+        // Single element
+        case q"$v" ⇒ List(v)
+      }
+      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.valueStack.push($v)" }
+
       // for some reason `reify` doesn't seem to work here
       c.Expr[RuleX](q"""
         val p = ${c.prefix}
-        p.valueStack.push($arg)
+        ..$stackPushes
         Rule.matched
       """)
+    }
   }
 
   abstract class Predicate extends OpTree {

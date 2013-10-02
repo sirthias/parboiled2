@@ -114,6 +114,22 @@ class ParserSpec extends TestParserSpec {
       "" must beMismatched
     }
 
+    "successfully recognize EMPTY" in new TestParser0 {
+      def targetRule = rule { "a" ~ EMPTY ~ EOI }
+      "a" must beMatched
+      "b" must beMismatched
+    }
+
+    "successfully recognize `test`" in new TestParser0 {
+      var flag = true
+      def targetRule = rule { "a" ~ test(flag) ~ EOI }
+
+      "a" must beMatched
+
+      flag = false
+      "a" must beMismatched
+    }
+
     "properly expand string literals to a sequence of char rules" in new TestParser0 {
       def targetRule = rule { "def" }
       "def" must beMatched
