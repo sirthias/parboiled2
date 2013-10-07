@@ -52,9 +52,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"$a.this.&($arg)"                               ⇒ AndPredicate(OpTree(arg))
         case q"$a.this.ANY"                                   ⇒ AnyChar
         case q"$a.this.EMPTY"                                 ⇒ Empty
-        case q"$a.this.$b"                                    ⇒ RuleCall(tree)
-        case q"$a.this.$b(..$c)"                              ⇒ RuleCall(tree)
-        case q"$a.unary_!()"                                  ⇒ NotPredicate(OpTree(a))
+        case q"$a.this.nTimes[$ti, $to]($times, $r, $sep)($sequencer)" ⇒
+          NTimes(times, OpTree(r), tree.pos, isForRule1(sequencer), sep)
+        case q"$a.this.$b"       ⇒ RuleCall(tree)
+        case q"$a.this.$b(..$c)" ⇒ RuleCall(tree)
+        case q"$a.unary_!()"     ⇒ NotPredicate(OpTree(a))
         case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
           Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
@@ -96,6 +98,68 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           e.save(RuleFrame.FirstOf(c.literal(ruleName).splice))
       }
     }
+  }
+
+  /**
+   * @param times is greater than zero in `render` (see `object NTimes.apply`)
+   * @param rule to match `times` times
+   * @param separator rule that is between matching `rule`
+   * @param opIsRule1 a flag whether `rule` returns a result or not
+   */
+  case class NTimes(times: Tree, rule: OpTree, opIsRule1: Boolean, separator: OpTree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      val timez = c.Expr[Int](times).splice
+      if (timez == 0) {
+        c.Expr[Unit](if (opIsRule1) q"${c.prefix}.valueStack.push(Vector())" else q"()").splice
+        Rule.matched
+      } else {
+        try {
+          val p = c.prefix.splice
+          var matching = true
+          var ix = 0
+          val mark = p.markCursorAndValueStack
+          c.Expr[Unit](if (opIsRule1) q"val builder = new scala.collection.immutable.VectorBuilder[Any]" else q"()").splice
+          while (matching && ix < timez) {
+            val sepMatched = ix == 0 || separator.render().splice.matched
+            if (sepMatched) {
+              val rl = rule.render().splice
+              if (rl.matched) {
+                ix += 1
+                c.Expr[Unit](if (opIsRule1) q"builder += p.valueStack.pop()" else q"()").splice
+              } else {
+                matching = false
+              }
+            } else {
+              matching = false
+            }
+          }
+          if (matching) {
+            c.Expr[Unit](if (opIsRule1) q"p.valueStack.push(builder.result())" else q"()").splice
+            Rule.matched
+          } else {
+            p.resetCursorAndValueStack(mark)
+            p.onCharMismatch()
+            Rule.mismatched
+          }
+        } catch {
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(RuleFrame.NTimes(timez, c.literal(show(rule)).splice,
+              c.literal(show(separator)).splice, c.literal(ruleName).splice))
+        }
+      }
+    }
+  }
+  object NTimes {
+    def apply(times: Tree, rule: OpTree, pos: Position, opIsRule1: Boolean, separator: Tree): OpTree =
+      times match {
+        case Literal(Constant(timez: Int)) if timez < 0 ⇒ c.abort(pos, "`times` must be non-negative")
+        case _ ⇒
+          val separatorOpTree = separator match {
+            case q"$a.this.nTimes$$default$$3[$ti, $to]" ⇒ Empty
+            case _                                       ⇒ OpTree(separator)
+          }
+          NTimes(times, rule, opIsRule1, separatorOpTree)
+      }
   }
 
   case class SemanticPredicate(flagTree: Tree) extends OpTree {
