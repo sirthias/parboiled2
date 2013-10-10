@@ -44,17 +44,21 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"$lhs.|[$a, $b]($rhs)"                          ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
         case q"$a.this.str($s)"                               ⇒ LiteralString(s)
         case q"$a.this.ch($c)"                                ⇒ LiteralChar(c)
+        case q"$a.this.test($flag)"                           ⇒ SemanticPredicate(flag)
         case q"$a.this.optional[$b, $c]($arg)($optionalizer)" ⇒ Optional(OpTree(arg), isForRule1(optionalizer))
         case q"$a.this.zeroOrMore[$b, $c]($arg)($sequencer)"  ⇒ ZeroOrMore(OpTree(arg), isForRule1(sequencer))
         case q"$a.this.oneOrMore[$b, $c]($arg)($sequencer)"   ⇒ OneOrMore(OpTree(arg), isForRule1(sequencer))
         case q"$a.this.capture[$b, $c]($arg)($d)"             ⇒ Capture(OpTree(arg))
         case q"$a.this.&($arg)"                               ⇒ AndPredicate(OpTree(arg))
         case q"$a.this.ANY"                                   ⇒ AnyChar
-        case q"$a.this.$b"                                    ⇒ RuleCall(tree)
-        case q"$a.this.$b(..$c)"                              ⇒ RuleCall(tree)
-        case q"$a.unary_!()"                                  ⇒ NotPredicate(OpTree(a))
-        case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Arguments.$arity[..$ts])" ⇒
-          Action(OpTree(r), f, ts.map(_.tpe))
+        case q"$a.this.EMPTY"                                 ⇒ Empty
+        case q"$a.this.nTimes[$ti, $to]($times, $r, $sep)($sequencer)" ⇒
+          NTimes(times, OpTree(r), tree.pos, isForRule1(sequencer), sep)
+        case q"$a.this.$b"       ⇒ RuleCall(tree)
+        case q"$a.this.$b(..$c)" ⇒ RuleCall(tree)
+        case q"$a.unary_!()"     ⇒ NotPredicate(OpTree(a))
+        case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
+          Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
         case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
           CharacterClass(l, r, tree.pos)
@@ -94,6 +98,80 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           e.save(RuleFrame.FirstOf(c.literal(ruleName).splice))
       }
     }
+  }
+
+  /**
+   * @param times is greater than zero in `render` (see `object NTimes.apply`)
+   * @param rule to match `times` times
+   * @param separator rule that is between matching `rule`
+   * @param opIsRule1 a flag whether `rule` returns a result or not
+   */
+  case class NTimes(times: Tree, rule: OpTree, opIsRule1: Boolean, separator: OpTree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      val timez = c.Expr[Int](times).splice
+      if (timez == 0) {
+        c.Expr[Unit](if (opIsRule1) q"${c.prefix}.valueStack.push(Vector())" else q"()").splice
+        Rule.matched
+      } else {
+        try {
+          val p = c.prefix.splice
+          var matching = true
+          var ix = 0
+          val mark = p.markCursorAndValueStack
+          c.Expr[Unit](if (opIsRule1) q"val builder = new scala.collection.immutable.VectorBuilder[Any]" else q"()").splice
+          while (matching && ix < timez) {
+            val sepMatched = ix == 0 || separator.render().splice.matched
+            if (sepMatched) {
+              val rl = rule.render().splice
+              if (rl.matched) {
+                ix += 1
+                c.Expr[Unit](if (opIsRule1) q"builder += p.valueStack.pop()" else q"()").splice
+              } else {
+                matching = false
+              }
+            } else {
+              matching = false
+            }
+          }
+          if (matching) {
+            c.Expr[Unit](if (opIsRule1) q"p.valueStack.push(builder.result())" else q"()").splice
+            Rule.matched
+          } else {
+            p.resetCursorAndValueStack(mark)
+            p.onCharMismatch()
+            Rule.mismatched
+          }
+        } catch {
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(RuleFrame.NTimes(timez, c.literal(show(rule)).splice,
+              c.literal(show(separator)).splice, c.literal(ruleName).splice))
+        }
+      }
+    }
+  }
+  object NTimes {
+    def apply(times: Tree, rule: OpTree, pos: Position, opIsRule1: Boolean, separator: Tree): OpTree =
+      times match {
+        case Literal(Constant(timez: Int)) if timez < 0 ⇒ c.abort(pos, "`times` must be non-negative")
+        case _ ⇒
+          val separatorOpTree = separator match {
+            case q"$a.this.nTimes$$default$$3[$ti, $to]" ⇒ Empty
+            case _                                       ⇒ OpTree(separator)
+          }
+          NTimes(times, rule, opIsRule1, separatorOpTree)
+      }
+  }
+
+  case class SemanticPredicate(flagTree: Tree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
+      try {
+        val p = ${c.prefix}
+        Rule($flagTree || p.onCharMismatch())
+      } catch {
+        case e: Parser.CollectingRuleStackException ⇒
+          e.save(RuleFrame.SemanticPredicate($ruleName))
+      }
+    """)
   }
 
   case class LiteralString(stringTree: Tree) extends OpTree {
@@ -253,34 +331,65 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = {
       val argTypes = functionType dropRight 1
       val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
-      val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
-      val functionParams = argNames map Ident.apply
-      val functionCall = functionType.last match {
-        case TypeRef(_, sym, _) if sym.fullName == "scala.Unit" ⇒ q"$applicant(..$functionParams)"
-        case _ ⇒ q"p.valueStack.push($applicant(..$functionParams))"
+
+      def bodyIfMatched(tree: Tree): Tree = tree match {
+        case Block(exprs, res) ⇒
+          q"..$exprs; ${bodyIfMatched(res)}"
+        case Ident(_) ⇒
+          val functionParams = argNames map Ident.apply
+          val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
+          q"..${valDefs.reverse}; p.valueStack.push($applicant(..$functionParams)); result"
+        case q"( ..$args ⇒ $body )" ⇒
+          val (exprs, res) = body match {
+            case Block(exps, rs) ⇒ (exps, rs)
+            case x               ⇒ (Nil, x)
+          }
+
+          // TODO: Reconsider type matching
+          val bodyNew = functionType.last.toString match {
+            case tp if tp.startsWith("org.parboiled2.Rule") ⇒ q"${OpTree(res).render()}"
+            case tp if tp == "Unit" ⇒ q"$res; result"
+            case _ ⇒ q"${PushAction(res).render()}"
+          }
+          val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.valueStack.pop().asInstanceOf[$t]" }
+          q"..${argsNew.reverse}; ..$exprs; $bodyNew"
       }
+
       c.Expr[RuleX] {
         q"""
           val result = ${op.render()}
           if (result.matched) {
             val p = ${c.prefix}
-            ..${valDefs.reverse}
-            $functionCall
+            ${bodyIfMatched(c.resetAllAttrs(applicant))}
           }
-          result
+          else result
         """
       }
     }
   }
 
   case class PushAction(arg: Tree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] =
+    def render(ruleName: String): Expr[RuleX] = {
+      def unrollArg(tree: Tree): List[Tree] = tree match {
+        // 1 :: "a" :: HNil ⇒ 1 :: unrollArg("a" :: HNil)
+        case Block(List(ValDef(_, _, _, q"$v")),
+          q"shapeless.this.HList.hlistOps[${ _ }]($innerBlock).::[${ _ }](${ _ })") ⇒ v :: unrollArg(innerBlock)
+        // 1 :: HNil ⇒ List(1)
+        case Block(List(ValDef(_, _, _, q"$v")), q"shapeless.HNil.::[${ _ }](${ _ })") ⇒ List(v)
+        // HNil
+        case q"shapeless.HNil" ⇒ List()
+        // Single element
+        case q"$v" ⇒ List(v)
+      }
+      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.valueStack.push($v)" }
+
       // for some reason `reify` doesn't seem to work here
       c.Expr[RuleX](q"""
         val p = ${c.prefix}
-        p.valueStack.push($arg)
+        ..$stackPushes
         Rule.matched
       """)
+    }
   }
 
   abstract class Predicate extends OpTree {

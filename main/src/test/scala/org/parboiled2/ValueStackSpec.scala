@@ -52,11 +52,93 @@ class ValueStackSpec extends TestParserSpec {
       sideEffectedVar mustEqual "x"
     }
 
+    "handle `pop` function of multiple expressions with a non-`Rule` result" in new TestParser[Int :: HNil] {
+      var sideEffectedVar = "a"
+
+      def targetRule = rule { capture("7") ~> { sideEffectedVar = "b"; (_: String).toInt } }
+
+      "x" must beMismatched
+      sideEffectedVar mustEqual "a"
+      "7" must beMatchedBy(7)
+      sideEffectedVar mustEqual "b"
+    }
+
+    "handle `pop` function of expression block with a `Rule1` result" in new TestParser[Int :: Int :: HNil] {
+      var sideEffectedVar = "a"
+
+      def targetRule = rule { capture("7") ~> ((x: String) ⇒ { sideEffectedVar = "b"; push(42 :: x.toInt :: HNil) }) }
+
+      "x" must beMismatched
+      sideEffectedVar mustEqual "a"
+      "7" must beMatchedWith(42 :: 7 :: HNil)
+      sideEffectedVar mustEqual "b"
+    }
+
+    "handle `pop` function of expression block with a `Unit` result" in new TestParser[HNil] {
+      var sideEffectedVar = "a"
+
+      def targetRule = rule { capture("7") ~> ((x: String) ⇒ { sideEffectedVar = "b"; sideEffectedVar = "c" }) }
+
+      "x" must beMismatched
+      sideEffectedVar mustEqual "a"
+      "7" must beMatchedWith(HNil)
+      sideEffectedVar mustEqual "c"
+    }
+
+    "handle `pop` function with non-Rule result from block of expressions" in new TestParser[Int :: HNil] {
+      var sideEffectedVar = "a"
+
+      def targetRule = rule {
+        capture("7") ~> ((x: String) ⇒ {
+          sideEffectedVar = "9"
+
+          {
+            val r1 = x.toInt
+            val r2 = sideEffectedVar.toInt
+            r1 + r2
+          }
+        })
+      }
+
+      "x" must beMismatched
+      sideEffectedVar mustEqual "a"
+      "7" must beMatchedBy(7 + 9)
+      sideEffectedVar mustEqual "9"
+    }
+
     "handle `capture` of `ANY`" in new TestParser[String :: HNil] {
       def targetRule = rule { capture(ANY) }
 
       "x" must beMatchedBy("x")
       "" must beMismatched
+    }
+
+    "handle `nTimes` of `times == 0` with rule of type `Rule1`" in new TestParser[Seq[Int]:: HNil] {
+      def targetRule = rule { nTimes(0, capture("7") ~> (_.toInt)) ~ EOI }
+
+      "6" must beMismatched
+      "" must beMatchedBy(Seq())
+    }
+
+    "handle `nTimes` with rule of type `Rule1`" in new TestParser[Seq[Int]:: HNil] {
+      def targetRule = rule { nTimes(2, capture("7") ~> (_.toInt)) }
+
+      "76" must beMismatched
+      "77" must beMatchedBy(Seq(7, 7))
+    }
+
+    "handle `capture` of `nTimes`" in new TestParser[String :: HNil] {
+      def targetRule = rule { capture(nTimes(2, "a")) ~ EOI }
+
+      "a" must beMismatched
+      "aa" must beMatchedBy("aa")
+    }
+
+    "handle `nTimes` of `capture`" in new TestParser[Seq[String]:: HNil] {
+      def targetRule = rule { nTimes(2, capture("a")) ~ EOI }
+
+      "a" must beMismatched
+      "aa" must beMatchedBy(Seq("a", "a"))
     }
 
     "work with custom AST nodes" in {
@@ -121,10 +203,36 @@ class ValueStackSpec extends TestParserSpec {
       "a" must beMatchedWith("a" :: 1 :: HNil)
     }
 
-    "work with `push`" in new TestParser[Boolean :: HNil] {
-      def targetRule = rule { str("true") ~ push(true) }
+    "work with `push`" in {
+      "of arity 1" in new TestParser[Boolean :: HNil] {
+        def targetRule = rule { str("true") ~ push(true) }
 
-      "true" must beMatchedBy(true)
+        "true" must beMatchedBy(true)
+      }
+
+      "of arity 2+" in new TestParser[Boolean :: Int :: Double :: HNil] {
+        def targetRule = rule { str("true") ~ push(true :: 7 :: 42.0 :: HNil) }
+
+        "true" must beMatchedWith(true :: 7 :: 42.0 :: HNil)
+      }
+    }
+
+    "pass integration tests" in {
+      "sequence rule in `~>` production" in new TestParser[HNil] {
+        def foo = rule { capture("a") ~ capture("b") ~> (str(_) ~ _) }
+        def targetRule = foo
+
+        "abab" must beMatchedWith(HNil)
+        "ab" must beMismatched
+      }
+
+      "complex rule" in new TestParser[String :: Int :: Int :: HNil] {
+        def bar = rule { push(5) ~ capture("ab") ~ foo }
+        def foo = rule { push(4) ~> ((s1: String, i) ⇒ capture(s1) ~> ((j: Int, s2) ⇒ push(s2 :: j :: i :: HNil))) }
+        def targetRule = bar
+
+        "abab" must beMatchedWith("ab" :: 5 :: 4 :: HNil)
+      }
     }
   }
 }
