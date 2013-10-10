@@ -23,10 +23,12 @@ import shapeless._
 // `The classic non-context-free language <http://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples>`_
 // .. math:: \{ a^n b^n c^n : n \ge 1 \}
 
-case class CapturedString(s: String)
-
 class ABCParser(val input: ParserInput) extends Parser {
-  def InputLine = rule { capture("a") ~> (CapturedString(_)) }
+  def InputLine = rule { &(A ~ "c") ~ oneOrMore("a") ~ B ~ !("a" | "b" | "c") ~ EOI }
+
+  def A: Rule0 = rule { "a" ~ optional(A) ~ "b" }
+
+  def B: Rule0 = rule { "b" ~ optional(B) ~ "c" }
 }
 
 object ABCParser {
