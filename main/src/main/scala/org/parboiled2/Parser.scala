@@ -24,8 +24,6 @@ import shapeless._
 abstract class Parser extends RuleDSL {
   import Parser._
 
-  type Result[L <: HList] = Either[ParseError, L]
-
   def input: ParserInput
 
   // the index of the current input char
@@ -45,11 +43,11 @@ abstract class Parser extends RuleDSL {
   /**
    * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
    */
-  Val __valueStack = new ValueStack
+  val __valueStack = new ValueStack
 
   def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
 
-  def run[L <: HList](rule: this.type ⇒ RuleN[L]): Result[L] = {
+  def run[L <: HList](rule: this.type ⇒ RuleN[L]): Either[Parser.Error, L] = {
     def runRule(errorRuleStackIx: Int = -1): Boolean = {
       cursor = -1
       __valueStack.clear()
@@ -58,7 +56,7 @@ abstract class Parser extends RuleDSL {
       rule(this).matched
     }
     @tailrec def buildParseError(errorRuleIx: Int = 0,
-                                 stacksBuilder: VectorBuilder[RuleStack] = new VectorBuilder): ParseError = {
+                                 stacksBuilder: VectorBuilder[RuleStack] = new VectorBuilder): Error = {
       val ruleFrames: Seq[RuleFrame] =
         try {
           runRule(errorRuleIx)
@@ -66,7 +64,7 @@ abstract class Parser extends RuleDSL {
         } catch {
           case e: Parser.CollectingRuleStackException ⇒ e.ruleFrames
         }
-      if (ruleFrames.isEmpty) ParseError(errorPosition(), stacksBuilder.result())
+      if (ruleFrames.isEmpty) Error(errorPosition(), stacksBuilder.result())
       else buildParseError(errorRuleIx + 1, stacksBuilder += RuleStack(ruleFrames))
     }
     errorIndex = 0
@@ -136,6 +134,13 @@ abstract class Parser extends RuleDSL {
 }
 
 object Parser {
+  sealed trait Result[+L <: HList]
+  case class Value[L <: HList](value: L) extends Result[L]
+  case class Continuation[L <: HList](continuation: ParserInput ⇒ Result[L]) extends Result[L]
+  case class Error(position: Position, errorRules: Seq[RuleStack]) extends Result[Nothing]
+  case class Position(index: Int, line: Int, column: Int)
+  case class RuleStack(frames: Seq[RuleFrame])
+
   class Mark private[Parser] (val value: Long) extends AnyVal
 
   type ParserContext = Context { type PrefixType = Parser }

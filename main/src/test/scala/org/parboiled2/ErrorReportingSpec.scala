@@ -18,20 +18,21 @@ package org.parboiled2
 
 class ErrorReportingSpec extends SimpleCalculatorSpec {
   import RuleFrame._
+  import Parser.{ Error, Position, RuleStack }
 
   "Error reporting" should {
     "compose error messages for simple expression" in new TestParser0 {
       def targetRule = rule { oneOrMore("x") ~ ch('a') ~ 'b' ~ 'e' }
 
       parse("xxxace") ===
-        Left(ParseError(Position(4, 1, 5), Seq(RuleStack(Seq(LiteralChar('b'), Sequence(), Sequence("targetRule"))))))
+        Left(Error(Position(4, 1, 5), Seq(RuleStack(Seq(LiteralChar('b'), Sequence(), Sequence("targetRule"))))))
     }
 
     "compose error messages for simple calculator" in new SimpleCalculator {
       def targetRule = InputLine
 
       "3+*5" must beMismatchedWithError(
-        ParseError(Position(2, 1, 3), Seq(
+        Error(Position(2, 1, 3), Seq(
           RuleStack(Seq(CharacterClass('0', '9', "Digit"), RuleCall("", "SimpleCalculator.this.Digit"), OneOrMore("Digits"),
             RuleCall("", "SimpleCalculator.this.Digits"), FirstOf("Factor"), RuleCall("", "SimpleCalculator.this.Factor"),
             Sequence("Term"), RuleCall("", "SimpleCalculator.this.Term"), Sequence(),
@@ -45,21 +46,21 @@ class ErrorReportingSpec extends SimpleCalculatorSpec {
       "first line" in new TestParser0 {
         def targetRule = rule { str("a\n") ~ "b\n" ~ "c" }
 
-        "x\nb\nc" must beMismatchedWithError(ParseError(Position(0, 1, 1), Seq(
+        "x\nb\nc" must beMismatchedWithError(Error(Position(0, 1, 1), Seq(
           RuleStack(Seq(LiteralString("a\n"), Sequence(), Sequence("targetRule"))))))
       }
 
       "second line" in new TestParser0 {
         def targetRule = rule { str("a\n") ~ "b\n" ~ "c" }
 
-        "a\nx\nc" must beMismatchedWithError(ParseError(Position(2, 2, 1), Seq(
+        "a\nx\nc" must beMismatchedWithError(Error(Position(2, 2, 1), Seq(
           RuleStack(Seq(LiteralString("b\n"), Sequence(), Sequence("targetRule"))))))
       }
 
       "third line" in new TestParser0 {
         def targetRule = rule { str("a\n") ~ "b\n" ~ "c" }
 
-        "a\nb\nx" must beMismatchedWithError(ParseError(Position(4, 3, 1), Seq(
+        "a\nb\nx" must beMismatchedWithError(Error(Position(4, 3, 1), Seq(
           RuleStack(Seq(LiteralString("c"), Sequence("targetRule"))))))
       }
     }

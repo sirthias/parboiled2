@@ -16,10 +16,6 @@
 
 package org.parboiled2
 
-case class ParseError(position: Position, errorRules: Seq[RuleStack])
-case class Position(index: Int, line: Int, column: Int)
-case class RuleStack(frames: Seq[RuleFrame])
-
 sealed trait RuleFrame {
   def name: String // the name of rule (method), empty if the rule is anonymous (i.e. an "inner" rule)
 }
