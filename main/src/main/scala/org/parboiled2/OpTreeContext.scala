@@ -86,11 +86,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        val mark = p.markCursorAndValueStack
+        val mark = p.__markCursorAndValueStack
         val left = lhs.render().splice
         if (left.matched) left
         else {
-          p.resetCursorAndValueStack(mark)
+          p.__resetCursorAndValueStack(mark)
           rhs.render().splice
         }
       } catch {
@@ -110,14 +110,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = reify {
       val timez = c.Expr[Int](times).splice
       if (timez == 0) {
-        c.Expr[Unit](if (opIsRule1) q"${c.prefix}.valueStack.push(Vector())" else q"()").splice
+        c.Expr[Unit](if (opIsRule1) q"${c.prefix}.__valueStack.push(Vector())" else q"()").splice
         Rule.matched
       } else {
         try {
           val p = c.prefix.splice
           var matching = true
           var ix = 0
-          val mark = p.markCursorAndValueStack
+          val mark = p.__markCursorAndValueStack
           c.Expr[Unit](if (opIsRule1) q"val builder = new scala.collection.immutable.VectorBuilder[Any]" else q"()").splice
           while (matching && ix < timez) {
             val sepMatched = ix == 0 || separator.render().splice.matched
@@ -125,7 +125,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
               val rl = rule.render().splice
               if (rl.matched) {
                 ix += 1
-                c.Expr[Unit](if (opIsRule1) q"builder += p.valueStack.pop()" else q"()").splice
+                c.Expr[Unit](if (opIsRule1) q"builder += p.__valueStack.pop()" else q"()").splice
               } else {
                 matching = false
               }
@@ -134,11 +134,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             }
           }
           if (matching) {
-            c.Expr[Unit](if (opIsRule1) q"p.valueStack.push(builder.result())" else q"()").splice
+            c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(builder.result())" else q"()").splice
             Rule.matched
           } else {
-            p.resetCursorAndValueStack(mark)
-            p.onCharMismatch()
+            p.__resetCursorAndValueStack(mark)
+            p.__onCharMismatch()
             Rule.mismatched
           }
         } catch {
@@ -166,7 +166,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
       try {
         val p = ${c.prefix}
-        Rule($flagTree || p.onCharMismatch())
+        Rule($flagTree || p.__onCharMismatch())
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.SemanticPredicate($ruleName))
@@ -180,8 +180,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       try {
         val p = c.prefix.splice
         var ix = 0
-        while (ix < string.length && p.nextChar() == string.charAt(ix)) ix += 1
-        Rule(ix == string.length || p.onCharMismatch())
+        while (ix < string.length && p.__nextChar() == string.charAt(ix)) ix += 1
+        Rule(ix == string.length || p.__onCharMismatch())
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.LiteralString(string, c.literal(ruleName).splice))
@@ -197,7 +197,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val char = c.Expr[Char](charTree).splice
       try {
         val p = c.prefix.splice
-        Rule(p.nextChar() == char || p.onCharMismatch())
+        Rule(p.__nextChar() == char || p.__onCharMismatch())
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.LiteralChar(char, c.literal(ruleName).splice))
@@ -209,7 +209,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        Rule(p.nextChar() != EOI || p.onCharMismatch())
+        Rule(p.__nextChar() != EOI || p.__onCharMismatch())
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.AnyChar(c.literal(ruleName).splice))
@@ -222,12 +222,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       reify {
         try {
           val p = c.prefix.splice
-          val mark = p.markCursor
+          val mark = p.__markCursor
           if (op.render().splice.matched) {
-            c.Expr[Unit](if (opIsRule1) q"p.valueStack.push(Some(p.valueStack.pop())) " else q"()").splice
+            c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(Some(p.__valueStack.pop())) " else q"()").splice
           } else {
-            c.Expr[Unit](if (opIsRule1) q"p.valueStack.push(None)" else q"()").splice
-            p.resetCursor(mark)
+            c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(None)" else q"()").splice
+            p.__resetCursor(mark)
           }
           Rule.matched
         } catch {
@@ -244,22 +244,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         if (opIsRule1)
           reify {
             val p = c.prefix.splice
-            var mark = p.markCursorAndValueStack
+            var mark = p.__markCursorAndValueStack
             val builder = new VectorBuilder[Any]
             while (op.render().splice.matched) {
-              builder += p.valueStack.pop()
-              mark = p.markCursorAndValueStack
+              builder += p.__valueStack.pop()
+              mark = p.__markCursorAndValueStack
             }
-            p.resetCursorAndValueStack(mark)
-            p.valueStack.push(builder.result())
+            p.__resetCursorAndValueStack(mark)
+            p.__valueStack.push(builder.result())
           }
         else
           reify {
             val p = c.prefix.splice
-            var mark = p.markCursorAndValueStack
+            var mark = p.__markCursorAndValueStack
             while (op.render().splice.matched)
-              mark = p.markCursorAndValueStack
-            p.resetCursorAndValueStack(mark)
+              mark = p.__markCursorAndValueStack
+            p.__resetCursorAndValueStack(mark)
           }
       reify {
         try {
@@ -279,28 +279,28 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         if (opIsRule1)
           reify {
             val p = c.prefix.splice
-            val firstMark = p.markCursorAndValueStack
+            val firstMark = p.__markCursorAndValueStack
             var mark = firstMark
             val builder = new VectorBuilder[Any]
             while (op.render().splice.matched) {
-              builder += p.valueStack.pop()
-              mark = p.markCursorAndValueStack
+              builder += p.__valueStack.pop()
+              mark = p.__markCursorAndValueStack
             }
             if (mark != firstMark) {
-              p.resetCursorAndValueStack(mark)
-              p.valueStack.push(builder.result())
+              p.__resetCursorAndValueStack(mark)
+              p.__valueStack.push(builder.result())
               Rule.matched
             } else Rule.mismatched
           }
         else
           reify {
             val p = c.prefix.splice
-            val firstMark = p.markCursorAndValueStack
+            val firstMark = p.__markCursorAndValueStack
             var mark = firstMark
             while (op.render().splice.matched)
-              mark = p.markCursorAndValueStack
+              mark = p.__markCursorAndValueStack
             if (mark != firstMark) {
-              p.resetCursorAndValueStack(mark)
+              p.__resetCursorAndValueStack(mark)
               Rule.matched
             } else Rule.mismatched
           }
@@ -317,9 +317,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class Capture(op: OpTree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val p = c.prefix.splice
-      val mark = p.markCursor
+      val mark = p.__markCursor
       val result = op.render().splice
-      if (result.matched) p.valueStack.push(p.sliceInput(mark))
+      if (result.matched) p.__valueStack.push(p.__sliceInput(mark))
       result
     }
   }
@@ -337,8 +337,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           q"..$exprs; ${bodyIfMatched(res)}"
         case Ident(_) ⇒
           val functionParams = argNames map Ident.apply
-          val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
-          q"..${valDefs.reverse}; p.valueStack.push($applicant(..$functionParams)); result"
+          val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.__valueStack.pop().asInstanceOf[$t]" }
+          q"..${valDefs.reverse}; p.__valueStack.push($applicant(..$functionParams)); result"
         case q"( ..$args ⇒ $body )" ⇒
           val (exprs, res) = body match {
             case Block(exps, rs) ⇒ (exps, rs)
@@ -351,7 +351,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             case tp if tp == "Unit" ⇒ q"$res; result"
             case _ ⇒ q"${PushAction(res).render()}"
           }
-          val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.valueStack.pop().asInstanceOf[$t]" }
+          val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.__valueStack.pop().asInstanceOf[$t]" }
           q"..${argsNew.reverse}; ..$exprs; $bodyNew"
       }
 
@@ -381,7 +381,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         // Single element
         case q"$v" ⇒ List(v)
       }
-      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.valueStack.push($v)" }
+      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.__valueStack.push($v)" }
 
       // for some reason `reify` doesn't seem to work here
       c.Expr[RuleX](q"""
@@ -396,9 +396,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def op: OpTree
     def renderMatch(): Expr[RuleX] = reify {
       val p = c.prefix.splice
-      val mark = p.markCursorAndValueStack
+      val mark = p.__markCursorAndValueStack
       val result = op.render().splice
-      p.resetCursorAndValueStack(mark)
+      p.__resetCursorAndValueStack(mark)
       result
     }
   }
@@ -437,9 +437,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        val char = p.nextChar()
+        val char = p.__nextChar()
         val ok = c.literal(lowerBound).splice <= char && char <= c.literal(upperBound).splice
-        Rule(ok || p.onCharMismatch())
+        Rule(ok || p.__onCharMismatch())
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.CharacterClass(c.literal(lowerBound).splice, c.literal(upperBound).splice, c.literal(ruleName).splice))
