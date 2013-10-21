@@ -73,7 +73,7 @@ abstract class Parser extends RuleDSL {
       Left(buildParseError())
   }
 
-  private[parboiled2] def nextChar(): Char = {
+  def nextChar(): Char = {
     val nextCursor = cursor + 1
     if (nextCursor < input.length) {
       cursor = nextCursor
@@ -83,17 +83,17 @@ abstract class Parser extends RuleDSL {
     } else EOI
   }
 
-  private[parboiled2] def markCursorAndValueStack: Mark = new Mark((cursor.toLong << 32) + valueStack.top)
-  private[parboiled2] def resetCursorAndValueStack(mark: Mark): Unit = {
+  def markCursorAndValueStack: Mark = new Mark((cursor.toLong << 32) + valueStack.top)
+  def resetCursorAndValueStack(mark: Mark): Unit = {
     cursor = (mark.value >>> 32).toInt
     valueStack.top = (mark.value & 0x00000000FFFFFFFF).toInt
   }
 
-  private[parboiled2] def markCursor: Int = cursor
-  private[parboiled2] def resetCursor(mark: Int): Unit = cursor = mark
-  private[parboiled2] def sliceInput(start: Int): String = input.sliceString(start + 1, cursor + 1)
+  def markCursor: Int = cursor
+  def resetCursor(mark: Int): Unit = cursor = mark
+  def sliceInput(start: Int): String = input.sliceString(start + 1, cursor + 1)
 
-  private[parboiled2] def onCharMismatch(): Boolean = {
+  def onCharMismatch(): Boolean = {
     if (currentErrorRuleStackIx != -1 && cursor == errorIndex) {
       if (mismatchesAtErrorIndex < currentErrorRuleStackIx) mismatchesAtErrorIndex += 1
       else throw new Parser.CollectingRuleStackException
@@ -122,7 +122,7 @@ object Parser {
     }
   }
 
-  private[parboiled2] class CollectingRuleStackException extends RuntimeException {
+  class CollectingRuleStackException extends RuntimeException {
     private[this] val frameBuilder = new VectorBuilder[RuleFrame]
 
     def save(frame: RuleFrame): Nothing = {
