@@ -42,14 +42,14 @@ abstract class Parser extends RuleDSL {
   // a ParserError object) this value is -1
   private[this] var currentErrorRuleStackIx: Int = _
 
-  private[parboiled2] val valueStack = new ValueStack
+  val __valueStack = new ValueStack
 
   def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
 
   def run[L <: HList](rule: this.type ⇒ RuleN[L]): Result[L] = {
     def runRule(errorRuleStackIx: Int = -1): Boolean = {
       cursor = -1
-      valueStack.clear()
+      __valueStack.clear()
       mismatchesAtErrorIndex = 0
       currentErrorRuleStackIx = errorRuleStackIx
       rule(this).matched
@@ -68,12 +68,12 @@ abstract class Parser extends RuleDSL {
     }
     errorIndex = 0
     if (runRule())
-      Right(valueStack.toHList[L]())
+      Right(__valueStack.toHList[L]())
     else
       Left(buildParseError())
   }
 
-  def nextChar(): Char = {
+  def __nextChar(): Char = {
     val nextCursor = cursor + 1
     if (nextCursor < input.length) {
       cursor = nextCursor
@@ -83,17 +83,17 @@ abstract class Parser extends RuleDSL {
     } else EOI
   }
 
-  def markCursorAndValueStack: Mark = new Mark((cursor.toLong << 32) + valueStack.top)
-  def resetCursorAndValueStack(mark: Mark): Unit = {
+  def __markCursorAndValueStack: Mark = new Mark((cursor.toLong << 32) + __valueStack.top)
+  def __resetCursorAndValueStack(mark: Mark): Unit = {
     cursor = (mark.value >>> 32).toInt
-    valueStack.top = (mark.value & 0x00000000FFFFFFFF).toInt
+    __valueStack.top = (mark.value & 0x00000000FFFFFFFF).toInt
   }
 
-  def markCursor: Int = cursor
-  def resetCursor(mark: Int): Unit = cursor = mark
-  def sliceInput(start: Int): String = input.sliceString(start + 1, cursor + 1)
+  def __markCursor: Int = cursor
+  def __resetCursor(mark: Int): Unit = cursor = mark
+  def __sliceInput(start: Int): String = input.sliceString(start + 1, cursor + 1)
 
-  def onCharMismatch(): Boolean = {
+  def __onCharMismatch(): Boolean = {
     if (currentErrorRuleStackIx != -1 && cursor == errorIndex) {
       if (mismatchesAtErrorIndex < currentErrorRuleStackIx) mismatchesAtErrorIndex += 1
       else throw new Parser.CollectingRuleStackException
