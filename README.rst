@@ -60,7 +60,7 @@ How does *parboiled2* compute whether input string is matched or not? Being comp
     val left = {
       val string = "ab"
       var ix = 0
-      while (ix < string.length && this.nextChar() == string.charAt(ix)) ix += 1
+      while (ix < string.length && this.__nextChar() == string.charAt(ix)) ix += 1
       Rule(ix == string.length())
     }
 
@@ -71,7 +71,7 @@ How does *parboiled2* compute whether input string is matched or not? Being comp
       {
         val string = "cd"
         var ix = 0
-        while (ix < string.length && this.nextChar() == string.charAt(ix)) ix += 1
+        while (ix < string.length && this.__nextChar() == string.charAt(ix)) ix += 1
         Rule(ix == string.length())
       }
     }
