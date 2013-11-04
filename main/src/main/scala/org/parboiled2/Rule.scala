@@ -55,6 +55,9 @@ sealed abstract class Rule[-I <: HList, +O <: HList] {
   def mismatched: Boolean = this eq Rule.Mismatched
 }
 
+/**
+ * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+ */
 object Rule {
   private object Matched extends Rule0
   private object Mismatched extends Rule0

@@ -42,7 +42,10 @@ abstract class Parser extends RuleDSL {
   // a ParserError object) this value is -1
   private[this] var currentErrorRuleStackIx: Int = _
 
-  val __valueStack = new ValueStack
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
+  Val __valueStack = new ValueStack
 
   def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
 
@@ -73,6 +76,9 @@ abstract class Parser extends RuleDSL {
       Left(buildParseError())
   }
 
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
   def __nextChar(): Char = {
     val nextCursor = cursor + 1
     if (nextCursor < input.length) {
@@ -83,16 +89,37 @@ abstract class Parser extends RuleDSL {
     } else EOI
   }
 
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
   def __markCursorAndValueStack: Mark = new Mark((cursor.toLong << 32) + __valueStack.top)
+
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
   def __resetCursorAndValueStack(mark: Mark): Unit = {
     cursor = (mark.value >>> 32).toInt
     __valueStack.top = (mark.value & 0x00000000FFFFFFFF).toInt
   }
 
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
   def __markCursor: Int = cursor
+
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
   def __resetCursor(mark: Int): Unit = cursor = mark
+
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
   def __sliceInput(start: Int): String = input.sliceString(start + 1, cursor + 1)
 
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
   def __onCharMismatch(): Boolean = {
     if (currentErrorRuleStackIx != -1 && cursor == errorIndex) {
       if (mismatchesAtErrorIndex < currentErrorRuleStackIx) mismatchesAtErrorIndex += 1
@@ -122,6 +149,9 @@ object Parser {
     }
   }
 
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
   class CollectingRuleStackException extends RuntimeException {
     private[this] val frameBuilder = new VectorBuilder[RuleFrame]
 
