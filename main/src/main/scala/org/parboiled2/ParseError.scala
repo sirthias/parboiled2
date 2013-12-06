@@ -26,7 +26,7 @@ object RuleFrame {
   case class FirstOf(name: String = "") extends RuleFrame
   case class NTimes(times: Int, rule: String, separator: String, name: String = "") extends RuleFrame
   case class LiteralString(string: String, name: String = "") extends RuleFrame
-  case class SemanticPredicate(name: String = "") extends RuleFrame
+  case class SemanticPredicate(name: String = "", predicate: String = "") extends RuleFrame
   case class LiteralChar(char: Char, name: String = "") extends RuleFrame
   case class AnyChar(name: String = "") extends RuleFrame
   case class RuleCall(calledRule: String, name: String = "") extends RuleFrame

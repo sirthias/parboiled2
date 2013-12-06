@@ -45,21 +45,41 @@ abstract class Parser extends RuleDSL {
    */
   val __valueStack = new ValueStack
 
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
+  var __lastChunk: Boolean = true
+
   def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
 
-  def run[L <: HList](rule: this.type ⇒ RuleN[L]): Either[Parser.Error, L] = {
-    def runRule(errorRuleStackIx: Int = -1): Boolean = {
+  def startParsing[L <: HList](rule: this.type ⇒ RuleN[L], lastChunk: Boolean = false): Result[L] = {
+    def resetInternalState(errorRuleStackIx: Int) = {
+      __lastChunk = lastChunk
       cursor = -1
       __valueStack.clear()
       mismatchesAtErrorIndex = 0
       currentErrorRuleStackIx = errorRuleStackIx
-      rule(this).matched
     }
-    @tailrec def buildParseError(errorRuleIx: Int = 0,
-                                 stacksBuilder: VectorBuilder[RuleStack] = new VectorBuilder): Error = {
+
+    def runRule[I <: HList, O <: HList](r: Rule[I, O], buildingError: Boolean = false): Result[L] = {
+      if (r.matched) Value(__valueStack.toHList())
+      else if (r.mismatched) {
+        if (buildingError) Mismatch()
+        else buildParseError()
+      } else {
+        Continuation((parserInput: ParserInput, lastChunk: Boolean) ⇒ {
+          __lastChunk = lastChunk
+          input.append(parserInput)
+          r match { case Rule.PartiallyMatched(cont) ⇒ runRule(cont()) }
+        })
+      }
+    }
+
+    @tailrec def buildParseError(errorRuleIx: Int = 0, stacksBuilder: VectorBuilder[RuleStack] = new VectorBuilder): Error = {
+      resetInternalState(errorRuleIx)
       val ruleFrames: Seq[RuleFrame] =
         try {
-          runRule(errorRuleIx)
+          runRule(rule(this), true)
           Nil // we managed to complete the run w/o exception, i.e. we have collected all frames
         } catch {
           case e: Parser.CollectingRuleStackException ⇒ e.ruleFrames
@@ -67,23 +87,28 @@ abstract class Parser extends RuleDSL {
       if (ruleFrames.isEmpty) Error(errorPosition(), stacksBuilder.result())
       else buildParseError(errorRuleIx + 1, stacksBuilder += RuleStack(ruleFrames))
     }
-    errorIndex = 0
-    if (runRule())
-      Right(__valueStack.toHList[L]())
-    else
-      Left(buildParseError())
+
+    resetInternalState(-1)
+    runRule(rule(this))
+  }
+
+  def run[L <: HList](rule: this.type ⇒ RuleN[L]): Either[Parser.Error, L] = {
+    startParsing(rule, true) match {
+      case Value(v)     ⇒ Right(v)
+      case (err: Error) ⇒ Left(err)
+      case _            ⇒ throw new InternalError("Unexpected result of parsing with a single chunk")
+    }
   }
 
   /**
    * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
    */
   def __nextChar(): Char = {
-    val nextCursor = cursor + 1
-    if (nextCursor < input.length) {
-      cursor = nextCursor
-      if (currentErrorRuleStackIx == -1 && nextCursor > errorIndex)
-        errorIndex = nextCursor // if we are in the first "regular" parser run, we need to advance the errorIndex here
-      input.charAt(nextCursor)
+    if (!__endOfInput()) {
+      cursor += 1
+      if (currentErrorRuleStackIx == -1 && cursor > errorIndex)
+        errorIndex = cursor // if we are in the first "regular" parser run, we need to advance the errorIndex here
+      input.charAt(cursor)
     } else EOI
   }
 
@@ -99,6 +124,11 @@ abstract class Parser extends RuleDSL {
     cursor = (mark.value >>> 32).toInt
     __valueStack.top = (mark.value & 0x00000000FFFFFFFF).toInt
   }
+
+  /**
+   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   */
+  def __endOfInput(): Boolean = (cursor + 1) == input.length
 
   /**
    * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
@@ -136,8 +166,9 @@ abstract class Parser extends RuleDSL {
 object Parser {
   sealed trait Result[+L <: HList]
   case class Value[L <: HList](value: L) extends Result[L]
-  case class Continuation[L <: HList](continuation: ParserInput ⇒ Result[L]) extends Result[L]
+  case class Continuation[L <: HList](continuation: (ParserInput, Boolean) ⇒ Result[L]) extends Result[L]
   case class Error(position: Position, errorRules: Seq[RuleStack]) extends Result[Nothing]
+  private[Parser] case class Mismatch() extends Result[Nothing]
   case class Position(index: Int, line: Int, column: Int)
   case class RuleStack(frames: Seq[RuleFrame])
 
@@ -147,7 +178,7 @@ object Parser {
 
   def ruleImpl[I <: HList: ctx.WeakTypeTag, O <: HList: ctx.WeakTypeTag](ctx: ParserContext)(r: ctx.Expr[Rule[I, O]]): ctx.Expr[Rule[I, O]] = {
     val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
-    val opTree = opTreeCtx.OpTree(r.tree)
+    val opTree = opTreeCtx.OpTree[I, O](r.tree)
     val ruleName = ctx.enclosingMethod.asInstanceOf[ctx.universe.DefDef].name.toString
     ctx.universe.reify {
       opTree.render(ruleName).splice.asInstanceOf[Rule[I, O]]

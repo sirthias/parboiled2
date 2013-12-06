@@ -25,9 +25,15 @@ sealed abstract class ParserInput {
   override def toString: String = sliceString(0, length)
 
   /**
+   * In-place append
+   * @param input sequence to append
+   */
+  def append(input: ParserInput): Unit
+
+  /**
    * @param line starts at 1
    *
-   * @return
+   * @return line `String` of number `line`
    */
   def getLine(line: Int): String = toString.split('\n')(line - 1)
 }
@@ -38,21 +44,33 @@ sealed abstract class ParserInput {
 object ParserInput {
   val UTF8 = Charset.forName("UTF-8")
 
+  private[ParserInput] class ParserBytesInput(bytes: Array[Byte], charset: Charset) extends ParserInput {
+    private[ParserBytesInput] var content: Array[Byte] = bytes.clone()
+
+    def charAt(ix: Int) = content(ix).toChar
+    def length = content.length
+    def sliceString(start: Int, end: Int) = new String(content, start, end - start, charset)
+    def append(input: ParserInput) = input match {
+      case (pbi: ParserBytesInput) ⇒ content ++= pbi.content
+      case _                       ⇒ throw new Exception("Unexpected type of `ParserInput`")
+    }
+  }
+
   implicit def apply(bytes: Array[Byte]): ParserInput = apply(bytes, UTF8)
+  def apply(bytes: Array[Byte], charset: Charset): ParserInput = new ParserBytesInput(bytes, charset)
 
-  def apply(bytes: Array[Byte], charset: Charset): ParserInput =
-    new ParserInput {
-      def charAt(ix: Int) = bytes(ix).toChar
-      def length = bytes.length
-      def sliceString(start: Int, end: Int) = new String(bytes, start, end - start, charset)
+  private[ParserInput] class ParserCharsInput(string: String) extends ParserInput {
+    private[ParserCharsInput] val content = new StringBuilder(string)
+
+    def charAt(ix: Int): Char = content.charAt(ix)
+    def length = content.length
+    def sliceString(start: Int, end: Int) = content.substring(start, end)
+    def append(input: ParserInput) = input match {
+      case (pci: ParserCharsInput) ⇒ content ++= pci.content
+      case _                       ⇒ throw new Exception("Unexpected type of `ParserInput`")
     }
+  }
 
-  implicit def apply(string: String): ParserInput =
-    new ParserInput {
-      def charAt(ix: Int) = string.charAt(ix)
-      def length = string.length
-      def sliceString(start: Int, end: Int) = string.substring(start, end)
-    }
-
+  implicit def apply(string: String): ParserInput = new ParserCharsInput(string)
   implicit def apply(chars: Array[Char]): ParserInput = apply(new String(chars))
 }

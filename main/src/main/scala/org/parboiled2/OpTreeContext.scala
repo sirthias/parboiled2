@@ -30,7 +30,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   object OpTree {
-    def apply(tree: Tree): OpTree = {
+    def apply[I <: HList: c.WeakTypeTag, O <: HList: c.WeakTypeTag](tree: Tree): OpTree = {
       def isForRule1(t: Tree): Boolean =
         t match {
           case q"parboiled2.this.$a.forReduction[$b, $c]" ⇒ false
@@ -39,63 +39,196 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           case _ ⇒ c.abort(tree.pos, "Unexpected Optionalizer/Sequencer: " + show(t))
         }
 
+      case class Optional(op: OpTree, opIsRule1: Boolean) extends OpTree {
+        def render(ruleName: String): Expr[RuleX] = {
+          reify {
+            val p = c.prefix.splice
+            val mark = p.__markCursor
+
+            def continuation(r: Rule[I, O]): Rule[I, O] = {
+              if (r.matched) {
+                c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(Some(p.__valueStack.pop())) " else q"()").splice
+                Rule.matched
+              } else if (r.mismatched) {
+                c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(None)" else q"()").splice
+                p.__resetCursor(mark)
+                Rule.matched
+              } else {
+                val Rule.PartiallyMatched(cont) = r
+                Rule.partiallyMatched(() ⇒ continuation(cont()))
+              }
+            }
+
+            try continuation(op.render().splice.asInstanceOf[Rule[I, O]])
+            catch {
+              case e: Parser.CollectingRuleStackException ⇒
+                e.save(RuleFrame.Optional(c.literal(ruleName).splice))
+            }
+          }
+        }
+      }
+
+      // TODO: Having sequence be a simple (lhs, rhs) model causes us to allocate a mark on the stack
+      // for every sequence concatenation. If we modeled sequences as a Seq[OpTree] we would be able to
+      // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
+      // the stack size for all rules with sequences that are more than two elements long.
+      case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
+        def render(ruleName: String): Expr[RuleX] = reify {
+          def continuationRHS(r: Rule[I, O]): Rule[I, O] = {
+            if (r.matched) {
+              Rule.matched
+            } else if (r.mismatched) {
+              Rule.mismatched
+            } else {
+              val Rule.PartiallyMatched(cont) = r
+              Rule.partiallyMatched(() ⇒ continuationRHS(cont()))
+            }
+          }
+
+          def continuationLHS(r: Rule[I, O]): Rule[I, O] = {
+            if (r.matched) {
+              continuationRHS(rhs.render().splice.asInstanceOf[Rule[I, O]])
+            } else if (r.mismatched) {
+              Rule.mismatched
+            } else {
+              val Rule.PartiallyMatched(cont) = r
+              Rule.partiallyMatched(() ⇒ continuationLHS(cont()))
+            }
+          }
+
+          try continuationLHS(lhs.render().splice.asInstanceOf[Rule[I, O]])
+          catch {
+            case e: Parser.CollectingRuleStackException ⇒
+              e.save(RuleFrame.Sequence(c.literal(ruleName).splice))
+          }
+        }
+      }
+
+      case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
+        def render(ruleName: String): Expr[RuleX] = reify {
+          val p = c.prefix.splice
+          val mark = p.__markCursorAndValueStack
+
+          def continuationRHS(r: Rule[I, O]): Rule[I, O] = {
+            if (r.matched) {
+              Rule.matched
+            } else if (r.mismatched) {
+              Rule.mismatched
+            } else {
+              val Rule.PartiallyMatched(cont) = r
+              Rule.partiallyMatched(() ⇒ continuationRHS(cont()))
+            }
+          }
+
+          def continuationLHS(r: Rule[I, O]): Rule[I, O] = {
+            if (r.matched) {
+              Rule.matched
+            } else if (r.mismatched) {
+              p.__resetCursorAndValueStack(mark)
+              continuationRHS(rhs.render().splice.asInstanceOf[Rule[I, O]])
+            } else {
+              val Rule.PartiallyMatched(cont) = r
+              Rule.partiallyMatched(() ⇒ continuationLHS(cont()))
+            }
+          }
+
+          try continuationLHS(lhs.render().splice.asInstanceOf[Rule[I, O]])
+          catch {
+            case e: Parser.CollectingRuleStackException ⇒
+              e.save(RuleFrame.FirstOf(c.literal(ruleName).splice))
+          }
+        }
+      }
+
+      case class Capture(op: OpTree) extends OpTree {
+        def render(ruleName: String): Expr[RuleX] = reify {
+          val p = c.prefix.splice
+          val mark = p.__markCursor
+
+          def continuation(r: Rule[I, O]): Rule[I, O] = {
+            if (r.matched) {
+              p.__valueStack.push(p.__sliceInput(mark))
+              r
+            } else if (r.partiallyMatched) {
+              val Rule.PartiallyMatched(cont) = r
+              Rule.partiallyMatched(() ⇒ continuation(cont()))
+            } else r
+          }
+          continuation(op.render().splice.asInstanceOf[Rule[I, O]])
+        }
+      }
+
+      // NOTE: applicant might be:
+      // - `Function(_, _)` in case of function application
+      // - `Ident(_)` in case of case class application
+      case class Action(op: OpTree, applicant: Tree, functionType: List[Type]) extends OpTree {
+        def render(ruleName: String): Expr[RuleX] = {
+          val argTypes = functionType dropRight 1
+          val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
+
+          def bodyIfMatched(tree: Tree): Tree = tree match {
+            case Block(exprs, res) ⇒
+              q"..$exprs; ${bodyIfMatched(res)}"
+            case Ident(_) ⇒
+              val functionParams = argNames map Ident.apply
+              val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.__valueStack.pop().asInstanceOf[$t]" }
+              q"..${valDefs.reverse}; p.__valueStack.push($applicant(..$functionParams)); result"
+            case q"( ..$args ⇒ $body )" ⇒
+              val (exprs, res) = body match {
+                case Block(exps, rs) ⇒ (exps, rs)
+                case x               ⇒ (Nil, x)
+              }
+
+              // TODO: Reconsider type matching
+              val bodyNew = functionType.last.toString match {
+                case tp if tp.startsWith("org.parboiled2.Rule") ⇒ q"${OpTree[I, O](res).render()}"
+                case tp if tp == "Unit" ⇒ q"$res; result"
+                case _ ⇒ q"${PushAction(res).render()}"
+              }
+              val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.__valueStack.pop().asInstanceOf[$t]" }
+              q"..${argsNew.reverse}; ..$exprs; $bodyNew"
+          }
+
+          reify {
+            def continuation(result: Rule[I, O]): Rule[I, O] = {
+              if (result.matched) {
+                val p = c.prefix.splice
+                c.Expr[Rule[I, O]](bodyIfMatched(c.resetAllAttrs(applicant))).splice
+              } else if (result.partiallyMatched) {
+                val Rule.PartiallyMatched(cont) = result
+                Rule.partiallyMatched(() ⇒ continuation(cont()))
+              } else result
+            }
+            continuation(op.render().splice.asInstanceOf[Rule[I, O]])
+          }
+        }
+      }
+
       tree match {
-        case q"$lhs.~[$a, $b]($rhs)($c, $d)"                  ⇒ Sequence(OpTree(lhs), OpTree(rhs))
-        case q"$lhs.|[$a, $b]($rhs)"                          ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
+        case q"$lhs.~[$a, $b]($rhs)($c, $d)"                  ⇒ Sequence(OpTree[I, O](lhs), OpTree[I, O](rhs))
+        case q"$lhs.|[$a, $b]($rhs)"                          ⇒ FirstOf(OpTree[I, O](lhs), OpTree[I, O](rhs))
         case q"$a.this.str($s)"                               ⇒ LiteralString(s)
         case q"$a.this.ch($c)"                                ⇒ LiteralChar(c)
         case q"$a.this.test($flag)"                           ⇒ SemanticPredicate(flag)
-        case q"$a.this.optional[$b, $c]($arg)($optionalizer)" ⇒ Optional(OpTree(arg), isForRule1(optionalizer))
-        case q"$a.this.zeroOrMore[$b, $c]($arg)($sequencer)"  ⇒ ZeroOrMore(OpTree(arg), isForRule1(sequencer))
-        case q"$a.this.oneOrMore[$b, $c]($arg)($sequencer)"   ⇒ OneOrMore(OpTree(arg), isForRule1(sequencer))
-        case q"$a.this.capture[$b, $c]($arg)($d)"             ⇒ Capture(OpTree(arg))
-        case q"$a.this.&($arg)"                               ⇒ AndPredicate(OpTree(arg))
+        case q"$a.this.optional[$b, $c]($arg)($optionalizer)" ⇒ Optional(OpTree[I, O](arg), isForRule1(optionalizer))
+        case q"$a.this.zeroOrMore[$b, $c]($arg)($sequencer)"  ⇒ ZeroOrMore(OpTree[I, O](arg), isForRule1(sequencer))
+        case q"$a.this.oneOrMore[$b, $c]($arg)($sequencer)"   ⇒ OneOrMore(OpTree[I, O](arg), isForRule1(sequencer))
+        case q"$a.this.capture[$b, $c]($arg)($d)"             ⇒ Capture(OpTree[I, O](arg))
+        case q"$a.this.&($arg)"                               ⇒ AndPredicate(OpTree[I, O](arg))
         case q"$a.this.ANY"                                   ⇒ AnyChar
         case q"$a.this.EMPTY"                                 ⇒ Empty
         case q"$a.this.nTimes[$ti, $to]($times, $r, $sep)($sequencer)" ⇒
-          NTimes(times, OpTree(r), tree.pos, isForRule1(sequencer), sep)
+          NTimes(times, OpTree[I, O](r), tree.pos, isForRule1(sequencer), sep)
         case q"$a.this.$b"       ⇒ RuleCall(tree)
         case q"$a.this.$b(..$c)" ⇒ RuleCall(tree)
-        case q"$a.unary_!()"     ⇒ NotPredicate(OpTree(a))
+        case q"$a.unary_!()"     ⇒ NotPredicate(OpTree[I, O](a))
         case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
-          Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
+          Action(OpTree[I, O](r), f, ts.tpe.asInstanceOf[TypeRef].args)
         case q"$a.this.push[$b]($arg)($c)" ⇒ PushAction(arg)
         case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
           CharacterClass(l, r, tree.pos)
 
         case _ ⇒ c.abort(tree.pos, s"Invalid rule definition: $tree\n${showRaw(tree)}")
-      }
-    }
-  }
-
-  // TODO: Having sequence be a simple (lhs, rhs) model causes us to allocate a mark on the stack
-  // for every sequence concatenation. If we modeled sequences as a Seq[OpTree] we would be able to
-  // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
-  // the stack size for all rules with sequences that are more than two elements long.
-  case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try Rule(lhs.render().splice.matched && rhs.render().splice.matched)
-      catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.Sequence(c.literal(ruleName).splice))
-      }
-    }
-  }
-
-  case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
-        val p = c.prefix.splice
-        val mark = p.__markCursorAndValueStack
-        val left = lhs.render().splice
-        if (left.matched) left
-        else {
-          p.__resetCursorAndValueStack(mark)
-          rhs.render().splice
-        }
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.FirstOf(c.literal(ruleName).splice))
       }
     }
   }
@@ -169,20 +302,37 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         Rule($flagTree || p.__onCharMismatch())
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.SemanticPredicate($ruleName))
+          e.save(RuleFrame.SemanticPredicate($ruleName, ${show(flagTree)}))
       }
     """)
   }
 
   case class LiteralString(stringTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
+      var ix = 0
       val string = c.Expr[String](stringTree).splice
-      try {
-        val p = c.prefix.splice
-        var ix = 0
-        while (ix < string.length && p.__nextChar() == string.charAt(ix)) ix += 1
-        Rule(ix == string.length || p.__onCharMismatch())
-      } catch {
+      val p = c.prefix.splice
+
+      def continuation(): Rule0 = {
+        var lastCharMatched = false
+        do {
+          val lastChar = p.__nextChar()
+          lastCharMatched = lastChar == string.charAt(ix)
+          if (lastCharMatched) ix += 1
+        } while (ix < string.length && lastCharMatched)
+
+        if (!lastCharMatched && p.__lastChunk) {
+          p.__onCharMismatch()
+          Rule.mismatched
+        } else if (ix == string.length) {
+          Rule.matched
+        } else {
+          Rule.partiallyMatched(continuation)
+        }
+      }
+
+      try continuation()
+      catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.LiteralString(string, c.literal(ruleName).splice))
       }
@@ -195,10 +345,20 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class LiteralChar(charTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val char = c.Expr[Char](charTree).splice
-      try {
-        val p = c.prefix.splice
-        Rule(p.__nextChar() == char || p.__onCharMismatch())
-      } catch {
+      val p = c.prefix.splice
+      def continuation(): Rule0 = {
+        val lastChar = p.__nextChar()
+        if (lastChar == char) {
+          Rule.matched
+        } else if (lastChar != EOI) {
+          p.__onCharMismatch()
+          Rule.mismatched
+        } else {
+          Rule.partiallyMatched(continuation)
+        }
+      }
+      try continuation()
+      catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.LiteralChar(char, c.literal(ruleName).splice))
       }
@@ -213,27 +373,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
           e.save(RuleFrame.AnyChar(c.literal(ruleName).splice))
-      }
-    }
-  }
-
-  case class Optional(op: OpTree, opIsRule1: Boolean) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = {
-      reify {
-        try {
-          val p = c.prefix.splice
-          val mark = p.__markCursor
-          if (op.render().splice.matched) {
-            c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(Some(p.__valueStack.pop())) " else q"()").splice
-          } else {
-            c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(None)" else q"()").splice
-            p.__resetCursor(mark)
-          }
-          Rule.matched
-        } catch {
-          case e: Parser.CollectingRuleStackException ⇒
-            e.save(RuleFrame.Optional(c.literal(ruleName).splice))
-        }
       }
     }
   }
@@ -310,60 +449,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           case e: Parser.CollectingRuleStackException ⇒
             e.save(RuleFrame.OneOrMore(c.literal(ruleName).splice))
         }
-      }
-    }
-  }
-
-  case class Capture(op: OpTree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = reify {
-      val p = c.prefix.splice
-      val mark = p.__markCursor
-      val result = op.render().splice
-      if (result.matched) p.__valueStack.push(p.__sliceInput(mark))
-      result
-    }
-  }
-
-  // NOTE: applicant might be:
-  // - `Function(_, _)` in case of function application
-  // - `Ident(_)` in case of case class application
-  case class Action(op: OpTree, applicant: Tree, functionType: List[Type]) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = {
-      val argTypes = functionType dropRight 1
-      val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
-
-      def bodyIfMatched(tree: Tree): Tree = tree match {
-        case Block(exprs, res) ⇒
-          q"..$exprs; ${bodyIfMatched(res)}"
-        case Ident(_) ⇒
-          val functionParams = argNames map Ident.apply
-          val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.__valueStack.pop().asInstanceOf[$t]" }
-          q"..${valDefs.reverse}; p.__valueStack.push($applicant(..$functionParams)); result"
-        case q"( ..$args ⇒ $body )" ⇒
-          val (exprs, res) = body match {
-            case Block(exps, rs) ⇒ (exps, rs)
-            case x               ⇒ (Nil, x)
-          }
-
-          // TODO: Reconsider type matching
-          val bodyNew = functionType.last.toString match {
-            case tp if tp.startsWith("org.parboiled2.Rule") ⇒ q"${OpTree(res).render()}"
-            case tp if tp == "Unit" ⇒ q"$res; result"
-            case _ ⇒ q"${PushAction(res).render()}"
-          }
-          val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.__valueStack.pop().asInstanceOf[$t]" }
-          q"..${argsNew.reverse}; ..$exprs; $bodyNew"
-      }
-
-      c.Expr[RuleX] {
-        q"""
-          val result = ${op.render()}
-          if (result.matched) {
-            val p = ${c.prefix}
-            ${bodyIfMatched(c.resetAllAttrs(applicant))}
-          }
-          else result
-        """
       }
     }
   }
@@ -446,6 +531,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       }
     }
   }
+
   object CharacterClass {
     def apply(lower: String, upper: String, pos: Position): CharacterClass = {
       if (lower.length != 1) c.abort(pos, "lower bound must be a single char string")

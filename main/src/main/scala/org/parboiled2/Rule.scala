@@ -53,6 +53,7 @@ sealed abstract class Rule[-I <: HList, +O <: HList] {
 
   def matched: Boolean = this eq Rule.Matched
   def mismatched: Boolean = this eq Rule.Mismatched
+  def partiallyMatched[I <: HList, O <: HList]: Boolean = this.isInstanceOf[Rule.PartiallyMatched[I, O]]
 }
 
 /**
@@ -61,6 +62,7 @@ sealed abstract class Rule[-I <: HList, +O <: HList] {
 object Rule {
   private object Matched extends Rule0
   private object Mismatched extends Rule0
+  case class PartiallyMatched[I <: HList, O <: HList](continuation: () ⇒ Rule[I, O]) extends Rule[I, O]
 
   @compileTimeOnly("Calls to `Rule` constructor must be inside `rule` macro")
   def apply[I <: HList, O <: HList](): Rule[I, O] = ???
@@ -69,6 +71,8 @@ object Rule {
 
   def matched[I <: HList, O <: HList]: Rule[I, O] = Matched.asInstanceOf[Rule[I, O]]
   def mismatched[I <: HList, O <: HList]: Rule[I, O] = Mismatched.asInstanceOf[Rule[I, O]]
+  def partiallyMatched[I <: HList, O <: HList](continuation: () ⇒ Rule[I, O]): Rule[I, O] =
+    PartiallyMatched(continuation).asInstanceOf[Rule[I, O]]
 }
 
 abstract class RuleDSL {
