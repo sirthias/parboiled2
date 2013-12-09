@@ -19,6 +19,7 @@ package org.parboiled2
 import shapeless._
 import scala.annotation.unchecked.uncheckedVariance
 import scala.reflect.internal.annotations.compileTimeOnly
+import shapeless.ops.hlist.{ Prepend, ReversePrepend }
 
 sealed trait RuleX {
   def matched: Boolean
@@ -218,7 +219,7 @@ object TailSwitch0 extends TailSwitch0_1 {
   implicit def terminate1[L <: HList, LI <: HList, T <: HList, R <: HList, RI <: HList]: TailSwitch0[L, LI, T, L, R, RI, R] = null
 }
 private[parboiled2] abstract class TailSwitch0_1 extends TailSwitch0_2 {
-  implicit def terminate2[L <: HList, T <: HList, TI <: HList, R <: HList, RI <: HList, Out <: HList](implicit rp: ReversePrependAux[RI, R, Out]): TailSwitch0[L, T, T, TI, R, RI, Out] = null
+  implicit def terminate2[L <: HList, T <: HList, TI <: HList, R <: HList, RI <: HList, Out <: HList](implicit rp: ReversePrepend.Aux[RI, R, Out]): TailSwitch0[L, T, T, TI, R, RI, Out] = null
 }
 private[parboiled2] abstract class TailSwitch0_2 {
   implicit def iter1[L <: HList, T <: HList, TH, TT <: HList, R <: HList, RI <: HList, Out <: HList](implicit next: TailSwitch0[L, HNil, T, TT, R, RI, Out]): TailSwitch0[L, HNil, T, TH :: TT, R, RI, Out] = null
@@ -322,7 +323,7 @@ object Join0 extends LowerPriorityJoin0 {
   implicit def iter2[I <: HList, H, T <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: Join0[I, HNil, T, R, H :: Acc, I, Out]): Join0[I, HNil, H :: T, R, Acc, I, Out] = null
 
   // if R <: HList and L1 and L2 empty set Out = reversePrepend Acc before R
-  implicit def terminate[I <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: ReversePrependAux[Acc, R, Out]): Join0[I, HNil, HNil, R, Acc, I, Out] = null
+  implicit def terminate[I <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: ReversePrepend.Aux[Acc, R, Out]): Join0[I, HNil, HNil, R, Acc, I, Out] = null
 
   // if R <: Rule and L1 non-empty move head of L1 to Acc
   implicit def iterRule1[I <: HList, L2 <: HList, I2 <: HList, O2 <: HList, In0 <: HList, Acc <: HList, Out0 <: HList, H, T <: HList](implicit x: Join0[I, T, L2, Rule[I2, O2], H :: Acc, In0, Out0]): Join0[I, H :: T, L2, Rule[I2, O2], HNil, In0, Out0] = null
@@ -387,7 +388,7 @@ object Prepender {
     type Out = P
     def apply(prefix: P, suffix: S) = prefix
   }
-  implicit def apply[P <: HList, S <: HList, Out0 <: HList](implicit prepend: PrependAux[P, S, Out0]) =
+  implicit def apply[P <: HList, S <: HList, Out0 <: HList](implicit prepend: Prepend.Aux[P, S, Out0]) =
     new Prepender[P, S] {
       type Out = Out0
       def apply(prefix: P, suffix: S): Out = prepend(prefix, suffix)

@@ -54,7 +54,7 @@ val publishingSettings = Seq(
 /////////////////////// DEPENDENCIES /////////////////////////
 
 val scalaReflect = "org.scala-lang"  %  "scala-reflect"    % "2.10.3"   % "compile"
-val shapeless    = "com.chuusai"     %% "shapeless"        % "1.2.4"    % "compile" // TODO: upgrade to 2.0.0-M1
+val shapeless    = "com.chuusai"     %  "shapeless_2.10.3" % "2.0.0-M1" % "compile"
 val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.4"    % "test"
 
 /////////////////////// PROJECTS /////////////////////////
