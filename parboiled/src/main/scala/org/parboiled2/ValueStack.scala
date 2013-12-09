@@ -60,5 +60,5 @@ private[parboiled2] class ValueStack {
 }
 
 private[parboiled2] object ValueStack {
-  final val MaxSize = 1024
+  final val MaxSize = 1024 // must never be larger than 2^16 !
 }
