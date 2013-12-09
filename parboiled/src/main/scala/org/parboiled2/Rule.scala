@@ -20,6 +20,11 @@ import shapeless._
 import scala.annotation.unchecked.uncheckedVariance
 import scala.reflect.internal.annotations.compileTimeOnly
 
+sealed trait RuleX {
+  def matched: Boolean
+  def mismatched: Boolean
+}
+
 /**
  * The general model of a parser rule.
  * It is characterized by consuming a certain number of elements from the value stack (whose types are captured by the
@@ -29,7 +34,7 @@ import scala.reflect.internal.annotations.compileTimeOnly
  * At runtime there are only two instances of this class which signal whether the rule has matched (or mismatched)
  * at the current point in the input.
  */
-sealed abstract class Rule[-I <: HList, +O <: HList] {
+sealed abstract class Rule[-I <: HList, +O <: HList] extends RuleX {
   // TODO: model as value class wrapping a `matched: Boolean`
   // This would give us a (small) performance benefit since we'd save the comparison to the predefined
   // `Matched` and `Mismatched` objects.
@@ -56,19 +61,18 @@ sealed abstract class Rule[-I <: HList, +O <: HList] {
 }
 
 /**
- * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+ * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
  */
 object Rule {
-  private object Matched extends Rule0
-  private object Mismatched extends Rule0
+  object Matched extends Rule0
+  object Mismatched extends Rule0
 
   @compileTimeOnly("Calls to `Rule` constructor must be inside `rule` macro")
   def apply[I <: HList, O <: HList](): Rule[I, O] = ???
 
-  def apply[I <: HList, O <: HList](m: Boolean): Rule[I, O] = if (m) matched else mismatched
-
-  def matched[I <: HList, O <: HList]: Rule[I, O] = Matched.asInstanceOf[Rule[I, O]]
-  def mismatched[I <: HList, O <: HList]: Rule[I, O] = Mismatched.asInstanceOf[Rule[I, O]]
+  implicit class Runnable[L <: HList](rule: RuleN[L]) {
+    def apply(): Parser.Result[L] = macro Parser.runImpl[L]
+  }
 }
 
 abstract class RuleDSL {
@@ -338,7 +342,7 @@ sealed trait Optionalizer[I <: HList, O <: HList] {
   type In <: HList
   type Out <: HList
 }
-object Optionalizer extends LowerPriorityOptionalizer {
+object Optionalizer {
   implicit object forRule0 extends Optionalizer[HNil, HNil] {
     type In = HNil
     type Out = HNil
@@ -347,8 +351,6 @@ object Optionalizer extends LowerPriorityOptionalizer {
     type In = HNil
     type Out = Option[T] :: HNil
   }
-}
-private[parboiled2] abstract class LowerPriorityOptionalizer {
   implicit def forReduction[L <: HList, R <: L] = new Optionalizer[L, R] {
     type In = L
     type Out = R

@@ -33,9 +33,9 @@ abstract class TestParserSpec extends Specification {
     var input: ParserInput = _
     def targetRule: RuleN[L]
 
-    def parse(input: String): Result[L] = {
+    def parse(input: String): Parser.Result[L] = {
       this.input = input
-      run(_.targetRule)
+      targetRule()
     }
   }
 }

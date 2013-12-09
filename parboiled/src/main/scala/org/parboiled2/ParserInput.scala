@@ -25,19 +25,13 @@ sealed abstract class ParserInput {
   override def toString: String = sliceString(0, length)
 
   /**
-   * @param line starts at 1
-   *
-   * @return
+   * Gets the input line with the given number as a String.
+   * Note: the first line is line number one!
    */
   def getLine(line: Int): String = toString.split('\n')(line - 1)
 }
 
-// bimorphic ParserInput implementation
-// Note: make sure to not add another implementation, otherwise usage of this class
-// might turn megamorphic at the call-sites thereby effectively disabling method inlining!
 object ParserInput {
-  val UTF8 = Charset.forName("UTF-8")
-
   implicit def apply(bytes: Array[Byte]): ParserInput = apply(bytes, UTF8)
 
   def apply(bytes: Array[Byte], charset: Charset): ParserInput =

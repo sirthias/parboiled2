@@ -20,13 +20,31 @@ import scala.reflect.macros.Context
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
 import shapeless._
+import scala.util.control.NoStackTrace
 
 abstract class Parser extends RuleDSL {
   import Parser._
 
-  type Result[L <: HList] = Either[ParseError, L]
-
   def input: ParserInput
+
+  def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
+
+  /**
+   * Pretty prints the given `ParseError` instance in the context of the `ParserInput` of this parser.
+   */
+  def formatError(error: ParseError): String = {
+    val ParseError(Position(index, line, col), ruleStacks) = error
+    val problem =
+      if (index < input.length) s"Invalid input '${input charAt index}'"
+      else "Unexpected end of input"
+
+    problem + ", "
+    s"expected ${ruleStacks.map(x ⇒ RuleStack(x.frames.reverse)) mkString ("\n", "\n\n", "\n")} " +
+      s"(line $line, column $col): \n" +
+      s"${input.getLine(line)}\n" + (" " * (col - 1)) + '^'
+  }
+
+  ////////////////////// INTERNAL /////////////////////////
 
   // the index of the current input char
   private[this] var cursor: Int = _
@@ -34,28 +52,29 @@ abstract class Parser extends RuleDSL {
   // the highest cursor value we have seen in the current rule run
   private[this] var errorIndex: Int = _
 
-  // the number if times we have already seen a character mismatch at the error index
+  // the number of times we have already seen a character mismatch at the error index
   private[this] var mismatchesAtErrorIndex: Int = _
 
-  // the index of the RuleStack we are currently constructing for the ParserError to be returned
-  // in the very first parser run (as long as we do not yet know whether we have to construct
-  // a ParserError object) this value is -1
+  // the index of the RuleStack we are currently constructing
+  // for the ParserError to be returned in the very first parser run,
+  // as long as we do not yet know whether we have to construct a ParserError object this value is -1
   private[this] var currentErrorRuleStackIx: Int = _
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  Val __valueStack = new ValueStack
+  val __valueStack = new ValueStack
 
-  def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
-
-  def run[L <: HList](rule: this.type ⇒ RuleN[L]): Result[L] = {
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __run[L <: HList](rule: ⇒ RuleN[L]): Result[L] = {
     def runRule(errorRuleStackIx: Int = -1): Boolean = {
       cursor = -1
       __valueStack.clear()
       mismatchesAtErrorIndex = 0
       currentErrorRuleStackIx = errorRuleStackIx
-      rule(this).matched
+      rule.matched
     }
     @tailrec def buildParseError(errorRuleIx: Int = 0,
                                  stacksBuilder: VectorBuilder[RuleStack] = new VectorBuilder): ParseError = {
@@ -77,7 +96,7 @@ abstract class Parser extends RuleDSL {
   }
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __nextChar(): Char = {
     val nextCursor = cursor + 1
@@ -90,12 +109,12 @@ abstract class Parser extends RuleDSL {
   }
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __markCursorAndValueStack: Mark = new Mark((cursor.toLong << 32) + __valueStack.top)
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __resetCursorAndValueStack(mark: Mark): Unit = {
     cursor = (mark.value >>> 32).toInt
@@ -103,30 +122,28 @@ abstract class Parser extends RuleDSL {
   }
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __markCursor: Int = cursor
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __resetCursor(mark: Int): Unit = cursor = mark
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __sliceInput(start: Int): String = input.sliceString(start + 1, cursor + 1)
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __onCharMismatch(): Boolean = {
+  def __registerCharMismatch(): Unit =
     if (currentErrorRuleStackIx != -1 && cursor == errorIndex) {
       if (mismatchesAtErrorIndex < currentErrorRuleStackIx) mismatchesAtErrorIndex += 1
       else throw new Parser.CollectingRuleStackException
     }
-    false
-  }
 
   @tailrec
   private def errorPosition(ix: Int = math.min(errorIndex, input.length - 1), line: Int = 1, col: Int = -1): Position =
@@ -137,6 +154,19 @@ abstract class Parser extends RuleDSL {
 
 object Parser {
   class Mark private[Parser] (val value: Long) extends AnyVal
+
+  // TODO: please everyone all the time
+  type Result[L <: HList] = Either[ParseError, L]
+
+  type RunnableRuleContext[L <: HList] = Context { type PrefixType = Rule.Runnable[L] }
+
+  def runImpl[L <: HList: ctx.WeakTypeTag](ctx: RunnableRuleContext[L])(): ctx.Expr[Result[L]] = {
+    import ctx.universe._
+    ctx.prefix.tree match {
+      case q"parboiled2.this.Rule.Runnable[$l]($parser.$rule)" ⇒ ctx.Expr[Result[L]](q"$parser.__run[$l]($parser.$rule)")
+      case x ⇒ ctx.abort(x.pos, "Illegal `run` call: " + show(x))
+    }
+  }
 
   type ParserContext = Context { type PrefixType = Parser }
 
@@ -150,18 +180,14 @@ object Parser {
   }
 
   /**
-   * THIS IS NOT PUBLIC API. It will be hidden in future. Use it at your own risk.
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  class CollectingRuleStackException extends RuntimeException {
+  class CollectingRuleStackException extends RuntimeException with NoStackTrace {
     private[this] val frameBuilder = new VectorBuilder[RuleFrame]
-
     def save(frame: RuleFrame): Nothing = {
       frameBuilder += frame
       throw this
     }
-
     def ruleFrames: Seq[RuleFrame] = frameBuilder.result()
-
-    override def fillInStackTrace(): Throwable = this // skip stack trace creation as we don't need it
   }
 }

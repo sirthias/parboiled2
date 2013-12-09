@@ -16,41 +16,41 @@
 
 package org.parboiled2
 
-class SimpleCalculatorSpec extends TestParserSpec {
-  // SimpleCalculator from https://github.com/sirthias/parboiled/blob/master/examples-scala/src/main/scala/org/parboiled/examples/calculators/SimpleCalculator0.scala
-  abstract class SimpleCalculator extends TestParser0 {
-    def InputLine = rule { Expression ~ EOI }
-
-    def Expression: Rule0 = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
-
-    def Term = rule { Factor ~ zeroOrMore((ch('*') | '/') ~ Factor) }
-
-    def Factor = rule { Digits | Parens }
-
-    def Parens = rule { "(" ~ Expression ~ ")" }
-
-    def Digits = rule { oneOrMore(Digit) }
-
-    def Digit = rule { "0" - "9" }
-  }
-
-  "A SimpleCalculator" should {
-    "successfully recognize expression" in new SimpleCalculator {
-      def targetRule = InputLine
-
-      "1" must beMatched
-      "1+2" must beMatched
-      "1+2*3" must beMatched
-      "1*2+3" must beMatched
-      "1*(2+3)" must beMatched
-      "1*((2+3))" must beMatched
-
-      "*1" must beMismatched
-      "+1" must beMismatched
-      "()" must beMismatched
-      "(()" must beMismatched
-      "())" must beMismatched
-      "(1+)2" must beMismatched
-    }
-  }
-}
+//class SimpleCalculatorSpec extends TestParserSpec {
+//  // SimpleCalculator from https://github.com/sirthias/parboiled/blob/master/examples-scala/src/main/scala/org/parboiled/examples/calculators/SimpleCalculator0.scala
+//  abstract class SimpleCalculator extends TestParser0 {
+//    def InputLine = rule { Expression ~ EOI }
+//
+//    def Expression: Rule0 = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
+//
+//    def Term = rule { Factor ~ zeroOrMore((ch('*') | '/') ~ Factor) }
+//
+//    def Factor = rule { Digits | Parens }
+//
+//    def Parens = rule { "(" ~ Expression ~ ")" }
+//
+//    def Digits = rule { oneOrMore(Digit) }
+//
+//    def Digit = rule { "0" - "9" }
+//  }
+//
+//  "A SimpleCalculator" should {
+//    "successfully recognize expression" in new SimpleCalculator {
+//      def targetRule = InputLine
+//
+//      "1" must beMatched
+//      "1+2" must beMatched
+//      "1+2*3" must beMatched
+//      "1*2+3" must beMatched
+//      "1*(2+3)" must beMatched
+//      "1*((2+3))" must beMatched
+//
+//      "*1" must beMismatched
+//      "+1" must beMismatched
+//      "()" must beMismatched
+//      "(()" must beMismatched
+//      "())" must beMismatched
+//      "(1+)2" must beMismatched
+//    }
+//  }
+//}

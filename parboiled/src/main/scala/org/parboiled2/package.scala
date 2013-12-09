@@ -17,6 +17,7 @@
 package org
 
 import shapeless._
+import java.nio.charset.Charset
 
 package object parboiled2 {
 
@@ -27,4 +28,6 @@ package object parboiled2 {
   type PopRule[L <: HList] = Rule[L, HNil]
 
   val EOI = '\uFFFF'
+
+  val UTF8 = Charset.forName("UTF-8")
 }
