@@ -19,8 +19,9 @@ package org.parboiled2
 import org.specs2.specification.{ FragmentsBuilder, Scope }
 import org.specs2.mutable.Specification
 import shapeless._
+import org.specs2.control.NoNumberOfTimes
 
-abstract class TestParserSpec extends Specification with NoAutoHtmlLinkFragments {
+abstract class TestParserSpec extends Specification with NoAutoHtmlLinkFragments with NoNumberOfTimes {
   type TestParser0 = TestParser[HNil]
   type TestParser1[T] = TestParser[T :: HNil]
 

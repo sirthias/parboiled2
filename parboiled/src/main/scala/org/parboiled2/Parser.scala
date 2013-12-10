@@ -187,12 +187,13 @@ object Parser {
   def ruleImpl[I <: HList: ctx.WeakTypeTag, O <: HList: ctx.WeakTypeTag](ctx: ParserContext)(r: ctx.Expr[Rule[I, O]]): ctx.Expr[Rule[I, O]] = {
     val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
     val opTree = opTreeCtx.OpTree(r.tree)
+    import ctx.universe._
     val ruleName =
       ctx.enclosingMethod match {
-        case x: ctx.universe.DefDef ⇒ x.name.toString
-        case _                      ⇒ ctx.abort(r.tree.pos, "`rule` can only be used from within a method")
+        case q"def $name[..$tparams](...$vparamss): $tpt = $body" ⇒ name.toString
+        case _ ⇒ ctx.abort(r.tree.pos, "`rule` can only be used from within a method")
       }
-    ctx.universe.reify {
+    reify {
       opTree.render(ruleName).splice.asInstanceOf[Rule[I, O]]
     }
   }

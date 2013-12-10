@@ -74,6 +74,11 @@ object Rule {
   implicit class Runnable[L <: HList](rule: RuleN[L]) {
     def apply(): Parser.Result[L] = macro Parser.runImpl[L]
   }
+
+  trait Repeated
+  implicit class RepeatedRule[-I <: HList, +O <: HList](r: Rule[I, O] with Repeated) {
+    def separatedBy(separator: Rule0): Rule[I, O] = ???
+  }
 }
 
 abstract class RuleDSL {
@@ -83,6 +88,22 @@ abstract class RuleDSL {
 
   @compileTimeOnly("Calls to `str` must be inside `rule` macro")
   implicit def str(s: String): Rule0 = ???
+
+  implicit def int2range(i: Int): NTimes = ???
+  implicit class NTimes(range: Range) {
+    /**
+     * Repeats the given sub rule `r` the given number of times.
+     * Both bounds of the range must be non-negative and the upper bound must be >= the lower bound.
+     * If the upper bound is zero the rule is equivalent to `EMPTY`.
+     *
+     * Resulting rule type:
+     *   if (r == Rule0) Rule0
+     *   if (r == Rule1[T]) Rule1[Seq[T]]
+     *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+     */
+    @compileTimeOnly("Calls to `times` must be inside `rule` macro")
+    def times[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated = ???
+  }
 
   /**
    * Runs its inner rule and succeeds even if the inner rule doesn't.
@@ -102,7 +123,7 @@ abstract class RuleDSL {
    *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
    */
   @compileTimeOnly("Calls to `zeroOrMore` must be inside `rule` macro")
-  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = ???
+  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated = ???
 
   /**
    * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
@@ -112,7 +133,7 @@ abstract class RuleDSL {
    *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
    */
   @compileTimeOnly("Calls to `oneOrMore` must be inside `rule` macro")
-  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = ???
+  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated = ???
 
   /**
    * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
@@ -142,25 +163,6 @@ abstract class RuleDSL {
    */
   @compileTimeOnly("Calls to `test` must be inside `rule` macro")
   def test(predicateResult: Boolean): Rule0 = ???
-
-  /**
-   * Repeats the given sub rule `r` the given number of times thereby matching the given separator in between.
-   * I.e. if `times` is
-   *   <= 0, the produced rule is equivalent to `EMPTY`
-   *      1, the produced rule is equivalent to `r`
-   *      2, the produced rule is equivalent to `r ~ separator ~ r`
-   *      3, the produced rule is equivalent to `r ~ separator ~ r ~ separator ~ r`
-   *      etc.
-   *
-   * Resulting rule type:
-   *   if (r == Rule0) Rule0
-   *   if (r == Rule1[T]) Rule1[Seq[T]]
-   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
-   *
-   * @param separator default value is `EMPTY` rule
-   */
-  @compileTimeOnly("Calls to `nTimes` must be inside `rule` macro")
-  def nTimes[I <: HList, O <: HList](times: Int, r: Rule[I, O], separator: Rule0 = null)(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] = ???
 
   /**
    * Matches the EOI (end-of-input) character.

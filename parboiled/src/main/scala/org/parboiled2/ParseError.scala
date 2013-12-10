@@ -28,7 +28,7 @@ object RuleFrame {
   case class Sequence(name: String = "") extends RuleFrame
   case class CharacterRange(from: Char, to: Char, name: String = "") extends RuleFrame
   case class FirstOf(name: String = "") extends RuleFrame
-  case class NTimes(times: Int, rule: String, separator: String, name: String = "") extends RuleFrame
+  case class Times(min: Int, max: Int, name: String = "") extends RuleFrame
   case class LiteralString(string: String, name: String = "") extends RuleFrame
   case class SemanticPredicate(name: String = "") extends RuleFrame
   case class LiteralChar(char: Char, name: String = "") extends RuleFrame

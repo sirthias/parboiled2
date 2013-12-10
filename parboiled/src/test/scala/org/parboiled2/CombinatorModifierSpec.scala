@@ -119,19 +119,71 @@ class CombinatorModifierSpec extends TestParserSpec {
       "" must beMismatched
     }
 
-    "`nTimes(0, Rule0)` modifier" in new TestParser0 {
-      def targetRule = rule { nTimes(0, "a") ~ EOI }
+    "`0.times(Rule0)` modifier" in new TestParser0 {
+      def targetRule = rule { 0.times("a") }
       "" must beMatched
-      "x" must beMismatched
+      "x" must beMatched
     }
 
-    "`nTimes(2, ..., separator = '|')` modifier" in new TestParser0 {
-      def targetRule = rule { nTimes(2, "a", '|') ~ EOI }
-      "a" must beMismatched
-      "a|" must beMismatched
-      "a|a" must beMatched
-      "a|a|" must beMismatched
-      "a|a|a" must beMismatched
+    "`2.times(Rule0)` modifier" in {
+      "example 1" in new TestParser0 {
+        def targetRule = rule { 2.times("x") }
+        "" must beMismatched
+        "x" must beMismatched
+        "xx" must beMatched
+        "xxx" must beMatched
+      }
+      "example 2" in new TestParser0 {
+        def targetRule = rule { 2.times("x") ~ EOI }
+        "x" must beMismatched
+        "xx" must beMatched
+        "xxx" must beMismatched
+      }
     }
+
+    "`(2 to 4).times(Rule0)` modifier" in {
+      "example 1" in new TestParser0 {
+        def targetRule = rule { (2 to 4).times("x") }
+        "" must beMismatched
+        "x" must beMismatched
+        "xx" must beMatched
+        "xxx" must beMatched
+        "xxxx" must beMatched
+        "xxxxx" must beMatched
+      }
+      "example 2" in new TestParser0 {
+        def targetRule = rule { (2 to 4).times("x") ~ EOI }
+        "xx" must beMatched
+        "xxx" must beMatched
+        "xxxx" must beMatched
+        "xxxxx" must beMismatched
+      }
+    }
+
+    "`(1 to 3).times(Rule1[T])` modifier" in new TestParser1[Seq[String]] {
+      def targetRule = rule { (1 to 3).times(capture("x")) ~ EOI }
+      "" must beMismatched
+      "x" must beMatchedBy(Seq("x"))
+      "xx" must beMatchedBy(Seq("x", "x"))
+      "xxx" must beMatchedBy(Seq("x", "x", "x"))
+      "xxxx" must beMismatched
+    }
+
+    "`2.times(Rule[I, O <: I])` modifier" in new TestParser1[String] {
+      def targetRule = rule { capture("a") ~ 2.times(ch('x') ~> ((_: String) + 'x')) ~ EOI }
+      "a" must beMismatched
+      "ax" must beMismatched
+      "axx" must beMatchedBy("axx")
+      "axxx" must beMismatched
+    }
+
+    //    "`nTimes(2, ..., separator = '|')` modifier" in new TestParser0 {
+    //      def targetRule = rule { nTimes(2, "a", '|') ~ EOI }
+    //      "a" must beMismatched
+    //      "a|" must beMismatched
+    //      "a|a" must beMatched
+    //      "a|a|" must beMismatched
+    //      "a|a|a" must beMismatched
+    //    }
   }
 }
