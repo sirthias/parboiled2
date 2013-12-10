@@ -32,6 +32,8 @@ sealed abstract class ParserInput {
 }
 
 object ParserInput {
+  val Empty = apply(Array.empty[Byte])
+
   implicit def apply(bytes: Array[Byte]): ParserInput = apply(bytes, UTF8)
 
   def apply(bytes: Array[Byte], charset: Charset): ParserInput =

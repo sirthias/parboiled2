@@ -474,7 +474,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   object CharacterRange {
     def apply(lower: String, upper: String, pos: Position): CharacterRange = {
       if (lower.length != 1) c.abort(pos, "lower bound must be a single char string")
-      if (lower.length != 1) c.abort(pos, "upper bound must be a single char string")
+      if (upper.length != 1) c.abort(pos, "upper bound must be a single char string")
       val lowerBoundChar = lower.charAt(0)
       val upperBoundChar = upper.charAt(0)
       if (lowerBoundChar > upperBoundChar) c.abort(pos, "lower bound must not be > upper bound")

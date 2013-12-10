@@ -16,18 +16,16 @@
 
 package org.parboiled2
 
-class IntegrationSpec extends TestParserSpec {
+class ActionSpec extends TestParserSpec {
 
-  "The Parser should correctly recognize/reject input for" >> {
+  "The Parser should correctly handle the" >> {
 
-    "(ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI" in new TestParser0 {
-      def targetRule = rule { (ch('a') | 'b' | 'c') ~ (ch('d') | 'e') ~ 'f' ~ EOI }
-      "adf" must beMatched
-      "bdf" must beMatched
-      "aef" must beMatched
-      "cef" must beMatched
-      "adx" must beMismatched
-      "bbb" must beMismatched
+    "`test` semantic predicate" in new TestParser0 {
+      var flag = true
+      def targetRule = rule { test(flag) }
+      "x" must beMatched
+      flag = false
+      "x" must beMismatched
     }
 
   }

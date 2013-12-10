@@ -16,42 +16,60 @@
 
 package org.parboiled2
 
+import shapeless.test.illTyped
+import org.specs2.specification.Scope
+
 class BasicRuleSpec extends TestParserSpec {
 
   "The Parser should correctly recognize/reject input for" >> {
 
-    "single char literal" in new TestParser0 {
+    "simple char literals" in new TestParser0 {
       def targetRule = rule { 'x' }
       "x" must beMatched
       "y" must beMismatched
       "" must beMismatched
     }
 
-    "single char `val`" in new TestParser0 {
-      val c = "x"
+    "a simple char `val`" in new TestParser0 {
+      val c = 'x'
       def targetRule = rule { c }
-
       "x" must beMatched
       "y" must beMismatched
       "" must beMismatched
     }
 
-    "single char `def`" in new TestParser0 {
-      def c = "x"
+    "a simple char `def`" in new TestParser0 {
+      def c = 'x'
       def targetRule = rule { c }
-
       "x" must beMatched
       "y" must beMismatched
       "" must beMismatched
     }
 
-    "simple strings" in new TestParser0 {
-      def targetRule = rule { str("abc") ~ EOI }
+    "simple string literals" in new TestParser0 {
+      def targetRule = rule { "ab" ~ EOI }
       "" must beMismatched
       "a" must beMismatched
-      "ab" must beMismatched
-      "abc" must beMatched
-      "abcd" must beMismatched
+      "ab" must beMatched
+      "abc" must beMismatched
+    }
+
+    "a simple string `val`" in new TestParser0 {
+      val s = "ab"
+      def targetRule = rule { s ~ EOI }
+      "" must beMismatched
+      "a" must beMismatched
+      "ab" must beMatched
+      "abc" must beMismatched
+    }
+
+    "a simple string `def`" in new TestParser0 {
+      def s = "ab"
+      def targetRule = rule { s ~ EOI }
+      "" must beMismatched
+      "a" must beMismatched
+      "ab" must beMatched
+      "abc" must beMismatched
     }
 
     "character ranges" in new TestParser0 {
@@ -85,23 +103,15 @@ class BasicRuleSpec extends TestParserSpec {
     }
   }
 
-  // TODO: Fix this test
-  // "disallow compilation of an illegal `character-class` rule" in new TestParser0 {
-  //   def targetRule = rule { "00" - "5" }
-  //   def targetRule = rule { "0" - "55" }
-  //   def targetRule = rule { "" - "5" }
-  //   def targetRule = rule { "0" - "" }
-  //   def targetRule = rule { "5" - "1" }
-  //   def startDigit = rule { "1" }
-  //   def targetRule = rule { startDigit - "9" }
-  // }
-
-  // TODO: Fix this test
-  //    "disallow compilation of an illegal string rule" in new TestParser0 {
-  //      CompilerError.verify(
-  //        """class TestParser0(_input: ParserInput) extends Parser(_input) {
-  //                       val string = "def"
-  //                       def Illegal = rule { string } // not allowed, strings must be given as literals
-  //                     }""",
-  //        "Strings in rule definitions have to be literals")
+  "The Parser" should {
+    "disallow compilation of an illegal character range" in new Parser with Scope {
+      def input = ParserInput.Empty
+      illTyped("""rule { "00" - "5" }""", "lower bound must be a single char string")
+      illTyped("""rule { "0" - "55" }""", "upper bound must be a single char string")
+      illTyped("""rule { "" - "5" }""", "lower bound must be a single char string")
+      illTyped("""rule { "0" - "" }""", "upper bound must be a single char string")
+      illTyped("""rule { "5" - "1" }""", "lower bound must not be > upper bound")
+      success
+    }
+  }
 }

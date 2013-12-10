@@ -16,12 +16,13 @@
 
 package org.parboiled2
 
-import org.specs2.specification.Scope
+import org.specs2.specification.{ FragmentsBuilder, Scope }
 import org.specs2.mutable.Specification
 import shapeless._
 
-abstract class TestParserSpec extends Specification {
+abstract class TestParserSpec extends Specification with NoAutoHtmlLinkFragments {
   type TestParser0 = TestParser[HNil]
+  type TestParser1[T] = TestParser[T :: HNil]
 
   abstract class TestParser[L <: HList] extends Parser with Scope {
     def beMatched = beTrue ^^ (parse(_: String).isRight)
@@ -38,4 +39,9 @@ abstract class TestParserSpec extends Specification {
       targetRule()
     }
   }
+}
+
+trait NoAutoHtmlLinkFragments extends FragmentsBuilder {
+  override def stringToHtmlLinkFragments2(s: String): HtmlLinkFragments2 = super.stringToHtmlLinkFragments2(s)
+  override def stringToHtmlLinkFragments(s: String): HtmlLinkFragments = super.stringToHtmlLinkFragments(s)
 }
