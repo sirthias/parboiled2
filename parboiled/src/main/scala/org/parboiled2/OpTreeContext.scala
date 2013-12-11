@@ -37,8 +37,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     tree match {
       case q"$lhs.~[$a, $b]($rhs)($c, $d)"         ⇒ Sequence(OpTree(lhs), OpTree(rhs))
       case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-      case q"$a.this.str($s)"                      ⇒ StringMatch(s)
       case q"$a.this.ch($c)"                       ⇒ CharMatch(c)
+      case q"$a.this.str($s)"                      ⇒ StringMatch(s)
+      case q"$a.this.predicate($p)"                ⇒ PredicateMatch(p)
       case q"$a.this.anyOf($c)"                    ⇒ AnyOf(c)
       case q"$a.this.ANY"                          ⇒ ANY
       case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), collector(o))
@@ -98,6 +99,24 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
+  case class CharMatch(charTree: Tree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      val char = c.Expr[Char](charTree).splice
+      try {
+        val p = c.prefix.splice
+        if (p.__currentChar == char) {
+          p.__advance()
+          Rule.Matched
+        } else {
+          p.__registerCharMismatch()
+          Rule.Mismatched
+        }
+      } catch {
+        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.CharMatch(char, c.literal(ruleName).splice))
+      }
+    }
+  }
+
   case class StringMatch(stringTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val string = c.Expr[String](stringTree).splice
@@ -120,12 +139,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class CharMatch(charTree: Tree) extends OpTree {
+  case class PredicateMatch(predicateTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
-      val char = c.Expr[Char](charTree).splice
+      val predicate = c.Expr[CharPredicate](predicateTree).splice
       try {
         val p = c.prefix.splice
-        if (p.__currentChar == char) {
+        if (predicate(p.__currentChar)) {
           p.__advance()
           Rule.Matched
         } else {
@@ -133,7 +152,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           Rule.Mismatched
         }
       } catch {
-        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.CharMatch(char, c.literal(ruleName).splice))
+        case e: Parser.CollectingRuleStackException ⇒
+          e.save(RuleFrame.PredicateMatch(predicate, c.literal(ruleName).splice))
       }
     }
   }

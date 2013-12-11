@@ -99,6 +99,12 @@ abstract class RuleDSL {
   implicit def str(s: String): Rule0 = `n/a`
 
   /**
+   * Matches any (single) character matched by the given `CharPredicate`.
+   */
+  @compileTimeOnly("Calls to `predicate` must be inside `rule` macro")
+  implicit def predicate(p: CharPredicate): Rule0 = `n/a`
+
+  /**
    * Matches any single one of the given characters.
    */
   @compileTimeOnly("Calls to `anyOf` must be inside `rule` macro")
