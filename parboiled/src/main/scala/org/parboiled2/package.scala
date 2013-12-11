@@ -30,4 +30,6 @@ package object parboiled2 {
   val EOI = '\uFFFF'
 
   val UTF8 = Charset.forName("UTF-8")
+
+  private[parboiled2] def `n/a` = throw new IllegalStateException
 }

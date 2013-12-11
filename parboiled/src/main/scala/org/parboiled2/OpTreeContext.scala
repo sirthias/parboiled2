@@ -53,21 +53,18 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case q"$a.this.push[$b]($arg)($c)"           ⇒ PushAction(arg)
       case q"$a.this.$b"                           ⇒ RuleCall(tree)
       case q"$a.this.$b(..$c)"                     ⇒ RuleCall(tree)
-      case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
+      case q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
         CharacterRange(l, r, tree.pos)
-      case q"$a.this.pimpActionOp[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
+      case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
         Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
-      case q"parboiled2.this.Rule.RepeatedRule[$a, $b]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
+      case q"parboiled2.this.Rule.rule2WithSeparatedBy[$a, $b]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
         val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
         fun.toString match {
           case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
           case "oneOrMore"  ⇒ OneOrMore(op, coll, separator)
           case "times"      ⇒ Times(base, op, coll, separator)
-          case _            ⇒ c.abort(tree.pos, "Unexpected RepeatedRule fun: " + fun)
+          case _            ⇒ c.abort(tree.pos, "Unexpected Rule.Repeated fun: " + fun)
         }
-
-      case q"parboiled2.this.Rule.RepeatedRule[$a, $b]($c.this.oneOrMore[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
-        ZeroOrMore(OpTree(arg), collector(s), Separator(OpTree(sep)))
 
       case _ ⇒ c.abort(tree.pos, "Invalid rule definition: " + tree)
     }
@@ -265,12 +262,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
   def Times(base: Tree, rule: OpTree, collector: Collector, separator: Separator = emptySeparator): OpTree =
     base match {
-      case q"$a.this.int2range(${ Literal(Constant(i: Int)) })" ⇒
+      case q"$a.this.int2NTimes(${ Literal(Constant(i: Int)) })" ⇒
         if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
         else if (i == 1) rule
         else Times(i, i, rule, collector, separator)
 
-      case q"$a.this.NTimes(scala.this.Predef.intWrapper(${ Literal(Constant(min: Int)) }).to(${ Literal(Constant(max: Int)) }))" ⇒
+      case q"$a.this.range2NTimes(scala.this.Predef.intWrapper(${ Literal(Constant(min: Int)) }).to(${ Literal(Constant(max: Int)) }))" ⇒
         if (min < 0) c.abort(base.pos, "`min` in `(min to max).times` must be non-negative")
         else if (max < 0) c.abort(base.pos, "`max` in `(min to max).times` must be non-negative")
         else if (max < min) c.abort(base.pos, "`max` in `(min to max).times` must be >= `min`")

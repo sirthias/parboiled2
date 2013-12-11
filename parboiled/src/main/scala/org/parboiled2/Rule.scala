@@ -69,28 +69,119 @@ object Rule {
   object Mismatched extends Rule0
 
   @compileTimeOnly("Calls to `Rule` constructor must be inside `rule` macro")
-  def apply[I <: HList, O <: HList](): Rule[I, O] = ???
+  def apply[I <: HList, O <: HList](): Rule[I, O] = `n/a`
 
   implicit class Runnable[L <: HList](rule: RuleN[L]) {
     def apply(): Parser.Result[L] = macro Parser.runImpl[L]
   }
 
+  // phantom type for WithSeparatedBy pimp
   trait Repeated
-  implicit class RepeatedRule[I <: HList, O <: HList](r: Rule[I, O] with Repeated) {
-    def separatedBy(separator: Rule0): Rule[I, O] = ???
+
+  @compileTimeOnly("Calls to `rule2WithSeparatedBy` constructor must be inside `rule` macro")
+  implicit def rule2WithSeparatedBy[I <: HList, O <: HList](r: Rule[I, O] with Repeated): WithSeparatedBy[I, O] = `n/a`
+  trait WithSeparatedBy[I <: HList, O <: HList] {
+    def separatedBy(separator: Rule0): Rule[I, O] = `n/a`
   }
 }
 
 abstract class RuleDSL {
 
   @compileTimeOnly("Calls to `ch` must be inside `rule` macro")
-  implicit def ch(c: Char): Rule0 = ???
+  implicit def ch(c: Char): Rule0 = `n/a`
 
   @compileTimeOnly("Calls to `str` must be inside `rule` macro")
-  implicit def str(s: String): Rule0 = ???
+  implicit def str(s: String): Rule0 = `n/a`
 
-  implicit def int2range(i: Int): NTimes = ???
-  implicit class NTimes(range: Range) {
+  /**
+   * Runs its inner rule and succeeds even if the inner rule doesn't.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Option[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
+  @compileTimeOnly("Calls to `optional` must be inside `rule` macro")
+  def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Optionalizer[I, O]): Rule[o.In, o.Out] = `n/a`
+
+  /**
+   * Runs its inner rule until it fails, always succeeds.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Seq[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
+  @compileTimeOnly("Calls to `zeroOrMore` must be inside `rule` macro")
+  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated = `n/a`
+
+  /**
+   * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
+   * Resulting rule type:
+   *   if (r == Rule0) Rule0
+   *   if (r == Rule1[T]) Rule1[Seq[T]]
+   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   */
+  @compileTimeOnly("Calls to `oneOrMore` must be inside `rule` macro")
+  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated = `n/a`
+
+  /**
+   * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
+   * succeeds only if its inner rule succeeded.
+   */
+  @compileTimeOnly("Calls to `&` must be inside `rule` macro")
+  def &(r: Rule[_, _]): Rule0 = `n/a`
+
+  /**
+   * Pushes the input text matched by its inner rule onto the value stack
+   * after its inner rule has been run successfully.
+   */
+  @compileTimeOnly("Calls to `capture` must be inside `rule` macro")
+  def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepender[O, String :: HNil]): Rule[I, p.Out] = `n/a`
+
+  /**
+   * Pushes the given value onto the value stack.
+   * If `T` is `Unit` nothing is pushed, if `T <: HList` all value of the HList is pushed as individual elements,
+   * otherwise a single value of type `T` is pushed.
+   */
+  @compileTimeOnly("Calls to `push` must be inside `rule` macro")
+  def push[T](value: T)(implicit j: Join[HNil, HNil, HNil, T]): RuleN[j.Out] = `n/a`
+
+  /**
+   * Implements a semantic predicate. If the argument expression evaluates to `true` the created
+   * rule matches otherwise it doesn't.
+   */
+  @compileTimeOnly("Calls to `test` must be inside `rule` macro")
+  def test(predicateResult: Boolean): Rule0 = `n/a`
+
+  /**
+   * Matches the EOI (end-of-input) character.
+   */
+  def EOI = org.parboiled2.EOI
+
+  /**
+   * Matches any character except EOI.
+   */
+  @compileTimeOnly("Calls to `ANY` must be inside `rule` macro")
+  def ANY: Rule0 = `n/a`
+
+  /**
+   * Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
+   */
+  @compileTimeOnly("Calls to `EMPTY` must be inside `rule` macro")
+  def EMPTY: Rule0 = `n/a`
+
+  /**
+   * A rule that always fails.
+   */
+  @compileTimeOnly("Calls to `NOTHING` must be inside `rule` macro")
+  def NOTHING: Rule0 = `n/a`
+
+  @compileTimeOnly("Calls to `int2NTimes` must be inside `rule` macro")
+  implicit def int2NTimes(i: Int): NTimes = `n/a`
+
+  @compileTimeOnly("Calls to `range2NTimes` must be inside `rule` macro")
+  implicit def range2NTimes(range: Range): NTimes = `n/a`
+
+  sealed trait NTimes {
     /**
      * Repeats the given sub rule `r` the given number of times.
      * Both bounds of the range must be non-negative and the upper bound must be >= the lower bound.
@@ -102,98 +193,18 @@ abstract class RuleDSL {
      *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
      */
     @compileTimeOnly("Calls to `times` must be inside `rule` macro")
-    def times[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated = ???
+    def times[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated
   }
 
-  /**
-   * Runs its inner rule and succeeds even if the inner rule doesn't.
-   * Resulting rule type:
-   *   if (r == Rule0) Rule0
-   *   if (r == Rule1[T]) Rule1[Option[T]]
-   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
-   */
-  @compileTimeOnly("Calls to `optional` must be inside `rule` macro")
-  def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Optionalizer[I, O]): Rule[o.In, o.Out] = ???
-
-  /**
-   * Runs its inner rule until it fails, always succeeds.
-   * Resulting rule type:
-   *   if (r == Rule0) Rule0
-   *   if (r == Rule1[T]) Rule1[Seq[T]]
-   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
-   */
-  @compileTimeOnly("Calls to `zeroOrMore` must be inside `rule` macro")
-  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated = ???
-
-  /**
-   * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
-   * Resulting rule type:
-   *   if (r == Rule0) Rule0
-   *   if (r == Rule1[T]) Rule1[Seq[T]]
-   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
-   */
-  @compileTimeOnly("Calls to `oneOrMore` must be inside `rule` macro")
-  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Rule.Repeated = ???
-
-  /**
-   * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
-   * succeeds only if its inner rule succeeded.
-   */
-  @compileTimeOnly("Calls to `&` must be inside `rule` macro")
-  def &(r: Rule[_, _]): Rule0 = ???
-
-  /**
-   * Pushes the input text matched by its inner rule onto the value stack
-   * after its inner rule has been run successfully.
-   */
-  @compileTimeOnly("Calls to `capture` must be inside `rule` macro")
-  def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepender[O, String :: HNil]): Rule[I, p.Out] = ???
-
-  /**
-   * Pushes the given value onto the value stack.
-   * If `T` is `Unit` nothing is pushed, if `T <: HList` all value of the HList is pushed as individual elements,
-   * otherwise a single value of type `T` is pushed.
-   */
-  @compileTimeOnly("Calls to `push` must be inside `rule` macro")
-  def push[T](value: T)(implicit j: Join[HNil, HNil, HNil, T]): RuleN[j.Out] = ???
-
-  /**
-   * Implements a semantic predicate. If the argument expression evaluates to `true` the created
-   * rule matches otherwise it doesn't.
-   */
-  @compileTimeOnly("Calls to `test` must be inside `rule` macro")
-  def test(predicateResult: Boolean): Rule0 = ???
-
-  /**
-   * Matches the EOI (end-of-input) character.
-   */
-  def EOI = org.parboiled2.EOI
-
-  /**
-   * Matches any character except EOI.
-   */
-  @compileTimeOnly("Calls to `ANY` must be inside `rule` macro")
-  def ANY: Rule0 = ???
-
-  /**
-   * Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
-   */
-  @compileTimeOnly("Calls to `EMPTY` must be inside `rule` macro")
-  def EMPTY: Rule0 = ???
-
-  /**
-   * A rule that always fails.
-   */
-  @compileTimeOnly("Calls to `NOTHING` must be inside `rule` macro")
-  def NOTHING: Rule0 = ???
-
-  implicit def pimpString(s: String): PimpedString = null
-  sealed trait PimpedString {
+  @compileTimeOnly("Calls to `str2CharRangeSupport` must be inside `rule` macro")
+  implicit def str2CharRangeSupport(s: String): CharRangeSupport = `n/a`
+  sealed trait CharRangeSupport {
     def -(other: String): Rule0
   }
 
-  implicit def pimpActionOp[I <: HList, O <: HList](r: Rule[I, O])(implicit ops: ActionOps[I, O]): ActionOpsPimp[I, O, ops.Out] = null
-  sealed trait ActionOpsPimp[I <: HList, O <: HList, Ops] {
+  @compileTimeOnly("Calls to `rule2ActionOperator` must be inside `rule` macro")
+  implicit def rule2ActionOperator[I <: HList, O <: HList](r: Rule[I, O])(implicit ops: ActionOps[I, O]): ActionOperator[I, O, ops.Out] = `n/a`
+  sealed trait ActionOperator[I <: HList, O <: HList, Ops] {
     def ~> : Ops
   }
 }
