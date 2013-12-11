@@ -29,6 +29,8 @@ object RuleFrame {
   case class FirstOf(name: String = "") extends RuleFrame
   case class CharMatch(char: Char, name: String = "") extends RuleFrame
   case class StringMatch(string: String, name: String = "") extends RuleFrame
+  case class IgnoreCaseChar(char: Char, name: String = "") extends RuleFrame
+  case class IgnoreCaseString(string: String, name: String = "") extends RuleFrame
   case class PredicateMatch(predicate: CharPredicate, name: String = "") extends RuleFrame
   case class AnyOf(string: String, name: String = "") extends RuleFrame
   case class ANY(name: String = "") extends RuleFrame

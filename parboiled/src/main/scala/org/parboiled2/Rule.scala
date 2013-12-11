@@ -111,6 +111,22 @@ abstract class RuleDSL {
   def anyOf(chars: String): Rule0 = `n/a`
 
   /**
+   * Matches the given single character case insensitively.
+   * Note: the given character must be specified in lower-case!
+   * This requirement is currently NOT enforced!
+   */
+  @compileTimeOnly("Calls to `ignoreCase` must be inside `rule` macro")
+  def ignoreCase(c: Char): Rule0 = `n/a`
+
+  /**
+   * Matches the given string of characters case insensitively.
+   * Note: the given string must be specified in all lower-case!
+   * This requirement is currently NOT enforced!
+   */
+  @compileTimeOnly("Calls to `ignoreCase` must be inside `rule` macro")
+  def ignoreCase(s: String): Rule0 = `n/a`
+
+  /**
    * Runs its inner rule and succeeds even if the inner rule doesn't.
    * Resulting rule type:
    *   if (r == Rule0) Rule0

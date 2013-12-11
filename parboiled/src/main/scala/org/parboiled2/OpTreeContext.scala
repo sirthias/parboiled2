@@ -39,8 +39,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
       case q"$a.this.ch($c)"                       ⇒ CharMatch(c)
       case q"$a.this.str($s)"                      ⇒ StringMatch(s)
+      case q"$a.this.ignoreCase($t)"               ⇒ IgnoreCase(t)
       case q"$a.this.predicate($p)"                ⇒ PredicateMatch(p)
-      case q"$a.this.anyOf($c)"                    ⇒ AnyOf(c)
+      case q"$a.this.anyOf($s)"                    ⇒ AnyOf(s)
       case q"$a.this.ANY"                          ⇒ ANY
       case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), collector(o))
       case q"$a.this.zeroOrMore[$b, $c]($arg)($s)" ⇒ ZeroOrMore(OpTree(arg), collector(s))
@@ -135,6 +136,53 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         }
       } catch {
         case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.StringMatch(string, c.literal(ruleName).splice))
+      }
+    }
+  }
+
+  def IgnoreCase(argTree: Tree): OpTree =
+    argTree.tpe.typeSymbol.name.toString match { // TODO: can we do better than this toString?
+      case "Char"   ⇒ IgnoreCaseChar(argTree)
+      case "String" ⇒ IgnoreCaseString(argTree)
+      case x        ⇒ c.abort(argTree.pos, "Unexpected `ignoreCase` argument type: " + x)
+    }
+
+  case class IgnoreCaseChar(charTree: Tree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      val char = c.Expr[Char](charTree).splice
+      try {
+        val p = c.prefix.splice
+        if (p.__currentChar.toLower == char) {
+          p.__advance()
+          Rule.Matched
+        } else {
+          p.__registerCharMismatch()
+          Rule.Mismatched
+        }
+      } catch {
+        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.IgnoreCaseChar(char, c.literal(ruleName).splice))
+      }
+    }
+  }
+
+  case class IgnoreCaseString(stringTree: Tree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      val string = c.Expr[String](stringTree).splice
+      try {
+        val p = c.prefix.splice
+        @tailrec def rec(ix: Int): Boolean =
+          if (ix < string.length)
+            if (p.__currentChar.toLower == string.charAt(ix)) {
+              p.__advance()
+              rec(ix + 1)
+            } else false
+          else true
+        if (rec(0)) Rule.Matched else {
+          p.__registerCharMismatch()
+          Rule.Mismatched
+        }
+      } catch {
+        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.IgnoreCaseString(string, c.literal(ruleName).splice))
       }
     }
   }

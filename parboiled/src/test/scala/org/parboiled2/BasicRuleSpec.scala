@@ -90,6 +90,37 @@ class BasicRuleSpec extends TestParserSpec {
       "ab" must beMismatched
     }
 
+    "ignoreCase(char)" in new TestParser0 {
+      def targetRule = rule { ignoreCase('x') ~ EOI }
+      "" must beMismatched
+      "x" must beMatched
+      "X" must beMatched
+      "y" must beMismatched
+    }
+
+    "ignoreCase(string)" in new TestParser0 {
+      def targetRule = rule { ignoreCase("ab") ~ EOI }
+      "" must beMismatched
+      "a" must beMismatched
+      "ab" must beMatched
+      "Ab" must beMatched
+      "aB" must beMatched
+      "abc" must beMismatched
+    }
+
+    "ANY" in new TestParser0 {
+      def targetRule = rule { ANY }
+      "a" must beMatched
+      "Ж" must beMatched
+      "" must beMismatched
+    }
+
+    "EOI" in new TestParser0 {
+      def targetRule = rule { EOI }
+      "" must beMatched
+      "x" must beMismatched
+    }
+
     "character ranges" in new TestParser0 {
       def targetRule = rule { ("1" - "5") ~ EOI }
       "1" must beMatched
@@ -99,19 +130,6 @@ class BasicRuleSpec extends TestParserSpec {
       "0" must beMismatched
       "a" must beMismatched
       "8" must beMismatched
-    }
-
-    "EOI" in new TestParser0 {
-      def targetRule = rule { EOI }
-      "" must beMatched
-      "x" must beMismatched
-    }
-
-    "ANY" in new TestParser0 {
-      def targetRule = rule { ANY }
-      "a" must beMatched
-      "Ж" must beMatched
-      "" must beMismatched
     }
 
     "EMPTY" in new TestParser0 {
