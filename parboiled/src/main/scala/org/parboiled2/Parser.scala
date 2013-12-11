@@ -32,17 +32,33 @@ abstract class Parser extends RuleDSL {
   /**
    * Pretty prints the given `ParseError` instance in the context of the `ParserInput` of this parser.
    */
-  def formatError(error: ParseError): String = {
-    val ParseError(Position(index, line, col), ruleStacks) = error
-    val problem =
-      if (index < input.length) s"Invalid input '${input charAt index}'"
-      else "Unexpected end of input"
-
-    problem + ", "
-    s"expected ${ruleStacks.map(x ⇒ RuleStack(x.frames.reverse)) mkString ("\n", "\n\n", "\n")} " +
-      s"(line $line, column $col): \n" +
-      s"${input.getLine(line)}\n" + (" " * (col - 1)) + '^'
+  def formatError(error: ParseError, showTraces: Boolean = false): String = {
+    val ParseError(pos @ Position(index, line, col), traces) = error
+    val errorChar = if (index < input.length) input charAt index else EOI
+    val expected: Vector[String] =
+      traces.map { trace ⇒
+        val exp = trace.frames.last.format
+        if (exp.isEmpty) "?" else exp
+      }(collection.breakOut)
+    val caret = " " * (col - 1) + '^'
+    val errorMsg = formatError(errorChar, pos, expected, input getLine line, caret)
+    if (showTraces) errorMsg + "\n\n" + formatErrorTraces(traces) else errorMsg
   }
+
+  /**
+   * Pretty prints the given `ParseError`.
+   */
+  def formatError(errorChar: Char, pos: Position, expected: Seq[String], line: String, caret: String): String = {
+    val problem = if (errorChar == EOI) "Unexpected end of input" else s"Invalid input '$errorChar'"
+    val exp = if (expected.size == 1) expected.head else expected.init.mkString(", ") + " or " + expected.last
+    s"$problem, expected $exp (line ${pos.line}, column ${pos.column}):\n$line\n$caret"
+  }
+
+  /**
+   * Pretty prints the given error rule traces.
+   */
+  def formatErrorTraces(traces: Seq[RuleTrace]): String =
+    traces.map(_.format).mkString("Mismatched rules at error location:\n  ", "\n  ", "\n")
 
   ////////////////////// INTERNAL /////////////////////////
 
@@ -80,18 +96,26 @@ abstract class Parser extends RuleDSL {
       currentErrorRuleStackIx = errorRuleStackIx
       rule.matched
     }
-    @tailrec def buildParseError(errorRuleIx: Int = 0,
-                                 stacksBuilder: VectorBuilder[RuleStack] = new VectorBuilder): ParseError = {
-      val ruleFrames: Seq[RuleFrame] =
+
+    @tailrec
+    def errorPosition(ix: Int = math.min(maxIndex, input.length - 1), line: Int = 1, col: Int = -1): Position =
+      if (ix < 0) Position(maxIndex, line, if (col == -1) maxIndex + 1 else col)
+      else if (input.charAt(ix) != '\n') errorPosition(ix - 1, line, col)
+      else errorPosition(ix - 1, line + 1, if (col == -1) maxIndex - ix else col)
+
+    @tailrec
+    def buildParseError(errorRuleIx: Int = 0, traces: VectorBuilder[RuleTrace] = new VectorBuilder): ParseError = {
+      val ruleFrames: List[RuleFrame] =
         try {
           runRule(errorRuleIx)
           Nil // we managed to complete the run w/o exception, i.e. we have collected all frames
         } catch {
           case e: Parser.CollectingRuleStackException ⇒ e.ruleFrames
         }
-      if (ruleFrames.isEmpty) ParseError(errorPosition(), stacksBuilder.result())
-      else buildParseError(errorRuleIx + 1, stacksBuilder += RuleStack(ruleFrames))
+      if (ruleFrames.isEmpty) ParseError(errorPosition(), traces.result())
+      else buildParseError(errorRuleIx + 1, traces += RuleTrace(ruleFrames.toVector))
     }
+
     maxIndex = -1
     if (runRule())
       Right(__valueStack.toHList[L]())
@@ -158,12 +182,6 @@ abstract class Parser extends RuleDSL {
       if (mismatchesAtErrorIndex < currentErrorRuleStackIx) mismatchesAtErrorIndex += 1
       else throw new Parser.CollectingRuleStackException
     }
-
-  @tailrec
-  private def errorPosition(ix: Int = math.min(maxIndex, input.length - 1), line: Int = 1, col: Int = -1): Position =
-    if (ix < 0) Position(maxIndex, line, if (col == -1) maxIndex + 1 else col)
-    else if (input.charAt(ix) != '\n') errorPosition(ix - 1, line, col)
-    else errorPosition(ix - 1, line + 1, if (col == -1) maxIndex - ix else col)
 }
 
 object Parser {
@@ -202,11 +220,11 @@ object Parser {
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   class CollectingRuleStackException extends RuntimeException with NoStackTrace {
-    private[this] val frameBuilder = new VectorBuilder[RuleFrame]
+    private[this] var frames = List.empty[RuleFrame]
     def save(frame: RuleFrame): Nothing = {
-      frameBuilder += frame
+      frames ::= frame
       throw this
     }
-    def ruleFrames: Seq[RuleFrame] = frameBuilder.result()
+    def ruleFrames: List[RuleFrame] = frames
   }
 }

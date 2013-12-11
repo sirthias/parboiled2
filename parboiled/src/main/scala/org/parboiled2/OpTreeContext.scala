@@ -55,7 +55,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case q"$a.this.$b"                           ⇒ RuleCall(tree)
       case q"$a.this.$b(..$c)"                     ⇒ RuleCall(tree)
       case q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
-        CharacterRange(l, r, tree.pos)
+        CharRange(l, r, tree.pos)
       case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
         Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
       case q"parboiled2.this.Rule.rule2WithSeparatedBy[$a, $b]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
@@ -121,21 +121,23 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class StringMatch(stringTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val string = c.Expr[String](stringTree).splice
+      val p = c.prefix.splice
+      @tailrec def rec(ix: Int): Int =
+        if (ix < string.length)
+          if (p.__currentChar == string.charAt(ix)) {
+            p.__advance()
+            rec(ix + 1)
+          } else ix
+        else -1
+      val mismatchIx = rec(0)
       try {
-        val p = c.prefix.splice
-        @tailrec def rec(ix: Int): Boolean =
-          if (ix < string.length)
-            if (p.__currentChar == string.charAt(ix)) {
-              p.__advance()
-              rec(ix + 1)
-            } else false
-          else true
-        if (rec(0)) Rule.Matched else {
+        if (mismatchIx >= 0) {
           p.__registerCharMismatch()
           Rule.Mismatched
-        }
+        } else Rule.Matched
       } catch {
-        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.StringMatch(string, c.literal(ruleName).splice))
+        case e: Parser.CollectingRuleStackException ⇒
+          e.save(RuleFrame.StringMatch(string, mismatchIx, c.literal(ruleName).splice))
       }
     }
   }
@@ -168,26 +170,32 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class IgnoreCaseString(stringTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val string = c.Expr[String](stringTree).splice
+      val p = c.prefix.splice
+      @tailrec def rec(ix: Int): Int =
+        if (ix < string.length)
+          if (p.__currentChar.toLower == string.charAt(ix)) {
+            p.__advance()
+            rec(ix + 1)
+          } else ix
+        else -1
+      val mismatchIx = rec(0)
       try {
-        val p = c.prefix.splice
-        @tailrec def rec(ix: Int): Boolean =
-          if (ix < string.length)
-            if (p.__currentChar.toLower == string.charAt(ix)) {
-              p.__advance()
-              rec(ix + 1)
-            } else false
-          else true
-        if (rec(0)) Rule.Matched else {
+        if (mismatchIx >= 0) {
           p.__registerCharMismatch()
           Rule.Mismatched
-        }
+        } else Rule.Matched
       } catch {
-        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.IgnoreCaseString(string, c.literal(ruleName).splice))
+        case e: Parser.CollectingRuleStackException ⇒
+          e.save(RuleFrame.IgnoreCaseString(string, mismatchIx, c.literal(ruleName).splice))
       }
     }
   }
 
   case class PredicateMatch(predicateTree: Tree) extends OpTree {
+    def predicateName = predicateTree match {
+      case q"$a.$name" ⇒ name.toString
+      case _           ⇒ ""
+    }
     def render(ruleName: String): Expr[RuleX] = reify {
       val predicate = c.Expr[CharPredicate](predicateTree).splice
       try {
@@ -201,7 +209,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         }
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.PredicateMatch(predicate, c.literal(ruleName).splice))
+          val name = c.literal(if (ruleName.isEmpty) predicateName else ruleName).splice
+          e.save(RuleFrame.PredicateMatch(predicate, name))
       }
     }
   }
@@ -212,18 +221,17 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       try {
         val p = c.prefix.splice
         val cursor = p.__currentChar
-        @tailrec def rec(ix: Int): Boolean =
-          if (ix < string.length)
-            if (cursor == string.charAt(ix)) true
-            else rec(ix + 1)
-          else false
-        if (rec(0)) {
-          p.__advance()
-          Rule.Matched
-        } else {
-          p.__registerCharMismatch()
-          Rule.Mismatched
-        }
+        @tailrec def rec(ix: Int): RuleX =
+          if (ix < string.length) {
+            if (cursor == string.charAt(ix)) {
+              p.__advance()
+              Rule.Matched
+            } else rec(ix + 1)
+          } else {
+            p.__registerCharMismatch()
+            Rule.Mismatched
+          }
+        rec(0)
       } catch {
         case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.AnyOf(string, c.literal(ruleName).splice))
       }
@@ -461,11 +469,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         }
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.CharacterRange(c.literal(lowerBound).splice, c.literal(upperBound).splice, c.literal(ruleName).splice))
+          e.save(RuleFrame.CharRange(c.literal(lowerBound).splice, c.literal(upperBound).splice, c.literal(ruleName).splice))
       }
     }
   }
-  def CharacterRange(lower: String, upper: String, pos: Position): CharacterRange = {
+  def CharRange(lower: String, upper: String, pos: Position): CharacterRange = {
     if (lower.length != 1) c.abort(pos, "lower bound must be a single char string")
     if (upper.length != 1) c.abort(pos, "upper bound must be a single char string")
     val lowerBoundChar = lower.charAt(0)

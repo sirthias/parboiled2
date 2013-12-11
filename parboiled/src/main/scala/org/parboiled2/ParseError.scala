@@ -16,12 +16,42 @@
 
 package org.parboiled2
 
-case class ParseError(position: Position, errorRules: Seq[RuleStack])
-case class Position(index: Int, line: Int, column: Int)
-case class RuleStack(frames: Seq[RuleFrame])
+case class ParseError(position: Position, traces: Seq[RuleTrace])
 
-sealed trait RuleFrame {
+case class Position(index: Int, line: Int, column: Int)
+
+// outermost (i.e. highest-level) rule first
+case class RuleTrace(frames: Seq[RuleFrame]) {
+  def format: String = frames.map(_.format).filter(_.nonEmpty).mkString(" / ")
+}
+
+sealed abstract class RuleFrame {
+  import RuleFrame._
+
   def name: String // the name of rule (method), empty if the rule is anonymous (i.e. an "inner" rule)
+
+  def format: String =
+    if (name.nonEmpty) name
+    else this match {
+      case _: Sequence                ⇒ ""
+      case _: FirstOf                 ⇒ "|"
+      case CharMatch(c, _)            ⇒ "'" + c + '\''
+      case StringMatch(s, ix, _)      ⇒ "'" + s.charAt(ix) + '\''
+      case IgnoreCaseChar(c, _)       ⇒ "'" + c + '\''
+      case IgnoreCaseString(s, ix, _) ⇒ "'" + s.charAt(ix) + '\''
+      case _: PredicateMatch          ⇒ "<anon predicate>"
+      case AnyOf(s, _)                ⇒ '[' + s + ']'
+      case _: ANY                     ⇒ "ANY"
+      case _: Optional                ⇒ "optional"
+      case _: ZeroOrMore              ⇒ "zeroOrMore"
+      case _: OneOrMore               ⇒ "oneOrMore"
+      case _: Times                   ⇒ "times"
+      case _: AndPredicate            ⇒ "&"
+      case _: NotPredicate            ⇒ "!"
+      case _: SemanticPredicate       ⇒ "test"
+      case _: RuleCall                ⇒ ""
+      case CharRange(from, to, _)     ⇒ s"'$from'-'$to'"
+    }
 }
 
 object RuleFrame {
@@ -42,5 +72,5 @@ object RuleFrame {
   case class NotPredicate(name: String = "") extends RuleFrame
   case class SemanticPredicate(name: String = "") extends RuleFrame
   case class RuleCall(calledRule: String, name: String = "") extends RuleFrame
-  case class CharacterRange(from: Char, to: Char, name: String = "") extends RuleFrame
+  case class CharRange(from: Char, to: Char, name: String = "") extends RuleFrame
 }
