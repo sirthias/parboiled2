@@ -72,6 +72,16 @@ class BasicRuleSpec extends TestParserSpec {
       "abc" must beMismatched
     }
 
+    "anyOf" in new TestParser0 {
+      def targetRule = rule { anyOf("abc") ~ EOI }
+      "" must beMismatched
+      "a" must beMatched
+      "b" must beMatched
+      "c" must beMatched
+      "d" must beMismatched
+      "ab" must beMismatched
+    }
+
     "character ranges" in new TestParser0 {
       def targetRule = rule { ("1" - "5") ~ EOI }
       "1" must beMatched

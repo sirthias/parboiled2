@@ -27,8 +27,9 @@ sealed trait RuleFrame {
 object RuleFrame {
   case class Sequence(name: String = "") extends RuleFrame
   case class FirstOf(name: String = "") extends RuleFrame
-  case class LiteralString(string: String, name: String = "") extends RuleFrame
-  case class LiteralChar(char: Char, name: String = "") extends RuleFrame
+  case class StringMatch(string: String, name: String = "") extends RuleFrame
+  case class CharMatch(char: Char, name: String = "") extends RuleFrame
+  case class AnyOf(string: String, name: String = "") extends RuleFrame
   case class ANY(name: String = "") extends RuleFrame
   case class Optional(name: String = "") extends RuleFrame
   case class ZeroOrMore(name: String = "") extends RuleFrame

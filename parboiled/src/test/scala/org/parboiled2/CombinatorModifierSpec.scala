@@ -145,20 +145,19 @@ class CombinatorModifierSpec extends TestParserSpec {
       "x" must beMatched
     }
 
-    "`2.times(Rule0)` modifier" in {
-      "example 1" in new TestParser0 {
-        def targetRule = rule { 2.times("x") }
-        "" must beMismatched
-        "x" must beMismatched
-        "xx" must beMatched
-        "xxx" must beMatched
-      }
-      "example 2" in new TestParser0 {
-        def targetRule = rule { 2.times("x") ~ EOI }
-        "x" must beMismatched
-        "xx" must beMatched
-        "xxx" must beMismatched
-      }
+    "`2.times(Rule0)` modifier (example 1)" in new TestParser0 {
+      def targetRule = rule { 2.times("x") }
+      "" must beMismatched
+      "x" must beMismatched
+      "xx" must beMatched
+      "xxx" must beMatched
+    }
+
+    "`2.times(Rule0)` modifier (example 2)" in new TestParser0 {
+      def targetRule = rule { 2.times("x") ~ EOI }
+      "x" must beMismatched
+      "xx" must beMatched
+      "xxx" must beMismatched
     }
 
     "`2.times(Rule0).separatedBy('|')` modifier" in new TestParser0 {
@@ -168,23 +167,22 @@ class CombinatorModifierSpec extends TestParserSpec {
       "x|x|" must beMismatched
     }
 
-    "`(2 to 4).times(Rule0)` modifier" in {
-      "example 1" in new TestParser0 {
-        def targetRule = rule { (2 to 4).times("x") }
-        "" must beMismatched
-        "x" must beMismatched
-        "xx" must beMatched
-        "xxx" must beMatched
-        "xxxx" must beMatched
-        "xxxxx" must beMatched
-      }
-      "example 2" in new TestParser0 {
-        def targetRule = rule { (2 to 4).times("x") ~ EOI }
-        "xx" must beMatched
-        "xxx" must beMatched
-        "xxxx" must beMatched
-        "xxxxx" must beMismatched
-      }
+    "`(2 to 4).times(Rule0)` modifier (example 1)" in new TestParser0 {
+      def targetRule = rule { (2 to 4).times("x") }
+      "" must beMismatched
+      "x" must beMismatched
+      "xx" must beMatched
+      "xxx" must beMatched
+      "xxxx" must beMatched
+      "xxxxx" must beMatched
+    }
+
+    "`(2 to 4).times(Rule0)` modifier (example 2)" in new TestParser0 {
+      def targetRule = rule { (2 to 4).times("x") ~ EOI }
+      "xx" must beMatched
+      "xxx" must beMatched
+      "xxxx" must beMatched
+      "xxxxx" must beMismatched
     }
 
     "`(2 to 4).times(Rule0).separatedBy('|')` modifier" in new TestParser0 {

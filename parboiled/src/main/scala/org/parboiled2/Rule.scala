@@ -86,11 +86,23 @@ object Rule {
 
 abstract class RuleDSL {
 
+  /**
+   * Matches the given single character.
+   */
   @compileTimeOnly("Calls to `ch` must be inside `rule` macro")
   implicit def ch(c: Char): Rule0 = `n/a`
 
+  /**
+   * Matches the given string of characters.
+   */
   @compileTimeOnly("Calls to `str` must be inside `rule` macro")
   implicit def str(s: String): Rule0 = `n/a`
+
+  /**
+   * Matches any single one of the given characters.
+   */
+  @compileTimeOnly("Calls to `anyOf` must be inside `rule` macro")
+  def anyOf(chars: String): Rule0 = `n/a`
 
   /**
    * Runs its inner rule and succeeds even if the inner rule doesn't.
@@ -174,10 +186,8 @@ abstract class RuleDSL {
 
   @compileTimeOnly("Calls to `int2NTimes` must be inside `rule` macro")
   implicit def int2NTimes(i: Int): NTimes = `n/a`
-
   @compileTimeOnly("Calls to `range2NTimes` must be inside `rule` macro")
   implicit def range2NTimes(range: Range): NTimes = `n/a`
-
   sealed trait NTimes {
     /**
      * Repeats the given sub rule `r` the given number of times.

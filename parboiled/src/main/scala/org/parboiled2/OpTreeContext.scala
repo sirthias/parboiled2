@@ -37,8 +37,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     tree match {
       case q"$lhs.~[$a, $b]($rhs)($c, $d)"         ⇒ Sequence(OpTree(lhs), OpTree(rhs))
       case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-      case q"$a.this.str($s)"                      ⇒ LiteralString(s)
-      case q"$a.this.ch($c)"                       ⇒ LiteralChar(c)
+      case q"$a.this.str($s)"                      ⇒ StringMatch(s)
+      case q"$a.this.ch($c)"                       ⇒ CharMatch(c)
+      case q"$a.this.anyOf($c)"                    ⇒ AnyOf(c)
       case q"$a.this.ANY"                          ⇒ ANY
       case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), collector(o))
       case q"$a.this.zeroOrMore[$b, $c]($arg)($s)" ⇒ ZeroOrMore(OpTree(arg), collector(s))
@@ -97,7 +98,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class LiteralString(stringTree: Tree) extends OpTree {
+  case class StringMatch(stringTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val string = c.Expr[String](stringTree).splice
       try {
@@ -114,12 +115,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           Rule.Mismatched
         }
       } catch {
-        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.LiteralString(string, c.literal(ruleName).splice))
+        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.StringMatch(string, c.literal(ruleName).splice))
       }
     }
   }
 
-  case class LiteralChar(charTree: Tree) extends OpTree {
+  case class CharMatch(charTree: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val char = c.Expr[Char](charTree).splice
       try {
@@ -132,7 +133,31 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           Rule.Mismatched
         }
       } catch {
-        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.LiteralChar(char, c.literal(ruleName).splice))
+        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.CharMatch(char, c.literal(ruleName).splice))
+      }
+    }
+  }
+
+  case class AnyOf(stringTree: Tree) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = reify {
+      val string = c.Expr[String](stringTree).splice
+      try {
+        val p = c.prefix.splice
+        val cursor = p.__currentChar
+        @tailrec def rec(ix: Int): Boolean =
+          if (ix < string.length)
+            if (cursor == string.charAt(ix)) true
+            else rec(ix + 1)
+          else false
+        if (rec(0)) {
+          p.__advance()
+          Rule.Matched
+        } else {
+          p.__registerCharMismatch()
+          Rule.Mismatched
+        }
+      } catch {
+        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.AnyOf(string, c.literal(ruleName).splice))
       }
     }
   }
