@@ -23,7 +23,6 @@ import shapeless.ops.hlist.{ Prepend, ReversePrepend }
 
 sealed trait RuleX {
   def matched: Boolean
-  def mismatched: Boolean
 }
 
 /**
@@ -35,10 +34,9 @@ sealed trait RuleX {
  * At runtime there are only two instances of this class which signal whether the rule has matched (or mismatched)
  * at the current point in the input.
  */
-sealed abstract class Rule[-I <: HList, +O <: HList] extends RuleX {
-  // TODO: model as value class wrapping a `matched: Boolean`
-  // This would give us a (small) performance benefit since we'd save the comparison to the predefined
-  // `Matched` and `Mismatched` objects.
+sealed class Rule[-I <: HList, +O <: HList](val matched: Boolean) extends RuleX {
+  // TODO: model as value class
+  // This would give us a performance benefit since we'd save the heap access to the `matched` member
   // However, https://issues.scala-lang.org/browse/SI-6260 is quite a serious problem for this design,
   // so until this issue is fixed we better stick to this non-value-class-based model
 
@@ -49,27 +47,28 @@ sealed abstract class Rule[-I <: HList, +O <: HList] extends RuleX {
   //   Rule[A, B:C] ~ Rule[D:B:C, E:F] = Rule[D:A, E:F]
   @compileTimeOnly("Calls to `~` must be inside `rule` macro")
   def ~[I2 <: HList, O2 <: HList](that: Rule[I2, O2])(implicit i: TailSwitch[I2, O @uncheckedVariance, I @uncheckedVariance],
-                                                      o: TailSwitch[O @uncheckedVariance, I2, O2]): Rule[i.Out, o.Out] = ???
+                                                      o: TailSwitch[O @uncheckedVariance, I2, O2]): Rule[i.Out, o.Out] = `n/a`
 
   @compileTimeOnly("Calls to `|` must be inside `rule` macro")
-  def |[I2 <: I, O2 >: O <: HList](that: Rule[I2, O2]): Rule[I2, O2] = ???
+  def |[I2 <: I, O2 >: O <: HList](that: Rule[I2, O2]): Rule[I2, O2] = `n/a`
 
   @compileTimeOnly("Calls to `unary_!` must be inside `rule` macro")
-  def unary_!(): Rule0 = ???
-
-  def matched: Boolean = this eq Rule.Matched
-  def mismatched: Boolean = this eq Rule.Mismatched
+  def unary_!(): Rule0 = `n/a`
 }
 
 /**
  * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
  */
 object Rule {
-  object Matched extends Rule0
-  object Mismatched extends Rule0
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  val Matched = new Rule0(true)
 
-  @compileTimeOnly("Calls to `Rule` constructor must be inside `rule` macro")
-  def apply[I <: HList, O <: HList](): Rule[I, O] = `n/a`
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  val Mismatched = new Rule0(false)
 
   implicit class Runnable[L <: HList](rule: RuleN[L]) {
     def apply(): Parser.Result[L] = macro Parser.runImpl[L]
@@ -153,27 +152,25 @@ abstract class RuleDSL {
   def test(predicateResult: Boolean): Rule0 = `n/a`
 
   /**
-   * Matches the EOI (end-of-input) character.
-   */
-  def EOI = org.parboiled2.EOI
-
-  /**
    * Matches any character except EOI.
    */
   @compileTimeOnly("Calls to `ANY` must be inside `rule` macro")
   def ANY: Rule0 = `n/a`
 
   /**
+   * Matches the EOI (end-of-input) character.
+   */
+  def EOI = org.parboiled2.EOI
+
+  /**
    * Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
    */
-  @compileTimeOnly("Calls to `EMPTY` must be inside `rule` macro")
-  def EMPTY: Rule0 = `n/a`
+  def EMPTY: Rule0 = Rule.Matched
 
   /**
    * A rule that always fails.
    */
-  @compileTimeOnly("Calls to `NOTHING` must be inside `rule` macro")
-  def NOTHING: Rule0 = `n/a`
+  def NOTHING: Rule0 = Rule.Mismatched
 
   @compileTimeOnly("Calls to `int2NTimes` must be inside `rule` macro")
   implicit def int2NTimes(i: Int): NTimes = `n/a`

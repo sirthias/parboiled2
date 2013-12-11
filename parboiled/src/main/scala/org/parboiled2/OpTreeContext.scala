@@ -40,8 +40,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case q"$a.this.str($s)"                      ⇒ LiteralString(s)
       case q"$a.this.ch($c)"                       ⇒ LiteralChar(c)
       case q"$a.this.ANY"                          ⇒ ANY
-      case q"$a.this.EMPTY"                        ⇒ EMPTY
-      case q"$a.this.NOTHING"                      ⇒ NOTHING
       case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), collector(o))
       case q"$a.this.zeroOrMore[$b, $c]($arg)($s)" ⇒ ZeroOrMore(OpTree(arg), collector(s))
       case q"$a.this.oneOrMore[$b, $c]($arg)($s)"  ⇒ OneOrMore(OpTree(arg), collector(s))
@@ -154,14 +152,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.ANY(c.literal(ruleName).splice))
       }
     }
-  }
-
-  case object EMPTY extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = reify { Rule.Matched }
-  }
-
-  case object NOTHING extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = reify { Rule.Mismatched }
   }
 
   case class Optional(op: OpTree, collector: Collector) extends OpTree {
