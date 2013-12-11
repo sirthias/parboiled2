@@ -26,17 +26,17 @@ sealed trait RuleFrame {
 
 object RuleFrame {
   case class Sequence(name: String = "") extends RuleFrame
-  case class CharacterRange(from: Char, to: Char, name: String = "") extends RuleFrame
   case class FirstOf(name: String = "") extends RuleFrame
-  case class Times(min: Int, max: Int, name: String = "") extends RuleFrame
   case class LiteralString(string: String, name: String = "") extends RuleFrame
-  case class SemanticPredicate(name: String = "") extends RuleFrame
   case class LiteralChar(char: Char, name: String = "") extends RuleFrame
-  case class AnyChar(name: String = "") extends RuleFrame
-  case class RuleCall(calledRule: String, name: String = "") extends RuleFrame
+  case class ANY(name: String = "") extends RuleFrame
   case class Optional(name: String = "") extends RuleFrame
   case class ZeroOrMore(name: String = "") extends RuleFrame
   case class OneOrMore(name: String = "") extends RuleFrame
+  case class Times(min: Int, max: Int, name: String = "") extends RuleFrame
   case class AndPredicate(name: String = "") extends RuleFrame
   case class NotPredicate(name: String = "") extends RuleFrame
+  case class SemanticPredicate(name: String = "") extends RuleFrame
+  case class RuleCall(calledRule: String, name: String = "") extends RuleFrame
+  case class CharacterRange(from: Char, to: Char, name: String = "") extends RuleFrame
 }

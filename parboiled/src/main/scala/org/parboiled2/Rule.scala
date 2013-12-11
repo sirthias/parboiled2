@@ -181,6 +181,12 @@ abstract class RuleDSL {
   @compileTimeOnly("Calls to `EMPTY` must be inside `rule` macro")
   def EMPTY: Rule0 = ???
 
+  /**
+   * A rule that always fails.
+   */
+  @compileTimeOnly("Calls to `NOTHING` must be inside `rule` macro")
+  def NOTHING: Rule0 = ???
+
   implicit def pimpString(s: String): PimpedString = null
   sealed trait PimpedString {
     def -(other: String): Rule0
