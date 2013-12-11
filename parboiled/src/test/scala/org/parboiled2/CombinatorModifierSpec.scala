@@ -22,27 +22,37 @@ class CombinatorModifierSpec extends TestParserSpec {
 
     "`~` combinator" in new TestParser0 {
       def targetRule = rule { 'a' ~ 'b' }
+      "" must beMismatched
       "ab" must beMatched
       "ac" must beMismatched
       "a" must beMismatched
       "b" must beMismatched
-      "" must beMismatched
     }
 
     "`|` combinator" in new TestParser0 {
       def targetRule = rule { ch('a') | 'b' }
+      "" must beMismatched
       "a" must beMatched
       "b" must beMatched
       "c" must beMismatched
-      "" must beMismatched
     }
 
     "`zeroOrMore(Rule0)` modifier" in new TestParser0 {
       def targetRule = rule { zeroOrMore("a") ~ EOI }
+      "" must beMatched
       "a" must beMatched
       "aa" must beMatched
       "b" must beMismatched
+    }
+
+    "`zeroOrMore(Rule0).separatedBy('|')` modifier" in new TestParser0 {
+      def targetRule = rule { zeroOrMore("a").separatedBy('|') ~ EOI }
       "" must beMatched
+      "a" must beMatched
+      "a|a" must beMatched
+      "a|a|" must beMismatched
+      "aa" must beMismatched
+      "b" must beMismatched
     }
 
     "`zeroOrMore(Rule1[T])` modifier" in new TestParser1[Seq[String]] {
@@ -66,6 +76,16 @@ class CombinatorModifierSpec extends TestParserSpec {
       "aa" must beMatched
       "b" must beMismatched
       "" must beMismatched
+    }
+
+    "`oneOrMore(Rule0).separatedBy('|')` modifier" in new TestParser0 {
+      def targetRule = rule { oneOrMore("a").separatedBy('|') ~ EOI }
+      "" must beMismatched
+      "a" must beMatched
+      "a|a" must beMatched
+      "a|a|" must beMismatched
+      "aa" must beMismatched
+      "b" must beMismatched
     }
 
     "`oneOrMore(Rule1[T])` modifier" in new TestParser1[Seq[String]] {
@@ -141,6 +161,13 @@ class CombinatorModifierSpec extends TestParserSpec {
       }
     }
 
+    "`2.times(Rule0).separatedBy('|')` modifier" in new TestParser0 {
+      def targetRule = rule { 2.times("x").separatedBy('|') ~ EOI }
+      "xx" must beMismatched
+      "x|x" must beMatched
+      "x|x|" must beMismatched
+    }
+
     "`(2 to 4).times(Rule0)` modifier" in {
       "example 1" in new TestParser0 {
         def targetRule = rule { (2 to 4).times("x") }
@@ -160,6 +187,19 @@ class CombinatorModifierSpec extends TestParserSpec {
       }
     }
 
+    "`(2 to 4).times(Rule0).separatedBy('|')` modifier" in new TestParser0 {
+      def targetRule = rule { (2 to 4).times("x").separatedBy('|') ~ EOI }
+      "xx" must beMismatched
+      "x|" must beMismatched
+      "x|x" must beMatched
+      "x|x|" must beMismatched
+      "x|x|x" must beMatched
+      "x|x|x|" must beMismatched
+      "x|x|x|x" must beMatched
+      "x|x|x|x|" must beMismatched
+      "x|x|x|x|x" must beMismatched
+    }
+
     "`(1 to 3).times(Rule1[T])` modifier" in new TestParser1[Seq[String]] {
       def targetRule = rule { (1 to 3).times(capture("x")) ~ EOI }
       "" must beMismatched
@@ -176,14 +216,5 @@ class CombinatorModifierSpec extends TestParserSpec {
       "axx" must beMatchedBy("axx")
       "axxx" must beMismatched
     }
-
-    //    "`nTimes(2, ..., separator = '|')` modifier" in new TestParser0 {
-    //      def targetRule = rule { nTimes(2, "a", '|') ~ EOI }
-    //      "a" must beMismatched
-    //      "a|" must beMismatched
-    //      "a|a" must beMatched
-    //      "a|a|" must beMismatched
-    //      "a|a|a" must beMismatched
-    //    }
   }
 }

@@ -76,7 +76,7 @@ object Rule {
   }
 
   trait Repeated
-  implicit class RepeatedRule[-I <: HList, +O <: HList](r: Rule[I, O] with Repeated) {
+  implicit class RepeatedRule[I <: HList, O <: HList](r: Rule[I, O] with Repeated) {
     def separatedBy(separator: Rule0): Rule[I, O] = ???
   }
 }

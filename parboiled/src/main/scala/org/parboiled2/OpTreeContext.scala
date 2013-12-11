@@ -16,7 +16,6 @@
 
 package org.parboiled2
 
-import shapeless._
 import scala.annotation.tailrec
 
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
@@ -26,70 +25,53 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   abstract class OpTree {
     def render(ruleName: String = ""): Expr[RuleX]
   }
-
-  //  implicit class DummyStringContext(val sc: StringContext) extends AnyVal {
-  //    def q(args: Any*): Tree = ???
-  //  }
-
-  object OpTree {
-    def apply(tree: Tree): OpTree = {
-      def isForRule1(t: Tree): Boolean =
-        t match {
-          case q"parboiled2.this.$a.forReduction[$b, $c]" ⇒ false
-          case q"parboiled2.this.$a.forRule0" ⇒ false
-          case q"parboiled2.this.$a.forRule1[$b]" ⇒ true
-          case _ ⇒ c.abort(tree.pos, "Unexpected Optionalizer/Sequencer: " + t)
-        }
-      def sequencer(tree: Tree): Sequencer =
-        if (isForRule1(tree)) new Sequencer {
-          def valBuilder = c.Expr[Unit](q"val builder = new scala.collection.immutable.VectorBuilder[Any]")
-          def popToBuilder = c.Expr[Unit](q"builder += p.__valueStack.pop()")
-          def builderPushResult = c.Expr[Unit](q"p.__valueStack.push(builder.result())")
-        }
-        else new Sequencer {
-          def valBuilder = c.literalUnit
-          def popToBuilder = c.literalUnit
-          def builderPushResult = c.literalUnit
-        }
-
-      tree match {
-        case q"$lhs.~[$a, $b]($rhs)($c, $d)"         ⇒ Sequence(OpTree(lhs), OpTree(rhs))
-        case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-        case q"$a.this.str($s)"                      ⇒ LiteralString(s)
-        case q"$a.this.ch($c)"                       ⇒ LiteralChar(c)
-        case q"$a.this.ANY"                          ⇒ AnyChar
-        case q"$a.this.EMPTY"                        ⇒ Empty
-        case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), isForRule1(o))
-        case q"$a.this.zeroOrMore[$b, $c]($arg)($s)" ⇒ ZeroOrMore(OpTree(arg), sequencer(s))
-        case q"$a.this.oneOrMore[$b, $c]($arg)($s)"  ⇒ OneOrMore(OpTree(arg), sequencer(s))
-        case q"$base.times[$ti, $to]($r)($s)"        ⇒ Times(base, OpTree(r), sequencer(s))
-        case q"$a.this.&($arg)"                      ⇒ AndPredicate(OpTree(arg))
-        case q"$a.unary_!()"                         ⇒ NotPredicate(OpTree(a))
-        case q"$a.this.test($flag)"                  ⇒ SemanticPredicate(flag)
-        case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
-        case q"$a.this.push[$b]($arg)($c)"           ⇒ PushAction(arg)
-        case q"$a.this.$b"                           ⇒ RuleCall(tree)
-        case q"$a.this.$b(..$c)"                     ⇒ RuleCall(tree)
-        case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
-          CharacterRange(l, r, tree.pos)
-        case q"$a.this.pimpActionOp[$b1, $b2]($r)($ops).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
-          Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
-
-        case _ ⇒ c.abort(tree.pos, "Invalid rule definition: " + tree)
+  def OpTree(tree: Tree): OpTree = {
+    def collector(optionalizerOrSequencerTree: Tree): Collector =
+      optionalizerOrSequencerTree match {
+        case q"parboiled2.this.$a.forReduction[$b, $c]" ⇒ rule0Collector
+        case q"parboiled2.this.$a.forRule0" ⇒ rule0Collector
+        case q"parboiled2.this.$a.forRule1[$b]" ⇒ rule1Collector
+        case _ ⇒ c.abort(tree.pos, "Unexpected Optionalizer/Sequencer: " + optionalizerOrSequencerTree)
       }
+
+    tree match {
+      case q"$lhs.~[$a, $b]($rhs)($c, $d)"         ⇒ Sequence(OpTree(lhs), OpTree(rhs))
+      case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
+      case q"$a.this.str($s)"                      ⇒ LiteralString(s)
+      case q"$a.this.ch($c)"                       ⇒ LiteralChar(c)
+      case q"$a.this.ANY"                          ⇒ AnyChar
+      case q"$a.this.EMPTY"                        ⇒ Empty
+      case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), collector(o))
+      case q"$a.this.zeroOrMore[$b, $c]($arg)($s)" ⇒ ZeroOrMore(OpTree(arg), collector(s))
+      case q"$a.this.oneOrMore[$b, $c]($arg)($s)"  ⇒ OneOrMore(OpTree(arg), collector(s))
+      case q"$base.times[$a, $b]($r)($s)"          ⇒ Times(base, OpTree(r), collector(s))
+      case q"$a.this.&($arg)"                      ⇒ AndPredicate(OpTree(arg))
+      case q"$a.unary_!()"                         ⇒ NotPredicate(OpTree(a))
+      case q"$a.this.test($flag)"                  ⇒ SemanticPredicate(flag)
+      case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
+      case q"$a.this.push[$b]($arg)($c)"           ⇒ PushAction(arg)
+      case q"$a.this.$b"                           ⇒ RuleCall(tree)
+      case q"$a.this.$b(..$c)"                     ⇒ RuleCall(tree)
+      case q"$a.this.pimpString(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
+        CharacterRange(l, r, tree.pos)
+      case q"$a.this.pimpActionOp[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
+        Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
+      case q"parboiled2.this.Rule.RepeatedRule[$a, $b]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
+        val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
+        fun.toString match {
+          case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
+          case "oneOrMore"  ⇒ OneOrMore(op, coll, separator)
+          case "times"      ⇒ Times(base, op, coll, separator)
+          case _            ⇒ c.abort(tree.pos, "Unexpected RepeatedRule fun: " + fun)
+        }
+
+      case q"parboiled2.this.Rule.RepeatedRule[$a, $b]($c.this.oneOrMore[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
+        ZeroOrMore(OpTree(arg), collector(s), Separator(OpTree(sep)))
+
+      case _ ⇒ c.abort(tree.pos, "Invalid rule definition: " + tree)
     }
   }
 
-  trait Sequencer {
-    def valBuilder: Expr[Unit]
-    def popToBuilder: Expr[Unit]
-    def builderPushResult: Expr[Unit]
-  }
-
-  // TODO: Having sequence be a simple (lhs, rhs) model causes us to allocate a mark on the stack
-  // for every sequence concatenation. If we modeled sequences as a Seq[OpTree] we would be able to
-  // reuse a single mutable mark for all intermediate markings in between elements. This will reduce
-  // the stack size for all rules with sequences that are more than two elements long.
   case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
@@ -182,15 +164,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class Optional(op: OpTree, opIsRule1: Boolean) extends OpTree {
+  case class Optional(op: OpTree, collector: Collector) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
         val mark = p.__markCursor
         if (op.render().splice.matched) {
-          c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(Some(p.__valueStack.pop())) " else q"()").splice
+          collector.pushSomePop.splice
         } else {
-          c.Expr[Unit](if (opIsRule1) q"p.__valueStack.push(None)" else q"()").splice
+          collector.pushNone.splice
           p.__resetCursor(mark)
         }
         Rule.Matched
@@ -200,18 +182,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class ZeroOrMore(op: OpTree, sequencer: Sequencer) extends OpTree {
+  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = emptySeparator) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        var mark = p.__saveState
-        sequencer.valBuilder.splice
-        while (op.render().splice.matched) {
-          sequencer.popToBuilder.splice
-          mark = p.__saveState
-        }
-        p.__restoreState(mark)
-        sequencer.builderPushResult.splice
+        collector.valBuilder.splice
+
+        @tailrec def rec(mark: Parser.Mark): Parser.Mark =
+          if (op.render().splice.matched) {
+            collector.popToBuilder.splice
+            val preSeparatorMark = p.__saveState
+            val sepMatched = separator.tryMatch.splice
+            if (sepMatched) rec(preSeparatorMark) else preSeparatorMark
+          } else mark
+
+        p.__restoreState(rec(p.__saveState))
+        collector.builderPushResult.splice
         Rule.Matched
       } catch {
         case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.ZeroOrMore(c.literal(ruleName).splice))
@@ -219,20 +205,25 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class OneOrMore(op: OpTree, sequencer: Sequencer) extends OpTree {
+  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = emptySeparator) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
         val firstMark = p.__saveState
-        var mark = firstMark
-        sequencer.valBuilder.splice
-        while (op.render().splice.matched) {
-          sequencer.popToBuilder.splice
-          mark = p.__saveState
-        }
+        collector.valBuilder.splice
+
+        @tailrec def rec(mark: Parser.Mark): Parser.Mark =
+          if (op.render().splice.matched) {
+            collector.popToBuilder.splice
+            val preSeparatorMark = p.__saveState
+            val sepMatched = separator.tryMatch.splice
+            if (sepMatched) rec(preSeparatorMark) else preSeparatorMark
+          } else mark
+
+        val mark = rec(firstMark)
         if (mark != firstMark) {
           p.__restoreState(mark)
-          sequencer.builderPushResult.splice
+          collector.builderPushResult.splice
           Rule.Matched
         } else Rule.Mismatched
       } catch {
@@ -241,21 +232,26 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class Times(min: Int, max: Int, op: OpTree, sequencer: Sequencer, separator: OpTree) extends OpTree {
+  case class Times(min: Int, max: Int, op: OpTree, collector: Collector, separator: Separator) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        sequencer.valBuilder.splice
+        collector.valBuilder.splice
 
-        @tailrec def rec(count: Int, mark: Parser.Mark): Boolean =
+        @tailrec def rec(count: Int, mark: Parser.Mark): Boolean = {
           if (op.render().splice.matched) {
-            sequencer.popToBuilder.splice
-            if (count == c.literal(max).splice) true
-            else rec(count + 1, p.__saveState)
+            collector.popToBuilder.splice
+            if (count < c.literal(max).splice) {
+              val preSeparatorMark = p.__saveState
+              val sepMatched = separator.tryMatch.splice
+              if (sepMatched) rec(count + 1, preSeparatorMark)
+              else (count >= c.literal(min).splice) && { p.__restoreState(preSeparatorMark); true }
+            } else true
           } else (count > c.literal(min).splice) && { p.__restoreState(mark); true }
+        }
 
         if (rec(1, p.__saveState)) {
-          sequencer.builderPushResult.splice
+          collector.builderPushResult.splice
           Rule.Matched
         } else Rule.Mismatched
       } catch {
@@ -264,25 +260,21 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       }
     }
   }
-  object Times {
-    def apply(base: Tree, rule: OpTree, sequencer: Sequencer, separator: Tree = null): OpTree = {
-      val sep = if (separator eq null) Empty else OpTree(separator)
-      base match {
-        case q"$a.this.int2range(${ Literal(Constant(i: Int)) })" ⇒
-          if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
-          else if (i == 1) rule
-          else Times(i, i, rule, sequencer, sep)
+  def Times(base: Tree, rule: OpTree, collector: Collector, separator: Separator = emptySeparator): OpTree =
+    base match {
+      case q"$a.this.int2range(${ Literal(Constant(i: Int)) })" ⇒
+        if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
+        else if (i == 1) rule
+        else Times(i, i, rule, collector, separator)
 
-        case q"$a.this.NTimes(scala.this.Predef.intWrapper(${ Literal(Constant(min: Int)) }).to(${ Literal(Constant(max: Int)) }))" ⇒
-          if (min < 0) c.abort(base.pos, "`min` in `(min to max).times` must be non-negative")
-          else if (max < 0) c.abort(base.pos, "`max` in `(min to max).times` must be non-negative")
-          else if (max < min) c.abort(base.pos, "`max` in `(min to max).times` must be >= `min`")
-          else Times(min, max, rule, sequencer, sep)
+      case q"$a.this.NTimes(scala.this.Predef.intWrapper(${ Literal(Constant(min: Int)) }).to(${ Literal(Constant(max: Int)) }))" ⇒
+        if (min < 0) c.abort(base.pos, "`min` in `(min to max).times` must be non-negative")
+        else if (max < 0) c.abort(base.pos, "`max` in `(min to max).times` must be non-negative")
+        else if (max < min) c.abort(base.pos, "`max` in `(min to max).times` must be >= `min`")
+        else Times(min, max, rule, collector, separator)
 
-        case _ ⇒ c.abort(base.pos, "Invalid `x` in `x.times(...)`: " + base)
-      }
+      case _ ⇒ c.abort(base.pos, "Invalid `x` in `x.times(...)`: " + base)
     }
-  }
 
   abstract class SyntacticPredicate extends OpTree {
     def op: OpTree
@@ -390,15 +382,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       }
     }
   }
-  object CharacterRange {
-    def apply(lower: String, upper: String, pos: Position): CharacterRange = {
-      if (lower.length != 1) c.abort(pos, "lower bound must be a single char string")
-      if (upper.length != 1) c.abort(pos, "upper bound must be a single char string")
-      val lowerBoundChar = lower.charAt(0)
-      val upperBoundChar = upper.charAt(0)
-      if (lowerBoundChar > upperBoundChar) c.abort(pos, "lower bound must not be > upper bound")
-      apply(lowerBoundChar, upperBoundChar)
-    }
+  def CharacterRange(lower: String, upper: String, pos: Position): CharacterRange = {
+    if (lower.length != 1) c.abort(pos, "lower bound must be a single char string")
+    if (upper.length != 1) c.abort(pos, "upper bound must be a single char string")
+    val lowerBoundChar = lower.charAt(0)
+    val upperBoundChar = upper.charAt(0)
+    if (lowerBoundChar > upperBoundChar) c.abort(pos, "lower bound must not be > upper bound")
+    CharacterRange(lowerBoundChar, upperBoundChar)
   }
 
   // NOTE: applicant might be:
@@ -444,4 +434,28 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       }
     }
   }
+
+  /////////////////////////////////// helpers ////////////////////////////////////
+
+  class Collector(
+    val valBuilder: Expr[Unit],
+    val popToBuilder: Expr[Unit],
+    val builderPushResult: Expr[Unit],
+    val pushSomePop: Expr[Unit],
+    val pushNone: Expr[Unit])
+
+  lazy val rule0Collector = new Collector(c.literalUnit, c.literalUnit, c.literalUnit, c.literalUnit, c.literalUnit)
+
+  lazy val rule1Collector = new Collector(
+    valBuilder = c.Expr[Unit](q"val builder = new scala.collection.immutable.VectorBuilder[Any]"),
+    popToBuilder = c.Expr[Unit](q"builder += p.__valueStack.pop()"),
+    builderPushResult = c.Expr[Unit](q"p.__valueStack.push(builder.result())"),
+    pushSomePop = c.Expr[Unit](q"p.__valueStack.push(Some(p.__valueStack.pop()))"),
+    pushNone = c.Expr[Unit](q"p.__valueStack.push(None)"))
+
+  class Separator(val tryMatch: Expr[Boolean])
+
+  lazy val emptySeparator = new Separator(c.literalTrue)
+
+  def Separator(op: OpTree) = new Separator(reify(op.render().splice.matched))
 }
