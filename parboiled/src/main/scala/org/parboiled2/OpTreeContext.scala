@@ -354,6 +354,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
+  def Times(base: Tree, rule: OpTree, collector: Collector, separator: Separator = emptySeparator): OpTree =
+    base match {
+      case q"$a.this.int2NTimes(${ Literal(Constant(i: Int)) })" ⇒
+        if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
+        else if (i == 1) rule
+        else Times(i, i, rule, collector, separator)
+
+      case q"$a.this.range2NTimes(scala.this.Predef.intWrapper(${ Literal(Constant(min: Int)) }).to(${ Literal(Constant(max: Int)) }))" ⇒
+        if (min < 0) c.abort(base.pos, "`min` in `(min to max).times` must be non-negative")
+        else if (max < 0) c.abort(base.pos, "`max` in `(min to max).times` must be non-negative")
+        else if (max < min) c.abort(base.pos, "`max` in `(min to max).times` must be >= `min`")
+        else Times(min, max, rule, collector, separator)
+
+      case _ ⇒ c.abort(base.pos, "Invalid `x` in `x.times(...)`: " + base)
+    }
+
   case class Times(min: Int, max: Int, op: OpTree, collector: Collector, separator: Separator) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
@@ -382,45 +398,30 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       }
     }
   }
-  def Times(base: Tree, rule: OpTree, collector: Collector, separator: Separator = emptySeparator): OpTree =
-    base match {
-      case q"$a.this.int2NTimes(${ Literal(Constant(i: Int)) })" ⇒
-        if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
-        else if (i == 1) rule
-        else Times(i, i, rule, collector, separator)
 
-      case q"$a.this.range2NTimes(scala.this.Predef.intWrapper(${ Literal(Constant(min: Int)) }).to(${ Literal(Constant(max: Int)) }))" ⇒
-        if (min < 0) c.abort(base.pos, "`min` in `(min to max).times` must be non-negative")
-        else if (max < 0) c.abort(base.pos, "`max` in `(min to max).times` must be non-negative")
-        else if (max < min) c.abort(base.pos, "`max` in `(min to max).times` must be >= `min`")
-        else Times(min, max, rule, collector, separator)
-
-      case _ ⇒ c.abort(base.pos, "Invalid `x` in `x.times(...)`: " + base)
-    }
-
-  abstract class SyntacticPredicate extends OpTree {
-    def op: OpTree
-    def renderMatch(): Expr[RuleX] = reify {
-      val p = c.prefix.splice
-      val mark = p.__saveState
-      val result = op.render().splice
-      p.__restoreState(mark)
-      result
-    }
-  }
-
-  case class AndPredicate(op: OpTree) extends SyntacticPredicate {
+  case class AndPredicate(op: OpTree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
-      try renderMatch().splice
-      catch {
+      try {
+        val p = c.prefix.splice
+        val mark = p.__saveState
+        val result = op.render().splice
+        p.__restoreState(mark)
+        result
+      } catch {
         case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.AndPredicate(c.literal(ruleName).splice))
       }
     }
   }
 
-  case class NotPredicate(op: OpTree) extends SyntacticPredicate {
+  case class NotPredicate(op: OpTree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
-      try if (renderMatch().splice.matched) Rule.Mismatched else Rule.Matched
+      try {
+        val p = c.prefix.splice
+        val mark = p.__saveState
+        val result = op.render().splice
+        p.__restoreState(mark)
+        if (result.matched) Rule.Mismatched else Rule.Matched
+      }
       catch {
         case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.NotPredicate(c.literal(ruleName).splice))
       }
