@@ -91,7 +91,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       reify {
         try rec(0).splice
         catch {
-          case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.Sequence(c.literal(ruleName).splice))
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(RuleFrame.Sequence(c.literal(ops.size).splice, c.literal(ruleName).splice))
         }
       }
     }
@@ -123,7 +124,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           val mark = p.__saveState
           rec(0).splice
         } catch {
-          case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.FirstOf(c.literal(ruleName).splice))
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(RuleFrame.FirstOf(c.literal(ops.size).splice, c.literal(ruleName).splice))
         }
       }
     }

@@ -55,8 +55,8 @@ sealed abstract class RuleFrame {
 }
 
 object RuleFrame {
-  case class Sequence(name: String = "") extends RuleFrame
-  case class FirstOf(name: String = "") extends RuleFrame
+  case class Sequence(subs: Int, name: String = "") extends RuleFrame
+  case class FirstOf(subs: Int, name: String = "") extends RuleFrame
   case class CharMatch(char: Char, name: String = "") extends RuleFrame
   case class StringMatch(string: String, name: String = "") extends RuleFrame
   case class IgnoreCaseChar(char: Char, name: String = "") extends RuleFrame
