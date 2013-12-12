@@ -71,31 +71,60 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class Sequence(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
-        val left = lhs.render().splice
-        if (left.matched) rhs.render().splice
-        else left
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.Sequence(c.literal(ruleName).splice))
+  def Sequence(lhs: OpTree, rhs: OpTree): Sequence =
+    lhs match {
+      case Sequence(ops) ⇒ Sequence(ops :+ rhs)
+      case _             ⇒ Sequence(Seq(lhs, rhs))
+    }
+
+  case class Sequence(ops: Seq[OpTree]) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = {
+      def rec(ix: Int): Expr[RuleX] =
+        if (ix < ops.size - 1) {
+          val opName = newTermName("op" + ix)
+          c.Expr[RuleX](q"""
+          val $opName = ${ops(ix).render()}
+          if ($opName.matched) ${rec(ix + 1)}
+          else $opName""")
+        } else ops(ix).render()
+
+      reify {
+        try rec(0).splice
+        catch {
+          case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.Sequence(c.literal(ruleName).splice))
+        }
       }
     }
   }
 
-  case class FirstOf(lhs: OpTree, rhs: OpTree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
-        val p = c.prefix.splice
-        val mark = p.__saveState
-        val left = lhs.render().splice
-        if (left.matched) left
-        else {
-          p.__restoreState(mark)
-          rhs.render().splice
+  def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
+    lhs match {
+      case FirstOf(ops) ⇒ FirstOf(ops :+ rhs)
+      case _            ⇒ FirstOf(Seq(lhs, rhs))
+    }
+
+  case class FirstOf(ops: Seq[OpTree]) extends OpTree {
+    def render(ruleName: String): Expr[RuleX] = {
+      def rec(ix: Int): Expr[RuleX] =
+        if (ix < ops.size - 1) {
+          val opName = newTermName("op" + ix)
+          c.Expr[RuleX](q"""
+          val $opName = ${ops(ix).render()}
+          if ($opName.matched) $opName
+          else {
+            p.__restoreState(mark)
+            ${rec(ix + 1)}
+          }""")
+        } else ops(ix).render()
+
+      reify {
+        try {
+          val p = c.prefix.splice
+          val mark = p.__saveState
+          rec(0).splice
+        } catch {
+          case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.FirstOf(c.literal(ruleName).splice))
         }
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.FirstOf(c.literal(ruleName).splice))
       }
     }
   }

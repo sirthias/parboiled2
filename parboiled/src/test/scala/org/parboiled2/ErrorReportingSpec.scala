@@ -62,9 +62,9 @@ class ErrorReportingSpec extends TestParserSpec {
           |   ^
           |
           |4 rules mismatched at error location:
-          |  targetRule / | / | / | / "fgh" / 'f'
-          |  targetRule / | / | / | / Digit
-          |  targetRule / | / | / hex
+          |  targetRule / | / "fgh" / 'f'
+          |  targetRule / | / Digit
+          |  targetRule / | / hex
           |  targetRule / | / UpperAlpha
           |""")
     }
