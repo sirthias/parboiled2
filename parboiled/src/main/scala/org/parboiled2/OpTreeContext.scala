@@ -137,7 +137,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         } else Rule.Matched
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.StringMatch(string, mismatchIx, c.literal(ruleName).splice))
+          e.save(RuleFrame.StringMatch(string, c.literal(ruleName).splice),
+            RuleFrame.CharMatch(string charAt mismatchIx))
       }
     }
   }
@@ -186,7 +187,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         } else Rule.Matched
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame.IgnoreCaseString(string, mismatchIx, c.literal(ruleName).splice))
+          e.save(RuleFrame.IgnoreCaseString(string, c.literal(ruleName).splice),
+            RuleFrame.CharMatch(string charAt mismatchIx))
       }
     }
   }

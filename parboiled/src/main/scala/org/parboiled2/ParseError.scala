@@ -33,24 +33,24 @@ sealed abstract class RuleFrame {
   def format: String =
     if (name.nonEmpty) name
     else this match {
-      case _: Sequence                ⇒ ""
-      case _: FirstOf                 ⇒ "|"
-      case CharMatch(c, _)            ⇒ "'" + c + '\''
-      case StringMatch(s, ix, _)      ⇒ "'" + s.charAt(ix) + '\''
-      case IgnoreCaseChar(c, _)       ⇒ "'" + c + '\''
-      case IgnoreCaseString(s, ix, _) ⇒ "'" + s.charAt(ix) + '\''
-      case _: PredicateMatch          ⇒ "<anon predicate>"
-      case AnyOf(s, _)                ⇒ '[' + s + ']'
-      case _: ANY                     ⇒ "ANY"
-      case _: Optional                ⇒ "optional"
-      case _: ZeroOrMore              ⇒ "zeroOrMore"
-      case _: OneOrMore               ⇒ "oneOrMore"
-      case _: Times                   ⇒ "times"
-      case _: AndPredicate            ⇒ "&"
-      case _: NotPredicate            ⇒ "!"
-      case _: SemanticPredicate       ⇒ "test"
-      case _: RuleCall                ⇒ ""
-      case CharRange(from, to, _)     ⇒ s"'$from'-'$to'"
+      case _: Sequence            ⇒ ""
+      case _: FirstOf             ⇒ "|"
+      case CharMatch(c, _)        ⇒ "'" + c + '\''
+      case StringMatch(s, _)      ⇒ '"' + s + '"'
+      case IgnoreCaseChar(c, _)   ⇒ "'" + c + '\''
+      case IgnoreCaseString(s, _) ⇒ '"' + s + '"'
+      case _: PredicateMatch      ⇒ "<anon predicate>"
+      case AnyOf(s, _)            ⇒ '[' + s + ']'
+      case _: ANY                 ⇒ "ANY"
+      case _: Optional            ⇒ "optional"
+      case _: ZeroOrMore          ⇒ "zeroOrMore"
+      case _: OneOrMore           ⇒ "oneOrMore"
+      case _: Times               ⇒ "times"
+      case _: AndPredicate        ⇒ "&"
+      case _: NotPredicate        ⇒ "!"
+      case _: SemanticPredicate   ⇒ "test"
+      case _: RuleCall            ⇒ ""
+      case CharRange(from, to, _) ⇒ s"'$from'-'$to'"
     }
 }
 

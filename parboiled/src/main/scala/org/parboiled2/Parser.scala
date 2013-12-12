@@ -58,7 +58,8 @@ abstract class Parser extends RuleDSL {
    * Pretty prints the given error rule traces.
    */
   def formatErrorTraces(traces: Seq[RuleTrace]): String =
-    traces.map(_.format).mkString("Mismatched rules at error location:\n  ", "\n  ", "\n")
+    traces.map(_.format).mkString(traces.size + " rule" + (if (traces.size > 1) "s" else "") +
+      " mismatched at error location:\n  ", "\n  ", "\n")
 
   ////////////////////// INTERNAL /////////////////////////
 
@@ -221,8 +222,8 @@ object Parser {
    */
   class CollectingRuleStackException extends RuntimeException with NoStackTrace {
     private[this] var frames = List.empty[RuleFrame]
-    def save(frame: RuleFrame): Nothing = {
-      frames ::= frame
+    def save(newFrames: RuleFrame*): Nothing = {
+      frames = newFrames.foldRight(frames)(_ :: _)
       throw this
     }
     def ruleFrames: List[RuleFrame] = frames
