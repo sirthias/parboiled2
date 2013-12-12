@@ -421,8 +421,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         val result = op.render().splice
         p.__restoreState(mark)
         if (result.matched) Rule.Mismatched else Rule.Matched
-      }
-      catch {
+      } catch {
         case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame.NotPredicate(c.literal(ruleName).splice))
       }
     }
