@@ -31,24 +31,22 @@ val commonSettings = scalariformSettings ++ Seq(
 
 val publishingSettings = Seq(
   publishMavenStyle := true,
-  publishArtifact in Test := false,
   useGpg := true,
   publishTo <<= version { v: String =>
     val nexus = "https://oss.sonatype.org/"
     if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
     else                             Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
+  pomIncludeRepository := { _ => false },
   pomExtra :=
     <scm>
       <url>git@github.com:sirthias/parboiled2.git</url>
       <connection>scm:git:git@github.com:sirthias/parboiled2.git</connection>
     </scm>
-      <developers>
-        <developer>
-          <id>sirthias</id>
-          <name>Mathias Doenitz</name>
-        </developer>
-      </developers>
+    <developers>
+      <developer><id>sirthias</id><name>Mathias Doenitz</name></developer>
+      <developer><id>alexander-myltsev</id><name>Alexander Myltsev</name></developer>
+    </developers>
 )
 
 /////////////////////// DEPENDENCIES /////////////////////////
