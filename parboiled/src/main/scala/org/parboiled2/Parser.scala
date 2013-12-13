@@ -25,9 +25,34 @@ import scala.util.control.NoStackTrace
 abstract class Parser extends RuleDSL {
   import Parser._
 
+  /**
+   * The input this parser instance is running against.
+   */
   def input: ParserInput
 
+  /**
+   * Converts a compile-time only rule definition into the corresponding rule method implementation.
+   */
   def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
+
+  /**
+   * The index of the next (yet unmatched) input character.
+   * Might be equal to `input.length`!
+   */
+  def cursor: Int = _cursor
+
+  /**
+   * The next (yet unmatched) input character, i.e. the one at the `cursor` index.
+   * Identical to `if (cursor < input.length) input.charAt(cursor) else EOI` but more efficient.
+   */
+  def cursorChar: Char = _cursorChar
+
+  /**
+   * Allows "raw" (i.e. untyped) access to the `ValueStack`.
+   * In most cases you shouldn't need to access the value stack directly from your code.
+   * Use only if you know what you are doing!
+   */
+  val valueStack = new ValueStack
 
   /**
    * Pretty prints the given `ParseError` instance in the context of the `ParserInput` of this parser.
@@ -64,16 +89,16 @@ abstract class Parser extends RuleDSL {
   ////////////////////// INTERNAL /////////////////////////
 
   // the char at the current input index
-  private[this] var currentChar: Char = _
+  private[this] var _cursorChar: Char = _
 
   // the index of the current input char
-  private[this] var currentIndex: Int = _
+  private[this] var _cursor: Int = _
 
   // the highest input index we have seen in the current run
-  private[this] var maxIndex: Int = _
+  private[this] var maxCursor: Int = _
 
   // the number of times we have already seen a character mismatch at the error index
-  private[this] var mismatchesAtErrorIndex: Int = _
+  private[this] var mismatchesAtErrorCursor: Int = _
 
   // the index of the RuleStack we are currently constructing
   // for the ParserError to be returned in the very first parser run,
@@ -83,26 +108,21 @@ abstract class Parser extends RuleDSL {
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  val __valueStack = new ValueStack
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
   def __run[L <: HList](rule: ⇒ RuleN[L]): Result[L] = {
     def runRule(errorRuleStackIx: Int = -1): Boolean = {
-      currentIndex = -1
+      _cursor = -1
       __advance()
-      __valueStack.clear()
-      mismatchesAtErrorIndex = 0
+      valueStack.clear()
+      mismatchesAtErrorCursor = 0
       currentErrorRuleStackIx = errorRuleStackIx
       rule.matched
     }
 
     @tailrec
-    def errorPosition(ix: Int = math.min(maxIndex, input.length - 1), line: Int = 1, col: Int = -1): Position =
-      if (ix < 0) Position(maxIndex, line, if (col == -1) maxIndex + 1 else col)
+    def errorPosition(ix: Int = math.min(maxCursor, input.length - 1), line: Int = 1, col: Int = -1): Position =
+      if (ix < 0) Position(maxCursor, line, if (col == -1) maxCursor + 1 else col)
       else if (input.charAt(ix) != '\n') errorPosition(ix - 1, line, col)
-      else errorPosition(ix - 1, line + 1, if (col == -1) maxIndex - ix else col)
+      else errorPosition(ix - 1, line + 1, if (col == -1) maxCursor - ix else col)
 
     @tailrec
     def buildParseError(errorRuleIx: Int = 0, traces: VectorBuilder[RuleTrace] = new VectorBuilder): ParseError = {
@@ -117,9 +137,9 @@ abstract class Parser extends RuleDSL {
       else buildParseError(errorRuleIx + 1, traces += RuleTrace(ruleFrames.toVector))
     }
 
-    maxIndex = -1
+    maxCursor = -1
     if (runRule())
-      Right(__valueStack.toHList[L]())
+      Right(valueStack.toHList[L]())
     else
       Left(buildParseError())
   }
@@ -127,60 +147,40 @@ abstract class Parser extends RuleDSL {
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __currentChar: Char = currentChar
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
   def __advance(): Unit = {
-    var cursor = currentIndex
+    var c = _cursor
     val max = input.length
-    if (cursor < max) {
-      cursor += 1
-      currentIndex = cursor
-      currentChar =
-        if (cursor == max) EOI
-        else input charAt cursor
-      if (currentErrorRuleStackIx == -1 && cursor > maxIndex)
-        maxIndex = cursor // if we are in the first "regular" parser run, we need to advance the errorIndex here
+    if (c < max) {
+      c += 1
+      _cursor = c
+      _cursorChar =
+        if (c == max) EOI
+        else input charAt c
+      if (currentErrorRuleStackIx == -1 && c > maxCursor)
+        maxCursor = c // if we are in the first "regular" parser run, we need to keep track of maxCursor here
     }
   }
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __saveState: Mark = new Mark((currentIndex.toLong << 32) + (currentChar.toLong << 16) + __valueStack.top)
+  def __saveState: Mark = new Mark((_cursor.toLong << 32) + (_cursorChar.toLong << 16) + valueStack.top)
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __restoreState(mark: Mark): Unit = {
-    currentIndex = (mark.value >>> 32).toInt
-    currentChar = ((mark.value >>> 16) & 0x000000000000FFFF).toChar
-    __valueStack.top = (mark.value & 0x000000000000FFFF).toInt
+    _cursor = (mark.value >>> 32).toInt
+    _cursorChar = ((mark.value >>> 16) & 0x000000000000FFFF).toChar
+    valueStack.top = (mark.value & 0x000000000000FFFF).toInt
   }
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __markCursor: Int = currentIndex
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
-  def __resetCursor(mark: Int): Unit = currentIndex = mark
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
-  def __sliceInput(start: Int): String = input.sliceString(start, currentIndex)
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
   def __registerCharMismatch(): Unit =
-    if (currentErrorRuleStackIx != -1 && currentIndex == maxIndex) {
-      if (mismatchesAtErrorIndex < currentErrorRuleStackIx) mismatchesAtErrorIndex += 1
+    if (currentErrorRuleStackIx != -1 && _cursor == maxCursor) {
+      if (mismatchesAtErrorCursor < currentErrorRuleStackIx) mismatchesAtErrorCursor += 1
       else throw new Parser.CollectingRuleStackException
     }
 }

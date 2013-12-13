@@ -136,7 +136,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val char = c.Expr[Char](charTree).splice
       try {
         val p = c.prefix.splice
-        if (p.__currentChar == char) {
+        if (p.cursorChar == char) {
           p.__advance()
           Rule.Matched
         } else {
@@ -155,7 +155,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val p = c.prefix.splice
       @tailrec def rec(ix: Int): Int =
         if (ix < string.length)
-          if (p.__currentChar == string.charAt(ix)) {
+          if (p.cursorChar == string.charAt(ix)) {
             p.__advance()
             rec(ix + 1)
           } else ix
@@ -186,7 +186,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val char = c.Expr[Char](charTree).splice
       try {
         val p = c.prefix.splice
-        if (p.__currentChar.toLower == char) {
+        if (p.cursorChar.toLower == char) {
           p.__advance()
           Rule.Matched
         } else {
@@ -205,7 +205,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val p = c.prefix.splice
       @tailrec def rec(ix: Int): Int =
         if (ix < string.length)
-          if (p.__currentChar.toLower == string.charAt(ix)) {
+          if (p.cursorChar.toLower == string.charAt(ix)) {
             p.__advance()
             rec(ix + 1)
           } else ix
@@ -233,7 +233,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val predicate = c.Expr[CharPredicate](predicateTree).splice
       try {
         val p = c.prefix.splice
-        if (predicate(p.__currentChar)) {
+        if (predicate(p.cursorChar)) {
           p.__advance()
           Rule.Matched
         } else {
@@ -253,7 +253,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val string = c.Expr[String](stringTree).splice
       try {
         val p = c.prefix.splice
-        val cursor = p.__currentChar
+        val cursor = p.cursorChar
         @tailrec def rec(ix: Int): RuleX =
           if (ix < string.length) {
             if (cursor == string.charAt(ix)) {
@@ -275,7 +275,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        if (p.__currentChar == EOI) {
+        if (p.cursorChar == EOI) {
           p.__registerCharMismatch()
           Rule.Mismatched
         } else {
@@ -292,12 +292,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        val mark = p.__markCursor
+        val mark = p.__saveState
         if (op.render().splice.matched) {
           collector.pushSomePop.splice
         } else {
+          p.__restoreState(mark)
           collector.pushNone.splice
-          p.__resetCursor(mark)
         }
         Rule.Matched
       } catch {
@@ -447,9 +447,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class Capture(op: OpTree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val p = c.prefix.splice
-      val mark = p.__markCursor
+      val start = p.cursor
       val result = op.render().splice
-      if (result.matched) p.__valueStack.push(p.__sliceInput(mark))
+      if (result.matched) p.valueStack.push(p.input.sliceString(start, p.cursor))
       result
     }
   }
@@ -467,7 +467,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         // Single element
         case q"$v" ⇒ List(v)
       }
-      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.__valueStack.push($v)" }
+      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.valueStack.push($v)" }
 
       // for some reason `reify` doesn't seem to work here
       c.Expr[RuleX](q"""
@@ -492,7 +492,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String): Expr[RuleX] = reify {
       try {
         val p = c.prefix.splice
-        val char = p.__currentChar
+        val char = p.cursorChar
         if (c.literal(lowerBound).splice <= char && char <= c.literal(upperBound).splice) {
           p.__advance()
           Rule.Matched
@@ -528,8 +528,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           q"..$exprs; ${bodyIfMatched(res)}"
         case Ident(_) ⇒
           val functionParams = argNames map Ident.apply
-          val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.__valueStack.pop().asInstanceOf[$t]" }
-          q"..${valDefs.reverse}; p.__valueStack.push($applicant(..$functionParams)); result"
+          val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
+          q"..${valDefs.reverse}; p.valueStack.push($applicant(..$functionParams)); result"
         case q"( ..$args ⇒ $body )" ⇒
           val (exprs, res) = body match {
             case Block(exps, rs) ⇒ (exps, rs)
@@ -542,7 +542,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             case tp if tp == "Unit" ⇒ q"$res; result"
             case _ ⇒ q"${PushAction(res).render()}"
           }
-          val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.__valueStack.pop().asInstanceOf[$t]" }
+          val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.valueStack.pop().asInstanceOf[$t]" }
           q"..${argsNew.reverse}; ..$exprs; $bodyNew"
       }
 
@@ -572,10 +572,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   lazy val rule1Collector = new Collector(
     valBuilder = c.Expr[Unit](q"val builder = new scala.collection.immutable.VectorBuilder[Any]"),
-    popToBuilder = c.Expr[Unit](q"builder += p.__valueStack.pop()"),
-    builderPushResult = c.Expr[Unit](q"p.__valueStack.push(builder.result())"),
-    pushSomePop = c.Expr[Unit](q"p.__valueStack.push(Some(p.__valueStack.pop()))"),
-    pushNone = c.Expr[Unit](q"p.__valueStack.push(None)"))
+    popToBuilder = c.Expr[Unit](q"builder += p.valueStack.pop()"),
+    builderPushResult = c.Expr[Unit](q"p.valueStack.push(builder.result())"),
+    pushSomePop = c.Expr[Unit](q"p.valueStack.push(Some(p.valueStack.pop()))"),
+    pushNone = c.Expr[Unit](q"p.valueStack.push(None)"))
 
   class Separator(val tryMatch: Expr[Boolean])
 
