@@ -20,7 +20,7 @@ import shapeless._
 
 class ActionSpec extends TestParserSpec {
 
-  "The Parser should correctly handle the" >> {
+  "The Parser should correctly handle" >> {
 
     "`capture`" in new TestParser1[String] {
       def targetRule = rule { 'a' ~ capture(zeroOrMore('b')) ~ EOI }
@@ -49,5 +49,35 @@ class ActionSpec extends TestParserSpec {
       "y" must beMismatched
     }
 
+    case class Foo(i: Int, s: String)
+
+    "`~>` producing `Unit`" in new TestParser1[Int] {
+      def testRule = rule { push(1 :: "X" :: HNil) ~> (_ ⇒ ()) }
+      def targetRule = testRule
+      "" must beMatchedWith1(1)
+    }
+
+    "`~>` producing case class (simple notation)" in new TestParser1[Foo] {
+      def targetRule = rule { push(1 :: "X" :: HNil) ~> Foo }
+      "" must beMatchedWith1(Foo(1, "X"))
+    }
+
+    "`~>` producing case class (full notation)" in new TestParser1[Foo] {
+      def testRule = rule { push(1 :: "X" :: HNil) ~> (Foo(_, _)) }
+      def targetRule = testRule
+      "" must beMatchedWith1(Foo(1, "X"))
+    }
+
+    "`~>` partial take" in new TestParser1[Foo] {
+      def testRule = rule { push(1) ~> (Foo(_, "X")) }
+      def targetRule = testRule
+      "" must beMatchedWith1(Foo(1, "X"))
+    }
+
+    "`~>` producing HList" in new TestParser[String :: Int :: Double :: HNil] {
+      def testRule = rule { capture("x") ~> (_ :: 1 :: 3.0 :: HNil) }
+      def targetRule = testRule
+      "x" must beMatchedWith("x" :: 1 :: 3.0 :: HNil)
+    }
   }
 }

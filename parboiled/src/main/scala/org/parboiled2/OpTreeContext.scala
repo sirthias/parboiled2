@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import scala.annotation.tailrec
-import shapeless.HNil
+import shapeless.{ HList, HNil }
 
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
@@ -27,12 +27,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String = ""): Expr[RuleX]
   }
   def OpTree(tree: Tree): OpTree = {
-    def collector(optionalizerOrSequencerTree: Tree): Collector =
-      optionalizerOrSequencerTree match {
-        case q"parboiled2.this.$a.forReduction[$b, $c]" ⇒ rule0Collector
-        case q"parboiled2.this.$a.forRule0" ⇒ rule0Collector
-        case q"parboiled2.this.$a.forRule1[$b]" ⇒ rule1Collector
-        case _ ⇒ c.abort(tree.pos, "Unexpected Optionalizer/Sequencer: " + optionalizerOrSequencerTree)
+    def collector(lifterTree: Tree): Collector =
+      lifterTree match {
+        case q"parboiled2.this.$a.forRule0[$b]" ⇒ rule0Collector
+        case q"parboiled2.this.$a.forRule1[$b, $c]" ⇒ rule1Collector
+        case q"parboiled2.this.$a.forReduction[$b, $c, $d]" ⇒ rule0Collector
+        case _ ⇒ c.abort(tree.pos, "Unexpected Lifter: " + lifterTree)
       }
 
     tree match {
@@ -57,8 +57,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case q"$a.this.$b(..$c)"                     ⇒ RuleCall(tree)
       case q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
         CharRange(l, r, tree.pos)
-      case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
-        Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
+      case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, parboiled2.this.FCapture.apply[$ts])" ⇒
+        Action(OpTree(r), f, ts)
       case q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
         val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
         fun.toString match {
@@ -458,16 +458,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class PushAction(arg: Tree) extends OpTree {
     def render(ruleName: String): Expr[RuleX] = reify {
       val p = c.prefix.splice
-
-      @tailrec def rec(value: Any): Unit = value match {
-        case () | HNil ⇒
-        case shapeless.::(head, tail) ⇒
-          p.valueStack.push(head)
-          rec(tail)
-        case x ⇒ p.valueStack.push(x)
+      val value: Any = c.Expr[Any](arg).splice
+      value match {
+        case ()       ⇒
+        case x: HList ⇒ p.valueStack.push(x)
+        case x        ⇒ p.valueStack.push(x)
       }
-
-      rec(c.Expr[Any](arg).splice)
       Rule.Matched
     }
   }
@@ -509,46 +505,45 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     CharacterRange(lowerBoundChar, upperBoundChar)
   }
 
-  // NOTE: applicant might be:
-  // - `Function(_, _)` in case of function application
-  // - `Ident(_)` in case of case class application
-  case class Action(op: OpTree, applicant: Tree, functionType: List[Type]) extends OpTree {
+  case class Action(op: OpTree, actionTree: Tree, actionTypeTree: Tree) extends OpTree {
+    val actionType: List[Type] = actionTypeTree.tpe match {
+      case TypeRef(_, _, args) if args.nonEmpty ⇒ args
+      case x                                    ⇒ c.abort(actionTree.pos, "Unexpected action type: " + x)
+    }
+
     def render(ruleName: String): Expr[RuleX] = {
-      val argTypes = functionType dropRight 1
-      val argNames = argTypes.indices map { i ⇒ newTermName("value" + i) }
+      val argTypes = actionType dropRight 1
 
-      def bodyIfMatched(tree: Tree): Tree = tree match {
-        case Block(exprs, res) ⇒
-          q"..$exprs; ${bodyIfMatched(res)}"
-        case Ident(_) ⇒
-          val functionParams = argNames map Ident.apply
-          val valDefs = (argNames zip argTypes) map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }
-          q"..${valDefs.reverse}; p.valueStack.push($applicant(..$functionParams)); result"
-        case q"( ..$args ⇒ $body )" ⇒
-          val (exprs, res) = body match {
-            case Block(exps, rs) ⇒ (exps, rs)
-            case x               ⇒ (Nil, x)
-          }
+      def popToVals(valNames: List[TermName]): List[Tree] =
+        (valNames zip argTypes).map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }.reverse
 
-          // TODO: Reconsider type matching
-          val bodyNew = functionType.last.toString match {
-            case tp if tp.startsWith("org.parboiled2.Rule") ⇒ q"${OpTree(res).render()}"
-            case tp if tp == "Unit" ⇒ q"$res; result"
-            case _ ⇒ q"${PushAction(res).render()}"
-          }
-          val argsNew = args zip argTypes map { case (arg, t) ⇒ q"val ${arg.name} = p.valueStack.pop().asInstanceOf[$t]" }
-          q"..${argsNew.reverse}; ..$exprs; $bodyNew"
-      }
+      def actionBody(tree: Tree): Tree =
+        tree match {
+          case Block(statements, res) ⇒ Block(statements, actionBody(res))
 
-      c.Expr[RuleX] {
-        q"""
-          val result = ${op.render()}
-          if (result.matched) {
-            val p = ${c.prefix}
-            ${bodyIfMatched(c.resetAllAttrs(applicant))}
-          }
-          else result
-        """
+          case ident: Ident ⇒
+            val valNames: List[TermName] = argTypes.indices.map { i ⇒ newTermName("value" + i) }(collection.breakOut)
+            val args = valNames map Ident.apply
+            Block(popToVals(valNames), PushAction(q"$ident(..$args)").render().tree)
+
+          case q"(..$args ⇒ $body)" ⇒
+            val (expressions, res) = body match {
+              case Block(exps, rs) ⇒ (exps, rs)
+              case x               ⇒ (Nil, x)
+            }
+            val resExpr = actionType.last.typeSymbol.name.toString match { // TODO: can we do better than this toString?
+              case "org.parboiled2.Rule" ⇒ OpTree(res).render()
+              case _                     ⇒ PushAction(res).render()
+            }
+            Block(popToVals(args.map(_.name)) ::: expressions, resExpr.tree)
+        }
+
+      reify {
+        val result = op.render().splice
+        if (result.matched) {
+          val p = c.prefix.splice
+          c.Expr[RuleX](actionBody(c.resetAllAttrs(actionTree))).splice
+        } else result
       }
     }
   }

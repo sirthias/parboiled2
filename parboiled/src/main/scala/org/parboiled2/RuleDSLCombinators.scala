@@ -29,7 +29,7 @@ trait RuleDSLCombinators {
    *   Rule[I, O]        if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `optional` must be inside `rule` macro")
-  def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Optionalizer[I, O]): Rule[o.In, o.Out] = `n/a`
+  def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Lifter[Option, I, O]): Rule[o.In, o.Out] = `n/a`
 
   /**
    * Runs its inner rule until it fails, always succeeds.
@@ -39,7 +39,7 @@ trait RuleDSLCombinators {
    *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `zeroOrMore` must be inside `rule` macro")
-  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Repeated = `n/a`
+  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Lifter[Seq, I, O]): Rule[s.In, s.Out] with Repeated = `n/a`
 
   /**
    * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
@@ -49,7 +49,7 @@ trait RuleDSLCombinators {
    *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `oneOrMore` must be inside `rule` macro")
-  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Repeated = `n/a`
+  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Lifter[Seq, I, O]): Rule[s.In, s.Out] with Repeated = `n/a`
 
   /**
    * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
@@ -74,7 +74,7 @@ trait RuleDSLCombinators {
      *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
      */
     @compileTimeOnly("Calls to `times` must be inside `rule` macro")
-    def times[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Repeated
+    def times[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Lifter[Seq, I, O]): Rule[s.In, s.Out] with Repeated
   }
 
   // phantom type for WithSeparatedBy pimp
@@ -85,4 +85,13 @@ trait RuleDSLCombinators {
   trait WithSeparatedBy[I <: HList, O <: HList] {
     def separatedBy(separator: Rule0): Rule[I, O] = `n/a`
   }
+}
+
+sealed trait Lifter[M[_], I <: HList, O <: HList] { type In <: HList; type Out <: HList }
+object Lifter extends LowerPriorityLifter {
+  implicit def forRule0[M[_]] = new Lifter[M, HNil, HNil] { type In = HNil; type Out = HNil }
+  implicit def forRule1[M[_], T] = new Lifter[M, HNil, T :: HNil] { type In = HNil; type Out = M[T] :: HNil }
+}
+sealed abstract class LowerPriorityLifter {
+  implicit def forReduction[M[_], L <: HList, R <: L] = new Lifter[M, L, R] { type In = L; type Out = R }
 }

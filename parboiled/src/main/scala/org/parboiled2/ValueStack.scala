@@ -33,6 +33,15 @@ private[parboiled2] class ValueStack {
     top += 1
   }
 
+  @tailrec
+  final def push(hlist: HList): Unit =
+    hlist match {
+      case shapeless.::(head, tail) ⇒
+        push(head)
+        push(tail)
+      case HNil ⇒
+    }
+
   def pop(): Any =
     if (top > 0) {
       top -= 1
