@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-class CombinatorModifierSpec extends TestParserSpec {
+class CombinatorSpec extends TestParserSpec {
 
   "The Parser should correctly recognize/reject input for the" >> {
 

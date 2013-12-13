@@ -19,7 +19,7 @@ package org.parboiled2
 import shapeless.test.illTyped
 import org.specs2.specification.Scope
 
-class BasicRuleSpec extends TestParserSpec {
+class BasicSpec extends TestParserSpec {
 
   "The Parser should correctly recognize/reject input for" >> {
 

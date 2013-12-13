@@ -58,7 +58,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         CharRange(l, r, tree.pos)
       case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, parboiled2.this.Capture.capture[$ts])" ⇒
         Action(OpTree(r), f, ts.tpe.asInstanceOf[TypeRef].args)
-      case q"parboiled2.this.Rule.rule2WithSeparatedBy[$a, $b]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
+      case q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
         val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
         fun.toString match {
           case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
