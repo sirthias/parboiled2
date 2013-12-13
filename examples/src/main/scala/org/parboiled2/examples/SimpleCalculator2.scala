@@ -18,7 +18,6 @@ package org.parboiled2.examples
 
 import org.parboiled2._
 import scala.annotation.tailrec
-import shapeless._
 
 abstract class Expr
 
@@ -27,7 +26,7 @@ case class Num(value: Int) extends Expr
 case class BinOp(operator: Char, lhs: Expr, rhs: Expr) extends Expr
 
 class SimpleCalculator2(val input: ParserInput) extends Parser {
-  def InputLine = rule { Expression ~ EOI }
+  def InputLine: Rule1[Expr] = rule { Expression ~ EOI }
 
   def Expression: Rule1[Expr] = rule {
     Term ~ zeroOrMore(
@@ -66,9 +65,9 @@ object SimpleCalculator2 {
     val inputLine = readLine("--------------------------------------\nEnter expression for calculator (v2) > ")
     if (inputLine != "") {
       val simpleCalc = new SimpleCalculator2(inputLine)
-      simpleCalc.run(_.InputLine) match {
-        case Right(x)  ⇒ println(s"Expression is valid. Result: ${x}. Value: ${interp(x.head)}")
-        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
+      simpleCalc.InputLine() match {
+        case Right(x)  ⇒ println(s"Expression is valid. Result: $x. Value: ${interp(x.head)}")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${simpleCalc.formatError(err)}")
       }
       repl()
     }

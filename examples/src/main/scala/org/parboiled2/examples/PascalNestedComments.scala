@@ -18,10 +18,9 @@ package org.parboiled2.examples
 
 import org.parboiled2._
 import scala.annotation.tailrec
-import shapeless._
 
 class PascalNestedComments(val input: ParserInput) extends Parser {
-  def InputLine = rule { C ~ EOI }
+  def InputLine: Rule0 = rule { C ~ EOI }
 
   def BeginComment = rule { "(*" }
 
@@ -40,9 +39,9 @@ object PascalNestedComments {
     val inputLine = readLine("--------------------------------------\nEnter expression for Pascal-nested-comments parser (v2) > ")
     if (inputLine != "") {
       val pascalNestedComments = new PascalNestedComments(inputLine)
-      pascalNestedComments.run(_.InputLine) match {
+      pascalNestedComments.InputLine() match {
         case Right(_)  ⇒ println("Expression is valid")
-        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${pascalNestedComments.formatError(err)}")
       }
       repl()
     }

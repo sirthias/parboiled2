@@ -20,7 +20,7 @@ import org.parboiled2._
 import scala.annotation.tailrec
 
 class SimpleCalculator0(val input: ParserInput) extends Parser {
-  def InputLine = rule { Expression ~ EOI }
+  def InputLine: Rule0 = rule { Expression ~ EOI }
 
   def Expression: Rule0 = rule { Term ~ zeroOrMore((ch('+') | '-') ~ Term) }
 
@@ -41,9 +41,9 @@ object SimpleCalculator0 {
     val inputLine = readLine("--------------------------------------\nEnter expression for calculator (v2) > ")
     if (inputLine != "") {
       val simpleCalc = new SimpleCalculator0(inputLine)
-      simpleCalc.run(_.InputLine) match {
+      simpleCalc.InputLine() match {
         case Right(_)  ⇒ println("Expression is valid")
-        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${simpleCalc.formatError(err)}")
       }
       repl()
     }
