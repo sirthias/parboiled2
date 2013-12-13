@@ -23,30 +23,30 @@ trait RuleDSLCombinators {
 
   /**
    * Runs its inner rule and succeeds even if the inner rule doesn't.
-   * Resulting rule type:
-   *   if (r == Rule0) Rule0
-   *   if (r == Rule1[T]) Rule1[Option[T]]
-   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   * Resulting rule type is
+   *   Rule0             if r == Rule0
+   *   Rule1[Option[T]]  if r == Rule1[T]
+   *   Rule[I, O]        if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `optional` must be inside `rule` macro")
   def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit o: Optionalizer[I, O]): Rule[o.In, o.Out] = `n/a`
 
   /**
    * Runs its inner rule until it fails, always succeeds.
-   * Resulting rule type:
-   *   if (r == Rule0) Rule0
-   *   if (r == Rule1[T]) Rule1[Seq[T]]
-   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   * Resulting rule type is
+   *   Rule0          if r == Rule0
+   *   Rule1[Seq[T]]  if r == Rule1[T]
+   *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `zeroOrMore` must be inside `rule` macro")
   def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Repeated = `n/a`
 
   /**
    * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
-   * Resulting rule type:
-   *   if (r == Rule0) Rule0
-   *   if (r == Rule1[T]) Rule1[Seq[T]]
-   *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+   * Resulting rule type is
+   *   Rule0          if r == Rule0
+   *   Rule1[Seq[T]]  if r == Rule1[T]
+   *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `oneOrMore` must be inside `rule` macro")
   def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Repeated = `n/a`
@@ -68,10 +68,10 @@ trait RuleDSLCombinators {
      * Both bounds of the range must be non-negative and the upper bound must be >= the lower bound.
      * If the upper bound is zero the rule is equivalent to `EMPTY`.
      *
-     * Resulting rule type:
-     *   if (r == Rule0) Rule0
-     *   if (r == Rule1[T]) Rule1[Seq[T]]
-     *   if (r == Rule[I, O <: I]) Rule[I, O] // so called "reduction", which leaves the value stack unchanged (on a type level)
+     * Resulting rule type is
+     *   Rule0          if r == Rule0
+     *   Rule1[Seq[T]]  if r == Rule1[T]
+     *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
      */
     @compileTimeOnly("Calls to `times` must be inside `rule` macro")
     def times[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Sequencer[I, O]): Rule[s.In, s.Out] with Repeated

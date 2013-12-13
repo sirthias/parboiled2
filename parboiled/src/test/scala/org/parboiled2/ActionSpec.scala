@@ -16,16 +16,37 @@
 
 package org.parboiled2
 
+import shapeless._
+
 class ActionSpec extends TestParserSpec {
 
   "The Parser should correctly handle the" >> {
 
-    "`test` semantic predicate" in new TestParser0 {
+    "`capture`" in new TestParser1[String] {
+      def targetRule = rule { 'a' ~ capture(zeroOrMore('b')) ~ EOI }
+      "a" must beMatchedWith1("")
+      "b" must beMismatched
+      "ab" must beMatchedWith1("b")
+      "abb" must beMatchedWith1("bb")
+    }
+
+    "`test`" in new TestParser0 {
       var flag = true
       def targetRule = rule { test(flag) }
       "x" must beMatched
       flag = false
       "x" must beMismatched
+    }
+
+    "`push` (example 1)" in new TestParser1[String] {
+      def targetRule = rule { 'x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI }
+      "xy" must beMatchedWith1("yeah")
+    }
+
+    "`push` (example 2)" in new TestParser[Int :: Double :: Long :: String :: HNil] {
+      def targetRule = rule { 'x' ~ push(42 :: 3.14 :: HNil) ~ push(0L :: "yeah" :: HNil) ~ EOI }
+      "x" must beMatchedWith(42 :: 3.14 :: 0L :: "yeah" :: HNil)
+      "y" must beMismatched
     }
 
   }

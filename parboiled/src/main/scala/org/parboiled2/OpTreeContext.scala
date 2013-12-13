@@ -17,6 +17,7 @@
 package org.parboiled2
 
 import scala.annotation.tailrec
+import shapeless.HNil
 
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
@@ -455,26 +456,19 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class PushAction(arg: Tree) extends OpTree {
-    def render(ruleName: String): Expr[RuleX] = {
-      def unrollArg(tree: Tree): List[Tree] = tree match {
-        // 1 :: "a" :: HNil ⇒ 1 :: unrollArg("a" :: HNil)
-        case Block(List(ValDef(_, _, _, q"$v")),
-          q"shapeless.this.HList.hlistOps[${ _ }]($innerBlock).::[${ _ }](${ _ })") ⇒ v :: unrollArg(innerBlock)
-        // 1 :: HNil ⇒ List(1)
-        case Block(List(ValDef(_, _, _, q"$v")), q"shapeless.HNil.::[${ _ }](${ _ })") ⇒ List(v)
-        // HNil
-        case q"shapeless.HNil" ⇒ List()
-        // Single element
-        case q"$v" ⇒ List(v)
-      }
-      val stackPushes = unrollArg(arg) map { case v ⇒ q"p.valueStack.push($v)" }
+    def render(ruleName: String): Expr[RuleX] = reify {
+      val p = c.prefix.splice
 
-      // for some reason `reify` doesn't seem to work here
-      c.Expr[RuleX](q"""
-        val p = ${c.prefix}
-        ..$stackPushes
-        Rule.Matched
-      """)
+      @tailrec def rec(value: Any): Unit = value match {
+        case () | HNil ⇒
+        case shapeless.::(head, tail) ⇒
+          p.valueStack.push(head)
+          rec(tail)
+        case x ⇒ p.valueStack.push(x)
+      }
+
+      rec(c.Expr[Any](arg).splice)
+      Rule.Matched
     }
   }
 

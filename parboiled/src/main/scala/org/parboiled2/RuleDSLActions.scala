@@ -24,18 +24,10 @@ trait RuleDSLActions {
 
   /**
    * Pushes the input text matched by its inner rule onto the value stack
-   * after its inner rule has been run successfully.
+   * after its inner rule has been run successfully (and only then).
    */
   @compileTimeOnly("Calls to `capture` must be inside `rule` macro")
   def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepender[O, String :: HNil]): Rule[I, p.Out] = `n/a`
-
-  /**
-   * Pushes the given value onto the value stack.
-   * If `T` is `Unit` nothing is pushed, if `T <: HList` all value of the HList is pushed as individual elements,
-   * otherwise a single value of type `T` is pushed.
-   */
-  @compileTimeOnly("Calls to `push` must be inside `rule` macro")
-  def push[T](value: T)(implicit j: Join[HNil, HNil, HNil, T]): RuleN[j.Out] = `n/a`
 
   /**
    * Implements a semantic predicate. If the argument expression evaluates to `true` the created
@@ -44,11 +36,38 @@ trait RuleDSLActions {
   @compileTimeOnly("Calls to `test` must be inside `rule` macro")
   def test(predicateResult: Boolean): Rule0 = `n/a`
 
+  /**
+   * Pushes the given value onto the value stack.
+   * - if `T` is `Unit` nothing is pushed (i.e. the argument expression is simply evaluated)
+   * - if `T <: HList` all value of the HList is pushed as individual elements
+   * - otherwise a single value of type `T` is pushed.
+   */
+  @compileTimeOnly("Calls to `push` must be inside `rule` macro")
+  def push[T](value: T)(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
+
   @compileTimeOnly("Calls to `rule2ActionOperator` must be inside `rule` macro")
   implicit def rule2ActionOperator[I <: HList, O <: HList](r: Rule[I, O])(implicit ops: ActionOps[I, O]): ActionOperator[I, O, ops.Out] = `n/a`
   sealed trait ActionOperator[I <: HList, O <: HList, Ops] {
     def ~> : Ops
   }
+}
+
+/**
+ * Lifts `T` into an HList.
+ *   Out =
+ *     HNil       if T == Unit
+ *     T          if T <: HList
+ *     T :: HNil  otherwise
+ */
+trait HListable[T] {
+  type Out <: HList
+}
+object HListable extends LowerPriorityHListable {
+  implicit def fromUnit = new HListable[Unit] { type Out = HNil }
+  implicit def fromHList[T <: HList] = new HListable[T] { type Out = T }
+}
+abstract class LowerPriorityHListable {
+  implicit def fromAnyRef[T] = new HListable[T] { type Out = T :: HNil }
 }
 
 sealed trait ActionOps[I <: HList, O <: HList] { type Out }
@@ -116,6 +135,8 @@ object Capture {
   implicit def capture[T]: Capture[T] = null
 }
 
+// format: OFF
+
 // builds `In` and `Out` types according to this logic:
 //  if (R == Unit)
 //    In = I, Out = L1 ::: L2
@@ -130,38 +151,49 @@ sealed trait Join[I <: HList, L1 <: HList, L2 <: HList, R] {
   type Out <: HList
 }
 object Join {
-  implicit def join[I <: HList, L1 <: HList, L2 <: HList, R, In0 <: HList, Out0 <: HList](implicit x: Join0[I, L1, L2, R, HNil, In0, Out0]) = new Join[I, L1, L2, R] {
-    type In = In0
-    type Out = Out0
-  }
+  implicit def join[I <: HList, L1 <: HList, L2 <: HList, R, In0 <: HList, Out0 <: HList]
+               (implicit x: Join0[I, L1, L2, R, HNil, In0, Out0]) =
+    new Join[I, L1, L2, R] {
+      type In = In0
+      type Out = Out0
+    }
 }
 sealed trait Join0[I <: HList, L1 <: HList, L2 <: HList, R, Acc <: HList, In <: HList, Out <: HList]
 object Join0 extends LowerPriorityJoin0 {
   // if R == Unit convert to HNil
-  implicit def forUnit[I <: HList, L1 <: HList, L2 <: HList, Acc <: HList, Out <: HList](implicit x: Join0[I, L1, L2, HNil, Acc, I, Out]): Join0[I, L1, L2, Unit, Acc, I, Out] = null
+  implicit def forUnit[I <: HList, L1 <: HList, L2 <: HList, Acc <: HList, Out <: HList]
+               (implicit x: Join0[I, L1, L2, HNil, Acc, I, Out]): Join0[I, L1, L2, Unit, Acc, I, Out] = `n/a`
 
   // if R <: HList and L1 non-empty move head of L1 to Acc
-  implicit def iter1[I <: HList, H, T <: HList, L2 <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: Join0[I, T, L2, R, H :: Acc, I, Out]): Join0[I, H :: T, L2, R, Acc, I, Out] = null
+  implicit def iter1[I <: HList, H, T <: HList, L2 <: HList, R <: HList, Acc <: HList, Out <: HList]
+               (implicit x: Join0[I, T, L2, R, H :: Acc, I, Out]): Join0[I, H :: T, L2, R, Acc, I, Out] = `n/a`
 
   // if R <: HList and L1 empty and L2 non-empty move head of L2 to Acc
-  implicit def iter2[I <: HList, H, T <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: Join0[I, HNil, T, R, H :: Acc, I, Out]): Join0[I, HNil, H :: T, R, Acc, I, Out] = null
+  implicit def iter2[I <: HList, H, T <: HList, R <: HList, Acc <: HList, Out <: HList]
+               (implicit x: Join0[I, HNil, T, R, H :: Acc, I, Out]): Join0[I, HNil, H :: T, R, Acc, I, Out] = `n/a`
 
   // if R <: HList and L1 and L2 empty set Out = reversePrepend Acc before R
-  implicit def terminate[I <: HList, R <: HList, Acc <: HList, Out <: HList](implicit x: ReversePrepend.Aux[Acc, R, Out]): Join0[I, HNil, HNil, R, Acc, I, Out] = null
+  implicit def terminate[I <: HList, R <: HList, Acc <: HList, Out <: HList]
+               (implicit x: ReversePrepend.Aux[Acc, R, Out]): Join0[I, HNil, HNil, R, Acc, I, Out] = `n/a`
 
   // if R <: Rule and L1 non-empty move head of L1 to Acc
-  implicit def iterRule1[I <: HList, L2 <: HList, I2 <: HList, O2 <: HList, In0 <: HList, Acc <: HList, Out0 <: HList, H, T <: HList](implicit x: Join0[I, T, L2, Rule[I2, O2], H :: Acc, In0, Out0]): Join0[I, H :: T, L2, Rule[I2, O2], HNil, In0, Out0] = null
+  implicit def iterRule1[I <: HList, L2 <: HList, I2 <: HList, O2 <: HList, In0 <: HList, Acc <: HList, Out0 <: HList, H, T <: HList]
+               (implicit x: Join0[I, T, L2, Rule[I2, O2], H :: Acc, In0, Out0]): Join0[I, H :: T, L2, Rule[I2, O2], HNil, In0, Out0] = `n/a`
 
   // if R <: Rule and L1 empty and Acc non-empty move head of Acc to L2
-  implicit def iterRule2[I <: HList, L2 <: HList, I2 <: HList, O2 <: HList, In0 <: HList, Out0 <: HList, H, T <: HList](implicit x: Join0[I, HNil, H :: L2, Rule[I2, O2], T, In0, Out0]): Join0[I, HNil, L2, Rule[I2, O2], H :: T, In0, Out0] = null
+  implicit def iterRule2[I <: HList, L2 <: HList, I2 <: HList, O2 <: HList, In0 <: HList, Out0 <: HList, H, T <: HList]
+               (implicit x: Join0[I, HNil, H :: L2, Rule[I2, O2], T, In0, Out0]): Join0[I, HNil, L2, Rule[I2, O2], H :: T, In0, Out0] = `n/a`
 
   // if R <: Rule and L1 and Acc empty set In and Out to tailswitches result
-  implicit def terminateRule[I <: HList, O <: HList, I2 <: HList, O2 <: HList, In <: HList, Out <: HList](implicit i: TailSwitch0[I2, I2, O, O, I, HNil, In], o: TailSwitch0[O, O, I2, I2, O2, HNil, Out]): Join0[I, HNil, O, Rule[I2, O2], HNil, In, Out] = null
+  implicit def terminateRule[I <: HList, O <: HList, I2 <: HList, O2 <: HList, In <: HList, Out <: HList]
+               (implicit i: TailSwitch0[I2, I2, O, O, I, HNil, In], o: TailSwitch0[O, O, I2, I2, O2, HNil, Out]): Join0[I, HNil, O, Rule[I2, O2], HNil, In, Out] = `n/a`
 }
 private[parboiled2] abstract class LowerPriorityJoin0 {
   // convert R to R :: HNil
-  implicit def forAny[I <: HList, L1 <: HList, L2 <: HList, R, Acc <: HList, Out <: HList](implicit x: Join0[I, L1, L2, R :: HNil, Acc, I, Out]): Join0[I, L1, L2, R, Acc, I, Out] = null
+  implicit def forAny[I <: HList, L1 <: HList, L2 <: HList, R, Acc <: HList, Out <: HList](implicit x: Join0[I, L1, L2, R :: HNil, Acc, I, Out]): Join0[I, L1, L2, R, Acc, I, Out] = `n/a`
 }
+
+// format: ON
 
 sealed trait Optionalizer[I <: HList, O <: HList] {
   type In <: HList
