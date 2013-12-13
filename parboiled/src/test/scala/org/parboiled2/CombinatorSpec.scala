@@ -135,8 +135,11 @@ class CombinatorSpec extends TestParserSpec {
     "`&` modifier" in new TestParser0 {
       def targetRule = rule { &("a") }
       "a" must beMatched
+      this.cursor must_== 0
       "b" must beMismatched
+      this.cursor must_== 0
       "" must beMismatched
+      this.cursor must_== 0
     }
 
     "`0.times(Rule0)` modifier" in new TestParser0 {
