@@ -45,7 +45,11 @@ val publishingSettings = Seq(
     </scm>
     <developers>
       <developer><id>sirthias</id><name>Mathias Doenitz</name></developer>
-      <developer><id>alexander-myltsev</id><name>Alexander Myltsev</name></developer>
+      <developer>
+        <id>alexander-myltsev</id>
+        <name>Alexander Myltsev</name>
+        <url>http://www.linkedin.com/in/alexandermyltsev</url>
+      </developer>
     </developers>
 )
 
