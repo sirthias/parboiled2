@@ -65,7 +65,7 @@ lazy val parboiled = project
   .settings(commonSettings: _*)
   .settings(publishingSettings: _*)
   .settings(
-    addCompilerPlugin("org.scala-lang.plugins" % "macro-paradise" % "2.0.0-SNAPSHOT" cross CrossVersion.full),
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0-M1" cross CrossVersion.full),
     libraryDependencies ++= Seq(scalaReflect, shapeless, specs2)
   )
 
