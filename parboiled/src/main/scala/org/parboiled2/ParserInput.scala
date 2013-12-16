@@ -17,38 +17,70 @@
 package org.parboiled2
 
 import java.nio.charset.Charset
+import scala.annotation.tailrec
 
-sealed abstract class ParserInput {
+trait ParserInput {
+  /**
+   * Returns the character at the given (zero-based) index.
+   * Note: this method is hot and should be small and efficient.
+   * A range-check is not required for the parser to work correctly.
+   */
   def charAt(ix: Int): Char
+
+  /**
+   * The number of characters in this input.
+   * Note: this method is hot and should be small and efficient.
+   */
   def length: Int
+
+  /**
+   * Returns the characters between index `start` (inclusively) and `end` (exclusively) as a `String`.
+   */
   def sliceString(start: Int, end: Int): String
-  override def toString: String = sliceString(0, length)
 
   /**
    * Gets the input line with the given number as a String.
    * Note: the first line is line number one!
    */
-  def getLine(line: Int): String = toString.split('\n')(line - 1)
+  def getLine(line: Int): String
 }
 
 object ParserInput {
   val Empty = apply(Array.empty[Byte])
 
-  implicit def apply(bytes: Array[Byte]): ParserInput = apply(bytes, UTF8)
+  implicit def apply(bytes: Array[Byte]): ByteArrayBasedParser = apply(bytes, UTF8)
+  implicit def apply(string: String): StringBasedParser = new StringBasedParser(string)
+  implicit def apply(chars: Array[Char]): CharArrayBasedParser = new CharArrayBasedParser(chars)
+  def apply(bytes: Array[Byte], charset: Charset): ByteArrayBasedParser = new ByteArrayBasedParser(bytes, charset)
 
-  def apply(bytes: Array[Byte], charset: Charset): ParserInput =
-    new ParserInput {
-      def charAt(ix: Int) = bytes(ix).toChar
-      def length = bytes.length
-      def sliceString(start: Int, end: Int) = new String(bytes, start, end - start, charset)
+  abstract class DefaultParserInput extends ParserInput {
+    def getLine(line: Int): String = {
+      @tailrec def rec(ix: Int, lineStartIx: Int, lineNr: Int): String =
+        if (ix < length)
+          if (charAt(ix) == '\n')
+            if (lineNr < line) rec(ix + 1, ix + 1, lineNr + 1)
+            else sliceString(lineStartIx, ix)
+          else rec(ix + 1, lineStartIx, lineNr)
+        else if (lineNr == line) sliceString(lineStartIx, ix) else ""
+      rec(ix = 0, lineStartIx = 0, lineNr = 1)
     }
+  }
 
-  implicit def apply(string: String): ParserInput =
-    new ParserInput {
-      def charAt(ix: Int) = string.charAt(ix)
-      def length = string.length
-      def sliceString(start: Int, end: Int) = string.substring(start, end)
-    }
+  class ByteArrayBasedParser(bytes: Array[Byte], charset: Charset) extends DefaultParserInput {
+    def charAt(ix: Int) = bytes(ix).toChar
+    def length = bytes.length
+    def sliceString(start: Int, end: Int) = new String(bytes, start, end - start, charset)
+  }
 
-  implicit def apply(chars: Array[Char]): ParserInput = apply(new String(chars))
+  class StringBasedParser(string: String) extends DefaultParserInput {
+    def charAt(ix: Int) = string.charAt(ix)
+    def length = string.length
+    def sliceString(start: Int, end: Int) = string.substring(start, end)
+  }
+
+  class CharArrayBasedParser(chars: Array[Char]) extends DefaultParserInput {
+    def charAt(ix: Int) = chars(ix)
+    def length = chars.length
+    def sliceString(start: Int, end: Int) = new String(chars, start, end - start)
+  }
 }
