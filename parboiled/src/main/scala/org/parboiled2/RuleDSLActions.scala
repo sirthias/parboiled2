@@ -27,7 +27,7 @@ trait RuleDSLActions {
    * after its inner rule has been run successfully (and only then).
    */
   @compileTimeOnly("Calls to `capture` must be inside `rule` macro")
-  def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepender[O, String :: HNil]): Rule[I, p.Out] = `n/a`
+  def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepend[O, String :: HNil]): Rule[I, p.Out] = `n/a`
 
   /**
    * Implements a semantic predicate. If the argument expression evaluates to `true` the created
@@ -207,22 +207,6 @@ private[parboiled2] abstract class LowerPriorityJoin0 {
 }
 
 // format: ON
-
-sealed trait Prepender[P <: HList, S <: HList] {
-  type Out <: HList
-  def apply(prefix: P, suffix: S): Out
-}
-object Prepender {
-  implicit def hnilPrepend[P <: HList, S <: HNil] = new Prepender[P, S] {
-    type Out = P
-    def apply(prefix: P, suffix: S) = prefix
-  }
-  implicit def apply[P <: HList, S <: HList, Out0 <: HList](implicit prepend: Prepend.Aux[P, S, Out0]) =
-    new Prepender[P, S] {
-      type Out = Out0
-      def apply(prefix: P, suffix: S): Out = prepend(prefix, suffix)
-    }
-}
 
 sealed trait TakeRight5[L <: HList, Init <: HList, A, B, C, D, E]
 object TakeRight5 extends LowerPriorityMatchRight5 {

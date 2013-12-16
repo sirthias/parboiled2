@@ -586,7 +586,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             }
             val resExpr = actionType.last.toString match { // TODO: can we do better than this toString?
               case x if x startsWith "org.parboiled2.Rule" ⇒ OpTree(res).render()
-              case x ⇒ PushAction(res).render()
+              case x                                       ⇒ PushAction(res).render()
             }
             Block(popToVals(args.map(_.name)) ::: expressions, resExpr.tree)
         }
