@@ -27,8 +27,8 @@ class CharPredicateSpec extends Specification {
       show(CharPredicate("&048z{~")) === "&048z{~"
     }
     "support `testAny`" in {
-      CharPredicate("abc").matchAny("0125!") must beFalse
-      CharPredicate("abc").matchAny("012c5!") must beTrue
+      CharPredicate("abc").matchesAny("0125!") must beFalse
+      CharPredicate("abc").matchesAny("012c5!") must beTrue
     }
     "support `indexOfFirstMatch`" in {
       CharPredicate("abc").indexOfFirstMatch("0125!") === -1

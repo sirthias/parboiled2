@@ -16,61 +16,83 @@
 
 package org.parboiled2
 
+import CharUtils.escape
+
 case class ParseError(position: Position, traces: Seq[RuleTrace])
 
 case class Position(index: Int, line: Int, column: Int)
 
 // outermost (i.e. highest-level) rule first
 case class RuleTrace(frames: Seq[RuleFrame]) {
-  def format: String = frames.map(_.format).filter(_.nonEmpty).mkString(" / ")
+  def format: String =
+    frames.size match {
+      case 0 ⇒ "<empty>"
+      case 1 ⇒ RuleFrame.format(frames.head)
+      case _ ⇒
+        // we don't want to show intermediate Sequence and RuleCall frames in the trace
+        def show(frame: RuleFrame) = !(frame.isInstanceOf[RuleFrame.Sequence] || frame.isInstanceOf[RuleFrame.RuleCall])
+        frames.init.filter(show).map(RuleFrame.format).mkString("", " / ", " / " + RuleFrame.format(frames.last))
+    }
+
+  def isNegated: Boolean = (frames.count(_.anon == RuleFrame.NotPredicate) & 0x01) > 0
 }
 
-sealed abstract class RuleFrame {
-  import RuleFrame._
-
-  def name: String // the name of rule (method), empty if the rule is anonymous (i.e. an "inner" rule)
-
-  def format: String =
-    if (name.nonEmpty) name
-    else this match {
-      case _: Sequence            ⇒ ""
-      case _: FirstOf             ⇒ "|"
-      case CharMatch(c, _)        ⇒ "'" + c + '\''
-      case StringMatch(s, _)      ⇒ '"' + s + '"'
-      case IgnoreCaseChar(c, _)   ⇒ "'" + c + '\''
-      case IgnoreCaseString(s, _) ⇒ '"' + s + '"'
-      case _: PredicateMatch      ⇒ "<anon predicate>"
-      case AnyOf(s, _)            ⇒ '[' + s + ']'
-      case _: ANY                 ⇒ "ANY"
-      case _: Optional            ⇒ "optional"
-      case _: ZeroOrMore          ⇒ "zeroOrMore"
-      case _: OneOrMore           ⇒ "oneOrMore"
-      case _: Times               ⇒ "times"
-      case _: AndPredicate        ⇒ "&"
-      case _: NotPredicate        ⇒ "!"
-      case _: SemanticPredicate   ⇒ "test"
-      case _: RuleCall            ⇒ ""
-      case CharRange(from, to, _) ⇒ s"'$from'-'$to'"
-    }
+sealed trait RuleFrame {
+  def anon: RuleFrame.Anonymous
 }
 
 object RuleFrame {
-  case class Sequence(subs: Int, name: String = "") extends RuleFrame
-  case class FirstOf(subs: Int, name: String = "") extends RuleFrame
-  case class CharMatch(char: Char, name: String = "") extends RuleFrame
-  case class StringMatch(string: String, name: String = "") extends RuleFrame
-  case class IgnoreCaseChar(char: Char, name: String = "") extends RuleFrame
-  case class IgnoreCaseString(string: String, name: String = "") extends RuleFrame
-  case class PredicateMatch(predicate: CharPredicate, name: String = "") extends RuleFrame
-  case class AnyOf(string: String, name: String = "") extends RuleFrame
-  case class ANY(name: String = "") extends RuleFrame
-  case class Optional(name: String = "") extends RuleFrame
-  case class ZeroOrMore(name: String = "") extends RuleFrame
-  case class OneOrMore(name: String = "") extends RuleFrame
-  case class Times(min: Int, max: Int, name: String = "") extends RuleFrame
-  case class AndPredicate(name: String = "") extends RuleFrame
-  case class NotPredicate(name: String = "") extends RuleFrame
-  case class SemanticPredicate(name: String = "") extends RuleFrame
-  case class RuleCall(calledRule: String, name: String = "") extends RuleFrame
-  case class CharRange(from: Char, to: Char, name: String = "") extends RuleFrame
+  def apply(frame: Anonymous, name: String): RuleFrame =
+    if (name.isEmpty) frame else Named(name, frame)
+
+  case class Named(name: String, anon: Anonymous) extends RuleFrame
+
+  sealed trait Anonymous extends RuleFrame {
+    def anon: Anonymous = this
+  }
+  case class Sequence(subs: Int) extends Anonymous
+  case class FirstOf(subs: Int) extends Anonymous
+  case class CharMatch(char: Char) extends Anonymous
+  case class StringMatch(string: String) extends Anonymous
+  case class IgnoreCaseChar(char: Char) extends Anonymous
+  case class IgnoreCaseString(string: String) extends Anonymous
+  case class CharPredicateMatch(predicate: CharPredicate) extends Anonymous
+  case class AnyOf(string: String) extends Anonymous
+  case class Times(min: Int, max: Int) extends Anonymous
+  case class RuleCall(callee: String) extends Anonymous
+  case class CharRange(from: Char, to: Char) extends Anonymous
+  case object ANY extends Anonymous
+  case object Optional extends Anonymous
+  case object ZeroOrMore extends Anonymous
+  case object OneOrMore extends Anonymous
+  case object AndPredicate extends Anonymous
+  case object NotPredicate extends Anonymous
+  case object SemanticPredicate extends Anonymous
+  case object Capture extends Anonymous
+  case object Push extends Anonymous
+  case object Action extends Anonymous
+
+  def format(frame: RuleFrame): String =
+    frame match {
+      case Named(name, _)          ⇒ name
+      case Sequence(_)             ⇒ "~"
+      case FirstOf(_)              ⇒ "|"
+      case CharMatch(c)            ⇒ "'" + escape(c) + '\''
+      case StringMatch(s)          ⇒ '"' + escape(s) + '"'
+      case IgnoreCaseChar(c)       ⇒ "'" + escape(c) + '\''
+      case IgnoreCaseString(s)     ⇒ '"' + escape(s) + '"'
+      case CharPredicateMatch(_)   ⇒ "<anon predicate>"
+      case RuleCall(callee)        ⇒ '(' + callee + ')'
+      case AnyOf(s)                ⇒ '[' + escape(s) + ']'
+      case Times(_, _)             ⇒ "times"
+      case CharRange(from, to)     ⇒ s"'${escape(from)}'-'${escape(to)}'"
+      case ANY                     ⇒ "ANY"
+      case Optional                ⇒ "optional"
+      case ZeroOrMore              ⇒ "zeroOrMore"
+      case OneOrMore               ⇒ "oneOrMore"
+      case AndPredicate            ⇒ "&"
+      case NotPredicate            ⇒ "!"
+      case SemanticPredicate       ⇒ "test"
+      case Capture | Push | Action ⇒ frame.toString
+    }
 }

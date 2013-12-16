@@ -68,7 +68,13 @@ object CharUtils {
     case '\t'                           ⇒ "\\t"
     case '\r'                           ⇒ "\\r"
     case '\n'                           ⇒ "\\n"
+    case EOI                            ⇒ "EOI"
     case x if Character.isISOControl(x) ⇒ "\\u%04x" format c.toInt
     case x                              ⇒ x.toString
   }
+
+  val escapedChars = CharPredicate("\t\r\n", EOI, Character.isISOControl _)
+
+  def escape(s: String): String =
+    if (escapedChars.matchesAny(s)) s.flatMap(escape(_: Char)) else s
 }

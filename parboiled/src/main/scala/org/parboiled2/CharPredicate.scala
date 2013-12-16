@@ -39,13 +39,13 @@ sealed abstract class CharPredicate extends (Char ⇒ Boolean) {
     case _     ⇒ from(c ⇒ !this(c))
   }
 
-  def matchAny(string: String): Boolean = {
+  def matchesAny(string: String): Boolean = {
     @tailrec def rec(ix: Int): Boolean =
       if (ix == string.length) false else if (this(string charAt ix)) true else rec(ix + 1)
     rec(0)
   }
 
-  def matchAll(string: String): Boolean = {
+  def matchesAll(string: String): Boolean = {
     @tailrec def rec(ix: Int): Boolean =
       if (ix == string.length) true else if (!this(string charAt ix)) false else rec(ix + 1)
     rec(0)

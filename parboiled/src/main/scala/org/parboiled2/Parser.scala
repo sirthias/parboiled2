@@ -65,8 +65,12 @@ abstract class Parser(initialValueStackSize: Int = 32,
     val errorChar = if (index < input.length) input charAt index else EOI
     val expected: Vector[String] =
       traces.map { trace ⇒
-        val exp = trace.frames.last.format
-        if (exp.isEmpty) "?" else exp
+        if (trace.frames.nonEmpty) {
+          val exp = RuleFrame.format(trace.frames.last)
+          val nonEmptyExp = if (exp.isEmpty) "?" else exp
+          if (trace.isNegated) "!" + nonEmptyExp else nonEmptyExp
+        } else "???"
+
       }(collection.breakOut)
     val caret = " " * (col - 1) + '^'
     val errorMsg = formatError(errorChar, pos, expected, input getLine line, caret)
@@ -77,8 +81,13 @@ abstract class Parser(initialValueStackSize: Int = 32,
    * Pretty prints the given `ParseError`.
    */
   def formatError(errorChar: Char, pos: Position, expected: Seq[String], line: String, caret: String): String = {
-    val problem = if (errorChar == EOI) "Unexpected end of input" else s"Invalid input '$errorChar'"
-    val exp = if (expected.size == 1) expected.head else expected.init.mkString(", ") + " or " + expected.last
+    val problem = if (errorChar == EOI) "Unexpected end of input" else s"Invalid input '${CharUtils.escape(errorChar)}'"
+    val exp =
+      expected.size match {
+        case 0 ⇒ "??"
+        case 1 ⇒ expected.head
+        case _ ⇒ expected.init.mkString(", ") + " or " + expected.last
+      }
     s"$problem, expected $exp (line ${pos.line}, column ${pos.column}):\n$line\n$caret"
   }
 
@@ -181,8 +190,22 @@ abstract class Parser(initialValueStackSize: Int = 32,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __registerCharMismatch(): Unit =
-    if (currentErrorRuleStackIx != -1 && _cursor == maxCursor) {
+  def __enterNotPredicate: Int = {
+    val saved = currentErrorRuleStackIx
+    currentErrorRuleStackIx = -2 // disables maxCursor update as well as error rulestack collection
+    saved
+  }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __exitNotPredicate(saved: Int): Unit = currentErrorRuleStackIx = saved
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __registerMismatch(): Unit =
+    if (currentErrorRuleStackIx >= 0 && _cursor == maxCursor) {
       if (mismatchesAtErrorCursor < currentErrorRuleStackIx) mismatchesAtErrorCursor += 1
       else throw new Parser.CollectingRuleStackException
     }

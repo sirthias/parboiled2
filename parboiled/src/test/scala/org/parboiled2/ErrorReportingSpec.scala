@@ -69,5 +69,27 @@ class ErrorReportingSpec extends TestParserSpec {
           |""")
     }
 
+    "example 2" in new TestParser0 {
+      def targetRule = rule { !"a" ~ ANY ~ !foo ~ EOI }
+      def foo = rule { "bcd" }
+
+      "a" must beMismatchedWithErrorMsg(
+        """Invalid input 'a', expected !"a" (line 1, column 1):
+          |a
+          |^
+          |
+          |1 rule mismatched at error location:
+          |  targetRule / ! / "a"
+          |""")
+
+      "xbcd" must beMismatchedWithErrorMsg(
+        """Invalid input 'b', expected !(foo) (line 1, column 2):
+          |xbcd
+          | ^
+          |
+          |1 rule mismatched at error location:
+          |  targetRule / ! / (foo)
+          |""")
+    }
   }
 }
