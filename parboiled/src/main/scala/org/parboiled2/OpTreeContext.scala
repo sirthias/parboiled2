@@ -461,7 +461,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val value: Any = c.Expr[Any](arg).splice
       value match {
         case ()       ⇒
-        case x: HList ⇒ p.valueStack.push(x)
+        case x: HList ⇒ p.valueStack.pushAll(x)
         case x        ⇒ p.valueStack.push(x)
       }
       Rule.Matched

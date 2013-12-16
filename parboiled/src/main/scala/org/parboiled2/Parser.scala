@@ -22,8 +22,11 @@ import scala.collection.immutable.VectorBuilder
 import shapeless._
 import scala.util.control.NoStackTrace
 
-abstract class Parser extends RuleDSL {
+abstract class Parser(initialValueStackSize: Int = 32,
+                      maxValueStackSize: Int = 1024) extends RuleDSL {
   import Parser._
+
+  require(maxValueStackSize <= 65536, "`maxValueStackSize` > 2^16 is not supported") // due to current snapshot design
 
   /**
    * The input this parser instance is running against.
@@ -52,7 +55,7 @@ abstract class Parser extends RuleDSL {
    * In most cases you shouldn't need to access the value stack directly from your code.
    * Use only if you know what you are doing!
    */
-  val valueStack = new ValueStack
+  val valueStack = new ValueStack(initialValueStackSize, maxValueStackSize)
 
   /**
    * Pretty prints the given `ParseError` instance in the context of the `ParserInput` of this parser.
@@ -164,7 +167,7 @@ abstract class Parser extends RuleDSL {
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __saveState: Mark = new Mark((_cursor.toLong << 32) + (_cursorChar.toLong << 16) + valueStack.top)
+  def __saveState: Mark = new Mark((_cursor.toLong << 32) + (_cursorChar.toLong << 16) + valueStack.size)
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -172,7 +175,7 @@ abstract class Parser extends RuleDSL {
   def __restoreState(mark: Mark): Unit = {
     _cursor = (mark.value >>> 32).toInt
     _cursorChar = ((mark.value >>> 16) & 0x000000000000FFFF).toChar
-    valueStack.top = (mark.value & 0x000000000000FFFF).toInt
+    valueStack.size = (mark.value & 0x000000000000FFFF).toInt
   }
 
   /**

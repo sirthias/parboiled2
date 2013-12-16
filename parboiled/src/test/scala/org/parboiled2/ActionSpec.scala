@@ -38,12 +38,12 @@ class ActionSpec extends TestParserSpec {
       "x" must beMismatched
     }
 
-    "`push` (example 1)" in new TestParser1[String] {
+    "`push` simple value" in new TestParser1[String] {
       def targetRule = rule { 'x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI }
       "xy" must beMatchedWith1("yeah")
     }
 
-    "`push` (example 2)" in new TestParser[Int :: Double :: Long :: String :: HNil] {
+    "`push` HList" in new TestParser[Int :: Double :: Long :: String :: HNil] {
       def targetRule = rule { 'x' ~ push(42 :: 3.14 :: HNil) ~ push(0L :: "yeah" :: HNil) ~ EOI }
       "x" must beMatchedWith(42 :: 3.14 :: 0L :: "yeah" :: HNil)
       "y" must beMismatched
@@ -62,7 +62,7 @@ class ActionSpec extends TestParserSpec {
       "" must beMatchedWith1(Foo(1, "X"))
     }
 
-    "`~>` producing case class (full notation)" in new TestParser1[Foo] {
+    "`~>` full take" in new TestParser1[Foo] {
       def testRule = rule { push(1 :: "X" :: HNil) ~> (Foo(_, _)) }
       def targetRule = testRule
       "" must beMatchedWith1(Foo(1, "X"))
