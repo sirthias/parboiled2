@@ -19,8 +19,9 @@ package org.parboiled2
 import scala.reflect.macros.Context
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
-import shapeless._
 import scala.util.control.{ NonFatal, NoStackTrace }
+import shapeless._
+import org.parboiled2.support._
 
 abstract class Parser(initialValueStackSize: Int = 32,
                       maxValueStackSize: Int = 1024) extends RuleDSL {

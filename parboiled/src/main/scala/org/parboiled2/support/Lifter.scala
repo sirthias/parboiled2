@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package org
+package org.parboiled2.support
 
 import shapeless._
-import java.nio.charset.Charset
 
-package object parboiled2 {
+sealed trait Lifter[M[_], I <: HList, O <: HList] { type In <: HList; type Out <: HList }
 
-  type Rule0 = RuleN[HNil]
-  type Rule1[T] = RuleN[T :: HNil]
-  type Rule2[A, B] = RuleN[A :: B :: HNil]
-  type RuleN[L <: HList] = Rule[HNil, L]
-  type PopRule[L <: HList] = Rule[L, HNil]
+object Lifter extends LowerPriorityLifter {
+  implicit def forRule0[M[_]] = new Lifter[M, HNil, HNil] { type In = HNil; type Out = HNil }
+  implicit def forRule1[M[_], T] = new Lifter[M, HNil, T :: HNil] { type In = HNil; type Out = M[T] :: HNil }
+}
 
-  val EOI = '\uFFFF'
-
-  val UTF8 = Charset.forName("UTF-8")
+sealed abstract class LowerPriorityLifter {
+  implicit def forReduction[M[_], L <: HList, R <: L] = new Lifter[M, L, R] { type In = L; type Out = R }
 }

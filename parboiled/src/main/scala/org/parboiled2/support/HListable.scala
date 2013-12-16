@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package org
+package org.parboiled2.support
 
 import shapeless._
-import java.nio.charset.Charset
 
-package object parboiled2 {
+trait HListable[T] {
+  type Out <: HList
+}
 
-  type Rule0 = RuleN[HNil]
-  type Rule1[T] = RuleN[T :: HNil]
-  type Rule2[A, B] = RuleN[A :: B :: HNil]
-  type RuleN[L <: HList] = Rule[HNil, L]
-  type PopRule[L <: HList] = Rule[L, HNil]
+object HListable extends LowerPriorityHListable {
+  implicit def fromUnit = new HListable[Unit] { type Out = HNil }
+  implicit def fromHList[T <: HList] = new HListable[T] { type Out = T }
+}
 
-  val EOI = '\uFFFF'
-
-  val UTF8 = Charset.forName("UTF-8")
+abstract class LowerPriorityHListable {
+  implicit def fromAnyRef[T] = new HListable[T] { type Out = T :: HNil }
 }

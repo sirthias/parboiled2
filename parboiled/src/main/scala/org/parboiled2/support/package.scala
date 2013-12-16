@@ -14,20 +14,8 @@
  * limitations under the License.
  */
 
-package org
+package org.parboiled2
 
-import shapeless._
-import java.nio.charset.Charset
-
-package object parboiled2 {
-
-  type Rule0 = RuleN[HNil]
-  type Rule1[T] = RuleN[T :: HNil]
-  type Rule2[A, B] = RuleN[A :: B :: HNil]
-  type RuleN[L <: HList] = Rule[HNil, L]
-  type PopRule[L <: HList] = Rule[L, HNil]
-
-  val EOI = '\uFFFF'
-
-  val UTF8 = Charset.forName("UTF-8")
+package object support {
+  private[parboiled2] def `n/a` = throw new IllegalStateException
 }

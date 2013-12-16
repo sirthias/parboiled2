@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.parboiled2
+package org.parboiled2.support
 
 import scala.annotation.tailrec
 import shapeless.HList
+import org.parboiled2._
 
 trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
@@ -30,9 +31,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   def OpTree(tree: Tree): OpTree = {
     def collector(lifterTree: Tree): Collector =
       lifterTree match {
-        case q"parboiled2.this.$a.forRule0[$b]" ⇒ rule0Collector
-        case q"parboiled2.this.$a.forRule1[$b, $c]" ⇒ rule1Collector
-        case q"parboiled2.this.$a.forReduction[$b, $c, $d]" ⇒ rule0Collector
+        case q"support.this.$a.forRule0[$b]" ⇒ rule0Collector
+        case q"support.this.$a.forRule1[$b, $c]" ⇒ rule1Collector
+        case q"support.this.$a.forReduction[$b, $c, $d]" ⇒ rule0Collector
         case _ ⇒ c.abort(tree.pos, "Unexpected Lifter: " + lifterTree)
       }
 
@@ -59,7 +60,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case q"$a.this.$method(..$c)"                ⇒ RuleCall(tree, method.toString)
       case q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
         CharRange(l, r, tree.pos)
-      case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, parboiled2.this.FCapture.apply[$ts])" ⇒
+      case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
         Action(OpTree(r), f, ts)
       case q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
         val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))

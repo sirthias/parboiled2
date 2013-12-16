@@ -17,6 +17,7 @@
 package org.parboiled2
 
 import scala.reflect.internal.annotations.compileTimeOnly
+import org.parboiled2.support._
 
 trait RuleDSLBasics {
 

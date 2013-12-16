@@ -17,6 +17,7 @@
 package org.parboiled2
 
 import scala.reflect.internal.annotations.compileTimeOnly
+import org.parboiled2.support._
 import shapeless._
 
 trait RuleDSLCombinators {
@@ -85,15 +86,4 @@ trait RuleDSLCombinators {
   trait WithSeparatedBy[I <: HList, O <: HList] {
     def separatedBy(separator: Rule0): Rule[I, O] = `n/a`
   }
-}
-
-//////////////////////////////// SUPPORTING TYPE-CLASSES ////////////////////////////////////
-
-sealed trait Lifter[M[_], I <: HList, O <: HList] { type In <: HList; type Out <: HList }
-object Lifter extends LowerPriorityLifter {
-  implicit def forRule0[M[_]] = new Lifter[M, HNil, HNil] { type In = HNil; type Out = HNil }
-  implicit def forRule1[M[_], T] = new Lifter[M, HNil, T :: HNil] { type In = HNil; type Out = M[T] :: HNil }
-}
-sealed abstract class LowerPriorityLifter {
-  implicit def forReduction[M[_], L <: HList, R <: L] = new Lifter[M, L, R] { type In = L; type Out = R }
 }
