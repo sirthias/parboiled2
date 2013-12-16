@@ -53,6 +53,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case q"$a.unary_!()"                         ⇒ NotPredicate(OpTree(a))
       case q"$a.this.test($flag)"                  ⇒ SemanticPredicate(flag)
       case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
+      case q"$a.this.run($arg)"                    ⇒ RunAction(arg)
       case q"$a.this.push[$b]($arg)($c)"           ⇒ PushAction(arg)
       case q"$a.this.$method"                      ⇒ RuleCall(tree, method.toString)
       case q"$a.this.$method(..$c)"                ⇒ RuleCall(tree, method.toString)
@@ -494,6 +495,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
+  case class RunAction(arg: Tree) extends OpTree {
+    def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Run)
+    def render(ruleName: String): Expr[RuleX] = reify {
+      c.Expr[Unit](arg).splice
+      Rule.Matched
+    }
+  }
+
   case class PushAction(arg: Tree) extends OpTree {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Push)
     def render(ruleName: String): Expr[RuleX] = reify {
@@ -575,9 +584,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
               case Block(exps, rs) ⇒ (exps, rs)
               case x               ⇒ (Nil, x)
             }
-            val resExpr = actionType.last.typeSymbol.name.toString match { // TODO: can we do better than this toString?
-              case "org.parboiled2.Rule" ⇒ OpTree(res).render()
-              case _                     ⇒ PushAction(res).render()
+            val resExpr = actionType.last.toString match { // TODO: can we do better than this toString?
+              case x if x startsWith "org.parboiled2.Rule" ⇒ OpTree(res).render()
+              case x ⇒ PushAction(res).render()
             }
             Block(popToVals(args.map(_.name)) ::: expressions, resExpr.tree)
         }

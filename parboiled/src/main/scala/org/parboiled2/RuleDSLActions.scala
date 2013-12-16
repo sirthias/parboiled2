@@ -37,9 +37,18 @@ trait RuleDSLActions {
   def test(predicateResult: Boolean): Rule0 = `n/a`
 
   /**
+   * Simply runs the given block / expression. The valueStack is left untouched.
+   * NOTE: Even though the block is not a call-by-name parameter it will be executed
+   * for every rule application anew! (Since the expression is directly transplanted
+   * into the rule method by the `rule` macro.
+   */
+  @compileTimeOnly("Calls to `run` must be inside `rule` macro")
+  def run(block: Unit): Rule0 = `n/a`
+
+  /**
    * Pushes the given value onto the value stack.
-   * - if `T` is `Unit` nothing is pushed (i.e. the argument expression is simply evaluated)
-   * - if `T <: HList` all value of the HList is pushed as individual elements
+   * - if `T` is `Unit` nothing is pushed (i.e. `push` with a block/expression evaluating to `Unit` is identical to `run`)
+   * - if `T <: HList` all values of the HList is pushed as individual elements
    * - otherwise a single value of type `T` is pushed.
    */
   @compileTimeOnly("Calls to `push` must be inside `rule` macro")

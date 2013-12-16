@@ -38,6 +38,13 @@ class ActionSpec extends TestParserSpec {
       "x" must beMismatched
     }
 
+    "`run`" in new TestParser0 {
+      var flag = false
+      def targetRule = rule { 'a' ~ run(flag = true) ~ EOI }
+      "a" must beMatched
+      flag must beTrue
+    }
+
     "`push` simple value" in new TestParser1[String] {
       def targetRule = rule { 'x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI }
       "xy" must beMatchedWith1("yeah")
@@ -78,6 +85,28 @@ class ActionSpec extends TestParserSpec {
       def testRule = rule { capture("x") ~> (_ :: 1 :: 3.0 :: HNil) }
       def targetRule = testRule
       "x" must beMatchedWith("x" :: 1 :: 3.0 :: HNil)
+    }
+
+    "`~>` with a statement block" in new TestParser[Char :: HNil] {
+      var captured = ' '
+      def testRule = rule { capture("x") ~> { x ⇒ captured = x.head; cursorChar } }
+      def targetRule = testRule
+      "xy" must beMatchedWith1('y')
+      captured === 'x'
+    }
+
+    "`~>` producing a Rule0" in new TestParser0 {
+      def testRule = rule { capture("x") ~> (str(_)) ~ EOI }
+      def targetRule = testRule
+      "x" must beMismatched
+      "xx" must beMatched
+    }
+
+    "`~>` producing a Rule1" in new TestParser1[String] {
+      def testRule = rule { capture("x") ~> (capture(_)) ~ EOI }
+      def targetRule = testRule
+      "x" must beMismatched
+      "xx" must beMatchedWith1("x")
     }
   }
 }
