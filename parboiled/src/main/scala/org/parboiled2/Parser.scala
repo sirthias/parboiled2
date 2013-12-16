@@ -19,6 +19,7 @@ package org.parboiled2
 import scala.reflect.macros.Context
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
+import scala.util.{ Failure, Success, Try }
 import scala.util.control.{ NonFatal, NoStackTrace }
 import shapeless._
 import org.parboiled2.support._
@@ -121,7 +122,7 @@ abstract class Parser(initialValueStackSize: Int = 32,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __run[L <: HList](rule: ⇒ RuleN[L])(implicit strategy: ParseError.Strategy[L]): strategy.Result = {
+  def __run[L <: HList](rule: ⇒ RuleN[L])(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = {
     def runRule(errorRuleStackIx: Int = -1): Boolean = {
       _cursor = -1
       __advance()
@@ -153,11 +154,11 @@ abstract class Parser(initialValueStackSize: Int = 32,
     try {
       maxCursor = -1
       if (runRule())
-        strategy.success(valueStack.toHList[L]())
+        scheme.success(valueStack.toHList[L]())
       else
-        strategy.parseError(buildParseError())
+        scheme.parseError(buildParseError())
     } catch {
-      case NonFatal(e) ⇒ strategy.failure(e)
+      case NonFatal(e) ⇒ scheme.failure(e)
     }
   }
 
@@ -217,19 +218,64 @@ abstract class Parser(initialValueStackSize: Int = 32,
 }
 
 object Parser {
+
+  trait DeliveryScheme[L <: HList] {
+    type Result
+    def success(result: L): Result
+    def parseError(error: ParseError): Result
+    def failure(error: Throwable): Result
+  }
+
+  object DeliveryScheme extends AlternativeDeliverySchemes {
+    implicit def Try[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
+      new DeliveryScheme[L] {
+        type Result = Try[Out]
+        def success(result: L) = Success(unpack(result))
+        def parseError(error: ParseError) = Failure(error)
+        def failure(error: Throwable) = Failure(error)
+      }
+  }
+  sealed abstract class AlternativeDeliverySchemes {
+    implicit def Either[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
+      new DeliveryScheme[L] {
+        type Result = Either[ParseError, Out]
+        def success(result: L) = Right(unpack(result))
+        def parseError(error: ParseError) = Left(error)
+        def failure(error: Throwable) = throw error
+      }
+    implicit def Throw[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
+      new DeliveryScheme[L] {
+        type Result = Out
+        def success(result: L) = unpack(result)
+        def parseError(error: ParseError) = throw error
+        def failure(error: Throwable) = throw error
+      }
+  }
+
+  ////////////////////////////// INTERNAL //////////////////////////////
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
   class Mark private[Parser] (val value: Long) extends AnyVal
 
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
   type RunnableRuleContext[L <: HList] = Context { type PrefixType = Rule.Runnable[L] }
 
-  def runImpl[L <: HList: c.WeakTypeTag](c: RunnableRuleContext[L])()(strategy: c.Expr[ParseError.Strategy[L]]): c.Expr[strategy.value.Result] = {
+  def runImpl[L <: HList: c.WeakTypeTag](c: RunnableRuleContext[L])()(scheme: c.Expr[DeliveryScheme[L]]): c.Expr[scheme.value.Result] = {
     import c.universe._
     c.prefix.tree match {
       case q"parboiled2.this.Rule.Runnable[$l]($parser.$rule)" ⇒
-        c.Expr[strategy.value.Result](q"$parser.__run[$l]($parser.$rule)($strategy)")
+        c.Expr[scheme.value.Result](q"$parser.__run[$l]($parser.$rule)($scheme)")
       case x ⇒ c.abort(x.pos, "Illegal `Runnable.apply` call: " + show(x))
     }
   }
 
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
   type ParserContext = Context { type PrefixType = Parser }
 
   def ruleImpl[I <: HList: ctx.WeakTypeTag, O <: HList: ctx.WeakTypeTag](ctx: ParserContext)(r: ctx.Expr[Rule[I, O]]): ctx.Expr[Rule[I, O]] = {

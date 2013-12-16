@@ -17,45 +17,8 @@
 package org.parboiled2
 
 import CharUtils.escape
-import scala.util.{ Failure, Success, Try }
-import shapeless.HList
-import org.parboiled2.support._
 
 case class ParseError(position: Position, traces: Seq[RuleTrace]) extends RuntimeException
-
-object ParseError {
-  trait Strategy[L <: HList] {
-    type Result
-    def success(result: L): Result
-    def parseError(error: ParseError): Result
-    def failure(error: Throwable): Result
-  }
-  object Strategy extends AlternativeStrategies {
-    implicit def Try[L <: HList, Out0](implicit unpack: Unpack.Aux[L, Out0]) =
-      new Strategy[L] {
-        type Result = Try[Out0]
-        def success(result: L) = Success(unpack(result))
-        def parseError(error: ParseError) = Failure(error)
-        def failure(error: Throwable) = Failure(error)
-      }
-  }
-  sealed abstract class AlternativeStrategies {
-    implicit def Either[L <: HList, Out0](implicit unpack: Unpack.Aux[L, Out0]) =
-      new Strategy[L] {
-        type Result = Either[ParseError, Out0]
-        def success(result: L) = Right(unpack(result))
-        def parseError(error: ParseError) = Left(error)
-        def failure(error: Throwable) = throw error
-      }
-    implicit def Throw[L <: HList, Out0](implicit unpack: Unpack.Aux[L, Out0]) =
-      new Strategy[L] {
-        type Result = Out0
-        def success(result: L) = unpack(result)
-        def parseError(error: ParseError) = throw error
-        def failure(error: Throwable) = throw error
-      }
-  }
-}
 
 case class Position(index: Int, line: Int, column: Int)
 

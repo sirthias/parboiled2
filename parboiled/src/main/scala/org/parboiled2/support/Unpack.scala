@@ -16,7 +16,7 @@
 
 package org.parboiled2.support
 
-import shapeless.{ HNil, HList }
+import shapeless._
 
 /**
  * "Unpacks" an HList if it has only zero or one element(s).
@@ -31,8 +31,8 @@ sealed trait Unpack[L <: HList] {
   type Out
   def apply(hlist: L): Out
 }
+
 object Unpack extends AlternativeUnpacks {
-  import shapeless.::
 
   implicit def fromAux[L <: HList, Out0](implicit aux: Aux[L, Out0]) = new Unpack[L] {
     type Out = Out0
