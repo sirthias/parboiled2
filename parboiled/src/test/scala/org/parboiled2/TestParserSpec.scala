@@ -41,7 +41,7 @@ abstract class TestParserSpec extends Specification with NoToHtmlLinkFragments w
     def parse(input: String): Either[ParseError, Out] = {
       this.input = input
       import Parser.DeliveryScheme.Either
-      targetRule()
+      targetRule.run()
     }
   }
 }
