@@ -61,6 +61,8 @@ trait RuleDSLActions {
   }
 }
 
+//////////////////////////////// SUPPORTING TYPE-CLASSES ////////////////////////////////////
+
 /**
  * Lifts `T` into an HList.
  *   Out =

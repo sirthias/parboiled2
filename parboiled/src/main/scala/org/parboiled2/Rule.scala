@@ -71,7 +71,7 @@ object Rule {
   val Mismatched = new Rule0(false)
 
   implicit class Runnable[L <: HList](rule: RuleN[L]) {
-    def apply(): Parser.Result[L] = macro Parser.runImpl[L]
+    def apply()(implicit strategy: ParseError.Strategy[L]): strategy.Result = macro Parser.runImpl[L]
   }
 }
 

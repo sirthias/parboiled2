@@ -20,7 +20,7 @@ import scala.reflect.macros.Context
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
 import shapeless._
-import scala.util.control.NoStackTrace
+import scala.util.control.{ NonFatal, NoStackTrace }
 
 abstract class Parser(initialValueStackSize: Int = 32,
                       maxValueStackSize: Int = 1024) extends RuleDSL {
@@ -120,7 +120,7 @@ abstract class Parser(initialValueStackSize: Int = 32,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __run[L <: HList](rule: ⇒ RuleN[L]): Result[L] = {
+  def __run[L <: HList](rule: ⇒ RuleN[L])(implicit strategy: ParseError.Strategy[L]): strategy.Result = {
     def runRule(errorRuleStackIx: Int = -1): Boolean = {
       _cursor = -1
       __advance()
@@ -149,11 +149,15 @@ abstract class Parser(initialValueStackSize: Int = 32,
       else buildParseError(errorRuleIx + 1, traces += RuleTrace(ruleFrames.toVector))
     }
 
-    maxCursor = -1
-    if (runRule())
-      Right(valueStack.toHList[L]())
-    else
-      Left(buildParseError())
+    try {
+      maxCursor = -1
+      if (runRule())
+        strategy.success(valueStack.toHList[L]())
+      else
+        strategy.parseError(buildParseError())
+    } catch {
+      case NonFatal(e) ⇒ strategy.failure(e)
+    }
   }
 
   /**
@@ -214,16 +218,14 @@ abstract class Parser(initialValueStackSize: Int = 32,
 object Parser {
   class Mark private[Parser] (val value: Long) extends AnyVal
 
-  // TODO: please everyone all the time
-  type Result[L <: HList] = Either[ParseError, L]
-
   type RunnableRuleContext[L <: HList] = Context { type PrefixType = Rule.Runnable[L] }
 
-  def runImpl[L <: HList: ctx.WeakTypeTag](ctx: RunnableRuleContext[L])(): ctx.Expr[Result[L]] = {
-    import ctx.universe._
-    ctx.prefix.tree match {
-      case q"parboiled2.this.Rule.Runnable[$l]($parser.$rule)" ⇒ ctx.Expr[Result[L]](q"$parser.__run[$l]($parser.$rule)")
-      case x ⇒ ctx.abort(x.pos, "Illegal `run` call: " + show(x))
+  def runImpl[L <: HList: c.WeakTypeTag](c: RunnableRuleContext[L])()(strategy: c.Expr[ParseError.Strategy[L]]): c.Expr[strategy.value.Result] = {
+    import c.universe._
+    c.prefix.tree match {
+      case q"parboiled2.this.Rule.Runnable[$l]($parser.$rule)" ⇒
+        c.Expr[strategy.value.Result](q"$parser.__run[$l]($parser.$rule)($strategy)")
+      case x ⇒ c.abort(x.pos, "Illegal `Runnable.apply` call: " + show(x))
     }
   }
 

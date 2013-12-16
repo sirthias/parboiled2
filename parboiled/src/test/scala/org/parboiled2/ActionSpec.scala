@@ -24,10 +24,10 @@ class ActionSpec extends TestParserSpec {
 
     "`capture`" in new TestParser1[String] {
       def targetRule = rule { 'a' ~ capture(zeroOrMore('b')) ~ EOI }
-      "a" must beMatchedWith1("")
+      "a" must beMatchedWith("")
       "b" must beMismatched
-      "ab" must beMatchedWith1("b")
-      "abb" must beMatchedWith1("bb")
+      "ab" must beMatchedWith("b")
+      "abb" must beMatchedWith("bb")
     }
 
     "`test`" in new TestParser0 {
@@ -47,10 +47,10 @@ class ActionSpec extends TestParserSpec {
 
     "`push` simple value" in new TestParser1[String] {
       def targetRule = rule { 'x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI }
-      "xy" must beMatchedWith1("yeah")
+      "xy" must beMatchedWith("yeah")
     }
 
-    "`push` HList" in new TestParser[Int :: Double :: Long :: String :: HNil] {
+    "`push` HList" in new TestParserN[Int :: Double :: Long :: String :: HNil] {
       def targetRule = rule { 'x' ~ push(42 :: 3.14 :: HNil) ~ push(0L :: "yeah" :: HNil) ~ EOI }
       "x" must beMatchedWith(42 :: 3.14 :: 0L :: "yeah" :: HNil)
       "y" must beMismatched
@@ -61,37 +61,37 @@ class ActionSpec extends TestParserSpec {
     "`~>` producing `Unit`" in new TestParser1[Int] {
       def testRule = rule { push(1 :: "X" :: HNil) ~> (_ ⇒ ()) }
       def targetRule = testRule
-      "" must beMatchedWith1(1)
+      "" must beMatchedWith(1)
     }
 
     "`~>` producing case class (simple notation)" in new TestParser1[Foo] {
       def targetRule = rule { push(1 :: "X" :: HNil) ~> Foo }
-      "" must beMatchedWith1(Foo(1, "X"))
+      "" must beMatchedWith(Foo(1, "X"))
     }
 
     "`~>` full take" in new TestParser1[Foo] {
       def testRule = rule { push(1 :: "X" :: HNil) ~> (Foo(_, _)) }
       def targetRule = testRule
-      "" must beMatchedWith1(Foo(1, "X"))
+      "" must beMatchedWith(Foo(1, "X"))
     }
 
     "`~>` partial take" in new TestParser1[Foo] {
       def testRule = rule { push(1) ~> (Foo(_, "X")) }
       def targetRule = testRule
-      "" must beMatchedWith1(Foo(1, "X"))
+      "" must beMatchedWith(Foo(1, "X"))
     }
 
-    "`~>` producing HList" in new TestParser[String :: Int :: Double :: HNil] {
+    "`~>` producing HList" in new TestParserN[String :: Int :: Double :: HNil] {
       def testRule = rule { capture("x") ~> (_ :: 1 :: 3.0 :: HNil) }
       def targetRule = testRule
       "x" must beMatchedWith("x" :: 1 :: 3.0 :: HNil)
     }
 
-    "`~>` with a statement block" in new TestParser[Char :: HNil] {
+    "`~>` with a statement block" in new TestParser1[Char] {
       var captured = ' '
       def testRule = rule { capture("x") ~> { x ⇒ captured = x.head; cursorChar } }
       def targetRule = testRule
-      "xy" must beMatchedWith1('y')
+      "xy" must beMatchedWith('y')
       captured === 'x'
     }
 
@@ -106,7 +106,7 @@ class ActionSpec extends TestParserSpec {
       def testRule = rule { capture("x") ~> (capture(_)) ~ EOI }
       def targetRule = testRule
       "x" must beMismatched
-      "xx" must beMatchedWith1("x")
+      "xx" must beMatchedWith("x")
     }
   }
 }

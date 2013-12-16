@@ -17,8 +17,44 @@
 package org.parboiled2
 
 import CharUtils.escape
+import scala.util.{ Failure, Success, Try }
+import shapeless.{ HNil, HList }
 
-case class ParseError(position: Position, traces: Seq[RuleTrace])
+case class ParseError(position: Position, traces: Seq[RuleTrace]) extends RuntimeException
+
+object ParseError {
+  trait Strategy[L <: HList] {
+    type Result
+    def success(result: L): Result
+    def parseError(error: ParseError): Result
+    def failure(error: Throwable): Result
+  }
+  object Strategy extends AlternativeStrategies {
+    implicit def Try[L <: HList, Out0](implicit unpack: Unpack.Aux[L, Out0]) =
+      new Strategy[L] {
+        type Result = Try[Out0]
+        def success(result: L) = Success(unpack(result))
+        def parseError(error: ParseError) = Failure(error)
+        def failure(error: Throwable) = Failure(error)
+      }
+  }
+  sealed abstract class AlternativeStrategies {
+    implicit def Either[L <: HList, Out0](implicit unpack: Unpack.Aux[L, Out0]) =
+      new Strategy[L] {
+        type Result = Either[ParseError, Out0]
+        def success(result: L) = Right(unpack(result))
+        def parseError(error: ParseError) = Left(error)
+        def failure(error: Throwable) = throw error
+      }
+    implicit def Throw[L <: HList, Out0](implicit unpack: Unpack.Aux[L, Out0]) =
+      new Strategy[L] {
+        type Result = Out0
+        def success(result: L) = unpack(result)
+        def parseError(error: ParseError) = throw error
+        def failure(error: Throwable) = throw error
+      }
+  }
+}
 
 case class Position(index: Int, line: Int, column: Int)
 
@@ -97,3 +133,54 @@ object RuleFrame {
       case Capture | Run | Push | Action ⇒ frame.toString
     }
 }
+
+//////////////////////////////// SUPPORTING TYPE-CLASSES ////////////////////////////////////
+
+/**
+ * "Unpacks" an HList if it has only zero or one element(s).
+ *   Out =
+ *     Unit  if L == HNil
+ *     T     if L == T :: HNil
+ *     L     otherwise
+ *
+ *  You can `import Unpack.dontUnpack` if you'd like to circumvent this unpacking logic.
+ */
+sealed trait Unpack[L <: HList] {
+  type Out
+  def apply(hlist: L): Out
+}
+object Unpack extends AlternativeUnpacks {
+  import shapeless.::
+
+  implicit def fromAux[L <: HList, Out0](implicit aux: Aux[L, Out0]) = new Unpack[L] {
+    type Out = Out0
+    def apply(hlist: L) = aux(hlist)
+  }
+
+  sealed trait Aux[L <: HList, Out0] {
+    def apply(hlist: L): Out0
+  }
+
+  object Aux {
+    implicit object hnil extends Aux[HNil, Unit] {
+      def apply(hlist: HNil): Unit = ()
+    }
+    private object SingleUnpack extends Aux[Any :: HList, Any] {
+      def apply(hlist: Any :: HList): Any = hlist.head
+    }
+    implicit def single[T]: Aux[T :: HNil, T] = SingleUnpack.asInstanceOf[Aux[T :: HNil, T]]
+  }
+}
+
+sealed abstract class AlternativeUnpacks {
+  private object DontUnpack extends Unpack.Aux[HList, HList] {
+    def apply(hlist: HList): HList = hlist
+  }
+
+  /**
+   * Import if you'd like to *always* deliver the valueStack as an `HList`
+   * at the end of the parsing run, even if it has only zero or one element(s).
+   */
+  implicit def dontUnpack[L <: HList]: Unpack.Aux[L, L] = DontUnpack.asInstanceOf[Unpack.Aux[L, L]]
+}
+

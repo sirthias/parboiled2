@@ -48,14 +48,14 @@ class CalculatorSpec extends TestParserSpec {
     "successfully evaluate simple calculator expression" in new Calculator {
       def targetRule = InputLine
 
-      "1" must beMatchedWith1(1)
-      "1+2" must beMatchedWith1(3)
-      "1+2*3" must beMatchedWith1(7)
-      "1*2+3" must beMatchedWith1(5)
-      "1*(2+3)" must beMatchedWith1(5)
-      "10*((2+3))" must beMatchedWith1(50)
-      "(2+3)*(80-60)" must beMatchedWith1(100)
-      "2*8/2+16/16-16/(1+3)" must beMatchedWith1(5)
+      "1" must beMatchedWith(1)
+      "1+2" must beMatchedWith(3)
+      "1+2*3" must beMatchedWith(7)
+      "1*2+3" must beMatchedWith(5)
+      "1*(2+3)" must beMatchedWith(5)
+      "10*((2+3))" must beMatchedWith(50)
+      "(2+3)*(80-60)" must beMatchedWith(100)
+      "2*8/2+16/16-16/(1+3)" must beMatchedWith(5)
 
       "*1" must beMismatchedWithErrorMsg(
         """Invalid input '*', expected Digit or '(' (line 1, column 1):

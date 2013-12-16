@@ -87,6 +87,8 @@ trait RuleDSLCombinators {
   }
 }
 
+//////////////////////////////// SUPPORTING TYPE-CLASSES ////////////////////////////////////
+
 sealed trait Lifter[M[_], I <: HList, O <: HList] { type In <: HList; type Out <: HList }
 object Lifter extends LowerPriorityLifter {
   implicit def forRule0[M[_]] = new Lifter[M, HNil, HNil] { type In = HNil; type Out = HNil }
