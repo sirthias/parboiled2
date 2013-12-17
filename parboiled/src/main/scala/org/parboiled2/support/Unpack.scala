@@ -43,26 +43,25 @@ object Unpack extends AlternativeUnpacks {
     def apply(hlist: L): Out0
   }
 
-  object Aux {
-    implicit object hnil extends Aux[HNil, Unit] {
-      def apply(hlist: HNil): Unit = ()
-    }
-    private object SingleUnpack extends Aux[Any :: HList, Any] {
-      def apply(hlist: Any :: HList): Any = hlist.head
-    }
-    implicit def single[T]: Aux[T :: HNil, T] = SingleUnpack.asInstanceOf[Aux[T :: HNil, T]]
+  implicit def hnil[L <: HNil]: Aux[L, Unit] = HNilUnpack.asInstanceOf[Aux[L, Unit]]
+  implicit object HNilUnpack extends Aux[HNil, Unit] {
+    def apply(hlist: HNil): Unit = ()
+  }
+
+  implicit def single[T]: Aux[T :: HNil, T] = SingleUnpack.asInstanceOf[Aux[T :: HNil, T]]
+  private object SingleUnpack extends Aux[Any :: HList, Any] {
+    def apply(hlist: Any :: HList): Any = hlist.head
   }
 }
 
 sealed abstract class AlternativeUnpacks {
-  private object DontUnpack extends Unpack.Aux[HList, HList] {
-    def apply(hlist: HList): HList = hlist
-  }
-
   /**
    * Import if you'd like to *always* deliver the valueStack as an `HList`
    * at the end of the parsing run, even if it has only zero or one element(s).
    */
   implicit def dontUnpack[L <: HList]: Unpack.Aux[L, L] = DontUnpack.asInstanceOf[Unpack.Aux[L, L]]
+  private object DontUnpack extends Unpack.Aux[HList, HList] {
+    def apply(hlist: HList): HList = hlist
+  }
 }
 
