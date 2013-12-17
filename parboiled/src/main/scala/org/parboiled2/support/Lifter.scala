@@ -16,8 +16,11 @@
 
 package org.parboiled2.support
 
+import scala.annotation.implicitNotFound
 import shapeless._
 
+@implicitNotFound("The `optional`, `zeroOrMore`, `oneOrMore` and `times` modifiers " +
+  "can only be used on rules of type `Rule0`, `Rule1[T]Rule[I, O]` and `Rule[I, O <: I]`!")
 sealed trait Lifter[M[_], I <: HList, O <: HList] { type In <: HList; type Out <: HList }
 
 object Lifter extends LowerPriorityLifter {
