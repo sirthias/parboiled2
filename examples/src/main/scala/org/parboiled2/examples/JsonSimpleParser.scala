@@ -29,7 +29,7 @@ import scala.annotation.tailrec
 import shapeless._
 
 class JsonSimpleParser(val input: ParserInput) extends Parser {
-  def InputLine = rule { Object ~ EOI }
+  def InputLine: Rule1[JSonObject] = rule { Object ~ EOI }
 
   def Object = rule {
     ("{" ~ optional(Members) ~ "}") ~>
@@ -87,9 +87,9 @@ object JsonSimpleParser {
     val inputLine = readLine("--------------------------------------\nEnter expression for JSon simple parser (v2) > ")
     if (inputLine != "") {
       val jsonSimpleParser = new JsonSimpleParser(inputLine)
-      jsonSimpleParser.run(_.InputLine) match {
-        case Right(x)  ⇒ println(s"Expression is valid. Result: ${x}. Pretty-printed: ${prettyPrint(x.head)}")
-        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}\n")
+      jsonSimpleParser.InputLine() match {
+        case Right(x)  ⇒ println(s"Expression is valid. Result: $x. Pretty-printed: ${prettyPrint(x.head)}")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${jsonSimpleParser.formatError(err)}\n")
       }
       repl()
     }

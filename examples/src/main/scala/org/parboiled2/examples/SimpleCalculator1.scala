@@ -18,10 +18,9 @@ package org.parboiled2.examples
 
 import org.parboiled2._
 import scala.annotation.tailrec
-import shapeless._
 
 class SimpleCalculator1(val input: ParserInput) extends Parser {
-  def InputLine = rule { Expression ~ EOI }
+  def InputLine: Rule1[Int] = rule { Expression ~ EOI }
 
   def Expression: Rule1[Int] = rule {
     Term ~ zeroOrMore(
@@ -52,9 +51,9 @@ object SimpleCalculator1 {
     val inputLine = readLine("--------------------------------------\nEnter expression for calculator (v2) > ")
     if (inputLine != "") {
       val simpleCalc = new SimpleCalculator1(inputLine)
-      simpleCalc.run(_.InputLine) match {
-        case Right(x)  ⇒ println(s"Expression is valid. Result: ${x}")
-        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
+      simpleCalc.InputLine() match {
+        case Right(x)  ⇒ println(s"Expression is valid. Result: $x")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${simpleCalc.formatError(err)}")
       }
       repl()
     }

@@ -18,13 +18,12 @@ package org.parboiled2.examples
 
 import org.parboiled2._
 import scala.annotation.tailrec
-import shapeless._
 
 // `The classic non-context-free language <http://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples>`_
 // .. math:: \{ a^n b^n c^n : n \ge 1 \}
 
 class ABCParser(val input: ParserInput) extends Parser {
-  def InputLine = rule { &(A ~ "c") ~ oneOrMore("a") ~ B ~ !("a" | "b" | "c") ~ EOI }
+  def InputLine: Rule0 = rule { &(A ~ "c") ~ oneOrMore("a") ~ B ~ !("a" | "b" | "c") ~ EOI }
 
   def A: Rule0 = rule { "a" ~ optional(A) ~ "b" }
 
@@ -37,9 +36,9 @@ object ABCParser {
     val inputLine = readLine("--------------------------------------\nEnter expression for abc-parser (v2) > ")
     if (inputLine != "") {
       val abcParser = new ABCParser(inputLine)
-      abcParser.run(_.InputLine) match {
+      abcParser.InputLine() match {
         case Right(_)  ⇒ println("Expression is valid")
-        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
+        case Left(err) ⇒ println(s"Expression is not valid. Error: ${abcParser.formatError(err)}")
       }
       repl()
     }

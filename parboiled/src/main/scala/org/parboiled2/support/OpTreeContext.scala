@@ -183,12 +183,18 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  def IgnoreCase(argTree: Tree): OpTree =
-    argTree.tpe.typeSymbol.name.toString match { // TODO: can we do better than this toString?
-      case "Char"   ⇒ IgnoreCaseChar(argTree)
-      case "String" ⇒ IgnoreCaseString(argTree)
-      case x        ⇒ c.abort(argTree.pos, "Unexpected `ignoreCase` argument type: " + x)
+  def IgnoreCase(argTree: Tree): OpTree = {
+    def abort() = c.abort(argTree.pos, "Unexpected `ignoreCase` argument type: " + argTree.tpe)
+    argTree.tpe match {
+      case ConstantType(x) ⇒
+        x.value match {
+          case _: Char   ⇒ IgnoreCaseChar(argTree)
+          case _: String ⇒ IgnoreCaseString(argTree)
+          case _         ⇒ abort()
+        }
+      case x ⇒ abort()
     }
+  }
 
   case class IgnoreCaseChar(charTree: Tree) extends OpTree {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.CharMatch(c.Expr[Char](charTree).splice))
@@ -585,9 +591,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
               case Block(exps, rs) ⇒ (exps, rs)
               case x               ⇒ (Nil, x)
             }
-            val resExpr = actionType.last.toString match { // TODO: can we do better than this toString?
-              case x if x startsWith "org.parboiled2.Rule" ⇒ OpTree(res).render()
-              case x                                       ⇒ PushAction(res).render()
+            val resExpr = actionType.last match {
+              case TypeRef(_, sym, _) if sym.fullName.startsWith("org.parboiled2.Rule") ⇒ OpTree(res).render()
+              case _ ⇒ PushAction(res).render()
             }
             Block(popToVals(args.map(_.name)) ::: expressions, resExpr.tree)
         }
