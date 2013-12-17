@@ -1,7 +1,7 @@
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
-val commonSettings = scalariformSettings ++ Seq(
+val commonSettings = Seq(
   version := "2.0.0-SNAPSHOT",
   scalaVersion := "2.10.3",
   organization := "parboiled.org",
@@ -20,14 +20,15 @@ val commonSettings = scalariformSettings ++ Seq(
     "-Xlog-reflective-calls"
   ),
   resolvers ++= Seq(Resolver.sonatypeRepo("snapshots"), Resolver.sonatypeRepo("releases")),
+  shellPrompt := { s => Project.extract(s).currentProject.id + " > " })
+
+val formattingSettings = scalariformSettings ++ Seq(
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(RewriteArrowSymbols, true)
     .setPreference(AlignParameters, true)
     .setPreference(AlignSingleLineCaseStatements, true)
     .setPreference(DoubleIndentClassDeclaration, true)
-    .setPreference(PreserveDanglingCloseParenthesis, true),
-  shellPrompt := { s => Project.extract(s).currentProject.id + " > " }
-)
+    .setPreference(PreserveDanglingCloseParenthesis, true))
 
 val publishingSettings = Seq(
   publishMavenStyle := true,
@@ -59,6 +60,7 @@ val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.6"    % "test"
 
 lazy val parboiled = project
   .settings(commonSettings: _*)
+  .settings(formattingSettings: _*)
   .settings(publishingSettings: _*)
   .settings(
     addCompilerPlugin("org.scala-lang.plugins" % "macro-paradise" % "2.0.0-SNAPSHOT" cross CrossVersion.full),
@@ -68,4 +70,10 @@ lazy val parboiled = project
 lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
-  .settings(libraryDependencies ++= Seq(shapeless))
+  .settings(cappiSettings: _*)
+  .settings(libraryDependencies ++= Seq(
+    specs2,
+    "io.spray" %%  "spray-json" % "1.2.5",
+    "org.json4s" %% "json4s-native" % "3.2.6",
+    "org.json4s" %% "json4s-jackson" % "3.2.6"
+  ))

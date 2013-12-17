@@ -20,26 +20,7 @@ import scala.annotation.tailrec
 import scala.util.{ Success, Failure }
 import org.parboiled2._
 
-// `The classic non-context-free language <http://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples>`_
-// .. math:: \{ a^n b^n c^n : n \ge 1 \}
-
-class ABCParser(val input: ParserInput) extends Parser {
-
-  def InputLine = rule {
-    &(A ~ 'c') ~ oneOrMore('a') ~ B ~ !(ch('a') | 'b' | 'c') ~ EOI
-  }
-
-  def A: Rule0 = rule {
-    'a' ~ optional(A) ~ 'b'
-  }
-
-  def B: Rule0 = rule {
-    'b' ~ optional(B) ~ 'c'
-  }
-}
-
 object ABCParser extends App {
-
   repl()
 
   @tailrec
@@ -55,4 +36,26 @@ object ABCParser extends App {
         }
         repl()
     }
+}
+
+/**
+ * This parser reads the classic non-context-free language:
+ *
+ *     a^n b^n c^n (for n > 1)
+ *
+ * See also: http://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples
+ */
+class ABCParser(val input: ParserInput) extends Parser {
+
+  def InputLine = rule {
+    &(A ~ 'c') ~ oneOrMore('a') ~ B ~ !(ch('a') | 'b' | 'c') ~ EOI
+  }
+
+  def A: Rule0 = rule {
+    'a' ~ optional(A) ~ 'b'
+  }
+
+  def B: Rule0 = rule {
+    'b' ~ optional(B) ~ 'c'
+  }
 }
