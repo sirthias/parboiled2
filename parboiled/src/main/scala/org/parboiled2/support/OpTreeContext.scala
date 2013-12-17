@@ -24,10 +24,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
   import c.universe._
 
-  abstract class OpTree {
+  sealed trait OpTree {
     def ruleFrame: Expr[RuleFrame.Anonymous]
     def render(ruleName: String = ""): Expr[RuleX]
   }
+
   def OpTree(tree: Tree): OpTree = {
     def collector(lifterTree: Tree): Collector =
       lifterTree match {
@@ -68,7 +69,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
           case "oneOrMore"  ⇒ OneOrMore(op, coll, separator)
           case "times"      ⇒ Times(base, op, coll, separator)
-          case _            ⇒ c.abort(tree.pos, "Unexpected Rule.Repeated fun: " + fun)
+          case _            ⇒ c.abort(tree.pos, "Unexpected Repeated fun: " + fun)
         }
 
       case _ ⇒ c.abort(tree.pos, "Invalid rule definition: " + tree)
@@ -183,12 +184,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  def IgnoreCase(argTree: Tree): OpTree =
-    argTree.tpe.typeSymbol.name.toString match { // TODO: can we do better than this toString?
-      case "Char"   ⇒ IgnoreCaseChar(argTree)
-      case "String" ⇒ IgnoreCaseString(argTree)
-      case x        ⇒ c.abort(argTree.pos, "Unexpected `ignoreCase` argument type: " + x)
-    }
+  def IgnoreCase(argTree: Tree): OpTree = {
+    val argTypeSymbol = argTree.tpe.typeSymbol
+    if (argTypeSymbol == definitions.CharClass) IgnoreCaseChar(argTree)
+    else if (argTypeSymbol == definitions.StringClass) IgnoreCaseString(argTree)
+    else c.abort(argTree.pos, "Unexpected `ignoreCase` argument type: " + argTypeSymbol)
+  }
 
   case class IgnoreCaseChar(charTree: Tree) extends OpTree {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.CharMatch(c.Expr[Char](charTree).splice))
@@ -585,11 +586,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
               case Block(exps, rs) ⇒ (exps, rs)
               case x               ⇒ (Nil, x)
             }
-            val resExpr = actionType.last.toString match { // TODO: can we do better than this toString?
-              case x if x startsWith "org.parboiled2.Rule" ⇒ OpTree(res).render()
-              case x                                       ⇒ PushAction(res).render()
-            }
-            Block(popToVals(args.map(_.name)) ::: expressions, resExpr.tree)
+            val resOpTree = if (actionType.last.typeSymbol == ruleTypeSymbol) OpTree(res) else PushAction(res)
+            Block(popToVals(args.map(_.name)) ::: expressions, resOpTree.render().tree)
         }
 
       reify {
@@ -625,4 +623,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   lazy val emptySeparator = new Separator(c.literalTrue)
 
   def Separator(op: OpTree) = new Separator(reify(op.render().splice.matched))
+
+  lazy val ruleTypeSymbol = c.mirror.staticClass("org.parboiled2.Rule")
 }
