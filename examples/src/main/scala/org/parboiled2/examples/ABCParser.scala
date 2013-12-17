@@ -16,36 +16,43 @@
 
 package org.parboiled2.examples
 
-import org.parboiled2._
 import scala.annotation.tailrec
-import shapeless._
+import scala.util.{ Success, Failure }
+import org.parboiled2._
 
 // `The classic non-context-free language <http://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples>`_
 // .. math:: \{ a^n b^n c^n : n \ge 1 \}
 
 class ABCParser(val input: ParserInput) extends Parser {
-  def InputLine = rule { &(A ~ "c") ~ oneOrMore("a") ~ B ~ !("a" | "b" | "c") ~ EOI }
 
-  def A: Rule0 = rule { "a" ~ optional(A) ~ "b" }
+  def InputLine = rule {
+    &(A ~ 'c') ~ oneOrMore('a') ~ B ~ !(ch('a') | 'b' | 'c') ~ EOI
+  }
 
-  def B: Rule0 = rule { "b" ~ optional(B) ~ "c" }
+  def A: Rule0 = rule {
+    'a' ~ optional(A) ~ 'b'
+  }
+
+  def B: Rule0 = rule {
+    'b' ~ optional(B) ~ 'c'
+  }
 }
 
-object ABCParser {
-  @tailrec
-  def repl(): Unit = {
-    val inputLine = readLine("--------------------------------------\nEnter expression for abc-parser (v2) > ")
-    if (inputLine != "") {
-      val abcParser = new ABCParser(inputLine)
-      abcParser.run(_.InputLine) match {
-        case Right(_)  ⇒ println("Expression is valid")
-        case Left(err) ⇒ println(s"Expression is not valid. Error: ${ErrorUtils.formatError(inputLine, err)}")
-      }
-      repl()
-    }
-  }
+object ABCParser extends App {
 
-  def main(args: Array[String]): Unit = {
-    repl()
-  }
+  repl()
+
+  @tailrec
+  def repl(): Unit =
+    readLine("---\nEnter expression for abc-parser > ") match {
+      case "" ⇒
+      case line ⇒
+        val parser = new ABCParser(line)
+        parser.InputLine.run() match {
+          case Success(_)             ⇒ println("Expression is valid")
+          case Failure(e: ParseError) ⇒ println("Expression is not valid: " + parser.formatError(e))
+          case Failure(e)             ⇒ println(s"Unexpected error during parsing run: " + e)
+        }
+        repl()
+    }
 }
