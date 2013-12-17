@@ -33,10 +33,10 @@ sealed abstract class CharPredicate extends (Char ⇒ Boolean) {
 
   def intersect(that: CharPredicate): CharPredicate
 
-  def unary_!(): CharPredicate = this match {
+  def negated: CharPredicate = this match {
     case Empty ⇒ All
     case All   ⇒ Empty
-    case _     ⇒ from(c ⇒ !this(c))
+    case x     ⇒ from(c ⇒ !x(c))
   }
 
   def matchesAny(string: String): Boolean = {
@@ -90,6 +90,7 @@ object CharPredicate {
   val UpperAlpha = CharPredicate('A' to 'Z')
   val Alpha = LowerAlpha ++ UpperAlpha
   val Digit = CharPredicate('0' to '9')
+  val Digit19 = CharPredicate('1' to '9')
   val AlphaNum = Alpha ++ Digit
   val LowerHexLetter = CharPredicate('a' to 'f')
   val UpperHexLetter = CharPredicate('A' to 'F')

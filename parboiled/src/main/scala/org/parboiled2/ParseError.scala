@@ -56,7 +56,7 @@ object RuleFrame {
   case class StringMatch(string: String) extends Anonymous
   case class IgnoreCaseChar(char: Char) extends Anonymous
   case class IgnoreCaseString(string: String) extends Anonymous
-  case class CharPredicateMatch(predicate: CharPredicate) extends Anonymous
+  case class CharPredicateMatch(predicate: CharPredicate, name: String) extends Anonymous
   case class AnyOf(string: String) extends Anonymous
   case class Times(min: Int, max: Int) extends Anonymous
   case class RuleCall(callee: String) extends Anonymous
@@ -82,7 +82,7 @@ object RuleFrame {
       case StringMatch(s)                ⇒ '"' + escape(s) + '"'
       case IgnoreCaseChar(c)             ⇒ "'" + escape(c) + '\''
       case IgnoreCaseString(s)           ⇒ '"' + escape(s) + '"'
-      case CharPredicateMatch(_)         ⇒ "<anon predicate>"
+      case CharPredicateMatch(_, name)   ⇒ if (name.nonEmpty) name else "<anon predicate>"
       case RuleCall(callee)              ⇒ '(' + callee + ')'
       case AnyOf(s)                      ⇒ '[' + escape(s) + ']'
       case Times(_, _)                   ⇒ "times"

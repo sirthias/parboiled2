@@ -268,7 +268,7 @@ object Parser {
     import c.universe._
     c.prefix.tree match {
       case q"parboiled2.this.Rule.Runnable[$l]($parser.$rule)" ⇒
-        c.Expr[scheme.value.Result](q"$parser.__run[$l]($parser.$rule)($scheme)")
+        c.Expr[scheme.value.Result](q"val __p__ = $parser; __p__.__run[$l](__p__.$rule)($scheme)")
       case x ⇒ c.abort(x.pos, "Illegal `Runnable.apply` call: " + show(x))
     }
   }

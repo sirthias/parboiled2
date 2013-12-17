@@ -238,11 +238,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   case class CharPredicateMatch(predicateTree: Tree) extends OpTree {
     def predicateName = predicateTree match {
-      case q"$a.$name" ⇒ name.toString
-      case _           ⇒ ""
+      case Select(_, name) ⇒ name.toString
+      case Ident(name)     ⇒ name.toString
+      case _               ⇒ ""
     }
     def ruleFrame: Expr[RuleFrame.Anonymous] =
-      reify(RuleFrame.CharPredicateMatch(c.Expr[CharPredicate](predicateTree).splice))
+      reify(RuleFrame.CharPredicateMatch(c.Expr[CharPredicate](predicateTree).splice, c.literal(predicateName).splice))
     def render(ruleName: String): Expr[RuleX] = reify {
       val predicate = c.Expr[CharPredicate](predicateTree).splice
       try {
@@ -256,8 +257,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         }
       } catch {
         case e: Parser.CollectingRuleStackException ⇒
-          val name = c.literal(if (ruleName.isEmpty) predicateName else ruleName).splice
-          e.save(RuleFrame(RuleFrame.CharPredicateMatch(predicate), name))
+          e.save(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice))
       }
     }
   }
@@ -575,10 +575,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         tree match {
           case Block(statements, res) ⇒ Block(statements, actionBody(res))
 
-          case ident: Ident ⇒
+          case x @ (Ident(_) | Select(_, _)) ⇒
             val valNames: List[TermName] = argTypes.indices.map { i ⇒ newTermName("value" + i) }(collection.breakOut)
             val args = valNames map Ident.apply
-            Block(popToVals(valNames), PushAction(q"$ident(..$args)").render().tree)
+            Block(popToVals(valNames), PushAction(q"$x(..$args)").render().tree)
 
           case q"(..$args ⇒ $body)" ⇒
             val (expressions, res) = body match {
