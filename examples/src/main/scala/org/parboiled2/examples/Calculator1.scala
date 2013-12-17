@@ -32,7 +32,7 @@ object Calculator1 extends App {
         parser.InputLine.run() match {
           case Success(result)        => println("Result: " + result)
           case Failure(e: ParseError) => println("Expression is not valid: " + parser.formatError(e))
-          case Failure(e)             => println(s"Unexpected error during parsing run: " + e)
+          case Failure(e)             => println("Unexpected error during parsing run: " + e)
         }
         repl()
     }
