@@ -135,6 +135,7 @@ class CombinatorSpec extends TestParserSpec {
     "`&` modifier" in new TestParser0 {
       def targetRule = rule { &("a") }
       "a" must beMatched
+      cursor === 0
       "b" must beMismatched
       "" must beMismatched
     }
