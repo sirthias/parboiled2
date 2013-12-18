@@ -2,9 +2,9 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
 val commonSettings = Seq(
-  version := "2.0.0-SNAPSHOT",
+  version := "2.0-M1",
   scalaVersion := "2.10.3",
-  organization := "parboiled.org",
+  organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
   startYear := Some(2009),
@@ -78,7 +78,9 @@ lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
   .settings(cappiSettings: _*)
-  .settings(libraryDependencies ++= Seq(
+  .settings(
+    publishTo := None,
+    libraryDependencies ++= Seq(
     specs2,
     "io.spray" %%  "spray-json" % "1.2.5",
     "org.json4s" %% "json4s-native" % "3.2.6",
