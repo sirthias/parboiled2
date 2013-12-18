@@ -70,7 +70,7 @@ trait RuleDSLBasics {
   /**
    * Matches the EOI (end-of-input) character.
    */
-  def EOI = org.parboiled2.EOI
+  def EOI: Char = org.parboiled2.EOI
 
   /**
    * Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).

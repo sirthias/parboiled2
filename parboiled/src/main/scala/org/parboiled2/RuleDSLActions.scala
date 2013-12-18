@@ -35,7 +35,7 @@ trait RuleDSLActions {
    * rule matches otherwise it doesn't.
    */
   @compileTimeOnly("Calls to `test` must be inside `rule` macro")
-  def test(predicateResult: Boolean): Rule0 = `n/a`
+  def test(condition: Boolean): Rule0 = `n/a`
 
   /**
    * Simply runs the given block / expression. The valueStack is left untouched.

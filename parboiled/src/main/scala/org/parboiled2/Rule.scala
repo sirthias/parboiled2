@@ -40,18 +40,31 @@ sealed class Rule[-I <: HList, +O <: HList](val matched: Boolean) extends RuleX 
   // However, https://issues.scala-lang.org/browse/SI-6260 is quite a serious problem for this design,
   // so until this issue is fixed we better stick to this non-value-class-based model
 
-  // general concatenation of two rules,
-  // e.g. (using an abbreviated HList notation):
-  //   Rule[, A] ~ Rule[, B] = Rule[, A:B]
-  //   Rule[A:B:C, D:E:F] ~ Rule[F, G:H] = Rule[A:B:C, D:E:G:H]
-  //   Rule[A, B:C] ~ Rule[D:B:C, E:F] = Rule[D:A, E:F]
+  /**
+   * Concatenates this rule with the given other one.
+   * The resulting rule type is computed on a type-level.
+   * Here is an illustration (using an abbreviated HList notation):
+   *   Rule[, A] ~ Rule[, B] = Rule[, A:B]
+   *   Rule[A:B:C, D:E:F] ~ Rule[F, G:H] = Rule[A:B:C, D:E:G:H]
+   *   Rule[A, B:C] ~ Rule[D:B:C, E:F] = Rule[D:A, E:F]
+   */
   @compileTimeOnly("Calls to `~` must be inside `rule` macro")
   def ~[I2 <: HList, O2 <: HList](that: Rule[I2, O2])(implicit i: TailSwitch[I2, O @uncheckedVariance, I @uncheckedVariance],
                                                       o: TailSwitch[O @uncheckedVariance, I2, O2]): Rule[i.Out, o.Out] = `n/a`
 
+  /**
+   * Combines this rule with the given other one in a way that the resulting rule matches if this rule matches
+   * or the other one matches. If this rule doesn't match the parser is reset and the given alternative tried.
+   * This operators therefore implements the "ordered choice' PEG combinator.
+   */
   @compileTimeOnly("Calls to `|` must be inside `rule` macro")
   def |[I2 <: I, O2 >: O <: HList](that: Rule[I2, O2]): Rule[I2, O2] = `n/a`
 
+  /**
+   * Creates a "negative syntactic predicate", i.e. a rule that matches only if this rule mismatches and vice versa.
+   * The resulting rule doesn't cause the parser to make any progress (i.e. match any input) and also clears out all
+   * effects that the underlying rule might have had on the value stack.
+   */
   @compileTimeOnly("Calls to `unary_!` must be inside `rule` macro")
   def unary_!(): Rule0 = `n/a`
 }
