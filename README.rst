@@ -1,247 +1,869 @@
-*********************************************************
-`parboiled2`_: a Macro-Based PEG Parser Generator for Scala
-*********************************************************
+**parboiled2**  |--| A Macro-Based PEG Parser Generator for Scala 2.10+
 
-.. _parboiled2: https://github.com/sirthias/parboiled2
-
-Motivation
-==========
-
-Grammar-based parsing of text data is a ubiquitous problem in real-world applications. One popular technique for implementing parsers is parser combinators. However, even though it's comparatively easy to build a parser with combinators the end-result is logic that essentially "interprets" the grammar rules against the input, which is rather slow. Hand-writing a parser can yield a much faster implementation but is tedious and error-prone.
-
-It is possible to implement a parser defined via an embedded DSL that is translated into runnable code by the host language compiler at compile time. The macro support introduced with Scala 2.10 provides the required and sufficient infrastructure for such an endeavor.
-
-*parboiled2* is a next version of `parboiled`_ library. *parboiled2* is a Scala library that provides lightweight and modular way to build a parser of arbitrary input based on `parsing expression grammars <http://en.wikipedia.org/wiki/Parsing_expression_grammar>`_ (PEGs). *parboiled2* uses Scala 2.10 macros to implement a compile-time generator for highly efficient PEG parsers. Rule definition is based on the `parboiled DSL`_ embedded in Scala.
+.. contents:: Contents of this Document
 
 
-.. _parboiled: http://parboiled.org
+Introduction
+============
 
-.. _parboiled DSL: https://github.com/sirthias/parboiled/wiki/Rule-Construction-in-Scala
+*parboiled2* is a Scala 2.10+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
+arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
+runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
+bytecode.
+
+PEGs are an alternative to `Context-Free Grammars`_ (CFGs) for formally specifying syntax, they make a good replacement
+for regular expressions and have some advantages over the "traditional" way of building parsers via CFGs (like not
+needing a separate lexer/scanner phase).
+
+*parboiled2* is the successor of `parboiled 1.x`_ , which provides a similar capability (for Scala as well as Java) but
+does not actually *generate* a parser. Rather `parboiled 1.x`_ interprets a rule tree structure (which is also created
+via an internal DSL) against the input, which results in a much lower parsing performance.
+For more info on how `parboiled 1.x`_ and *parboiled2* compare see `parboiled2 vs. parboiled 1.x`_.
+You might also be interested in reading about `parboiled2 vs. Scala Parser Combinators`_ and
+`parboiled2 vs. Regular Expressions`_.
+
+.. _PEG:
+.. _Parsing Expression Grammars: http://en.wikipedia.org/wiki/Parsing_expression_grammar
+.. _Context-Free Grammars: http://en.wikipedia.org/wiki/Context-free_grammar
+.. _parboiled 1.x: http://parboiled.org
+
+
+Installation
+============
+
+The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into your SBT-based Scala project like this:
+
+.. code:: Scala
+
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.0-M1"
+
+The latest released version is **2.0-M1**.
+
+*parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
+(currently version 2.0.0-M1).
+
+Once on your classpath you can use this single import to bring everything you need into scope:
+
+.. code:: Scala
+
+    import org.parboiled2._
+
+.. _Maven Central: http://search.maven.org/
+.. _shapeless: https://github.com/milessabin/shapeless
+
+
+Example
+=======
+
+This is what a simple *parboiled2* parser looks like:
+
+.. code:: Scala
+
+    import org.parboiled2._
+
+    class Calculator(val input: ParserInput) extends Parser {
+      def InputLine = rule { Expression ~ EOI }
+
+      def Expression: Rule1[Int] = rule {
+        Term ~ zeroOrMore(
+          '+' ~ Term ~> ((_: Int) + _)
+        | '-' ~ Term ~> ((_: Int) - _))
+      }
+
+      def Term = rule {
+        Factor ~ zeroOrMore(
+          '*' ~ Factor ~> ((_: Int) * _)
+        | '/' ~ Factor ~> ((_: Int) / _))
+      }
+
+      def Factor = rule { Number | Parens }
+
+      def Parens = rule { '(' ~ Expression ~ ')' }
+
+      def Number = rule { capture(Digits) ~> (_.toInt) }
+
+      def Digits = rule { oneOrMore(CharPredicate.Digit) }
+    }
+
+    new Calculator("1+1").InputLine.run() // evaluates to `scala.util.Success(2)`
+
+This implements a parser for simple integer expressions like ``1+(2-3*4)/5`` and runs the actual calculation in-phase
+with the parser. If you'd like to see it run and try it out yourself check out `Running the Examples`_.
+
 
 Quick Start
 ===========
 
-Launching Simple Parser
+A *parboiled2* parser is a class deriving from ``org.parboiled2.Parser``, which defines one abstract member:
+
+.. code:: Scala
+
+    def input: ParserInput
+
+holding the input for the parsing run. Usually it is best implemented as a ``val`` parameter in the constructor
+(as shown in the Example_ above). As you can see from this design you need to (re-)create a new parser instance for
+every parsing run (parser instances are very lightweight).
+
+The "productions" (or "rules") of your grammar are then defined as simple methods, which in most cases consist of a
+single call to the ``rule`` macro whose argument is a `DSL expression`_ defining what input the rule is to match and
+what actions_ to perform.
+
+In order to run your parser against a given input you create a new instance and call ``run()`` on the top-level rule,
+e.g:
+
+.. code:: Scala
+
+    val parser = new MyParser(input)
+    parser.topLevelRule.run() // by default returns a `scala.util.Try`
+
+For more info on what options you have with regard to accessing the results of a parsing run check out the section
+on `Access to Parser Results`_.
+
+.. _DSL expression: `The Rule DSL`_
+.. _actions: `Parser Actions`_
+
+
+How the Parser matches Input
+============================
+
+PEG_ parsers are quite easy to understand as they work just like most people without a lot of background in parsing
+theory would build a parser "by hand": recursive-descent with backtracking. They have only one parsing phase (not two,
+like mosts parsers produced by traditional parser generators like ANTLR_), do not require any look-ahead and perform
+quite well in most real-world scenarios (although they *can* exhibit exponential runtime for certain pathological
+languages and inputs).
+
+A PEG_ parser consists of a number of rules that logically form a "tree", with one "root" rule at the top calling zero
+or more lower-level rules, which can each call other rules and so on. Since rules can also call themselves or any of
+their parents the rule "tree" is not really a tree but rather a potentially cyclic directed graph, but in most cases the
+tree structure dominates, which is why its useful to think of it as a tree with potential cycles.
+
+When a rule is executed against the current position in an input buffer it applies its specific matching logic to the
+input, which can either succeed or fail. In the success case the parser advances the input position (the *cursor*) and
+potentially executes the next rule. Otherwise, when the rule fails, the cursor is reset and the parser backtracks in
+search of another parsing alternative that might succeed.
+
+For example consider this simple *parboiled2* rule:
+
+.. code::
+
+    def foo = rule { 'a' ~ ('b' ~ 'c' | 'b' ~ 'd') }
+
+When this rule is confronted with the input ``abd`` the parser matches the input in these steps:
+
+1. Rule ``foo`` starts executing, which calls its first sub-rule ``'a'``. The cursor is at position 0.
+2. Rule ``'a'`` is executed against input position 0, matches (succeeds) and the cursor is advanced to position 1.
+3. Rule ``'b' ~ 'c' | 'b' ~ 'd'`` starts executing, which calls its first sub-rule ``'b' ~ 'c'``.
+4. Rule ``'b' ~ 'c'`` starts executing, which calls its first sub-rule ``'b'``.
+5. Rule ``'b'`` is executed against input position 1, matches (succeeds) and the cursor is advanced to position 2.
+6. Rule ``'c'`` is executed against input position 2 and mismatches (fails).
+7. Rule ``'b' ~ 'c' | 'b' ~ 'd'`` notices that its first sub-rule has failed, resets the cursor to position 1 and
+   calls its 2nd sub-rule ``'b' ~ 'd'``.
+8. Rule ``'b' ~ 'd'`` starts executing, which calls its first sub-rule ``'b'``.
+9. Rule ``'b'`` is executed against input position 1, matches and the cursor is advanced to position 2.
+10. Rule ``'d'`` is executed against input position 2, matches and the cursor is advanced to position 3.
+11. Rule ``'b' ~ 'd'`` completes successfully, as its last sub-rule has succeeded.
+12. Rule ``'b' ~ 'c' | 'b' ~ 'd'`` completes successfully, as one of its sub-rules has succeeded.
+13. Rule ``foo`` completes execution successfully, as its last sub-rule has succeeded.
+    The whole input "abd" was matched and the cursor is left at position 3 (after the last-matched character).
+
+.. _ANTLR: http://www.antlr.org/
+
+
+The Rule DSL
+============
+
+In order to work with *parboiled2* effectively you should understand the core concepts behind its rule DSL, mainly
+the "Value Stack" and how *parboiled2* encodes value stack operations in the Scala type system.
+
+
+Rule Types and the Value Stack
+------------------------------
+
+Apart from the input buffer and the cursor the parser manages another important structure: the "Value Stack".
+The value stack is a simple stack construct that serves as temporary storage for your `Parser Actions`_. In many cases
+it is used for constructing an AST_ during the parsing run but it can also be used for "in-phase" computations
+(like in the Example_ above) or for any other purpose.
+
+When a rule of a *parboiled2* parser executes it performs any combination of the following three things:
+
+- match input, i.e. advance the input cursor
+- operate on the value stack, i.e. pop values off and/or push values to the value stack
+- perform side-effects
+
+Matching input is done by calling `Basic Character Matching`_ rules, which do nothing but match input and advance
+the cursor. Value stack operations (and other potential side-effects) are performed by `Parser Actions`_.
+
+It is important to understand that rules in *parboiled2* (i.e. the rule methods in your parser class) do not directly
+return some custom value as a method result. Instead, all their consuming and producing values happens as side-effects
+to the value stack. Thereby the way that a rule interacts with value stack is encoded in the rule's type.
+
+This is the general definition of a *parboiled2* rule:
+
+.. code:: Scala
+
+    class Rule[-I <: HList, +O <: HList]
+
+This can look scary at first but is really quite simple. An ``HList`` is defined by shapeless_ and is essentially a type
+of list whose element number and element types are statically known at compile time. The ``I`` type parameter on
+``Rule`` encodes what values (the number and types) the rule pops off the value stack and the ``O`` type parameter
+encodes what values (the number and types) the rule then pushes onto the value stack.
+
+Luckily, in most cases, you won't have to work with these types directly as they can either be inferred or you can use
+one of these predefined aliases:
+
+.. code:: Scala
+
+    type Rule0 = RuleN[HNil]
+    type Rule1[T] = RuleN[T :: HNil]
+    type Rule2[A, B] = RuleN[A :: B :: HNil]
+    type RuleN[L <: HList] = Rule[HNil, L]
+    type PopRule[L <: HList] = Rule[L, HNil]
+
+Here is what these type aliases denote:
+
+Rule0
+    A rule that neither pops off nor pushes to the value stack, i.e. has no effect on the value stack whatsoever.
+    All `Basic Character Matching`_ rules are of this type.
+
+Rule1[T]
+    Pushes exactly one value of type ``T`` onto the value stack. After ``Rule0`` this is the second-most frequently
+    used rule type.
+
+Rule2[A, B]
+    Pushes exactly two values of types ``A`` and ``B`` onto the value stack.
+
+RuleN[L <: HList]
+    Pushes a number of values onto the value stack, which correspond to the given ``L <: HList`` type parameter.
+
+PopRule[L <: HList]
+    Pops a number of values off the value stack (corresponding to the given ``L <: HList`` type parameter) and does
+    not produce any new value itself.
+
+The rule DSL makes sure that the rule types are properly assembled and carried through your rule structure as you
+combine `Basic Character Matching`_  with `Rule Combinators and Modifiers`_ and `Parser Actions`_, so
+as long as you don't write any logic that circumvents the value stack your parser will be completely type-safe and
+the compiler will be able to catch you if you make mistakes by combining rules in an unsound way.
+
+.. _AST: http://en.wikipedia.org/wiki/Abstract_syntax_tree
+
+
+Basic Character Matching
+------------------------
+
+The following basic character matching rules are the only way to cause the parser to match actual input and
+"make progress". They are the "atomic" elements of the rule DSL which are then used by the
+`Rule Combinators and Modifiers`_ to form higher-level rules.
+
+----
+
+``implicit def ch(c: Char): Rule0``
+    ``Char`` values can be directly used in the rule DSL and match themselves. There is one notable case where you will
+    have to use the explicit ``ch`` wrapper: You cannot use the ``|`` operator directly on chars as it denotes the
+    built-in Scala binary "or" operator defined on numeric types (``Char`` is an unsigned 16-bit integer).
+    So rather than saying ``'a' | 'b'`` you will have to say ``ch('a') | 'b'``.
+
+----
+
+``implicit def str(s: String): Rule0``
+    ``String`` values can be directly used in the rule DSL and match themselves.
+
+----
+
+``implicit def predicate(p: CharPredicate): Rule0``
+    You can use ``org.parboiled2.CharPredicate`` values directly in the rule DSL. ``CharPredicate`` is an efficient
+    implementation of character sets and already comes with pre-defined character classes like ``CharPredicate.Digit``
+    or ``CharPredicate.LowerHexLetter``.
+
+----
+
+``def anyOf(chars: String): Rule0``
+    This constructs a ``Rule0`` which matches any of the given strings characters.
+
+----
+
+``def ignoreCase(c: Char): Rule0``
+    Matches the given single character case insensitively.
+    Note: **The given character must be specified in lower-case!** This requirement is currently NOT enforced!
+
+----
+
+``def ignoreCase(s: String): Rule0``
+    Matches the given string of characters case insensitively.
+    Note: **The given string must be specified in all lower-case!** This requirement is currently NOT enforced!
+
+----
+
+``def ANY: Rule0``
+    Matches any character except *EOI* (end-of-input).
+
+----
+
+``def EOI: Char``
+    The *EOI* (end-of-input) character, which is a virtual character that the parser "appends" after the last
+    character of the actual input.
+
+----
+
+``def EMPTY: Rule0``
+    Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
+
+----
+
+``def NOTHING: Rule0``
+    A rule that always fails.
+
+
+Rule Combinators and Modifiers
+------------------------------
+
+Rules can be freely combined/modified with these operations:
+
+----
+
+a ~ b
+    Two rules ``a`` and ``b`` can be combined with the ``~`` operator resulting in a rule that only matches if first
+    ``a`` matches and then ``b`` matches. The computation of the resulting rule type is somewhat involved.
+    Here is an illustration (using an abbreviated HList notation):
+
+    ====================== ==================== ========================
+    a                      b                    a ~ b
+    ====================== ==================== ========================
+    ``Rule[, A]``          ``Rule[, B]``        ``Rule[, A:B]``
+    ``Rule[A:B:C, D:E:F]`` ``Rule[F, G:H]``     ``Rule[A:B:C, D:E:G:H]``
+    ``Rule[A, B:C]``       ``Rule[D:B:C, E:F]`` ``Rule[D:A, E:F]``
+    ====================== ==================== ========================
+
+----
+
+a | b
+    Two rules ``a`` and ``b`` can be combined with the ``|`` operator to form an "ordered choice" in PEG_ speak.
+    The resulting rule tries to match ``a`` and succeeds if this succeeds. Otherwise the parser is reset and ``b``
+    is tried. This operator can only be used on compatible rules.
+
+----
+
+&(a)
+    Creates a "positive syntactic predicate", i.e. a rule that tests if the underlying rule matches but doesn't cause
+    the parser to make any progress (i.e. match any input) itself. Also, all effects that the underlying rule might
+    have had on the value stack are cleared out, the resulting rule type is therefore always ``Rule0``,
+    independently of the type of the underlying rule.
+
+----
+
+!a
+    Creates a "negative syntactic predicate", i.e. a rule that matches only if the underlying one mismatches and vice
+    versa. A syntactic predicate doesn't cause the parser to make any progress (i.e. match any input) and also clears
+    out all effects that the underlying rule might have had on the value stack. The resulting rule type is therefore
+    always ``Rule0``, independently of the type of the underlying rule.
+
+----
+
+optional(a)
+    Runs its inner rule and succeeds even if the inner rule doesn't. The resulting rule type depends on the type
+    of the inner rule:
+
+    =================== =======================
+    Type of ``a``       Type of ``optional(a)``
+    =================== =======================
+    ``Rule0``           ``Rule0``
+    ``Rule1[T]``        ``Rule1[Option[T]]``
+    ``Rule[I, O <: I]`` ``Rule[I, O]``
+    =================== =======================
+
+    The last case is a so-called "reduction rule", which leaves the value stack unchanged on a type level.
+    This is an example of a reduction rule wrapped with ``optional``:
+
+    .. code:: Scala
+
+        capture(CharPredicate.Digit) ~ optional('h' ~> ((s: String) => s + "hex"))
+
+    The inner rule of ``optional`` here has type ``Rule[String :: HNil, String :: HNil]``, i.e. it pops one ``String``
+    off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
+    their types remain the same, even though the actual values might have changed.
+
+----
+
+zeroOrMore(a)
+    Runs its inner rule until it fails, always succeeds. The resulting rule type depends on the type of the inner rule:
+
+    =================== =======================
+    Type of ``a``       Type of ``zeroOrMore(a)``
+    =================== =======================
+    ``Rule0``           ``Rule0``
+    ``Rule1[T]``        ``Rule1[Seq[T]]``
+    ``Rule[I, O <: I]`` ``Rule[I, O]``
+    =================== =======================
+
+    The last case is a so-called "reduction rule", which leaves the value stack unchanged on a type level.
+    This is an example of a reduction rule wrapped with ``zeroOrMore``:
+
+    .. code:: Scala
+
+        (factor :Rule1[Int]) ~ zeroOrMore('*' ~ factor ~> ((a: Int, b) => a * b))
+
+    The inner rule of ``zeroOrMore`` here has type ``Rule[Int :: HNil, Int :: HNil]``, i.e. it pops one ``Int``
+    off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
+    their types remain the same, even though the actual values might have changed.
+
+----
+
+oneOrMore(a)
+    Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
+    The resulting rule type depends on the type of the inner rule:
+
+    =================== =======================
+    Type of ``a``       Type of ``oneOrMore(a)``
+    =================== =======================
+    ``Rule0``           ``Rule0``
+    ``Rule1[T]``        ``Rule1[Seq[T]]``
+    ``Rule[I, O <: I]`` ``Rule[I, O]``
+    =================== =======================
+
+    The last case is a so-called "reduction rule", which leaves the value stack unchanged on a type level.
+    This is an example of a reduction rule wrapped with ``oneOrMore``:
+
+    .. code:: Scala
+
+        (factor :Rule1[Int]) ~ oneOrMore('*' ~ factor ~> ((a: Int, b) => a * b))
+
+    The inner rule of ``oneOrMore`` here has type ``Rule[Int :: HNil, Int :: HNil]``, i.e. it pops one ``Int``
+    off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
+    their types remain the same, even though the actual values might have changed.
+
+----
+
+xxx.times(a)
+    Repeats a rule a given number of times. ``xxx`` can be either an non-negative ``Int`` constant (!) or a range
+    ``(<x> to <y>)`` whereby both ``<x>`` and ``<y>`` are non-negative ``Int`` constants and ``<x> <= <y>``.
+    If the upper bound is zero the rule is equivalent to ``EMPTY``.
+    The resulting rule type depends on the type of the inner rule:
+
+    =================== =======================
+    Type of ``a``       Type of ``xxx.times(a)``
+    =================== =======================
+    ``Rule0``           ``Rule0``
+    ``Rule1[T]``        ``Rule1[Seq[T]]``
+    ``Rule[I, O <: I]`` ``Rule[I, O]``
+    =================== =======================
+
+    The last case is a so-called "reduction rule", which leaves the value stack unchanged on a type level.
+    This is an example of a reduction rule wrapped with ``oneOrMore``:
+
+    .. code:: Scala
+
+        (factor :Rule1[Int]) ~ (0 to 5).times('*' ~ factor ~> ((a: Int, b) => a * b))
+
+    The inner rule here has type ``Rule[Int :: HNil, Int :: HNil]``, i.e. it pops one ``Int`` off the stack and pushes
+    another one onto it, which means that the number of elements on the value stack as well as their types remain the
+    same, even though the actual values might have changed.
+
+----
+
+a.separatedBy(separator: Rule0)
+    You can use ``a.separatedBy(b)`` to create a rule with efficient and automatic support for element separators if
+    ``a`` is a rule produced by the ``zeroOrMore``, ``oneOrMore`` or ``xxx.times`` modifier and ``b`` is a ``Rule0``.
+    The resulting rule has the same type as ``a`` but expects the individual repetition elements to be separated by
+    a successful match of the ``separator`` rule.
+
+
+Parser Actions
+--------------
+
+The `Basic Character Matching`_  rules and the `Rule Combinators and Modifiers`_ allow you to build *recognizers* for
+potentially complex languages, but usually your parser is supposed to do more than simply determining whether a given
+input conforms to the defined grammar. In order to run custom logic during parser execution, e.g. for creating custom
+objects (like an AST_), you will have to add some "actions" to your rules.
+
+----
+
+``def run(block: Unit): Rule0``
+    ``run`` is the simplest parser action. It produces a ``Rule0`` which executes its argument block and always
+    succeeds (as a rule). Since it doesn't interact with the value stack and doesn't match any input all it can do is
+    perform "unchecked" side effects. Note that by using ``run`` you are leaving the "safety-net" that the value stack
+    and the rule type system gives you! Make sure you understand what you are doing before using ``run`` actions!
+
+    Also note that, due to the macro expansion the *parboiled2* rule DSL is based on, the given block behaves like a
+    call-by-name parameter even though it is not marked as one! This means that the argument expression to ``run`` is
+    (re-)evaluated for every rule execution, just as if ``run`` would have been defined as
+    ``def run(block: => Unit): Rule0``.
+
+----
+
+push(value)
+    ``push(value)`` creates a rule that matches no input (but always succeeds, as a rule) and pushes the given value
+    onto the value stack. It's rule type depends on the given value:
+
+    ================= =============================================
+    Type of ``value`` Type of ``push(value)``
+    ================= =============================================
+    ``Unit``          ``Rule0`` (identical to ``run`` in this case)
+    ``L <: HList``    ``RuleN[L]`` (pushes all HList values)
+    ``T`` (otherwise) ``Rule1[T]`` (pushes only one value)
+    ================= =============================================
+
+    Also note that, due to the macro expansion the *parboiled2* rule DSL is based on, the given value expression behaves
+    like a call-by-name parameter even though it is not marked as one! This means that the argument expression to
+    ``push`` is (re-)evaluated for every rule execution.
+
+----
+
+capture(a)
+    Wrapping a rule ``a`` with ``capture`` turns that rule into one that pushes an additional ``String`` instance onto
+    the value stack (in addition to all values that ``a`` already pushes itself): the input text matched by ``a``.
+
+    For example ``capture(oneOrMore(CharPredicate.Digit))`` has type ``Rule1[String]`` and pushes one value onto the
+    value stack: the string of digit characters matched by ``oneOrMore(CharPredicate.Digit)``.
+
+    Another example: ``capture("foo" ~ push(42))`` has type ``Rule2[Int, String]`` and will match input "foo". After
+    successful execution the value stack will have the String ``"foo"`` as its top element and ``42`` underneath.
+
+----
+
+``def test(condition: Boolean): Rule0``
+    ``test`` implements "semantic predicates". It creates a rule that matches no input and succeeds only if the given
+    condition expression evaluates to true. Note that, due to the macro expansion the *parboiled2* rule DSL is based on,
+    the given argument behaves like a call-by-name parameter even though it is not marked as one!
+    This means that the argument expression to ``run`` is (re-)evaluated for every rule execution, just as if ``test``
+    would have been defined as ``def test(condition: => Boolean): Rule0``.
+
+----
+
+a ~> (...)
+    The ``~>`` operator is the "action operator" and as such the most frequently used way to add custom logic to a rule.
+    It can be applied to any rule and appends action logic to it. The argument to ``~>`` is always a function, what
+    functions are allowed and what the resulting rule type is depends on the type of ``a``.
+
+    The basic idea is that the input of the function is popped of the value stack and the result of the function is
+    pushed back onto it. In its basic form the ``~>`` operator therefore transform the top elements of the value stack
+    into some other object(s).
+
+    Let's look at some examples:
+
+    .. code:: Scala
+
+        (foo: Rule1[Int]) ~> (i => i * 2)
+
+    This results in a ``Rule1[Int]`` which multiplies the "output" of rule ``foo`` by 2.
+
+    .. code:: Scala
+
+        (foo: Rule2[Int, String]) ~> ((i, s) => s + i.toString)
+
+    This results in a ``Rule1[String]`` which combines the two "outputs" of rule ``foo`` (an ``Int`` and a ``String``)
+    into one single ``String``.
+
+    .. code:: Scala
+
+        (foo: Rule2[Int, String]) ~> (_.toDouble)
+
+    This results in a ``Rule2[Int, Double]``. As you can see the function argument to ``~>`` doesn't always have to
+    "take" the complete output of the rule its applied to. It can also take fewer or even more elements. Its parameters
+    are simply matched left to right against the top of the value stack (the right-most parameter matching the top-level
+    element).
+
+    .. code:: Scala
+
+        (foo: Rule1[String]) ~> ((i :Int, s) => s + i.toString)
+
+    This results in a ``Rule[Int :: HNil, String :: HNil]``, i.e. a rule that pops one ``Int`` value off the stack and
+    replaces it with a ``String``. Note that, while the parameter types to the action function can be inferred if they
+    can be matched against an "output" of the underlying rule, this is not the case for parameters that don't directly
+    correspond to an underlying output. In these cases you need to add an explicit type annotation to the action
+    function parameter.
+
+    If an action function returns ``Unit`` it doesn't push anything on the stack. So this rule
+
+    .. code:: Scala
+
+        (foo: Rule1[String]) ~> (println(_))
+
+    has type ``Rule0``.
+
+    Also, an action function can also be a ``Function0``, i.e. a function without any parameters:
+
+    .. code:: Scala
+
+        (foo: Rule1[String]) ~> (() => 42)
+
+    This rule has type ``Rule2[String, Int]`` and can also be written like this:
+
+    .. code:: Scala
+
+        (foo: Rule1[String]) ~ push(42)
+
+    An action function can also produce more than one output by returning an ``HList`` instance:
+
+    .. code:: Scala
+
+        (foo: Rule1[String]) ~> (s => s.toInt :: 3.14 :: HNil)
+
+    This has type ``Rule2[Int, Double]``.
+
+    And finally, there is one more very powerful action type: the action function can itself return a rule!
+    If an action returns a rule this rule is then immediately executed after the action application just like if it
+    had been concatenated to the underlying rule with the ``~`` operator. You can therefore do things like
+
+    .. code:: Scala
+
+        (foo: Rule1[Int]) ~> (i => test(i % 2 == 0))
+
+    which is a ``Rule1[Int]`` that only produces even integers and fails for all others. Or:
+
+    .. code:: Scala
+
+        capture("x") ~> (str(_))
+
+    which is a ``Rule0`` that is identical to ``'x' ~ 'x'``.
+
+----
+
+There are two more members of the ``Parser`` class that are useful for writing efficient action logic:
+
+``def cursor: Int``
+    The index of the next (yet unmatched) input character.
+    Note: Might be equal to ``input.length`` if the cursor is currently behind the last input character!
+
+``def cursorChar: Char``
+    The next (yet unmatched) input character, i.e. the one at the ``cursor`` index.
+    Identical to ``if (cursor < input.length) input.charAt(cursor) else EOI`` but more efficient.
+
+You can use these to write efficient character-level logic like this:
+
+.. code:: Scala
+
+    def hexDigit: Rule1[Int] = rule {
+      CharPredicate.HexAlpha ~ push(CharUtils.hexValue(input.charAt(cursor - 1)))
+    }
+
+
+Common Mistakes
+===============
+
+Disregarding Order Choice
+-------------------------
+
+There is one mistake that new users frequently make when starting out with writing PEG_ grammars: disregarding the
+"ordered choice" logic of the ``|`` operator. This operator always tries all alternatives *in the order that they were
+defined* and picks the first match.
+
+As a consequence earlier alternatives that are a prefix of later alternatives will always "shadow" the later ones, the
+later ones will never be able to match!
+
+For example in this simple rule
+
+.. code:: Scala
+
+    def foo = rule { "foo" | "foobar" }
+
+"foobar" will never match. Reordering the alternatives to either "factor out" all common prefixes or putting the more
+specific alternatives first are the canonical solutions.
+
+If your parser is not behaving the way you expect it to watch out for this "wrong ordering" problem, which might be
+not that easy to spot in more complicated rule structures.
+
+
+Unchecked Mutable State
 -----------------------
 
-First basic task of parsing is to determine if input string is conformed to target PEG. For example, having a PEG described in *parboiled2* `DSL`_ as follows
+*parboiled2* parsers work with mutable state as a design choice for achieving good parsing performance. Matching input
+and operating on the value stack happen as side-effects to rule execution and mutate the parser state.
+However, as long as you confine yourself to the value stack and do not add parser actions that mutate custom parser
+members the rule DSL will protect you from making mistakes.
 
-.. code-block:: Scala
+It is important to understand that, in case of rule mismatch, the parser state (cursor and value stack) is reset to
+what it was before the rule execution was started. However, if you write rules that have side-effects beyond matching
+input and operating on the value stack than these side-effects *cannot* be automatically rolled-back!
+This means that you will have to make sure that you action logic "cleans up after itself" in the case of rule mismatches
+or is only used in locations where you know that rule execution can never fail.
+These techniques are considered advanced and are not recommended for beginners.
 
-  import org.parboiled2._
-  class SimpleParser (val input: ParserInput) extends Parser {
-    def InputLine = rule { "ab" | "cd" }
-  }
+The rule DSL is powerful enough to support even very complex parsing logic without the need to resort to custom mutable
+state, we consider the addition of mutable members as an optimization that should be well justified.
 
-This ``SimpleParser`` will just tell whether an input string is ``"ab"`` or ``"cd"``, or fail otherwise. To check it at runtime:
 
-.. code-block:: bash
+Grammar Debugging
+=================
 
-  scala> val inputLine = "cd"
-  inputLine: String = cd
+TODO
 
-  scala> val simpleParser = new org.parboiled2.examples.v2.SimpleParser(inputLine)
-  simpleParser: org.parboiled2.examples.v2.SimpleParser = org.parboiled2.examples.v2.SimpleParser@46431d8c
+(e.g., use ``parse.formatError(error, showTraces = true)``)
 
-  scala> simpleParser.run(_.InputLine)
-  res0: simpleParser.Result[shapeless.HNil] = Right(HNil)
 
-Note that type of ``res0`` is ``Right``. It means the given string ``"cd"`` is conformed input grammar.
+Access to Parser Results
+========================
 
-Computation Process
--------------------
+In order to run the top-level parser rule against a given input you create a new instance of your parser class and
+call ``run()`` on it, e.g:
 
-How does *parboiled2* compute whether input string is matched or not? Being compiled ``SimpleParser.InputLine`` code will be transformed to a piece equivalent to a following one:
+.. code:: Scala
 
-.. code-block:: Scala
+    val parser = new MyParser(input)
+    val result = parser.rootRule.run()
 
-  def InputLine = {
-    val mark = this.mark
-    val left = {
-      val string = "ab"
-      var ix = 0
-      while (ix < string.length && this.__nextChar() == string.charAt(ix)) ix += 1
-      Rule(ix == string.length())
-    }
+By default the type of ``result`` in this snippet will be a ``Try[T]`` whereby ``T`` depends on the type
+of ``rootRule``:
 
-    if (left.matched)
-      left
-    else {
-      this.reset(mark)
-      {
-        val string = "cd"
-        var ix = 0
-        while (ix < string.length && this.__nextChar() == string.charAt(ix)) ix += 1
-        Rule(ix == string.length())
-      }
-    }
-  }
+================================= ==========================
+Type of ``rootRule``              Type of ``rootRule.run()``
+================================= ==========================
+``Rule0``                         ``Try[Unit]``
+``Rule1[T]``                      ``Try[T]``
+``RuleN[L <: HList]`` (otherwise) ``Try[L]``
+================================= ==========================
 
-Minimum of intermediate object. Minimum of method calls. Run-time effective imperative-style code is where effectiveness of *parboiled2* comes from.
+The contents of the value stack at the end of the ``rootRule`` execution constitute the result of the parsing run.
+Note that ``run()`` is not available on rules that are not of type ``RuleN[L <: HList]``.
 
-Error Reporting
----------------
+If the parser is not able to match the input successfully it creates an instance of class ``ParseError`` , which is
+defined like this
 
-Parsing error message will be returned if input string does not conform to target grammar. To help to understand why parser failed, error message contains all necessary information. For example, matching ``"bb"`` against ``SimpleParser.InputLine`` will produce an error of following shape:
+.. code:: Scala
 
-.. code-block:: Scala
+    case class ParseError(position: Position, traces: Seq[RuleTrace]) extends RuntimeException
 
-  scala> val inputLine = "bb"
-  inputLine: String = bb
+In such cases the ``Try`` is completed with a ``scala.util.Failure`` holding the ``ParseError``.
+If other exceptions occur during the parsing run (e.g. because some parser action failed) these will also end up as
+a ``Try`` failure.
 
-  scala> val simpleParser = new org.parboiled2.examples.v2.SimpleParser(inputLine)
-  simpleParser: org.parboiled2.examples.v2.ABCParser = org.parboiled2.examples.v2.SimpleParser@5b264dee
+*parboiled2* has quite powerful error reporting facilities, which should help you (and your users) to easily understand
+why a particular input does not conform to the defined grammar and how this can be fixed.
+The ``formatError`` method available on the ``Parser`` class is of great utility here, as it can "pretty print"
+a parse error instance, to display something like this (excerpt from the ErrorReportingSpec_)::
 
-  scala> simpleParser.run(_.InputLine)
-  res0: simpleParser.Result[shapeless.HNil] = Left(ParseError(Position(0,1,1),Vector(RuleStack(Vector(LiteralString(ab,), FirstOf(InputLine))), RuleStack(Vector(LiteralString(cd,), FirstOf(InputLine))))))
+    Invalid input 'x', expected 'f', Digit, hex or UpperAlpha (line 1, column 4):
+    abcx
+       ^
 
-``Left`` means that there was a parsing error. ``ParseError`` instance contains ``Position`` and ``Seq[RuleStack]``. ``Position`` is an ``index``, ``line`` and ``column`` of input start position that failed all possible rules. ``index`` is zero-based, ``line`` and ``column`` are one-based. ``Seq[RuleStack]`` contains all these rules stacks (top of each stack is at ``Vector(0)``) that failed. You can format ``ParseError`` data structure in way most appropriate for your application. *parboiled2* provides ``ErrorUtils.formatError`` that will produce a string:
+    4 rules mismatched at error location:
+      targetRule / | / "fgh" / 'f'
+      targetRule / | / Digit
+      targetRule / | / hex
+      targetRule / | / UpperAlpha
 
-.. code-block:: bash
 
-  scala> org.parboiled2.ErrorUtils.formatError(inputLine, res0.left.get)
+Alternative DeliverSchemes
+--------------------------
 
-  res1: String =
-  expected
-  RuleStack(Vector(FirstOf(InputLine), LiteralString(ab,)))
+Apart from delivering your parser results as a ``Try[T]`` *parboiled2* allows you to select another one of the
+pre-defined ``Parser.DeliveryScheme`` alternatives, or even define your own. They differ in how they wrap the three
+possible outcomes of a parsing run:
 
-  RuleStack(Vector(FirstOf(InputLine), LiteralString(cd,)))
-   (line 1, column 1):
-  bb
-  ^
+- parsing completed successfully, deliver a result of type ``T``
+- parsing failed with a ``ParseError``
+- parsing failed due to another exception
 
-Value-Stack
------------
+This table compares the built-in ``Parser.DeliveryScheme`` alternatives (the first one being the default):
 
-Type-Driven Implementation
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+=================================== ========================== ======= ========== ================
+Import                              Type of ``rootRule.run()`` Success ParseError Other Exceptions
+=================================== ========================== ======= ========== ================
+import Parser.DeliveryScheme.Try    Try[T]                     Success Failure    Failure
+import Parser.DeliveryScheme.Either Either[ParseError, T]      Right   Left       thrown
+import Parser.DeliveryScheme.Throw  T                          T       thrown     thrown
+=================================== ========================== ======= ========== ================
 
-*parboiled2* can produce *abstract syntax tree* as a side effect of interaction with ``value-stack``. ``value-stack`` is inner data structure that is referentially invisible from an application. Only ``value-stack`` actions embedded in rules can check and change it: ``capture``, ``~>``, ``push`` and ``~?``. 
+.. _ErrorReportingSpec: https://github.com/sirthias/parboiled2/blob/master/parboiled/src/test/scala/org/parboiled2/ErrorReportingSpec.scala
 
-Major part of ``value-stack`` manipulations errors could be caught at compile time. It is provided by typing of ``Rule``. ``Rule`` is defined as follows:
 
-.. code-block:: Scala
+Running the Examples
+====================
 
-  sealed abstract class Rule[-I <: HList, +O <: HList]
+Follow these steps to run the example parsers defined here__ on your own machine:
 
-It is characterized by consuming a certain number of elements from the ``value-stack``. Its types are captured by the ``HList`` type parameter ``I`` for "Input". And itself pushing a certain number of elements onto the ``value-stack``. Its types in turn are captured by the ``HList`` type parameter `O` for "Output". 
+1. Clone the *parboiled2* repository::
 
-For example, rule of type ``Rule[String :: HNil, Int :: HNil]`` will pop ``String`` from ``value-stack`` and push a value of type ``Int``. Special case is so-called reduction rules that pop two or more values and push a single one.
+    git clone git://github.com/sirthias/parboiled2.git
 
-Note that ``Rule``'s ``I`` and ``O`` types grow from left to right. Means that for type ``Int :: String :: HNil`` value of type ``Int`` was pushed first, and after that value of type ``String``.
+2. Change into the base directory::
 
-Actions
-^^^^^^^
+    cd parboiled2
 
-``capture``
-"""""""""""
+3. Run SBT::
 
-``capture`` action rule is defined as
+    sbt "project examples" run
 
-.. code-block:: Scala
+__ https://github.com/sirthias/parboiled2/tree/master/examples/src/main/scala/org/parboiled2/examples
 
-  def capture(r: Rule[I, O]): Rule[I, O :: String]
 
-If ``r`` matched then part of matched input is pushed to ``value-stack``. Otherwise it fails matching. For example, matching 
+Alternatives
+============
 
-.. code-block:: Scala
+parboiled2 vs. parboiled 1.x
+----------------------------
 
-  rule { capture(oneOrMore("a")) }
+TODO
 
-against ``"a"`` will cause ``value-stack`` to be ``"a" :: HNil``. "aa" -- ``"aa" :: HNil``. And ``"b"`` will fail.
+(about one order of magnitude faster, more powerful DSL, improved error reporting, fewer dependencies (more lightweight),
+but Scala 2.10+ only, no error recovery (yet) and no Java version (ever))
 
-``~>``
-""""""
 
-``~>`` accepts a function of ``n`` arguments on right side. Then provided function is called with values substituted by ``n`` popped values from ``value-stack``. Result of a function is pushed back to ``value-stack``. For example,
+parboiled2 vs. Scala Parser Combinators
+---------------------------------------
 
-.. code-block:: Scala
+TODO
 
-  rule { capture("0" - "9") ~> ((x: String) => x.toInt) }
+(much much faster, better error reporting, more concise and elegant DSL, similarly powerful in terms of language class
+capabilities, but Scala 2.10+ only, 2 added dependencies (parboiled2 + shapeless))
 
-``-`` is a syntactic sugar for a rule that matches first of character in provided range. After string representation of a digit is matched, captured string is pushed on ``value-stack``. ``~>`` pops it and passes to lambda-function where it is converted to ``Int``. As a result ``value-stack`` state is ``7 :: HNil`` for ``"7"`` input. 
+parboiled2 vs. Regular Expressions
+----------------------------------
 
-Note that type of a function is statically typed: It can be only of type ``(String) => A``. Rule type in turn will be of type ``Rule[HNil, Int :: HNil]``.
+TODO
 
-Underscored functions are also valid. This is equivalent to previous example:
+(much easier to read and maintain, more powerful (e.g. regexes do not support recursive structures), faster,
+but Scala 2.10+ only, 2 added dependencies (parboiled2 + shapeless))
 
-.. code-block:: Scala
 
-    rule { capture("0" - "9") ~> (_.toInt) }
+Roadmap
+=======
 
-Reduction Rules
-^^^^^^^^^^^^^^^
+TODO
 
-``~>`` together with varying-matching operators (``zeroOrMore``, ``oneOrMore`` and ``Optional``) gives possibility of ``value-stack`` reductions. Consider grammar as follows:
 
-.. code-block:: Scala
+Contributing
+============
 
-    def Digit = rule { capture("0" - "9") ~> (_.toInt) }
-    rule { Digit ~ zeroOrMore(Digit ~> ((_: Int) + _)) }
+TODO
 
-Each ``Digit`` is pushing ``Int`` onto ``value-stack``. When ``Digit`` inside ``zeroOrMore`` is matched there are two ``Int`` s on ``value-stack``. Both ``Int`` s are popping by ``~>`` and passing to a lambda that sums them. And so forth. As a result there is a result of summing of input digits on ``value-stack``: ``"123"`` causes ``6 :: HNil``.
 
-Abstract Syntax Tree
-^^^^^^^^^^^^^^^^^^^^
+Support
+=======
 
-Result of ``~>``'s functions is not limited to predefined types (like ``Int``):
+In most cases the `parboiled2 mailing list`__ is probably the best place for your needs with regard to
+support, feedback and general discussion.
 
-.. code-block:: Scala
+**Note:** Your first post after signup is going to be moderated (for spam protection), but we'll immediately
+give you full posting privileges if your message doesn't unmask you as a spammer.
 
-    case class CapturedString(s: String)
-    rule { capture("a") ~> ((x: String) => CapturedString(x)) }
-    rule { capture("a") ~> (CapturedString(_)) }
-    rule { capture("a") ~> CapturedString }
+__ https://groups.google.com/forum/#!forum/parboiled-user
 
-All three forms are equivalent. Matching against ``"a"`` causes ``value-stack`` to have state ``CapturedString("a") :: HNil``.
 
-``push``
-^^^^^^^^
+References
+==========
 
-``push`` rule just pushes provided value on ``value-stack``.
+TODO
 
-.. code-block:: Scala
 
-    rule { "true" ~ push(true) }
+Credits
+=======
 
-This rule pushes ``true: Boolean`` right after ``"true"`` string is matched.
+Much of *parboiled2* was developed by `Alexander Myltsev`__ during `GSoc 2013`__, a big thank you for his great work!
 
-``~?``
-^^^^^^
+Also, without the `Macro Paradise`__ made available by `Eugene Burmako`__ *parboiled2* would probably still not be ready
+and its codebase would look a lot more messy.
 
-Operator provides semantic predicates during parsing. Consider a grammar:
 
-.. code-block:: Scala
+__ https://github.com/alexander-myltsev
+__ http://www.google-melange.com/gsoc/homepage/google/gsoc2013
+__ http://docs.scala-lang.org/overviews/macros/paradise.html
+__ https://github.com/xeno-by
 
-    def Digit = rule { capture("0" - "9") }
-    def Digits = rule { oneOrMore(Digit) ~> (_.toInt) }
-    def LargeNumber = rule { Digits ~? (_ > 1000) }
 
-``~?`` does not change ``value-stack``. The type of ``LargeNumber`` is same as type of ``Digits``. ``~?`` checks if top value of ``value-stack`` is true for provided predicate. It matches if predicate returns ``true``, and fails otherwise. That grammar allows only a number larger than 1000 to be on ``value-stack``.
+License
+=======
 
-DSL
-===
+*parboiled2* is released under the `Apache License 2.0`__
 
-Correspondence of PEG operators [bford_] and *parboiled2* DSL primitive expressions (`a` and `b` are parsing expressions):
+__ http://en.wikipedia.org/wiki/Apache_license
 
-+----------------+--------------+-----------------------+
-| Operator       | PEG notation | *parboiled2* notation |
-+================+==============+=======================+
-| Sequence       | a ~ b        | a ~ b                 |
-+----------------+--------------+-----------------------+
-| Ordered Choice | a | b        | a | b                 |
-+----------------+--------------+-----------------------+
-| Zero-or-more   | a *          | zeroOrMore(a)         |
-+----------------+--------------+-----------------------+
-| One-or-more    | a +          | oneOrMore(a)          |
-+----------------+--------------+-----------------------+
-| Optional       | a ?          | optional(a)           |
-+----------------+--------------+-----------------------+
-| And-predicate  | & a          | &(a)                  |
-+----------------+--------------+-----------------------+
-| Not-predicate  | ! a          | ! a                   |
-+----------------+--------------+-----------------------+
-
-`Examples <https://github.com/sirthias/parboiled2/tree/master/examples/src/main/scala/org/parboiled2/examples>`_ of using `DSL`.
-
-.. _bford: http://pdos.csail.mit.edu/papers/parsing:popl04.pdf
+.. |--| unicode:: U+2013
