@@ -16,6 +16,7 @@
 
 package org.parboiled2.examples
 
+import scala.annotation.switch
 import org.parboiled2._
 import spray.json._
 
@@ -40,7 +41,20 @@ class JsonParser(val input: ParserInput) extends Parser {
   def Pair = rule { JsonStringUnwrapped ~ ws(':') ~ Value ~> ((_, _)) }
 
   def Value: Rule1[JsValue] = rule {
-    JsonString | JsonNumber | JsonObject | JsonArray | JsonTrue | JsonFalse | JsonNull
+    // as an optimization of the equivalent rule:
+    //   JsonString | JsonNumber | JsonObject | JsonArray | JsonTrue | JsonFalse | JsonNull
+    // we make use of the fact that one-char lookahead is enough to discriminate the cases
+    run {
+      (cursorChar: @switch) match {
+        case '"' => JsonString
+        case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '-' => JsonNumber
+        case '{' => JsonObject
+        case '[' => JsonArray
+        case 't' => JsonTrue
+        case 'f' => JsonFalse
+        case 'n' => JsonNull
+      }
+    }
   }
 
   def JsonString = rule { JsonStringUnwrapped ~> (JsString(_)) }
