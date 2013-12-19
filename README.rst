@@ -787,8 +787,8 @@ a parse error instance, to display something like this (excerpt from the ErrorRe
       targetRule / | / UpperAlpha
 
 
-Alternative DeliverSchemes
---------------------------
+Alternative DeliverySchemes
+---------------------------
 
 Apart from delivering your parser results as a ``Try[T]`` *parboiled2* allows you to select another one of the
 pre-defined ``Parser.DeliveryScheme`` alternatives, or even define your own. They differ in how they wrap the three
