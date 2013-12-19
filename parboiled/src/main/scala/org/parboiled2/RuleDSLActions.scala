@@ -38,13 +38,16 @@ trait RuleDSLActions {
   def test(condition: Boolean): Rule0 = `n/a`
 
   /**
-   * Simply runs the given block / expression. The valueStack is left untouched.
+   * Runs the given block / expression.
+   * If the block evaluates to a rule (i.e. has type `R <: Rule[_, _]`) the result type of `run` is
+   * this rule's type (i.e. `R`) and the produced rule immediately executed.
+   * Otherwise the result type of `run` is an always succeeding `Rule0`.
    * NOTE: Even though the block is not a call-by-name parameter it will be executed
    * for every rule application anew! (Since the expression is directly transplanted
    * into the rule method by the `rule` macro.
    */
   @compileTimeOnly("Calls to `run` must be inside `rule` macro")
-  def run(block: Unit): Rule0 = `n/a`
+  def run[T](block: T)(implicit rr: RunResult[T]): rr.Out = `n/a`
 
   /**
    * Pushes the given value onto the value stack.

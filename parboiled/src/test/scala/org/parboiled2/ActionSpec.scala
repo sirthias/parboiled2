@@ -38,11 +38,28 @@ class ActionSpec extends TestParserSpec {
       "x" must beMismatched
     }
 
-    "`run`" in new TestParser0 {
+    "`run(nonRuleExpr)`" in new TestParser0 {
       var flag = false
       def targetRule = rule { 'a' ~ run(flag = true) ~ EOI }
       "a" must beMatched
       flag must beTrue
+    }
+
+    "`run(ruleBlockWithRuleCall)`" in new TestParser0 {
+      var flag = false
+      def targetRule = rule { 'a' ~ run { flag = true; b } ~ EOI }
+      def b = rule { 'b' }
+      "a" must beMismatched
+      flag must beTrue
+      "ab" must beMatched
+    }
+
+    "`run(ruleBlockWithNestedRuleDef)`" in new TestParser0 {
+      var flag = false
+      def targetRule = rule { 'a' ~ run { flag = true; rule(ch('b')) } ~ EOI }
+      "a" must beMismatched
+      flag must beTrue
+      "ab" must beMatched
     }
 
     "`push` simple value" in new TestParser1[String] {

@@ -55,7 +55,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case q"$a.unary_!()"                         ⇒ NotPredicate(OpTree(a))
       case q"$a.this.test($flag)"                  ⇒ SemanticPredicate(flag)
       case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
-      case q"$a.this.run($arg)"                    ⇒ RunAction(arg)
+      case q"$a.this.run[$b]($arg)($rr)"           ⇒ RunAction(arg, rr)
       case q"$a.this.push[$b]($arg)($c)"           ⇒ PushAction(arg)
       case q"$a.this.$method"                      ⇒ RuleCall(tree, method.toString)
       case q"$a.this.$method(..$c)"                ⇒ RuleCall(tree, method.toString)
@@ -497,11 +497,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class RunAction(arg: Tree) extends OpTree {
+  case class RunAction(argTree: Tree, rrTree: Tree) extends OpTree {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Run)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      c.Expr[Unit](arg).splice
-      Rule.Matched
+    def render(ruleName: String): Expr[RuleX] = {
+      rrTree match {
+        case q"support.this.RunResult.forAny[$t]" ⇒
+          reify {
+            c.Expr[Unit](argTree).splice
+            Rule.Matched
+          }
+
+        case q"support.this.RunResult.forRule[$t]" ⇒
+          c.Expr[RuleX](argTree)
+
+        case _ ⇒
+          c.abort(rrTree.pos, "Unexpected RunResult expression: " + show(rrTree))
+      }
     }
   }
 
