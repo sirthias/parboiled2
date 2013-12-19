@@ -25,7 +25,7 @@ import spray.json._
  * models the JSON grammar presented at http://www.json.org as a parboiled2 PEG parser.
  */
 class JsonParser(val input: ParserInput) extends Parser {
-  import CharPredicate.{Digit, Digit19, HexAlpha}
+  import CharPredicate.{Digit, Digit19, HexDigit}
 
   // for better performance we use a mutable StringBuilder for assembling the individual
   // (potentially escaped) characters of a JSON string
@@ -79,7 +79,7 @@ class JsonParser(val input: ParserInput) extends Parser {
 
   def NormalChar = rule { !QuoteBackSlash ~ ANY ~ run(sb.append(input.charAt(cursor - 1))) }
 
-  def Unicode = rule { 'u' ~ capture(HexAlpha ~ HexAlpha ~ HexAlpha ~ HexAlpha) ~> (java.lang.Integer.parseInt(_, 16)) }
+  def Unicode = rule { 'u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16)) }
 
   def Integer = rule { optional('-') ~ (Digit19 ~ Digits | Digit) }
 

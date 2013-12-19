@@ -95,7 +95,7 @@ object CharPredicate {
   val LowerHexLetter = CharPredicate('a' to 'f')
   val UpperHexLetter = CharPredicate('A' to 'F')
   val HexLetter = LowerHexLetter ++ UpperHexLetter
-  val HexAlpha = Digit ++ HexLetter
+  val HexDigit = Digit ++ HexLetter
   val Visible = CharPredicate('\u0021' to '\u007e')
   val Printable = Visible ++ ' '
 
