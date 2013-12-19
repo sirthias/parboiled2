@@ -29,52 +29,51 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def render(ruleName: String = ""): Expr[RuleX]
   }
 
-  def OpTree(tree: Tree): OpTree = {
-    def collector(lifterTree: Tree): Collector =
-      lifterTree match {
-        case q"support.this.$a.forRule0[$b]" ⇒ rule0Collector
-        case q"support.this.$a.forRule1[$b, $c]" ⇒ rule1Collector
-        case q"support.this.$a.forReduction[$b, $c, $d]" ⇒ rule0Collector
-        case _ ⇒ c.abort(tree.pos, "Unexpected Lifter: " + lifterTree)
-      }
-
-    tree match {
-      case q"$lhs.~[$a, $b]($rhs)($c, $d)"         ⇒ Sequence(OpTree(lhs), OpTree(rhs))
-      case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-      case q"$a.this.ch($c)"                       ⇒ CharMatch(c)
-      case q"$a.this.str($s)"                      ⇒ StringMatch(s)
-      case q"$a.this.ignoreCase($t)"               ⇒ IgnoreCase(t)
-      case q"$a.this.predicate($p)"                ⇒ CharPredicateMatch(p)
-      case q"$a.this.anyOf($s)"                    ⇒ AnyOf(s)
-      case q"$a.this.ANY"                          ⇒ ANY
-      case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), collector(o))
-      case q"$a.this.zeroOrMore[$b, $c]($arg)($s)" ⇒ ZeroOrMore(OpTree(arg), collector(s))
-      case q"$a.this.oneOrMore[$b, $c]($arg)($s)"  ⇒ OneOrMore(OpTree(arg), collector(s))
-      case q"$base.times[$a, $b]($r)($s)"          ⇒ Times(base, OpTree(r), collector(s))
-      case q"$a.this.&($arg)"                      ⇒ AndPredicate(OpTree(arg))
-      case q"$a.unary_!()"                         ⇒ NotPredicate(OpTree(a))
-      case q"$a.this.test($flag)"                  ⇒ SemanticPredicate(flag)
-      case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
-      case q"$a.this.run[$b]($arg)($rr)"           ⇒ RunAction(arg, rr)
-      case q"$a.this.push[$b]($arg)($c)"           ⇒ PushAction(arg)
-      case q"$a.this.$method"                      ⇒ RuleCall(tree, method.toString)
-      case q"$a.this.$method(..$c)"                ⇒ RuleCall(tree, method.toString)
-      case q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
-        CharRange(l, r, tree.pos)
-      case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
-        Action(OpTree(r), f, ts)
-      case q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
-        val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
-        fun.toString match {
-          case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
-          case "oneOrMore"  ⇒ OneOrMore(op, coll, separator)
-          case "times"      ⇒ Times(base, op, coll, separator)
-          case _            ⇒ c.abort(tree.pos, "Unexpected Repeated fun: " + fun)
-        }
-
-      case _ ⇒ c.abort(tree.pos, "Invalid rule definition: " + tree)
+  def collector(lifterTree: Tree): Collector =
+    lifterTree match {
+      case q"support.this.$a.forRule0[$b]" ⇒ rule0Collector
+      case q"support.this.$a.forRule1[$b, $c]" ⇒ rule1Collector
+      case q"support.this.$a.forReduction[$b, $c, $d]" ⇒ rule0Collector
+      case x ⇒ c.abort(x.pos, "Unexpected Lifter: " + lifterTree)
     }
+
+  val opTreePF: PartialFunction[Tree, OpTree] = {
+    case q"$lhs.~[$a, $b]($rhs)($c, $d)"         ⇒ Sequence(OpTree(lhs), OpTree(rhs))
+    case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
+    case q"$a.this.ch($c)"                       ⇒ CharMatch(c)
+    case q"$a.this.str($s)"                      ⇒ StringMatch(s)
+    case q"$a.this.ignoreCase($t)"               ⇒ IgnoreCase(t)
+    case q"$a.this.predicate($p)"                ⇒ CharPredicateMatch(p)
+    case q"$a.this.anyOf($s)"                    ⇒ AnyOf(s)
+    case q"$a.this.ANY"                          ⇒ ANY
+    case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), collector(o))
+    case q"$a.this.zeroOrMore[$b, $c]($arg)($s)" ⇒ ZeroOrMore(OpTree(arg), collector(s))
+    case q"$a.this.oneOrMore[$b, $c]($arg)($s)"  ⇒ OneOrMore(OpTree(arg), collector(s))
+    case q"$base.times[$a, $b]($r)($s)"          ⇒ Times(base, OpTree(r), collector(s))
+    case q"$a.this.&($arg)"                      ⇒ AndPredicate(OpTree(arg))
+    case q"$a.unary_!()"                         ⇒ NotPredicate(OpTree(a))
+    case q"$a.this.test($flag)"                  ⇒ SemanticPredicate(flag)
+    case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
+    case q"$a.this.run[$b]($arg)($rr)"           ⇒ RunAction(arg, rr)
+    case q"$a.this.push[$b]($arg)($c)"           ⇒ PushAction(arg)
+    case x @ q"$a.this.$method"                  ⇒ RuleCall(x, method.toString)
+    case x @ q"$a.this.$method(..$c)"            ⇒ RuleCall(x, method.toString)
+    case x @ q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
+      CharRange(l, r, x.pos)
+    case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
+      Action(OpTree(r), f, ts)
+    case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
+      val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
+      fun.toString match {
+        case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
+        case "oneOrMore"  ⇒ OneOrMore(op, coll, separator)
+        case "times"      ⇒ Times(base, op, coll, separator)
+        case _            ⇒ c.abort(x.pos, "Unexpected Repeated fun: " + fun)
+      }
   }
+
+  def OpTree(tree: Tree): OpTree =
+    opTreePF.applyOrElse(tree, (t: Tree) ⇒ c.abort(t.pos, "Invalid rule definition: " + t))
 
   def Sequence(lhs: OpTree, rhs: OpTree): Sequence =
     lhs match {
@@ -508,7 +507,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           }
 
         case q"support.this.RunResult.forRule[$t]" ⇒
-          c.Expr[RuleX](argTree)
+          def body(tree: Tree): Tree =
+            tree match {
+              case Block(statements, res) ⇒ Block(statements, body(res))
+              case x                      ⇒ matchAndExpandOpTreeIfPossible(x)
+            }
+          c.Expr[RuleX](body(argTree))
 
         case _ ⇒
           c.abort(rrTree.pos, "Unexpected RunResult expression: " + show(rrTree))
@@ -583,25 +587,31 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       def popToVals(valNames: List[TermName]): List[Tree] =
         (valNames zip argTypes).map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }.reverse
 
-      val actionBodyTree =
-        c.resetAllAttrs(actionTree) match {
+      def actionBody(tree: Tree): Tree =
+        tree match {
+          case Block(statements, res) ⇒ Block(statements, actionBody(res))
+
           case x @ (Ident(_) | Select(_, _)) ⇒
             val valNames: List[TermName] = argTypes.indices.map { i ⇒ newTermName("value" + i) }(collection.breakOut)
             val args = valNames map Ident.apply
             Block(popToVals(valNames), PushAction(q"$x(..$args)").render().tree)
 
           case q"(..$args ⇒ $body)" ⇒
-            val bodyTree =
-              if (actionType.last.typeSymbol == ruleTypeSymbol) body
-              else PushAction(body).render().tree
-            Block(popToVals(args.map(_.name)), bodyTree)
+            val (expressions, res) = body match {
+              case Block(exps, rs) ⇒ (exps, rs)
+              case x               ⇒ (Nil, x)
+            }
+            val resTree =
+              if (actionType.last.typeSymbol == ruleTypeSymbol) matchAndExpandOpTreeIfPossible(res)
+              else PushAction(res).render().tree
+            Block(popToVals(args.map(_.name)) ::: expressions, resTree)
         }
 
       reify {
         val result = op.render().splice
         if (result.matched) {
           val p = c.prefix.splice
-          c.Expr[RuleX](actionBodyTree).splice
+          c.Expr[RuleX](actionBody(c.resetAllAttrs(actionTree))).splice
         } else result
       }
     }
@@ -632,4 +642,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   def Separator(op: OpTree) = new Separator(reify(op.render().splice.matched))
 
   lazy val ruleTypeSymbol = c.mirror.staticClass("org.parboiled2.Rule")
+
+  def matchAndExpandOpTreeIfPossible(tree: Tree): Tree =
+    opTreePF.andThen(_.render().tree).applyOrElse(tree, identity(_: Tree))
+
 }

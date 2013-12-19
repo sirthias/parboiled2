@@ -56,7 +56,7 @@ class ActionSpec extends TestParserSpec {
 
     "`run(ruleBlockWithNestedRuleDef)`" in new TestParser0 {
       var flag = false
-      def targetRule = rule { 'a' ~ run { flag = true; rule(ch('b')) } ~ EOI }
+      def targetRule = rule { 'a' ~ run { flag = true; ch('b') } ~ EOI }
       "a" must beMismatched
       flag must beTrue
       "ab" must beMatched
@@ -113,14 +113,14 @@ class ActionSpec extends TestParserSpec {
     }
 
     "`~>` producing a Rule0" in new TestParser0 {
-      def testRule = rule { capture("x") ~> (rule(_)) ~ EOI }
+      def testRule = rule { capture("x") ~> (str(_)) ~ EOI }
       def targetRule = testRule
       "x" must beMismatched
       "xx" must beMatched
     }
 
     "`~>` producing a Rule1" in new TestParser1[String] {
-      def testRule = rule { capture("x") ~> (s ⇒ rule(capture(s))) ~ EOI }
+      def testRule = rule { capture("x") ~> (capture(_)) ~ EOI }
       def targetRule = testRule
       "x" must beMismatched
       "xx" must beMatchedWith("x")
