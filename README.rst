@@ -28,6 +28,17 @@ You might also be interested in reading about `parboiled2 vs. Scala Parser Combi
 .. _parboiled 1.x: http://parboiled.org
 
 
+Features
+========
+
+* Concise, flexible and type-safe DSL for expressing parsing logic
+* Full expressive power of `Parsing Expression Grammars`_, for effectively dealing with most real-world parsing needs
+* Excellent reporting of parse errors
+* Parsing performance comparable to hand-written parsers
+* Easy to learn and use (just one parsing phase (no lexer code required), rather small API)
+* Light-weight enough to serve as a replacement for regular expressions (also strictly more powerful than regexes)
+
+
 Installation
 ============
 
@@ -585,7 +596,7 @@ a ~> (...)
 
         (foo: Rule1[String]) ~> (() => 42)
 
-    This rule has type ``Rule2[String, Int]`` and can also be written like this:
+    This rule has type ``Rule2[String, Int]`` and is equivalent to this:
 
     .. code:: Scala
 
@@ -599,15 +610,33 @@ a ~> (...)
 
     This has type ``Rule2[Int, Double]``.
 
+    One more very useful feature is special support for case class instance creation:
+
+    .. code:: Scala
+
+        case class Person(name: String, age: Int)
+
+        (foo: Rule2[String, Int]) ~> Person
+
+    This has type ``Rule1[Person]``. The top elements of the value stack are popped off and replaced by an instance
+    of the case class if they match in number, order and types to the case class members. This is great for building
+    AST_-like structures! Check out the Calculator2__ example to see this form in action.
+
+    Note that there is one quirk: For some reason this notation stops working if you explicitly define a companion
+    object for your case class. You'll have to write ``~> (Person(_, _))`` instead.
+
+    __ https://github.com/sirthias/parboiled2/blob/master/examples/src/main/scala/org/parboiled2/examples/Calculator2.scala
+
     And finally, there is one more very powerful action type: the action function can itself return a rule!
-    If an action returns a rule this rule is then immediately executed after the action application just like if it
+    If an action returns a rule this rule is immediately executed after the action application just as if it
     had been concatenated to the underlying rule with the ``~`` operator. You can therefore do things like
 
     .. code:: Scala
 
         (foo: Rule1[Int]) ~> (i => test(i % 2 == 0))
 
-    which is a ``Rule1[Int]`` that only produces even integers and fails for all others. Or:
+    which is a ``Rule1[Int]`` that only produces even integers and fails for all others. Or, somewhat unusual
+    but still perfectly legal:
 
     .. code:: Scala
 
@@ -679,6 +708,23 @@ These techniques are considered advanced and are not recommended for beginners.
 
 The rule DSL is powerful enough to support even very complex parsing logic without the need to resort to custom mutable
 state, we consider the addition of mutable members as an optimization that should be well justified.
+
+
+Handling Whitespace
+-------------------
+
+One disadvantage of PEGs over lexer-based parser can be the handling of white space. In a "traditional" parser with a
+separate lexer (scanner) phase this lexer can simply skip all white space and only generate tokens for the actual
+parser to operate on. This can free the higher-level parser grammar from all white space treatment.
+
+Since PEGs do not have a lexer but directly operate on the raw input they have to deal with white space in the grammar
+itself. Language designers with little experience in PEGs can sometime be unsure of how to best handle white space in
+their grammar.
+
+The common and highly recommended pattern is to
+**match white space always immediately after a terminal (a single character or string) but not in any other place**.
+This helps with keeping your grammar rules properly structured and white space "taken care of" without it getting in the
+way.
 
 
 Grammar Debugging
