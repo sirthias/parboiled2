@@ -572,29 +572,25 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       def popToVals(valNames: List[TermName]): List[Tree] =
         (valNames zip argTypes).map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }.reverse
 
-      def actionBody(tree: Tree): Tree =
-        tree match {
-          case Block(statements, res) ⇒ Block(statements, actionBody(res))
-
+      val actionBodyTree =
+        c.resetAllAttrs(actionTree) match {
           case x @ (Ident(_) | Select(_, _)) ⇒
             val valNames: List[TermName] = argTypes.indices.map { i ⇒ newTermName("value" + i) }(collection.breakOut)
             val args = valNames map Ident.apply
             Block(popToVals(valNames), PushAction(q"$x(..$args)").render().tree)
 
           case q"(..$args ⇒ $body)" ⇒
-            val (expressions, res) = body match {
-              case Block(exps, rs) ⇒ (exps, rs)
-              case x               ⇒ (Nil, x)
-            }
-            val resOpTree = if (actionType.last.typeSymbol == ruleTypeSymbol) OpTree(res) else PushAction(res)
-            Block(popToVals(args.map(_.name)) ::: expressions, resOpTree.render().tree)
+            val bodyTree =
+              if (actionType.last.typeSymbol == ruleTypeSymbol) body
+              else PushAction(body).render().tree
+            Block(popToVals(args.map(_.name)), bodyTree)
         }
 
       reify {
         val result = op.render().splice
         if (result.matched) {
           val p = c.prefix.splice
-          c.Expr[RuleX](actionBody(c.resetAllAttrs(actionTree))).splice
+          c.Expr[RuleX](actionBodyTree).splice
         } else result
       }
     }

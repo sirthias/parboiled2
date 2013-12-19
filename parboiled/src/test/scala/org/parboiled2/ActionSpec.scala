@@ -96,17 +96,26 @@ class ActionSpec extends TestParserSpec {
     }
 
     "`~>` producing a Rule0" in new TestParser0 {
-      def testRule = rule { capture("x") ~> (str(_)) ~ EOI }
+      def testRule = rule { capture("x") ~> (rule(_)) ~ EOI }
       def targetRule = testRule
       "x" must beMismatched
       "xx" must beMatched
     }
 
     "`~>` producing a Rule1" in new TestParser1[String] {
-      def testRule = rule { capture("x") ~> (capture(_)) ~ EOI }
+      def testRule = rule { capture("x") ~> (s ⇒ rule(capture(s))) ~ EOI }
       def targetRule = testRule
       "x" must beMismatched
       "xx" must beMatchedWith("x")
+    }
+
+    "`~>` producing an expression evaluating to a rule" in new TestParser0 {
+      def testRule = rule { capture(anyOf("ab")) ~> (s ⇒ if (s == "a") rule('b') else rule('a')) ~ EOI }
+      def targetRule = testRule
+      "ab" must beMatched
+      "ba" must beMatched
+      "a" must beMismatched
+      "b" must beMismatched
     }
   }
 }
