@@ -269,7 +269,7 @@ object Parser {
     c.prefix.tree match {
       case q"parboiled2.this.Rule.Runnable[$l]($parser.$rule)" ⇒
         c.Expr[scheme.value.Result](q"val __p__ = $parser; __p__.__run[$l](__p__.$rule)($scheme)")
-      case x ⇒ c.abort(x.pos, "Illegal `Runnable.apply` call: " + show(x))
+      case x ⇒ c.abort(x.pos, "Illegal `Runnable.apply` call: " + x)
     }
   }
 
@@ -284,8 +284,8 @@ object Parser {
     import ctx.universe._
     val ruleName =
       ctx.enclosingMethod match {
-        case q"def $name[..$tparams](...$vparamss): $tpt = $body" ⇒ name.toString
-        case _ ⇒ ctx.abort(r.tree.pos, "`rule` can only be used from within a method")
+        case DefDef(_, name, _, _, _, _) ⇒ name.decoded
+        case _                           ⇒ ctx.abort(r.tree.pos, "`rule` can only be used from within a method")
       }
     reify {
       opTree.render(ruleName).splice.asInstanceOf[Rule[I, O]]

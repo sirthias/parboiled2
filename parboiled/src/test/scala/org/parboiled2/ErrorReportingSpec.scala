@@ -69,7 +69,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |""")
     }
 
-    "example 2" in new TestParser0 {
+    "for rules with negative syntactic predicates" in new TestParser0 {
       def targetRule = rule { !"a" ~ ANY ~ !foo ~ EOI }
       def foo = rule { "bcd" }
 
@@ -89,6 +89,30 @@ class ErrorReportingSpec extends TestParserSpec {
           |
           |1 rule mismatched at error location:
           |  targetRule / ! / (foo)
+          |""")
+    }
+
+    "for rules with backtick identifiers" in new TestParser0 {
+      val `this:that` = CharPredicate.Alpha
+      def targetRule = rule { `foo-bar` ~ `this:that` ~ EOI }
+      def `foo-bar` = rule { 'x' }
+
+      "a" must beMismatchedWithErrorMsg(
+        """Invalid input 'a', expected foo-bar (line 1, column 1):
+          |a
+          |^
+          |
+          |1 rule mismatched at error location:
+          |  targetRule / foo-bar
+          |""")
+
+      "x" must beMismatchedWithErrorMsg(
+        """Unexpected end of input, expected this:that (line 1, column 2):
+          |x
+          | ^
+          |
+          |1 rule mismatched at error location:
+          |  targetRule / this:that
           |""")
     }
   }

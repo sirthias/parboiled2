@@ -62,7 +62,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       Action(OpTree(r), f, ts)
     case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
       val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
-      fun.toString match {
+      fun.decoded match {
         case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
         case "oneOrMore"  ⇒ OneOrMore(op, coll, separator)
         case "times"      ⇒ Times(base, op, coll, separator)
@@ -645,8 +645,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   @tailrec
   private def callName(tree: Tree): Option[String] =
     tree match {
-      case Ident(name)     ⇒ Some(name.toString)
-      case Select(_, name) ⇒ Some(name.toString)
+      case Ident(name)     ⇒ Some(name.decoded)
+      case Select(_, name) ⇒ Some(name.decoded)
       case Apply(fun, _)   ⇒ callName(fun)
       case _               ⇒ None
     }
