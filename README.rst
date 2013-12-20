@@ -59,6 +59,12 @@ Once on your classpath you can use this single import to bring everything you ne
 
     import org.parboiled2._
 
+There might be potentially newer snapshot builds available in the *sonatype snapshots* repository located at:
+https://oss.sonatype.org/content/repositories/snapshots/
+
+You can find the latest ones here:
+https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.10/
+
 .. _Maven Central: http://search.maven.org/
 .. _shapeless: https://github.com/milessabin/shapeless
 
