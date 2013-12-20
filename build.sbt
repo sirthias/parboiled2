@@ -9,6 +9,12 @@ val commonSettings = Seq(
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
   startYear := Some(2009),
   licenses := Seq("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  javacOptions ++= Seq(
+    "-encoding", "UTF-8",
+    "-source", "1.6",
+    "-target", "1.6",
+    "-Xlint:unchecked",
+    "-Xlint:deprecation"),
   scalacOptions ++= List(
     "-encoding", "UTF-8",
     "-feature",
@@ -17,8 +23,7 @@ val commonSettings = Seq(
     "-Xlint",
     "-language:_",
     "-target:jvm-1.6",
-    "-Xlog-reflective-calls"
-  ),
+    "-Xlog-reflective-calls"),
   resolvers ++= Seq(Resolver.sonatypeRepo("snapshots"), Resolver.sonatypeRepo("releases")),
   shellPrompt := { s => Project.extract(s).currentProject.id + " > " })
 
