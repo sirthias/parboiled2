@@ -26,8 +26,8 @@ sealed abstract class CharPredicate extends (Char ⇒ Boolean) {
   def --(that: CharPredicate): CharPredicate
   def --(chars: Seq[Char]): CharPredicate
 
-  def ++(chars: Char): CharPredicate = this ++ (chars :: Nil)
-  def --(chars: Char): CharPredicate = this -- (chars :: Nil)
+  def ++(char: Char): CharPredicate = this ++ (char :: Nil)
+  def --(char: Char): CharPredicate = this -- (char :: Nil)
   def ++(chars: String): CharPredicate = this ++ chars.toCharArray
   def --(chars: String): CharPredicate = this -- chars.toCharArray
 

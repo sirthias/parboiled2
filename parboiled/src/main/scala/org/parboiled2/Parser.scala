@@ -62,6 +62,14 @@ abstract class Parser(initialValueStackSize: Int = 32,
   }
 
   /**
+   * Returns the last character that was matched, i.e. the one at index cursor - 1
+   * Note: for performance optimization this method does *not* do a range check,
+   * i.e. depending on the ParserInput implementation you might get an exception
+   * when calling this method before any character was matched by the parser.
+   */
+  def lastChar: Char = input.charAt(cursor - 1)
+
+  /**
    * Allows "raw" (i.e. untyped) access to the `ValueStack`.
    * In most cases you shouldn't need to access the value stack directly from your code.
    * Use only if you know what you are doing!
