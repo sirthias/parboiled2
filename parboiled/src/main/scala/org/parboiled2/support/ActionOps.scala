@@ -33,6 +33,10 @@ object ActionOps {
     def apply[X, Y, Z, R](f: (X, Y, Z) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: FCapture[(X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
     def apply[W, X, Y, Z, R](f: (W, X, Y, Z) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(W, X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
     def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z) ⇒ R)(implicit j: SJoin[V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(V, W, X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
+    def apply[U, V, W, X, Y, Z, R](f: (U, V, W, X, Y, Z) ⇒ R)(implicit j: SJoin[U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(U, V, W, X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
+    def apply[T, U, V, W, X, Y, Z, R](f: (T, U, V, W, X, Y, Z) ⇒ R)(implicit j: SJoin[T :: U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(T, U, V, W, X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
+    def apply[S, T, U, V, W, X, Y, Z, R](f: (S, T, U, V, W, X, Y, Z) ⇒ R)(implicit j: SJoin[S :: T :: U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(S, T, U, V, W, X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
+    def apply[P, S, T, U, V, W, X, Y, Z, R](f: (P, S, T, U, V, W, X, Y, Z) ⇒ R)(implicit j: SJoin[P :: S :: T :: U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(P, S, T, U, V, W, X, Y, Z) ⇒ R]): Rule[j.In, j.Out]
   }
   implicit def ops1[I <: HList, A] = new ActionOps[I, A :: HNil] { type Out = Ops1[I, A] }
   sealed trait Ops1[I <: HList, A] {
@@ -42,6 +46,10 @@ object ActionOps {
     def apply[Y, Z, R](f: (Y, Z, A) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: FCapture[(Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
     def apply[X, Y, Z, R](f: (X, Y, Z, A) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: FCapture[(X, Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
     def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(W, X, Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
+    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z, A) ⇒ R)(implicit j: SJoin[V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(V, W, X, Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
+    def apply[U, V, W, X, Y, Z, R](f: (U, V, W, X, Y, Z, A) ⇒ R)(implicit j: SJoin[U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(U, V, W, X, Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
+    def apply[T, U, V, W, X, Y, Z, R](f: (T, U, V, W, X, Y, Z, A) ⇒ R)(implicit j: SJoin[T :: U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(T, U, V, W, X, Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
+    def apply[S, T, U, V, W, X, Y, Z, R](f: (S, T, U, V, W, X, Y, Z, A) ⇒ R)(implicit j: SJoin[S :: T :: U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(S, T, U, V, W, X, Y, Z, A) ⇒ R]): Rule[j.In, j.Out]
   }
   implicit def ops2[I <: HList, A, B] = new ActionOps[I, A :: B :: HNil] { type Out = Ops2[I, A, B] }
   sealed trait Ops2[I <: HList, A, B] {
@@ -51,6 +59,10 @@ object ActionOps {
     def apply[Z, R](f: (Z, A, B) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: FCapture[(Z, A, B) ⇒ R]): Rule[j.In, j.Out]
     def apply[Y, Z, R](f: (Y, Z, A, B) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: FCapture[(Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
     def apply[X, Y, Z, R](f: (X, Y, Z, A, B) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: FCapture[(X, Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
+    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A, B) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(W, X, Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
+    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z, A, B) ⇒ R)(implicit j: SJoin[V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(V, W, X, Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
+    def apply[U, V, W, X, Y, Z, R](f: (U, V, W, X, Y, Z, A, B) ⇒ R)(implicit j: SJoin[U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(U, V, W, X, Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
+    def apply[T, U, V, W, X, Y, Z, R](f: (T, U, V, W, X, Y, Z, A, B) ⇒ R)(implicit j: SJoin[T :: U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(T, U, V, W, X, Y, Z, A, B) ⇒ R]): Rule[j.In, j.Out]
   }
   implicit def ops3[I <: HList, A, B, C] = new ActionOps[I, A :: B :: C :: HNil] { type Out = Ops3[I, A, B, C] }
   sealed trait Ops3[I <: HList, A, B, C] {
@@ -60,6 +72,10 @@ object ActionOps {
     def apply[R](f: (A, B, C) ⇒ R)(implicit j: SJoin[I, HNil, R], c: FCapture[(A, B, C) ⇒ R]): Rule[j.In, j.Out]
     def apply[Z, R](f: (Z, A, B, C) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: FCapture[(Z, A, B, C) ⇒ R]): Rule[j.In, j.Out]
     def apply[Y, Z, R](f: (Y, Z, A, B, C) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: FCapture[(Y, Z, A, B, C) ⇒ R]): Rule[j.In, j.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z, A, B, C) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: FCapture[(X, Y, Z, A, B, C) ⇒ R]): Rule[j.In, j.Out]
+    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A, B, C) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(W, X, Y, Z, A, B, C) ⇒ R]): Rule[j.In, j.Out]
+    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z, A, B, C) ⇒ R)(implicit j: SJoin[V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(V, W, X, Y, Z, A, B, C) ⇒ R]): Rule[j.In, j.Out]
+    def apply[U, V, W, X, Y, Z, R](f: (U, V, W, X, Y, Z, A, B, C) ⇒ R)(implicit j: SJoin[U :: V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(U, V, W, X, Y, Z, A, B, C) ⇒ R]): Rule[j.In, j.Out]
   }
   implicit def ops4[I <: HList, A, B, C, D] = new ActionOps[I, A :: B :: C :: D :: HNil] { type Out = Ops4[I, A, B, C, D] }
   sealed trait Ops4[I <: HList, A, B, C, D] {
@@ -69,15 +85,75 @@ object ActionOps {
     def apply[R](f: (B, C, D) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: FCapture[(B, C, D) ⇒ R]): Rule[j.In, j.Out]
     def apply[R](f: (A, B, C, D) ⇒ R)(implicit j: SJoin[I, HNil, R], c: FCapture[(A, B, C, D) ⇒ R]): Rule[j.In, j.Out]
     def apply[Z, R](f: (Z, A, B, C, D) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: FCapture[(Z, A, B, C, D) ⇒ R]): Rule[j.In, j.Out]
+    def apply[Y, Z, R](f: (Y, Z, A, B, C, D) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: FCapture[(Y, Z, A, B, C, D) ⇒ R]): Rule[j.In, j.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z, A, B, C, D) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: FCapture[(X, Y, Z, A, B, C, D) ⇒ R]): Rule[j.In, j.Out]
+    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A, B, C, D) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(W, X, Y, Z, A, B, C, D) ⇒ R]): Rule[j.In, j.Out]
+    def apply[V, W, X, Y, Z, R](f: (V, W, X, Y, Z, A, B, C, D) ⇒ R)(implicit j: SJoin[V :: W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(V, W, X, Y, Z, A, B, C, D) ⇒ R]): Rule[j.In, j.Out]
   }
-  implicit def ops[I <: HList, O <: HList, OI <: HList, A, B, C, D, E](implicit x: TakeRight5[O, OI, A, B, C, D, E]) = new ActionOps[I, O] { type Out = Ops[I, OI, A, B, C, D, E] }
-  sealed trait Ops[I <: HList, OI <: HList, A, B, C, D, E] {
-    def apply[R](f: () ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: E :: HNil, R], c: FCapture[() ⇒ R]): Rule[j.In, j.Out]
-    def apply[R](f: E ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: HNil, R], c: FCapture[E ⇒ R]): Rule[j.In, j.Out]
-    def apply[R](f: (D, E) ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: HNil, R], c: FCapture[(D, E) ⇒ R]): Rule[j.In, j.Out]
-    def apply[R](f: (C, D, E) ⇒ R)(implicit j: Join[I, OI, A :: B :: HNil, R], c: FCapture[(C, D, E) ⇒ R]): Rule[j.In, j.Out]
-    def apply[R](f: (B, C, D, E) ⇒ R)(implicit j: Join[I, OI, A :: HNil, R], c: FCapture[(B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
-    def apply[R](f: (A, B, C, D, E) ⇒ R)(implicit j: SJoin[I, OI, R], c: FCapture[(A, B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+  implicit def ops5[I <: HList, A, B, C, D, E] = new ActionOps[I, A :: B :: C :: D :: E :: HNil] { type Out = Ops5[I, A, B, C, D, E] }
+  sealed trait Ops5[I <: HList, A, B, C, D, E] {
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: HNil, R], c: FCapture[() ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: E ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: HNil, R], c: FCapture[E ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (D, E) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: HNil, R], c: FCapture[(D, E) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (C, D, E) ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: FCapture[(C, D, E) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (B, C, D, E) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: FCapture[(B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B, C, D, E) ⇒ R)(implicit j: SJoin[I, HNil, R], c: FCapture[(A, B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: (Z, A, B, C, D, E) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: FCapture[(Z, A, B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+    def apply[Y, Z, R](f: (Y, Z, A, B, C, D, E) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: FCapture[(Y, Z, A, B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z, A, B, C, D, E) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: FCapture[(X, Y, Z, A, B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+    def apply[W, X, Y, Z, R](f: (W, X, Y, Z, A, B, C, D, E) ⇒ R)(implicit j: SJoin[W :: X :: Y :: Z :: I, HNil, R], c: FCapture[(W, X, Y, Z, A, B, C, D, E) ⇒ R]): Rule[j.In, j.Out]
+  }
+  implicit def ops6[I <: HList, A, B, C, D, E, F] = new ActionOps[I, A :: B :: C :: D :: E :: F :: HNil] { type Out = Ops6[I, A, B, C, D, E, F] }
+  sealed trait Ops6[I <: HList, A, B, C, D, E, F] {
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: F :: HNil, R], c: FCapture[() ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: F ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: HNil, R], c: FCapture[F ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (E, F) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: HNil, R], c: FCapture[(E, F) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (D, E, F) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: HNil, R], c: FCapture[(D, E, F) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (C, D, E, F) ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: FCapture[(C, D, E, F) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (B, C, D, E, F) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: FCapture[(B, C, D, E, F) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B, C, D, E, F) ⇒ R)(implicit j: SJoin[I, HNil, R], c: FCapture[(A, B, C, D, E, F) ⇒ R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: (Z, A, B, C, D, E, F) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: FCapture[(Z, A, B, C, D, E, F) ⇒ R]): Rule[j.In, j.Out]
+    def apply[Y, Z, R](f: (Y, Z, A, B, C, D, E, F) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: FCapture[(Y, Z, A, B, C, D, E, F) ⇒ R]): Rule[j.In, j.Out]
+    def apply[X, Y, Z, R](f: (X, Y, Z, A, B, C, D, E, F) ⇒ R)(implicit j: SJoin[X :: Y :: Z :: I, HNil, R], c: FCapture[(X, Y, Z, A, B, C, D, E, F) ⇒ R]): Rule[j.In, j.Out]
+  }
+  implicit def ops7[I <: HList, A, B, C, D, E, F, G] = new ActionOps[I, A :: B :: C :: D :: E :: F :: G :: HNil] { type Out = Ops7[I, A, B, C, D, E, F, G] }
+  sealed trait Ops7[I <: HList, A, B, C, D, E, F, G] {
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: F :: G :: HNil, R], c: FCapture[() ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: G ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: F :: HNil, R], c: FCapture[G ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (F, G) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: HNil, R], c: FCapture[(F, G) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (E, F, G) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: HNil, R], c: FCapture[(E, F, G) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (D, E, F, G) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: HNil, R], c: FCapture[(D, E, F, G) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (C, D, E, F, G) ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: FCapture[(C, D, E, F, G) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (B, C, D, E, F, G) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: FCapture[(B, C, D, E, F, G) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B, C, D, E, F, G) ⇒ R)(implicit j: SJoin[I, HNil, R], c: FCapture[(A, B, C, D, E, F, G) ⇒ R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: (Z, A, B, C, D, E, F, G) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: FCapture[(Z, A, B, C, D, E, F, G) ⇒ R]): Rule[j.In, j.Out]
+    def apply[Y, Z, R](f: (Y, Z, A, B, C, D, E, F, G) ⇒ R)(implicit j: SJoin[Y :: Z :: I, HNil, R], c: FCapture[(Y, Z, A, B, C, D, E, F, G) ⇒ R]): Rule[j.In, j.Out]
+  }
+  implicit def ops8[I <: HList, A, B, C, D, E, F, G, H] = new ActionOps[I, A :: B :: C :: D :: E :: F :: G :: H :: HNil] { type Out = Ops8[I, A, B, C, D, E, F, G, H] }
+  sealed trait Ops8[I <: HList, A, B, C, D, E, F, G, H] {
+    def apply[R](f: () ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: F :: G :: H :: HNil, R], c: FCapture[() ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: H ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: F :: G :: HNil, R], c: FCapture[H ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (G, H) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: F :: HNil, R], c: FCapture[(G, H) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (F, G, H) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: E :: HNil, R], c: FCapture[(F, G, H) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (E, F, G, H) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: D :: HNil, R], c: FCapture[(E, F, G, H) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (D, E, F, G, H) ⇒ R)(implicit j: SJoin[I, A :: B :: C :: HNil, R], c: FCapture[(D, E, F, G, H) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (C, D, E, F, G, H) ⇒ R)(implicit j: SJoin[I, A :: B :: HNil, R], c: FCapture[(C, D, E, F, G, H) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (B, C, D, E, F, G, H) ⇒ R)(implicit j: SJoin[I, A :: HNil, R], c: FCapture[(B, C, D, E, F, G, H) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B, C, D, E, F, G, H) ⇒ R)(implicit j: SJoin[I, HNil, R], c: FCapture[(A, B, C, D, E, F, G, H) ⇒ R]): Rule[j.In, j.Out]
+    def apply[Z, R](f: (Z, A, B, C, D, E, F, G, H) ⇒ R)(implicit j: SJoin[Z :: I, HNil, R], c: FCapture[(Z, A, B, C, D, E, F, G, H) ⇒ R]): Rule[j.In, j.Out]
+  }
+  implicit def ops[I <: HList, O <: HList, OI <: HList, A, B, C, D, E, F, G, H, J](implicit x: TakeRight9[O, OI, A, B, C, D, E, F, G, H, J]) = new ActionOps[I, O] { type Out = Ops[I, OI, A, B, C, D, E, F, G, H, J] }
+  sealed trait Ops[I <: HList, OI <: HList, A, B, C, D, E, F, G, H, J] {
+    def apply[R](f: () ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: E :: F :: G :: H :: J :: HNil, R], c: FCapture[() ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: J ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: E :: F :: G :: H :: HNil, R], c: FCapture[J ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (H, J) ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: E :: F :: G :: HNil, R], c: FCapture[(H, J) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (G, H, J) ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: E :: F :: HNil, R], c: FCapture[(G, H, J) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (F, G, H, J) ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: E :: HNil, R], c: FCapture[(F, G, H, J) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (E, F, G, H, J) ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: D :: HNil, R], c: FCapture[(E, F, G, H, J) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (D, E, F, G, H, J) ⇒ R)(implicit j: Join[I, OI, A :: B :: C :: HNil, R], c: FCapture[(D, E, F, G, H, J) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (C, D, E, F, G, H, J) ⇒ R)(implicit j: Join[I, OI, A :: B :: HNil, R], c: FCapture[(C, D, E, F, G, H, J) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (B, C, D, E, F, G, H, J) ⇒ R)(implicit j: Join[I, OI, A :: HNil, R], c: FCapture[(B, C, D, E, F, G, H, J) ⇒ R]): Rule[j.In, j.Out]
+    def apply[R](f: (A, B, C, D, E, F, G, H, J) ⇒ R)(implicit j: Join[I, OI, HNil, R], c: FCapture[(A, B, C, D, E, F, G, H, J) ⇒ R]): Rule[j.In, j.Out]
   }
 }
 
@@ -147,13 +223,12 @@ private[parboiled2] abstract class LowerPriorityJoin0 {
   implicit def forAny[I <: HList, L1 <: HList, L2 <: HList, R, Acc <: HList, Out <: HList](implicit x: Join0[I, L1, L2, R :: HNil, Acc, I, Out]): Join0[I, L1, L2, R, Acc, I, Out] = `n/a`
 }
 
-// format: ON
-
-sealed trait TakeRight5[L <: HList, Init <: HList, A, B, C, D, E]
-object TakeRight5 extends LowerPriorityMatchRight5 {
-  implicit def forHList5[A, B, C, D, E]: TakeRight5[A :: B :: C :: D :: E :: HNil, HNil, A, B, C, D, E] = null
+sealed trait TakeRight9[L <: HList, Init <: HList, A, B, C, D, E, F, G, H, I]
+object TakeRight9 extends LowerPriorityMatchRight9 {
+  implicit def forHList9[A, B, C, D, E, F, G, H, I]: TakeRight9[A :: B :: C :: D :: E :: F :: G :: H :: I :: HNil, HNil, A, B, C, D, E, F, G, H, I] = `n/a`
 }
-private[parboiled2] abstract class LowerPriorityMatchRight5 {
-  implicit def forHList[H, T <: HList, Init <: HList, A, B, C, D, E](implicit x: TakeRight5[T, Init, A, B, C, D, E]): TakeRight5[H :: T, H :: Init, A, B, C, D, E] = null
+private[parboiled2] abstract class LowerPriorityMatchRight9 {
+  implicit def forHList[Head, Tail <: HList, Init <: HList, A, B, C, D, E, F, G, H, I]
+  (implicit x: TakeRight9[Tail, Init, A, B, C, D, E, F, G, H, I]): TakeRight9[Head :: Tail, Head :: Init, A, B, C, D, E, F, G, H, I] = `n/a`
 }
 
