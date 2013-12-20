@@ -32,10 +32,7 @@ sealed trait TailSwitch[L <: HList, T <: HList, R <: HList] {
 }
 object TailSwitch {
   implicit def tailSwitch[L <: HList, T <: HList, R <: HList, Out0 <: HList]
-  (implicit ts: TailSwitch0[L, L, T, T, R, HNil, Out0]) =
-    new TailSwitch[L, T, R] {
-      type Out = Out0
-    }
+  (implicit ts: TailSwitch0[L, L, T, T, R, HNil, Out0]): TailSwitch[L, T, R] { type Out = Out0 } = `n/a`
 }
 
 // type-level implementation of this algorithm:
@@ -50,7 +47,8 @@ sealed trait TailSwitch0[L <: HList, LI <: HList, T <: HList, TI <: HList, R <: 
 
 object TailSwitch0 extends TailSwitch0_1 {
   // if TI <: L then Out = R
-  implicit def terminate1[L <: HList, LI <: HList, T <: HList, TI <: L, R <: HList, RI <: HList]: TailSwitch0[L, LI, T, TI, R, RI, R] = `n/a`
+  implicit def terminate1[L <: HList, LI <: HList, T <: HList, TI <: L, R <: HList, RI <: HList]:
+    TailSwitch0[L, LI, T, TI, R, RI, R] = `n/a`
 }
 
 private[parboiled2] abstract class TailSwitch0_1 extends TailSwitch0_2 {

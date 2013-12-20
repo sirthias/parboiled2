@@ -24,10 +24,10 @@ import shapeless._
 sealed trait Lifter[M[_], I <: HList, O <: HList] { type In <: HList; type Out <: HList }
 
 object Lifter extends LowerPriorityLifter {
-  implicit def forRule0[M[_]] = new Lifter[M, HNil, HNil] { type In = HNil; type Out = HNil }
-  implicit def forRule1[M[_], T] = new Lifter[M, HNil, T :: HNil] { type In = HNil; type Out = M[T] :: HNil }
+  implicit def forRule0[M[_]]: Lifter[M, HNil, HNil] { type In = HNil; type Out = HNil } = `n/a`
+  implicit def forRule1[M[_], T]: Lifter[M, HNil, T :: HNil] { type In = HNil; type Out = M[T] :: HNil } = `n/a`
 }
 
 sealed abstract class LowerPriorityLifter {
-  implicit def forReduction[M[_], L <: HList, R <: L] = new Lifter[M, L, R] { type In = L; type Out = R }
+  implicit def forReduction[M[_], L <: HList, R <: L]: Lifter[M, L, R] { type In = L; type Out = R } = `n/a`
 }
