@@ -2,7 +2,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 
 val commonSettings = Seq(
-  version := "2.0-M1",
+  version := "2.0-SNAPSHOT",
   scalaVersion := "2.10.3",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
