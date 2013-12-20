@@ -53,6 +53,15 @@ abstract class Parser(initialValueStackSize: Int = 32,
   def cursorChar: Char = _cursorChar
 
   /**
+   * Returns the input character at the index with the given offset from the cursor.
+   * If this index is out of range the method returns `EOI`.
+   */
+  def cursorChar(offset: Int): Char = {
+    val ix = cursor + offset
+    if (0 <= ix && ix < input.length) input.charAt(ix) else EOI
+  }
+
+  /**
    * Allows "raw" (i.e. untyped) access to the `ValueStack`.
    * In most cases you shouldn't need to access the value stack directly from your code.
    * Use only if you know what you are doing!
