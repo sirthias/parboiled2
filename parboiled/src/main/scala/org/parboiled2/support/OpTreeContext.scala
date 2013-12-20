@@ -56,8 +56,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
     case q"$a.this.run[$b]($arg)($rr)"           ⇒ RunAction(arg, rr)
     case q"$a.this.push[$b]($arg)($c)"           ⇒ PushAction(arg)
-    case x @ q"$a.this.$method"                  ⇒ RuleCall(x, method.toString)
-    case x @ q"$a.this.$method(..$c)"            ⇒ RuleCall(x, method.toString)
     case x @ q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
       CharRange(l, r, x.pos)
     case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
@@ -70,6 +68,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case "times"      ⇒ Times(base, op, coll, separator)
         case _            ⇒ c.abort(x.pos, "Unexpected Repeated fun: " + fun)
       }
+    case call @ (Apply(_, _) | Select(_, _) | Ident(_)) ⇒ RuleCall(call)
   }
 
   def OpTree(tree: Tree): OpTree =
@@ -237,11 +236,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class CharPredicateMatch(predicateTree: Tree) extends OpTree {
-    def predicateName = predicateTree match {
-      case Select(_, name) ⇒ name.toString
-      case Ident(name)     ⇒ name.toString
-      case _               ⇒ ""
-    }
+    def predicateName = callName(predicateTree) getOrElse ""
     def ruleFrame: Expr[RuleFrame.Anonymous] =
       reify(RuleFrame.CharPredicateMatch(c.Expr[CharPredicate](predicateTree).splice, c.literal(predicateName).splice))
     def render(ruleName: String): Expr[RuleX] = reify {
@@ -534,7 +529,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
   }
 
-  case class RuleCall(call: Tree, calleeName: String) extends OpTree {
+  case class RuleCall(call: Tree) extends OpTree {
+    def calleeName = callName(call) getOrElse c.abort(call.pos, "Illegal rule call: " + call)
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.RuleCall(c.literal(calleeName).splice))
     def render(ruleName: String): Expr[RuleX] = reify {
       try c.Expr[RuleX](call).splice
@@ -646,4 +642,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   def matchAndExpandOpTreeIfPossible(tree: Tree): Tree =
     opTreePF.andThen(_.render().tree).applyOrElse(tree, identity(_: Tree))
 
+  @tailrec
+  private def callName(tree: Tree): Option[String] =
+    tree match {
+      case Ident(name)     ⇒ Some(name.toString)
+      case Select(_, name) ⇒ Some(name.toString)
+      case Apply(fun, _)   ⇒ callName(fun)
+      case _               ⇒ None
+    }
 }
