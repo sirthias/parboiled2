@@ -25,8 +25,41 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   import c.universe._
 
   sealed trait OpTree {
+    protected[this] abstract class RenderedBody {
+      type T
+      def init(ruleName: String): Expr[T]
+      def process(ruleName: String): Expr[RuleX]
+    }
+
+    def renderedBody: RenderedBody
+
     def ruleFrame: Expr[RuleFrame.Anonymous]
-    def render(ruleName: String = ""): Expr[RuleX]
+
+    def render(ruleName: String = ""): Expr[RuleX] = {
+      reify {
+        renderedBody.init(ruleName).splice
+        renderedBody.process(ruleName).splice
+      }
+    }
+  }
+
+  sealed trait OpTreeThrowsError extends OpTree {
+    protected[this] abstract class RenderedBodyThrowsError extends RenderedBody {
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]]
+    }
+
+    def renderedBody: RenderedBodyThrowsError
+
+    override def render(ruleName: String): Expr[RuleX] = reify {
+      val arg = renderedBody.init(ruleName).splice
+      if (c.prefix.splice.__collectingErrors) {
+        try renderedBody.process(ruleName).splice
+        catch {
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(renderedBody.ruleFrames(ruleName).splice: _*)
+        }
+      } else renderedBody.process(ruleName).splice
+    }
   }
 
   def collector(lifterTree: Tree): Collector =
@@ -80,25 +113,27 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case _             ⇒ Sequence(Seq(lhs, rhs))
     }
 
-  case class Sequence(ops: Seq[OpTree]) extends OpTree {
+  case class Sequence(ops: Seq[OpTree]) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Sequence(c.literal(ops.size).splice))
-    def render(ruleName: String): Expr[RuleX] = {
-      def rec(ix: Int): Expr[RuleX] =
-        if (ix < ops.size - 1) {
-          val opName = newTermName("op" + ix)
-          c.Expr[RuleX](q"""
+
+    def rec(ix: Int): Expr[RuleX] =
+      if (ix < ops.size - 1) {
+        val opName = newTermName("op" + ix)
+        c.Expr[RuleX](q"""
           val $opName = ${ops(ix).render()}
           if ($opName.matched) ${rec(ix + 1)}
           else $opName""")
-        } else ops(ix).render()
+      } else ops(ix).render()
 
-      reify {
-        try rec(0).splice
-        catch {
-          case e: Parser.CollectingRuleStackException ⇒
-            e.save(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice))
-        }
-      }
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"${rec(0)}")
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
@@ -108,9 +143,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case _            ⇒ FirstOf(Seq(lhs, rhs))
     }
 
-  case class FirstOf(ops: Seq[OpTree]) extends OpTree {
+  case class FirstOf(ops: Seq[OpTree]) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.FirstOf(c.literal(ops.size).splice))
-    def render(ruleName: String): Expr[RuleX] = {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
       def rec(ix: Int): Expr[RuleX] =
         if (ix < ops.size - 1) {
           val opName = newTermName("op" + ix)
@@ -123,24 +161,28 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           }""")
         } else ops(ix).render()
 
-      reify {
-        try {
-          val p = c.prefix.splice
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
+          val p = ${c.prefix}
           val mark = p.__saveState
-          rec(0).splice
-        } catch {
-          case e: Parser.CollectingRuleStackException ⇒
-            e.save(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice))
-        }
-      }
+          ${rec(0)}
+      """)
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
-  case class CharMatch(charTree: Tree) extends OpTree {
-    def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.CharMatch(c.Expr[Char](charTree).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      val char = c.Expr[Char](charTree).splice
-      try {
+  case class CharMatch(charTree: Tree) extends OpTreeThrowsError {
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = reify {
+        val char = c.Expr[Char](charTree).splice
+      }
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
         val p = c.prefix.splice
         if (p.cursorChar == char) {
           p.__advance()
@@ -149,37 +191,48 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           p.__registerMismatch()
           Rule.Mismatched
         }
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.CharMatch(char), c.literal(ruleName).splice))
-      }
+      """)
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(RuleFrame.CharMatch(c.Expr[Char](q"char").splice), c.literal(ruleName).splice)))
     }
+
+    def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.CharMatch(c.Expr[Char](charTree).splice))
   }
 
-  case class StringMatch(stringTree: Tree) extends OpTree {
-    def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.StringMatch(c.Expr[String](stringTree).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      val string = c.Expr[String](stringTree).splice
-      val p = c.prefix.splice
-      @tailrec def rec(ix: Int): Int =
-        if (ix < string.length)
-          if (p.cursorChar == string.charAt(ix)) {
-            p.__advance()
-            rec(ix + 1)
-          } else ix
-        else -1
-      val mismatchIx = rec(0)
-      try {
+  case class StringMatch(stringTree: Tree) extends OpTreeThrowsError {
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = (Int, String)
+
+      def init(ruleName: String): Expr[T] = reify {
+        val string = c.Expr[String](stringTree).splice
+        val p = c.prefix.splice
+        @tailrec def rec(ix: Int): Int =
+          if (ix < string.length)
+            if (p.cursorChar == string.charAt(ix)) {
+              p.__advance()
+              rec(ix + 1)
+            } else ix
+          else -1
+        val mismatchIx = rec(0)
+        (mismatchIx, string)
+      }
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
+        val p = ${c.prefix}
+        val (mismatchIx, string) = arg
         if (mismatchIx >= 0) {
           p.__registerMismatch()
           Rule.Mismatched
         } else Rule.Matched
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.StringMatch(string), c.literal(ruleName).splice),
-            RuleFrame.CharMatch(string charAt mismatchIx))
-      }
+      """)
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame.StringMatch(c.Expr[String](stringTree).splice),
+          c.Expr[RuleFrame](q"RuleFrame.CharMatch(arg._2 charAt arg._1)").splice))
     }
+
+    def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.StringMatch(c.Expr[String](stringTree).splice))
   }
 
   def IgnoreCase(argTree: Tree): OpTree = {
@@ -189,11 +242,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     else c.abort(argTree.pos, "Unexpected `ignoreCase` argument type: " + argTypeSymbol)
   }
 
-  case class IgnoreCaseChar(charTree: Tree) extends OpTree {
-    def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.CharMatch(c.Expr[Char](charTree).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      val char = c.Expr[Char](charTree).splice
-      try {
+  case class IgnoreCaseChar(charTree: Tree) extends OpTreeThrowsError {
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = reify {
+        val char = c.Expr[Char](charTree).splice
+      }
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
         val p = c.prefix.splice
         if (p.cursorChar.toLower == char) {
           p.__advance()
@@ -202,46 +259,61 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           p.__registerMismatch()
           Rule.Mismatched
         }
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.IgnoreCaseChar(char), c.literal(ruleName).splice))
-      }
+      """)
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(RuleFrame.IgnoreCaseChar(c.Expr[Char](q"char").splice), c.literal(ruleName).splice)))
     }
+
+    def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.CharMatch(c.Expr[Char](charTree).splice))
   }
 
-  case class IgnoreCaseString(stringTree: Tree) extends OpTree {
+  case class IgnoreCaseString(stringTree: Tree) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.IgnoreCaseString(c.Expr[String](stringTree).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      val string = c.Expr[String](stringTree).splice
-      val p = c.prefix.splice
-      @tailrec def rec(ix: Int): Int =
-        if (ix < string.length)
-          if (p.cursorChar.toLower == string.charAt(ix)) {
-            p.__advance()
-            rec(ix + 1)
-          } else ix
-        else -1
-      val mismatchIx = rec(0)
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = reify {
+        val string = c.Expr[String](stringTree).splice
+        val p = c.prefix.splice
+        @tailrec def rec(ix: Int): Int =
+          if (ix < string.length)
+            if (p.cursorChar.toLower == string.charAt(ix)) {
+              p.__advance()
+              rec(ix + 1)
+            } else ix
+          else -1
+        val mismatchIx = rec(0)
+      }
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
         if (mismatchIx >= 0) {
           p.__registerMismatch()
           Rule.Mismatched
         } else Rule.Matched
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.IgnoreCaseString(string), c.literal(ruleName).splice),
-            RuleFrame.CharMatch(string charAt mismatchIx))
-      }
+      """)
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice),
+          c.Expr[RuleFrame](q"RuleFrame.CharMatch(string charAt mismatchIx)").splice))
     }
   }
 
-  case class CharPredicateMatch(predicateTree: Tree) extends OpTree {
+  case class CharPredicateMatch(predicateTree: Tree) extends OpTreeThrowsError {
     def predicateName = callName(predicateTree) getOrElse ""
+
     def ruleFrame: Expr[RuleFrame.Anonymous] =
       reify(RuleFrame.CharPredicateMatch(c.Expr[CharPredicate](predicateTree).splice, c.literal(predicateName).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      val predicate = c.Expr[CharPredicate](predicateTree).splice
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = reify {
+        val predicate = c.Expr[CharPredicate](predicateTree).splice
+      }
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
         val p = c.prefix.splice
         if (predicate(p.cursorChar)) {
           p.__advance()
@@ -250,18 +322,24 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           p.__registerMismatch()
           Rule.Mismatched
         }
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice))
-      }
+      """)
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
-  case class AnyOf(stringTree: Tree) extends OpTree {
+  case class AnyOf(stringTree: Tree) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.AnyOf(c.Expr[String](stringTree).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      val string = c.Expr[String](stringTree).splice
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = reify {
+        val string = c.Expr[String](stringTree).splice
+      }
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](q"""
         val p = c.prefix.splice
         val cursor = p.cursorChar
         @tailrec def rec(ix: Int): RuleX =
@@ -275,17 +353,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             Rule.Mismatched
           }
         rec(0)
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.AnyOf(string), c.literal(ruleName).splice))
-      }
+      """)
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
-  case object ANY extends OpTree {
+  case object ANY extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.ANY)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         if (p.cursorChar == EOI) {
           p.__registerMismatch()
@@ -294,17 +377,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           p.__advance()
           Rule.Matched
         }
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.ANY, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
-  case class Optional(op: OpTree, collector: Collector) extends OpTree {
+  case class Optional(op: OpTree, collector: Collector) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Optional)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         val mark = p.__saveState
         if (op.render().splice.matched) {
@@ -314,17 +402,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           collector.pushNone.splice
         }
         Rule.Matched
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.Optional, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
-  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = emptySeparator) extends OpTree {
+  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = emptySeparator) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.ZeroOrMore)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         collector.valBuilder.splice
 
@@ -339,17 +432,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         p.__restoreState(rec(p.__saveState))
         collector.builderPushResult.splice
         Rule.Matched
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.ZeroOrMore, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
-  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = emptySeparator) extends OpTree {
+  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = emptySeparator) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.OneOrMore)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         val firstMark = p.__saveState
         collector.valBuilder.splice
@@ -368,10 +466,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           collector.builderPushResult.splice
           Rule.Matched
         } else Rule.Mismatched
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.OneOrMore, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(RuleFrame.OneOrMore, c.literal(ruleName).splice)))
     }
   }
 
@@ -391,10 +489,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case _ ⇒ c.abort(base.pos, "Invalid `x` in `x.times(...)`: " + base)
     }
 
-  case class Times(min: Int, max: Int, op: OpTree, collector: Collector, separator: Separator) extends OpTree {
+  case class Times(min: Int, max: Int, op: OpTree, collector: Collector, separator: Separator) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Times(c.literal(min).splice, c.literal(max).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         collector.valBuilder.splice
 
@@ -414,33 +517,43 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           collector.builderPushResult.splice
           Rule.Matched
         } else Rule.Mismatched
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
-  case class AndPredicate(op: OpTree) extends OpTree {
+  case class AndPredicate(op: OpTree) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.AndPredicate)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         val mark = p.__saveState
         val result = op.render().splice
         p.__restoreState(mark)
         result
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.AndPredicate, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(RuleFrame.AndPredicate, c.literal(ruleName).splice)))
     }
   }
 
-  case class NotPredicate(op: OpTree) extends OpTree {
+  case class NotPredicate(op: OpTree) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.NotPredicate)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         val mark = p.__saveState
         val saved = p.__enterNotPredicate
@@ -451,93 +564,121 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           p.__registerMismatch()
           Rule.Mismatched
         } else Rule.Matched
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.NotPredicate, c.literal(ruleName).splice), op.ruleFrame.splice)
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(RuleFrame.NotPredicate, c.literal(ruleName).splice), op.ruleFrame.splice))
     }
   }
 
-  case class SemanticPredicate(flagTree: Tree) extends OpTree {
+  case class SemanticPredicate(flagTree: Tree) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.SemanticPredicate)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         if (c.Expr[Boolean](flagTree).splice) Rule.Matched
         else {
           p.__registerMismatch()
           Rule.Mismatched
         }
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.SemanticPredicate, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(RuleFrame.SemanticPredicate, c.literal(ruleName).splice)))
     }
   }
 
-  case class Capture(op: OpTree) extends OpTree {
+  case class Capture(op: OpTree) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Capture)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         val start = p.cursor
         val result = op.render().splice
         if (result.matched) p.valueStack.push(p.input.sliceString(start, p.cursor))
         result
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(RuleFrame.Capture, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
   case class RunAction(argTree: Tree, rrTree: Tree) extends OpTree {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Run)
-    def render(ruleName: String): Expr[RuleX] = {
-      rrTree match {
-        case q"support.this.RunResult.forAny[$t]" ⇒
-          reify {
-            c.Expr[Unit](argTree).splice
-            Rule.Matched
-          }
 
-        case q"support.this.RunResult.forRule[$t]" ⇒
-          def body(tree: Tree): Tree =
-            tree match {
-              case Block(statements, res) ⇒ Block(statements, body(res))
-              case x                      ⇒ matchAndExpandOpTreeIfPossible(x)
+    def renderedBody = new RenderedBody {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = {
+        rrTree match {
+          case q"support.this.RunResult.forAny[$t]" ⇒
+            reify {
+              c.Expr[Unit](argTree).splice
+              Rule.Matched
             }
-          c.Expr[RuleX](body(argTree))
 
-        case _ ⇒
-          c.abort(rrTree.pos, "Unexpected RunResult expression: " + show(rrTree))
+          case q"support.this.RunResult.forRule[$t]" ⇒
+            def body(tree: Tree): Tree =
+              tree match {
+                case Block(statements, res) ⇒ Block(statements, body(res))
+                case x                      ⇒ matchAndExpandOpTreeIfPossible(x)
+              }
+            c.Expr[RuleX](body(argTree))
+
+          case _ ⇒
+            c.abort(rrTree.pos, "Unexpected RunResult expression: " + show(rrTree))
+        }
       }
     }
   }
 
   case class PushAction(arg: Tree) extends OpTree {
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Push)
-    def render(ruleName: String): Expr[RuleX] = reify {
-      val p = c.prefix.splice
-      val value: Any = c.Expr[Any](arg).splice
-      value match {
-        case ()       ⇒
-        case x: HList ⇒ p.valueStack.pushAll(x)
-        case x        ⇒ p.valueStack.push(x)
+
+    def renderedBody = new RenderedBody {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
+        val p = c.prefix.splice
+        val value: Any = c.Expr[Any](arg).splice
+        value match {
+          case ()       ⇒
+          case x: HList ⇒ p.valueStack.pushAll(x)
+          case x        ⇒ p.valueStack.push(x)
+        }
+        Rule.Matched
       }
-      Rule.Matched
     }
   }
 
-  case class RuleCall(call: Tree) extends OpTree {
+  case class RuleCall(call: Tree) extends OpTreeThrowsError {
     def calleeName = callName(call) getOrElse c.abort(call.pos, "Illegal rule call: " + call)
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.RuleCall(c.literal(calleeName).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try c.Expr[RuleX](call).splice
-      catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice))
-      }
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = c.Expr[RuleX](call)
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
@@ -550,11 +691,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     CharacterRange(lowerBoundChar, upperBoundChar)
   }
 
-  case class CharacterRange(lowerBound: Char, upperBound: Char) extends OpTree {
+  case class CharacterRange(lowerBound: Char, upperBound: Char) extends OpTreeThrowsError {
     def ruleFrame: Expr[RuleFrame.Anonymous] =
       reify(RuleFrame.CharRange(c.literal(lowerBound).splice, c.literal(upperBound).splice))
-    def render(ruleName: String): Expr[RuleX] = reify {
-      try {
+
+    def renderedBody = new RenderedBodyThrowsError {
+      type T = Unit
+
+      def init(ruleName: String): Expr[T] = c.literalUnit
+
+      def process(ruleName: String): Expr[RuleX] = reify {
         val p = c.prefix.splice
         val char = p.cursorChar
         if (c.literal(lowerBound).splice <= char && char <= c.literal(upperBound).splice) {
@@ -564,10 +710,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           p.__registerMismatch()
           Rule.Mismatched
         }
-      } catch {
-        case e: Parser.CollectingRuleStackException ⇒
-          e.save(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice))
       }
+
+      def ruleFrames(ruleName: String): Expr[List[RuleFrame]] =
+        reify(List(RuleFrame(ruleFrame.splice, c.literal(ruleName).splice)))
     }
   }
 
@@ -577,38 +723,45 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       case x                                    ⇒ c.abort(actionTree.pos, "Unexpected action type: " + x)
     }
     def ruleFrame: Expr[RuleFrame.Anonymous] = reify(RuleFrame.Action)
-    def render(ruleName: String): Expr[RuleX] = {
-      val argTypes = actionType dropRight 1
 
-      def popToVals(valNames: List[TermName]): List[Tree] =
-        (valNames zip argTypes).map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }.reverse
+    def renderedBody = new RenderedBody {
+      type T = Unit
 
-      def actionBody(tree: Tree): Tree =
-        tree match {
-          case Block(statements, res) ⇒ Block(statements, actionBody(res))
+      def init(ruleName: String): Expr[T] = c.literalUnit
 
-          case x @ (Ident(_) | Select(_, _)) ⇒
-            val valNames: List[TermName] = argTypes.indices.map { i ⇒ newTermName("value" + i) }(collection.breakOut)
-            val args = valNames map Ident.apply
-            Block(popToVals(valNames), PushAction(q"$x(..$args)").render().tree)
+      def process(ruleName: String): Expr[RuleX] = {
+        val argTypes = actionType dropRight 1
 
-          case q"(..$args ⇒ $body)" ⇒
-            val (expressions, res) = body match {
-              case Block(exps, rs) ⇒ (exps, rs)
-              case x               ⇒ (Nil, x)
-            }
-            val resTree =
-              if (actionType.last.typeSymbol == ruleTypeSymbol) matchAndExpandOpTreeIfPossible(res)
-              else PushAction(res).render().tree
-            Block(popToVals(args.map(_.name)) ::: expressions, resTree)
+        def popToVals(valNames: List[TermName]): List[Tree] =
+          (valNames zip argTypes).map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }.reverse
+
+        def actionBody(tree: Tree): Tree =
+          tree match {
+            case Block(statements, res) ⇒ Block(statements, actionBody(res))
+
+            case x @ (Ident(_) | Select(_, _)) ⇒
+              val valNames: List[TermName] = argTypes.indices.map { i ⇒ newTermName("value" + i) }(collection.breakOut)
+              val args = valNames map Ident.apply
+              Block(popToVals(valNames), PushAction(q"$x(..$args)").render().tree)
+
+            case q"(..$args ⇒ $body)" ⇒
+              val (expressions, res) = body match {
+                case Block(exps, rs) ⇒ (exps, rs)
+                case x               ⇒ (Nil, x)
+              }
+              val resTree =
+                if (actionType.last.typeSymbol == ruleTypeSymbol) matchAndExpandOpTreeIfPossible(res)
+                else PushAction(res).render().tree
+              Block(popToVals(args.map(_.name)) ::: expressions, resTree)
+          }
+
+        reify {
+          val result = op.render().splice
+          if (result.matched) {
+            val p = c.prefix.splice
+            c.Expr[RuleX](actionBody(c.resetAllAttrs(actionTree))).splice
+          } else result
         }
-
-      reify {
-        val result = op.render().splice
-        if (result.matched) {
-          val p = c.prefix.splice
-          c.Expr[RuleX](actionBody(c.resetAllAttrs(actionTree))).splice
-        } else result
       }
     }
   }

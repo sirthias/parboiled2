@@ -102,6 +102,11 @@ abstract class Parser(initialValueStackSize: Int = 32,
 
   ////////////////////// INTERNAL /////////////////////////
 
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  var __collectingErrors = false
+
   // the char at the current input index
   private[this] var _cursorChar: Char = _
 
@@ -155,8 +160,10 @@ abstract class Parser(initialValueStackSize: Int = 32,
       maxCursor = -1
       if (runRule())
         scheme.success(valueStack.toHList[L]())
-      else
+      else {
+        __collectingErrors = true
         scheme.parseError(buildParseError())
+      }
     } catch {
       case NonFatal(e) ⇒ scheme.failure(e)
     }
@@ -211,7 +218,7 @@ abstract class Parser(initialValueStackSize: Int = 32,
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __registerMismatch(): Unit =
-    if (currentErrorRuleStackIx >= 0 && _cursor == maxCursor) {
+    if (__collectingErrors && currentErrorRuleStackIx >= 0 && _cursor == maxCursor) {
       if (mismatchesAtErrorCursor < currentErrorRuleStackIx) mismatchesAtErrorCursor += 1
       else throw new Parser.CollectingRuleStackException
     }
