@@ -83,6 +83,14 @@ object Rule {
    */
   val Mismatched = new Rule0(false)
 
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def apply(matched: Boolean): RuleX = if (matched) Matched else Mismatched
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
   implicit class Runnable[L <: HList](rule: RuleN[L]) {
     def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = macro Parser.runImpl[L]
   }

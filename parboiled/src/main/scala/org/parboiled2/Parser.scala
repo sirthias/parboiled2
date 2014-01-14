@@ -132,9 +132,14 @@ abstract class Parser(initialValueStackSize: Int = 32,
   private[this] var mismatchesAtErrorCursor: Int = _
 
   // the index of the RuleStack we are currently constructing
-  // for the ParserError to be returned in the very first parser run,
-  // as long as we do not yet know whether we have to construct a ParserError object this value is -1
+  // for the ParseError to be (potentially) returned in the current parser run,
+  // as long as we do not yet know whether we have to construct a ParseError object this value is -1
   private[this] var currentErrorRuleStackIx: Int = _
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __collectingErrors = currentErrorRuleStackIx >= 0
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -182,7 +187,7 @@ abstract class Parser(initialValueStackSize: Int = 32,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __advance(): Unit = {
+  def __advance(): Boolean = {
     var c = _cursor
     val max = input.length
     if (c < max) {
@@ -194,6 +199,7 @@ abstract class Parser(initialValueStackSize: Int = 32,
       if (currentErrorRuleStackIx == -1 && c > maxCursor)
         maxCursor = c // if we are in the first "regular" parser run, we need to keep track of maxCursor here
     }
+    true
   }
 
   /**
@@ -227,11 +233,25 @@ abstract class Parser(initialValueStackSize: Int = 32,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __registerMismatch(): Unit =
+  def __registerMismatch(): Boolean = {
     if (currentErrorRuleStackIx >= 0 && _cursor == maxCursor) {
       if (mismatchesAtErrorCursor < currentErrorRuleStackIx) mismatchesAtErrorCursor += 1
       else throw new Parser.CollectingRuleStackException
     }
+    false
+  }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __push(value: Any): Boolean = {
+    value match {
+      case ()       ⇒
+      case x: HList ⇒ valueStack.pushAll(x)
+      case x        ⇒ valueStack.push(x)
+    }
+    true
+  }
 }
 
 object Parser {
@@ -285,7 +305,7 @@ object Parser {
     import c.universe._
     c.prefix.tree match {
       case q"parboiled2.this.Rule.Runnable[$l]($parser.$rule)" ⇒
-        c.Expr[scheme.value.Result](q"val __p__ = $parser; __p__.__run[$l](__p__.$rule)($scheme)")
+        c.Expr[scheme.value.Result](q"val p = $parser; p.__run[$l](p.$rule)($scheme)")
       case x ⇒ c.abort(x.pos, "Illegal `Runnable.apply` call: " + x)
     }
   }
@@ -305,7 +325,7 @@ object Parser {
         case _                           ⇒ ctx.abort(r.tree.pos, "`rule` can only be used from within a method")
       }
     reify {
-      opTree.render(ruleName).splice.asInstanceOf[Rule[I, O]]
+      ctx.Expr[RuleX](opTree.renderRule(ruleName)).splice.asInstanceOf[Rule[I, O]]
     }
   }
 

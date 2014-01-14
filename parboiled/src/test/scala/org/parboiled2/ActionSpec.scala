@@ -73,13 +73,13 @@ class ActionSpec extends TestParserSpec {
       "y" must beMismatched
     }
 
-    case class Foo(i: Int, s: String)
-
     "`~>` producing `Unit`" in new TestParser1[Int] {
       def testRule = rule { push(1 :: "X" :: HNil) ~> (_ ⇒ ()) }
       def targetRule = testRule
       "" must beMatchedWith(1)
     }
+
+    case class Foo(i: Int, s: String)
 
     "`~>` producing case class (simple notation)" in new TestParser1[Foo] {
       def targetRule = rule { push(1 :: "X" :: HNil) ~> Foo }

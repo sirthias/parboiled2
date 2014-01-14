@@ -63,7 +63,7 @@ class CalculatorSpec extends TestParserSpec {
           |^
           |
           |2 rules mismatched at error location:
-          |  InputLine / Expression / Term / Factor / Capture / Digits / Digit
+          |  InputLine / Expression / Term / Factor / Number / Capture / Digits / Digit
           |  InputLine / Expression / Term / Factor / Parens / '('
           |""")
 
@@ -73,7 +73,7 @@ class CalculatorSpec extends TestParserSpec {
           | ^
           |
           |2 rules mismatched at error location:
-          |  InputLine / Expression / Term / Factor / Parens / Expression / Term / Factor / Capture / Digits / Digit
+          |  InputLine / Expression / Term / Factor / Parens / Expression / Term / Factor / Number / Capture / Digits / Digit
           |  InputLine / Expression / Term / Factor / Parens / Expression / Term / Factor / Parens / '('
           |""")
 
@@ -83,7 +83,7 @@ class CalculatorSpec extends TestParserSpec {
           |   ^
           |
           |6 rules mismatched at error location:
-          |  InputLine / Expression / zeroOrMore / | / Term / Factor / Capture / Digits / Digit
+          |  InputLine / Expression / zeroOrMore / | / Term / Factor / Number / Capture / Digits / Digit
           |  InputLine / Expression / zeroOrMore / | / Term / zeroOrMore / | / '*'
           |  InputLine / Expression / zeroOrMore / | / Term / zeroOrMore / | / '/'
           |  InputLine / Expression / zeroOrMore / | / '+'
@@ -97,7 +97,7 @@ class CalculatorSpec extends TestParserSpec {
           |   ^
           |
           |2 rules mismatched at error location:
-          |  InputLine / Expression / Term / Factor / Parens / Expression / zeroOrMore / | / Term / Factor / Capture / Digits / Digit
+          |  InputLine / Expression / Term / Factor / Parens / Expression / zeroOrMore / | / Term / Factor / Number / Capture / Digits / Digit
           |  InputLine / Expression / Term / Factor / Parens / Expression / zeroOrMore / | / Term / Factor / Parens / '('
           |""")
     }
