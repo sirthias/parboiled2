@@ -62,6 +62,27 @@ class ActionSpec extends TestParserSpec {
       "ab" must beMatched
     }
 
+    "`run(F1producingUnit)`" in new TestParser1[Int] {
+      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((x: String) ⇒ require(x == "X")) ~ EOI }
+      "" must beMatchedWith(1)
+    }
+
+    "`run(F2producingValue)`" in new TestParser1[Char] {
+      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((i: Int, x: String) ⇒ (x.head - i).toChar) ~ EOI }
+      "" must beMatchedWith('W')
+    }
+
+    "`run(F2producingHList)`" in new TestParserN[String :: Int :: HNil] {
+      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((i: Int, x: String) ⇒ x :: i :: HNil) ~ EOI }
+      "" must beMatchedWith("X" :: 1 :: HNil)
+    }
+
+    "`run(F1producingRule)`" in new TestParser0 {
+      def targetRule = rule { ANY ~ push(lastChar - '0') ~ run((i: Int) ⇒ test(i % 2 == 0)) ~ EOI }
+      "4" must beMatched
+      "5" must beMismatched
+    }
+
     "`push` simple value" in new TestParser1[String] {
       def targetRule = rule { 'x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI }
       "xy" must beMatchedWith("yeah")

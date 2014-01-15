@@ -386,7 +386,28 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   case class RunAction(argTree: Tree, rrTree: Tree) extends OpTree {
     def ruleFrame = reify(RuleFrame.Run).tree
-    def renderInner(wrapped: Boolean): Tree =
+    def renderInner(wrapped: Boolean): Tree = {
+      def renderFunctionAction(resultTypeTree: Tree, argTypeTrees: Tree*): Tree = {
+        def actionBody(tree: Tree): Tree =
+          tree match {
+            case Block(statements, res) ⇒ block(statements, actionBody(res))
+
+            case q"(..$args ⇒ $body)" ⇒
+              def rewrite(tree: Tree): Tree =
+                tree match {
+                  case Block(statements, res) ⇒ block(statements, rewrite(res))
+                  case x if resultTypeTree.tpe.typeSymbol == ruleTypeSymbol ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
+                  case x ⇒ q"p.__push($x)"
+                }
+              val valDefs = args.zip(argTypeTrees).map { case (a, t) ⇒ q"val ${a.name} = p.valueStack.pop().asInstanceOf[${t.tpe}]" }.reverse
+              block(valDefs, rewrite(body))
+
+            case _ ⇒ c.abort(argTree.pos, "Unexpected `run` argument: " + show(argTree))
+          }
+
+        actionBody(c.resetLocalAttrs(argTree))
+      }
+
       rrTree match {
         case q"support.this.RunResult.forAny[$t]" ⇒ block(argTree, c.literalTrue.tree)
 
@@ -398,8 +419,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             }
           body(argTree)
 
+        case q"support.this.RunResult.forF1[$z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, z)
+        case q"support.this.RunResult.forF2[$y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, y, z)
+        case q"support.this.RunResult.forF3[$x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, x, y, z)
+        case q"support.this.RunResult.forF4[$w, $x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, w, x, y, z)
+        case q"support.this.RunResult.forF5[$v, $w, $x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, v, w, x, y, z)
+
         case _ ⇒ c.abort(rrTree.pos, "Unexpected RunResult: " + show(rrTree))
       }
+    }
   }
 
   case class PushAction(argTree: Tree, hlTree: Tree) extends OpTree {
