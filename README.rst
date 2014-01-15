@@ -65,6 +65,9 @@ https://oss.sonatype.org/content/repositories/snapshots/
 You can find the latest ones here:
 https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.10/
 
+(If you are seeing an `IllegalArgumentException: Could not find proxy for val p` you are using a Scala version that is
+too old. Upgrade to Scala `2.10.3` or later!)
+
 .. _Maven Central: http://search.maven.org/
 .. _shapeless: https://github.com/milessabin/shapeless
 
@@ -791,12 +794,6 @@ a parse error instance, to display something like this (excerpt from the ErrorRe
       targetRule / | / Digit
       targetRule / | / hex
       targetRule / | / UpperAlpha
-
-IllegalArgumentException: Could not find proxy for val p
-========================================================
-
-The error `IllegalArgumentException: Could not find proxy for val p` is a sign that you are on a old version of Scala. 
-Upgrade to at least version `2.10.3` of Scala.
 
 
 Alternative DeliverySchemes
