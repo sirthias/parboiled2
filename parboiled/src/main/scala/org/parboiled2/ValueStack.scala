@@ -210,7 +210,11 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
   /**
    * Returns all current stack elements as a new array.
    */
-  def toArray: Array[Any] = buffer.slice(0, size)
+  def toArray: Array[Any] = {
+    val a = new Array[Any](_size)
+    System.arraycopy(buffer, 0, a, 0, _size)
+    a
+  }
 
   /**
    * Copies all elements between the given `start` (inclusive) and `end` (exclusive)
@@ -236,7 +240,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
       if (requiredSize <= maxSize) {
         val newSize = math.min(math.max(buffer.length * 2, requiredSize), maxSize)
         val newBuffer = new Array[Any](newSize)
-        System.arraycopy(buffer, 0, newBuffer, 0, buffer.length)
+        System.arraycopy(buffer, 0, newBuffer, 0, _size)
         buffer = newBuffer
       } else throw new ValueStackOverflowException
 }

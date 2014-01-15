@@ -24,7 +24,7 @@ import scala.util.control.{ NonFatal, NoStackTrace }
 import shapeless._
 import org.parboiled2.support._
 
-abstract class Parser(initialValueStackSize: Int = 32,
+abstract class Parser(initialValueStackSize: Int = 16,
                       maxValueStackSize: Int = 1024) extends RuleDSL {
   import Parser._
 

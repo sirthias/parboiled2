@@ -30,4 +30,6 @@ package object parboiled2 {
   val EOI = '\uFFFF'
 
   val UTF8 = Charset.forName("UTF-8")
+
+  val EmptyArray = Array.empty[Any]
 }

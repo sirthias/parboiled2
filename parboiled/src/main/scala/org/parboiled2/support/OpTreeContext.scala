@@ -256,44 +256,53 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       true"""
   }
 
-  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = emptySeparator) extends OpTree {
+  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends OpTree {
     def ruleFrame = reify(RuleFrame.ZeroOrMore).tree
-    def renderInner(wrapped: Boolean): Tree = q"""
+    def renderInner(wrapped: Boolean): Tree = {
+      val recurse =
+        if (separator eq null) q"rec(p.__saveState)"
+        else q"val m = p.__saveState; if (${separator(wrapped)}) rec(m) else m"
+
+      q"""
       ${collector.valBuilder}
 
       @annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
-          val preSeparatorMark = p.__saveState
-          if (${separator(wrapped)}) rec(preSeparatorMark) else preSeparatorMark
+          $recurse
         } else mark
 
       p.__restoreState(rec(p.__saveState))
-      ${collector.builderPushResult}"""
+      ${collector.pushBuilderResult}"""
+    }
   }
 
-  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = emptySeparator) extends OpTree {
+  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends OpTree {
     def ruleFrame = reify(RuleFrame.OneOrMore).tree
-    def renderInner(wrapped: Boolean): Tree = q"""
+    def renderInner(wrapped: Boolean): Tree = {
+      val recurse =
+        if (separator eq null) q"rec(p.__saveState)"
+        else q"val m = p.__saveState; if (${separator(wrapped)}) rec(m) else m"
+
+      q"""
       val firstMark = p.__saveState
       ${collector.valBuilder}
 
       @annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
-          val preSeparatorMark = p.__saveState
-          val sepMatched = ${separator(wrapped)}
-          if (sepMatched) rec(preSeparatorMark) else preSeparatorMark
+          $recurse
         } else mark
 
       val mark = rec(firstMark)
       mark != firstMark && {
         p.__restoreState(mark)
-        ${collector.builderPushResult}
+        ${collector.pushBuilderResult}
       }"""
+    }
   }
 
-  def Times(base: Tree, rule: OpTree, collector: Collector, separator: Separator = emptySeparator): OpTree =
+  def Times(base: Tree, rule: OpTree, collector: Collector, separator: Separator = null): OpTree =
     base match {
       case q"$a.this.int2NTimes(${ Literal(Constant(i: Int)) })" ⇒
         if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
@@ -311,22 +320,25 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   case class Times(min: Int, max: Int, op: OpTree, collector: Collector, separator: Separator) extends OpTree {
     def ruleFrame = q"RuleFrame.Times(${c.literal(min).tree}, ${c.literal(max).tree})"
-    def renderInner(wrapped: Boolean): Tree = q"""
+    def renderInner(wrapped: Boolean): Tree = {
+      val recurse =
+        if (separator eq null) q"rec(count + 1, p.__saveState)"
+        else q"""
+          val m = p.__saveState; if (${separator(wrapped)}) rec(count + 1, m)
+          else (count >= ${c.literal(min).tree}) && { p.__restoreState(m); true }"""
+
+      q"""
       ${collector.valBuilder}
 
       @annotation.tailrec def rec(count: Int, mark: Parser.Mark): Boolean = {
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
-          if (count < ${c.literal(max).tree}) {
-            val preSeparatorMark = p.__saveState
-            val sepMatched = ${separator(wrapped)}
-            if (sepMatched) rec(count + 1, preSeparatorMark)
-            else (count >= ${c.literal(min).tree}) && { p.__restoreState(preSeparatorMark); true }
-          } else true
+          if (count < ${c.literal(max).tree}) $recurse else true
         } else (count > ${c.literal(min).tree}) && { p.__restoreState(mark); true }
       }
 
-      rec(1, p.__saveState) && ${collector.builderPushResult}"""
+      rec(1, p.__saveState) && ${collector.pushBuilderResult}"""
+    }
   }
 
   case class AndPredicate(op: OpTree) extends OpTree {
@@ -466,7 +478,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   class Collector(
     val valBuilder: Tree,
     val popToBuilder: Tree,
-    val builderPushResult: Tree,
+    val pushBuilderResult: Tree,
     val pushSomePop: Tree,
     val pushNone: Tree)
 
@@ -476,15 +488,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   lazy val rule1Collector = new Collector(
-    valBuilder = q"val builder = new scala.collection.immutable.VectorBuilder[Any]",
+    valBuilder = q"val builder = new org.parboiled2.support.SeqBuilder",
     popToBuilder = q"builder += p.valueStack.pop()",
-    builderPushResult = q"p.valueStack.push(builder.result()); true",
+    pushBuilderResult = q"p.valueStack.push(builder.result()); true",
     pushSomePop = q"p.valueStack.push(Some(p.valueStack.pop()))",
     pushNone = q"p.valueStack.push(None)")
 
   type Separator = Boolean ⇒ Tree
-
-  lazy val emptySeparator: Separator = _ ⇒ c.literalTrue.tree
 
   def Separator(op: OpTree): Separator = wrapped ⇒ op.render(wrapped)
 

@@ -21,7 +21,7 @@ import org.parboiled2._
 import spray.json._
 
 /**
- * This is a high-performance, feature-complete JSON parser implementation that almost directly
+ * This is a feature-complete JSON parser implementation that almost directly
  * models the JSON grammar presented at http://www.json.org as a parboiled2 PEG parser.
  */
 class JsonParser(val input: ParserInput) extends Parser {
@@ -65,10 +65,12 @@ class JsonParser(val input: ParserInput) extends Parser {
 
   def JsonArray = rule { ws('[') ~ zeroOrMore(Value).separatedBy(ws(',')) ~ ws(']') ~> (JsArray(_ :_*)) }
 
-  def Characters = rule { zeroOrMore('\\' ~ EscapedChar | NormalChar) }
+  def Characters = rule { zeroOrMore(NormalChar | '\\' ~ EscapedChar) }
+
+  def NormalChar = rule { !QuoteBackslash ~ ANY ~ run(sb.append(lastChar)) }
 
   def EscapedChar = rule (
-    QuoteSlashBackSlash ~ run(sb.append(input.charAt(cursor - 1)))
+    QuoteSlashBackSlash ~ run(sb.append(lastChar))
       | 'b' ~ run(sb.append('\b'))
       | 'f' ~ run(sb.append('\f'))
       | 'n' ~ run(sb.append('\n'))
@@ -76,8 +78,6 @@ class JsonParser(val input: ParserInput) extends Parser {
       | 't' ~ run(sb.append('\t'))
       | Unicode ~> { code => sb.append(code.asInstanceOf[Char]); () }
   )
-
-  def NormalChar = rule { !QuoteBackSlash ~ ANY ~ run(sb.append(input.charAt(cursor - 1))) }
 
   def Unicode = rule { 'u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16)) }
 
@@ -100,6 +100,16 @@ class JsonParser(val input: ParserInput) extends Parser {
   def ws(c: Char) = rule { c ~ WhiteSpace }
 
   val WhiteSpaceChar = CharPredicate(" \n\r\t\f")
-  val QuoteBackSlash = CharPredicate("\"\\")
-  val QuoteSlashBackSlash = QuoteBackSlash ++ "/"
+  val QuoteBackslash = CharPredicate("\"\\")
+  val QuoteSlashBackSlash = QuoteBackslash ++ "/"
+}
+
+object Test {
+  // 744kb test JSON produced with http://www.json-generator.com/
+  val json = io.Source.fromInputStream(getClass.getResourceAsStream("/test.json")).mkString
+}
+
+object JsonParser extends App {
+  for (i <- 0 to 1000)
+    new JsonParser(Test.json).Json.run().get
 }
