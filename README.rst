@@ -1,4 +1,4 @@
-**parboiled2**  |--| A Macro-Based PEG Parser Generator for Scala 2.10+
+**parboiled2**  |--| A Macro-Based PEG Parser Generator for Scala 2.10.3+
 
 .. contents:: Contents of this Document
 
@@ -6,7 +6,7 @@
 Introduction
 ============
 
-*parboiled2* is a Scala 2.10+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
+*parboiled2* is a Scala 2.10.3+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
 arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
 runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
 bytecode.
@@ -792,6 +792,12 @@ a parse error instance, to display something like this (excerpt from the ErrorRe
       targetRule / | / hex
       targetRule / | / UpperAlpha
 
+IllegalArgumentException: Could not find proxy for val p
+========================================================
+
+The error `IllegalArgumentException: Could not find proxy for val p` is a sign that you are on a old version of Scala. 
+Upgrade to at least version `2.10.3` of Scala.
+
 
 Alternative DeliverySchemes
 ---------------------------
@@ -846,7 +852,7 @@ parboiled2 vs. parboiled 1.x
 TODO
 
 (about one order of magnitude faster, more powerful DSL, improved error reporting, fewer dependencies (more lightweight),
-but Scala 2.10+ only, no error recovery (yet) and no Java version (ever))
+but Scala 2.10.3+ only, no error recovery (yet) and no Java version (ever))
 
 
 parboiled2 vs. Scala Parser Combinators
@@ -855,7 +861,7 @@ parboiled2 vs. Scala Parser Combinators
 TODO
 
 (much much faster, better error reporting, more concise and elegant DSL, similarly powerful in terms of language class
-capabilities, but Scala 2.10+ only, 2 added dependencies (parboiled2 + shapeless))
+capabilities, but Scala 2.10.3+ only, 2 added dependencies (parboiled2 + shapeless))
 
 parboiled2 vs. Regular Expressions
 ----------------------------------
@@ -863,7 +869,7 @@ parboiled2 vs. Regular Expressions
 TODO
 
 (much easier to read and maintain, more powerful (e.g. regexes do not support recursive structures), faster,
-but Scala 2.10+ only, 2 added dependencies (parboiled2 + shapeless))
+but Scala 2.10.3+ only, 2 added dependencies (parboiled2 + shapeless))
 
 
 Roadmap
