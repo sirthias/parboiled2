@@ -24,12 +24,8 @@ import spray.json._
  * This is a feature-complete JSON parser implementation that almost directly
  * models the JSON grammar presented at http://www.json.org as a parboiled2 PEG parser.
  */
-class JsonParser(val input: ParserInput) extends Parser {
+class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
   import CharPredicate.{Digit, Digit19, HexDigit}
-
-  // for better performance we use a mutable StringBuilder for assembling the individual
-  // (potentially escaped) characters of a JSON string
-  private[this] val sb = new StringBuilder
 
   // the root rule
   def Json = rule { WhiteSpace ~ Value ~ EOI }
@@ -59,7 +55,7 @@ class JsonParser(val input: ParserInput) extends Parser {
 
   def JsonString = rule { JsonStringUnwrapped ~> (JsString(_)) }
 
-  def JsonStringUnwrapped = rule { '"' ~ run(sb.clear()) ~ Characters ~ ws('"') ~ push(sb.toString) }
+  def JsonStringUnwrapped = rule { '"' ~ clearSB() ~ Characters ~ ws('"') ~ push(sb.toString) }
 
   def JsonNumber = rule { capture(Integer ~ optional(Frac) ~ optional(Exp)) ~> (JsNumber(_)) ~ WhiteSpace }
 
@@ -67,15 +63,15 @@ class JsonParser(val input: ParserInput) extends Parser {
 
   def Characters = rule { zeroOrMore(NormalChar | '\\' ~ EscapedChar) }
 
-  def NormalChar = rule { !QuoteBackslash ~ ANY ~ run(sb.append(lastChar)) }
+  def NormalChar = rule { !QuoteBackslash ~ ANY ~ append() }
 
   def EscapedChar = rule (
-    QuoteSlashBackSlash ~ run(sb.append(lastChar))
-      | 'b' ~ run(sb.append('\b'))
-      | 'f' ~ run(sb.append('\f'))
-      | 'n' ~ run(sb.append('\n'))
-      | 'r' ~ run(sb.append('\r'))
-      | 't' ~ run(sb.append('\t'))
+    QuoteSlashBackSlash ~ append()
+      | 'b' ~ append('\b')
+      | 'f' ~ append('\f')
+      | 'n' ~ append('\n')
+      | 'r' ~ append('\r')
+      | 't' ~ append('\t')
       | Unicode ~> { code => sb.append(code.asInstanceOf[Char]); () }
   )
 
