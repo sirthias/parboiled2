@@ -1,5 +1,7 @@
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
+import scala.xml.transform._
+import scala.xml.{Node => XNode, NodeSeq}
 
 val commonSettings = Seq(
   version := "2.0-SNAPSHOT",
@@ -59,8 +61,7 @@ val publishingSettings = Seq(
         <name>Alexander Myltsev</name>
         <url>http://www.linkedin.com/in/alexandermyltsev</url>
       </developer>
-    </developers>
-)
+    </developers>)
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
@@ -70,15 +71,6 @@ val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.6"    % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
-lazy val parboiled = project
-  .settings(commonSettings: _*)
-  .settings(formattingSettings: _*)
-  .settings(publishingSettings: _*)
-  .settings(
-    addCompilerPlugin("org.scala-lang.plugins" % "macro-paradise" % "2.0.0-SNAPSHOT" cross CrossVersion.full),
-    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2)
-  )
-
 lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
@@ -86,8 +78,35 @@ lazy val examples = project
   .settings(
     publishTo := None,
     libraryDependencies ++= Seq(
-    specs2,
-    "io.spray" %%  "spray-json" % "1.2.5",
-    "org.json4s" %% "json4s-native" % "3.2.6",
-    "org.json4s" %% "json4s-jackson" % "3.2.6",
-    "io.argonaut" %% "argonaut" % "6.0.1"))
+      specs2,
+      "io.spray" %%  "spray-json" % "1.2.5",
+      "org.json4s" %% "json4s-native" % "3.2.6",
+      "org.json4s" %% "json4s-jackson" % "3.2.6",
+      "io.argonaut" %% "argonaut" % "6.0.1"))
+
+lazy val parboiled = project
+  .dependsOn(parboiledCore)
+  .settings(commonSettings: _*)
+  .settings(formattingSettings: _*)
+  .settings(publishingSettings: _*)
+  .settings(
+    libraryDependencies ++= Seq(shapeless, specs2),
+    mappings in (Compile, packageBin) ++= (mappings in (parboiledCore.project, Compile, packageBin)).value,
+    mappings in (Compile, packageSrc) ++= (mappings in (parboiledCore.project, Compile, packageSrc)).value,
+    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCore.project, Compile, packageDoc)).value,
+    mappings in (Compile, packageDoc) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
+    pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
+      val filter = new RewriteRule {
+        override def transform(n: XNode) = if ((n \ "artifactId").text.startsWith("parboiledcore")) NodeSeq.Empty else n
+      }
+      new RuleTransformer(filter).transform(_).head
+    }
+  )
+
+lazy val parboiledCore = project.in(file("parboiled-core"))
+  .settings(commonSettings: _*)
+  .settings(formattingSettings: _*)
+  .settings(
+    addCompilerPlugin("org.scala-lang.plugins" % "macro-paradise" % "2.0.0-SNAPSHOT" cross CrossVersion.full),
+    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2),
+    mappings in (Compile, packageBin) ~= (_.filterNot(_._2.startsWith("scala")))) // don't package scala.reflect.api artifacts
