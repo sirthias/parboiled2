@@ -18,7 +18,28 @@ package org.parboiled2
 
 import CharUtils.escape
 
-case class ParseError(position: Position, traces: Seq[RuleTrace]) extends RuntimeException
+case class ParseError(position: Position, traces: Seq[RuleTrace]) extends RuntimeException {
+  def formatExpectedAsString: String = {
+    val expected = formatExpectedAsSeq
+    expected.size match {
+      case 0 ⇒ "??"
+      case 1 ⇒ expected.head
+      case _ ⇒ expected.init.mkString(", ") + " or " + expected.last
+    }
+  }
+  def formatExpectedAsSeq: Vector[String] =
+    traces.map { trace ⇒
+      if (trace.frames.nonEmpty) {
+        val exp = trace.frames.last.format
+        val nonEmptyExp = if (exp.isEmpty) "?" else exp
+        if (trace.isNegated) "!" + nonEmptyExp else nonEmptyExp
+      } else "???"
+    }(collection.breakOut)
+
+  def formatTraces: String =
+    traces.map(_.format).mkString(traces.size + " rule" + (if (traces.size != 1) "s" else "") +
+      " mismatched at error location:\n  ", "\n  ", "\n")
+}
 
 case class Position(index: Int, line: Int, column: Int)
 
@@ -27,18 +48,43 @@ case class RuleTrace(frames: Seq[RuleFrame]) {
   def format: String =
     frames.size match {
       case 0 ⇒ "<empty>"
-      case 1 ⇒ RuleFrame.format(frames.head)
+      case 1 ⇒ frames.head.format
       case _ ⇒
         // we don't want to show intermediate Sequence and RuleCall frames in the trace
         def show(frame: RuleFrame) = !(frame.isInstanceOf[RuleFrame.Sequence] || frame.isInstanceOf[RuleFrame.RuleCall])
-        frames.init.filter(show).map(RuleFrame.format).mkString("", " / ", " / " + RuleFrame.format(frames.last))
+        frames.init.filter(show).map(_.format).mkString("", " / ", " / " + frames.last.format)
     }
 
   def isNegated: Boolean = (frames.count(_.anon == RuleFrame.NotPredicate) & 0x01) > 0
 }
 
-sealed trait RuleFrame {
+sealed abstract class RuleFrame {
+  import RuleFrame._
   def anon: RuleFrame.Anonymous
+
+  def format: String =
+    this match {
+      case Named(name, _)                ⇒ name
+      case Sequence(_)                   ⇒ "~"
+      case FirstOf(_)                    ⇒ "|"
+      case CharMatch(c)                  ⇒ "'" + escape(c) + '\''
+      case StringMatch(s)                ⇒ '"' + escape(s) + '"'
+      case IgnoreCaseChar(c)             ⇒ "'" + escape(c) + '\''
+      case IgnoreCaseString(s)           ⇒ '"' + escape(s) + '"'
+      case CharPredicateMatch(_, name)   ⇒ if (name.nonEmpty) name else "<anon predicate>"
+      case RuleCall(callee)              ⇒ '(' + callee + ')'
+      case AnyOf(s)                      ⇒ '[' + escape(s) + ']'
+      case Times(_, _)                   ⇒ "times"
+      case CharRange(from, to)           ⇒ s"'${escape(from)}'-'${escape(to)}'"
+      case ANY                           ⇒ "ANY"
+      case Optional                      ⇒ "optional"
+      case ZeroOrMore                    ⇒ "zeroOrMore"
+      case OneOrMore                     ⇒ "oneOrMore"
+      case AndPredicate                  ⇒ "&"
+      case NotPredicate                  ⇒ "!"
+      case SemanticPredicate             ⇒ "test"
+      case Capture | Run | Push | Action ⇒ toString
+    }
 }
 
 object RuleFrame {
@@ -47,7 +93,7 @@ object RuleFrame {
 
   case class Named(name: String, anon: Anonymous) extends RuleFrame
 
-  sealed trait Anonymous extends RuleFrame {
+  sealed abstract class Anonymous extends RuleFrame {
     def anon: Anonymous = this
   }
   case class Sequence(subs: Int) extends Anonymous
@@ -72,28 +118,4 @@ object RuleFrame {
   case object Run extends Anonymous
   case object Push extends Anonymous
   case object Action extends Anonymous
-
-  def format(frame: RuleFrame): String =
-    frame match {
-      case Named(name, _)                ⇒ name
-      case Sequence(_)                   ⇒ "~"
-      case FirstOf(_)                    ⇒ "|"
-      case CharMatch(c)                  ⇒ "'" + escape(c) + '\''
-      case StringMatch(s)                ⇒ '"' + escape(s) + '"'
-      case IgnoreCaseChar(c)             ⇒ "'" + escape(c) + '\''
-      case IgnoreCaseString(s)           ⇒ '"' + escape(s) + '"'
-      case CharPredicateMatch(_, name)   ⇒ if (name.nonEmpty) name else "<anon predicate>"
-      case RuleCall(callee)              ⇒ '(' + callee + ')'
-      case AnyOf(s)                      ⇒ '[' + escape(s) + ']'
-      case Times(_, _)                   ⇒ "times"
-      case CharRange(from, to)           ⇒ s"'${escape(from)}'-'${escape(to)}'"
-      case ANY                           ⇒ "ANY"
-      case Optional                      ⇒ "optional"
-      case ZeroOrMore                    ⇒ "zeroOrMore"
-      case OneOrMore                     ⇒ "oneOrMore"
-      case AndPredicate                  ⇒ "&"
-      case NotPredicate                  ⇒ "!"
-      case SemanticPredicate             ⇒ "test"
-      case Capture | Run | Push | Action ⇒ frame.toString
-    }
 }

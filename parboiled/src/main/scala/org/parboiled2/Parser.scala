@@ -79,43 +79,31 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * Pretty prints the given `ParseError` instance in the context of the `ParserInput` of this parser.
    */
-  def formatError(error: ParseError, showTraces: Boolean = false): String = {
-    val ParseError(pos @ Position(index, line, col), traces) = error
-    val errorChar = if (index < input.length) input charAt index else EOI
-    val expected: Vector[String] =
-      traces.map { trace ⇒
-        if (trace.frames.nonEmpty) {
-          val exp = RuleFrame.format(trace.frames.last)
-          val nonEmptyExp = if (exp.isEmpty) "?" else exp
-          if (trace.isNegated) "!" + nonEmptyExp else nonEmptyExp
-        } else "???"
-
-      }(collection.breakOut)
-    val caret = " " * (col - 1) + '^'
-    val errorMsg = formatError(errorChar, pos, expected, input getLine line, caret)
-    if (showTraces) errorMsg + "\n\n" + formatErrorTraces(traces) else errorMsg
+  def formatError(error: ParseError, showExpected: Boolean = true, showPosition: Boolean = true,
+                  showLine: Boolean = true, showTraces: Boolean = false): String = {
+    val sb = new java.lang.StringBuilder(formatErrorProblem(error))
+    import error._
+    if (showExpected) sb.append(", expected ").append(formatExpectedAsString)
+    if (showPosition) sb.append(" (line ").append(position.line).append(", column ").append(position.column).append(')')
+    if (showLine) sb.append(':').append('\n').append(formatErrorLine(error))
+    if (showTraces) sb.append('\n').append('\n').append(formatTraces)
+    sb.toString
   }
 
   /**
-   * Pretty prints the given `ParseError`.
+   * Pretty prints the input line in which the error occurred and underlines the error position in the line
+   * with a caret.
    */
-  def formatError(errorChar: Char, pos: Position, expected: Seq[String], line: String, caret: String): String = {
-    val problem = if (errorChar == EOI) "Unexpected end of input" else s"Invalid input '${CharUtils.escape(errorChar)}'"
-    val exp =
-      expected.size match {
-        case 0 ⇒ "??"
-        case 1 ⇒ expected.head
-        case _ ⇒ expected.init.mkString(", ") + " or " + expected.last
-      }
-    s"$problem, expected $exp (line ${pos.line}, column ${pos.column}):\n$line\n$caret"
-  }
+  def formatErrorProblem(error: ParseError): String =
+    if (error.position.index < input.length) s"Invalid input '${CharUtils.escape(input charAt error.position.index)}'"
+    else "Unexpected end of input"
 
   /**
-   * Pretty prints the given error rule traces.
+   * Pretty prints the input line in which the error occurred and underlines the error position in the line
+   * with a caret.
    */
-  def formatErrorTraces(traces: Seq[RuleTrace]): String =
-    traces.map(_.format).mkString(traces.size + " rule" + (if (traces.size > 1) "s" else "") +
-      " mismatched at error location:\n  ", "\n  ", "\n")
+  def formatErrorLine(error: ParseError): String =
+    (input getLine error.position.line) + '\n' + (" " * (error.position.column - 1) + '^')
 
   ////////////////////// INTERNAL /////////////////////////
 
