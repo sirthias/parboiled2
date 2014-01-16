@@ -53,21 +53,30 @@ abstract class Parser(initialValueStackSize: Int = 16,
   def cursorChar: Char = _cursorChar
 
   /**
-   * Returns the input character at the index with the given offset from the cursor.
-   * If this index is out of range the method returns `EOI`.
-   */
-  def cursorChar(offset: Int): Char = {
-    val ix = cursor + offset
-    if (0 <= ix && ix < input.length) input.charAt(ix) else EOI
-  }
-
-  /**
    * Returns the last character that was matched, i.e. the one at index cursor - 1
    * Note: for performance optimization this method does *not* do a range check,
    * i.e. depending on the ParserInput implementation you might get an exception
    * when calling this method before any character was matched by the parser.
    */
-  def lastChar: Char = input.charAt(cursor - 1)
+  def lastChar: Char = charAt(-1)
+
+  /**
+   * Returns the character at the input index with the given delta to the cursor.
+   * Note: for performance optimization this method does *not* do a range check,
+   * i.e. depending on the ParserInput implementation you might get an exception
+   * when calling this method before any character was matched by the parser.
+   */
+  def charAt(offset: Int): Char = input.charAt(cursor + offset)
+
+  /**
+   * Same as `charAt` but range-checked.
+   * Returns the input character at the index with the given offset from the cursor.
+   * If this index is out of range the method returns `EOI`.
+   */
+  def charAtRC(offset: Int): Char = {
+    val ix = cursor + offset
+    if (0 <= ix && ix < input.length) input.charAt(ix) else EOI
+  }
 
   /**
    * Allows "raw" (i.e. untyped) access to the `ValueStack`.
