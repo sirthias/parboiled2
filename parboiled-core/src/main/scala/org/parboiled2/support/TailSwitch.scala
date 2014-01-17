@@ -16,6 +16,7 @@
 
 package org.parboiled2.support
 
+import scala.annotation.implicitNotFound
 import shapeless._
 import shapeless.ops.hlist.ReversePrepend
 
@@ -27,6 +28,7 @@ import shapeless.ops.hlist.ReversePrepend
  *     R                      if T has a tail of type L
  *     (L dropRight T) ::: R  if L has a tail of type T
  */
+@implicitNotFound("Illegal rule composition")
 sealed trait TailSwitch[L <: HList, T <: HList, R <: HList] {
   type Out <: HList
 }
