@@ -108,5 +108,4 @@ lazy val parboiledCore = project.in(file("parboiled-core"))
   .settings(formattingSettings: _*)
   .settings(
     addCompilerPlugin("org.scala-lang.plugins" % "macro-paradise" % "2.0.0-SNAPSHOT" cross CrossVersion.full),
-    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2),
-    mappings in (Compile, packageBin) ~= (_.filterNot(_._2.startsWith("scala")))) // don't package scala.reflect.api artifacts
+    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2))
