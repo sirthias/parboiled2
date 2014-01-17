@@ -81,6 +81,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
     case q"$a.this.run[$b]($arg)($rr)"           ⇒ RunAction(arg, rr)
     case q"$a.this.push[$b]($arg)($hl)"          ⇒ PushAction(arg, hl)
+    case q"$a.this.drop[$b]($hl)"                ⇒ DropAction(hl)
     case x @ q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
       CharRange(l, r, x.pos)
     case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
@@ -402,7 +403,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
               val valDefs = args.zip(argTypeTrees).map { case (a, t) ⇒ q"val ${a.name} = p.valueStack.pop().asInstanceOf[${t.tpe}]" }.reverse
               block(valDefs, rewrite(body))
 
-            case _ ⇒ c.abort(argTree.pos, "Unexpected `run` argument: " + show(argTree))
+            case x ⇒ c.abort(argTree.pos, "Unexpected `run` argument: " + show(argTree))
           }
 
         actionBody(c.resetLocalAttrs(argTree))
@@ -425,7 +426,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"support.this.RunResult.forF4[$w, $x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, w, x, y, z)
         case q"support.this.RunResult.forF5[$v, $w, $x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, v, w, x, y, z)
 
-        case _ ⇒ c.abort(rrTree.pos, "Unexpected RunResult: " + show(rrTree))
+        case x ⇒ c.abort(rrTree.pos, "Unexpected RunResult: " + show(x))
       }
     }
   }
@@ -437,8 +438,25 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case q"support.this.HListable.fromUnit"       ⇒ argTree
         case q"support.this.HListable.fromHList[$t]"  ⇒ q"p.valueStack.pushAll(${c.resetLocalAttrs(argTree)})"
         case q"support.this.HListable.fromAnyRef[$t]" ⇒ q"p.valueStack.push($argTree)"
-        case _                                        ⇒ c.abort(hlTree.pos, "Unexpected HListable: " + show(hlTree))
+        case x                                        ⇒ c.abort(hlTree.pos, "Unexpected HListable: " + show(x))
       }, c.literalTrue.tree)
+  }
+
+  case class DropAction(hlTree: Tree) extends OpTree {
+    def ruleFrame = reify(RuleFrame.Drop).tree
+    def renderInner(wrapped: Boolean): Tree =
+      hlTree match {
+        case q"support.this.HListable.fromUnit"       ⇒ c.literalTrue.tree
+        case q"support.this.HListable.fromAnyRef[$t]" ⇒ q"p.valueStack.pop(); true"
+        case q"support.this.HListable.fromHList[$t]" ⇒
+          @tailrec def rec(t: Type, result: List[Tree] = Nil): List[Tree] =
+            t match { // TODO: how can we use type quotes here, e.g. tq"shapeless.HNil"?
+              case TypeRef(_, sym, List(_, tail)) if sym == HListConsTypeSymbol ⇒ rec(tail, q"p.valueStack.pop()" :: result)
+              case TypeRef(_, sym, _) if sym == HNilTypeSymbol                  ⇒ result
+            }
+          Block(rec(t.tpe), c.literalTrue.tree)
+        case x ⇒ c.abort(hlTree.pos, "Unexpected HListable: " + show(x))
+      }
   }
 
   case class RuleCall(call: Tree) extends OpTree {
@@ -526,7 +544,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   def Separator(op: OpTree): Separator = wrapped ⇒ op.render(wrapped)
 
-  lazy val ruleTypeSymbol = c.mirror.staticClass("org.parboiled2.Rule")
+  lazy val ruleTypeSymbol = typeOf[Rule[_, _]].typeSymbol
+  lazy val HListConsTypeSymbol = typeOf[shapeless.::[_, _]].typeSymbol
+  lazy val HNilTypeSymbol = typeOf[shapeless.HNil].typeSymbol
 
   def matchAndExpandOpTreeIfPossible(tree: Tree, wrapped: Boolean): Tree =
     opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) ⇒ q"$t.matched")

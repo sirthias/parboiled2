@@ -94,6 +94,16 @@ class ActionSpec extends TestParserSpec {
       "y" must beMismatched
     }
 
+    "`drop[Int]`" in new TestParser0 {
+      def targetRule = rule { push(42) ~ drop[Int] ~ EOI }
+      "" must beMatched
+    }
+
+    "`drop[Int :: String :: HNil]`" in new TestParser0 {
+      def targetRule = rule { push(42 :: "X" :: HNil) ~ drop[Int :: String :: HNil] ~ EOI }
+      "" must beMatched
+    }
+
     "`~>` producing `Unit`" in new TestParser1[Int] {
       def testRule = rule { push(1 :: "X" :: HNil) ~> (_ ⇒ ()) }
       def targetRule = testRule

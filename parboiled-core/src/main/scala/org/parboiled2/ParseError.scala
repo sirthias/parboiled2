@@ -64,26 +64,26 @@ sealed abstract class RuleFrame {
 
   def format: String =
     this match {
-      case Named(name, _)                ⇒ name
-      case Sequence(_)                   ⇒ "~"
-      case FirstOf(_)                    ⇒ "|"
-      case CharMatch(c)                  ⇒ "'" + escape(c) + '\''
-      case StringMatch(s)                ⇒ '"' + escape(s) + '"'
-      case IgnoreCaseChar(c)             ⇒ "'" + escape(c) + '\''
-      case IgnoreCaseString(s)           ⇒ '"' + escape(s) + '"'
-      case CharPredicateMatch(_, name)   ⇒ if (name.nonEmpty) name else "<anon predicate>"
-      case RuleCall(callee)              ⇒ '(' + callee + ')'
-      case AnyOf(s)                      ⇒ '[' + escape(s) + ']'
-      case Times(_, _)                   ⇒ "times"
-      case CharRange(from, to)           ⇒ s"'${escape(from)}'-'${escape(to)}'"
-      case ANY                           ⇒ "ANY"
-      case Optional                      ⇒ "optional"
-      case ZeroOrMore                    ⇒ "zeroOrMore"
-      case OneOrMore                     ⇒ "oneOrMore"
-      case AndPredicate                  ⇒ "&"
-      case NotPredicate                  ⇒ "!"
-      case SemanticPredicate             ⇒ "test"
-      case Capture | Run | Push | Action ⇒ toString
+      case Named(name, _)                       ⇒ name
+      case Sequence(_)                          ⇒ "~"
+      case FirstOf(_)                           ⇒ "|"
+      case CharMatch(c)                         ⇒ "'" + escape(c) + '\''
+      case StringMatch(s)                       ⇒ '"' + escape(s) + '"'
+      case IgnoreCaseChar(c)                    ⇒ "'" + escape(c) + '\''
+      case IgnoreCaseString(s)                  ⇒ '"' + escape(s) + '"'
+      case CharPredicateMatch(_, name)          ⇒ if (name.nonEmpty) name else "<anon predicate>"
+      case RuleCall(callee)                     ⇒ '(' + callee + ')'
+      case AnyOf(s)                             ⇒ '[' + escape(s) + ']'
+      case Times(_, _)                          ⇒ "times"
+      case CharRange(from, to)                  ⇒ s"'${escape(from)}'-'${escape(to)}'"
+      case ANY                                  ⇒ "ANY"
+      case Optional                             ⇒ "optional"
+      case ZeroOrMore                           ⇒ "zeroOrMore"
+      case OneOrMore                            ⇒ "oneOrMore"
+      case AndPredicate                         ⇒ "&"
+      case NotPredicate                         ⇒ "!"
+      case SemanticPredicate                    ⇒ "test"
+      case Capture | Run | Push | Drop | Action ⇒ toString
     }
 }
 
@@ -117,5 +117,6 @@ object RuleFrame {
   case object Capture extends Anonymous
   case object Run extends Anonymous
   case object Push extends Anonymous
+  case object Drop extends Anonymous
   case object Action extends Anonymous
 }

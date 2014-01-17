@@ -73,6 +73,14 @@ trait RuleDSLActions {
   @compileTimeOnly("Calls to `push` must be inside `rule` macro")
   def push[T](value: T)(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
 
+  /**
+   * Drops one or more values from the top of the value stack.
+   * E.g. `drop[Int]` will drop the top ``Int`` value and `drop[Int :: String :: HNil]` will drop the top two values,
+   * which must be an ``Int`` underneath a ``String`` (the string being the top stack element).
+   */
+  @compileTimeOnly("Calls to `drop` must be inside `rule` macro")
+  def drop[T](implicit h: HListable[T]): PopRule[h.Out] = `n/a`
+
   @compileTimeOnly("Calls to `rule2ActionOperator` must be inside `rule` macro")
   implicit def rule2ActionOperator[I <: HList, O <: HList](r: Rule[I, O])(implicit ops: ActionOps[I, O]): ActionOperator[I, O, ops.Out] = `n/a`
   sealed trait ActionOperator[I <: HList, O <: HList, Ops] {
