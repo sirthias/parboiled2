@@ -25,7 +25,7 @@ object Calculator1 extends App {
 
   @tailrec
   def repl(): Unit =
-    readLine("---\nEnter calculator expression > ") match {
+    readLine("---\nEnter calculator expression >\n") match {
       case "" =>
       case line =>
         val parser = new Calculator1(line)

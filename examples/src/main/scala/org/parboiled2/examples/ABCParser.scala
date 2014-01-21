@@ -25,7 +25,7 @@ object ABCParser extends App {
 
   @tailrec
   def repl(): Unit =
-    readLine("---\nEnter expression for abc-parser > ") match {
+    readLine("---\nEnter expression for abc-parser >\n") match {
       case "" ⇒
       case line ⇒
         val parser = new ABCParser(line)
