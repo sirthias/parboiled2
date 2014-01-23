@@ -121,15 +121,13 @@ object CharPredicate {
 
   ///////////////////////// PRIVATE ////////////////////////////
 
-  private def ranged(c: Char) = c & ((c - 128) >> 31) // branchless for `if (c < 128) c else 0`
-  private def maskable(c: Char) = '\u0000' < c && c < '\u0080'
+  private def unmaskable(c: Char) = c >= 128
 
-  // efficient handling of 7bit-ASCII chars excluding 0x00
+  // efficient handling of 7bit-ASCII chars
   case class CharMask private[CharPredicate] (lowMask: Long, highMask: Long) extends CharPredicate {
-    def apply(char: Char): Boolean = {
-      val c = ranged(char)
-      if (c < 64) (lowMask & (1L << c)) != 0L
-      else (highMask & (1L << (c - 64))) != 0L
+    def apply(c: Char): Boolean = {
+      val b = (1L << c) & ((c - 128) >> 31) // branchless for `if (c < 128) 1 << c else 0`
+      ((if (c < 64) lowMask else highMask) & b) != 0L
     }
 
     def ++(that: CharPredicate): CharPredicate = that match {
@@ -140,9 +138,9 @@ object CharPredicate {
     }
 
     def ++(chars: Seq[Char]): CharPredicate = chars.foldLeft(this: CharPredicate) {
-      case (_: CharMask, c) if !maskable(c)   ⇒ this or new ArrayBasedPredicate(chars.toArray)
+      case (_: CharMask, c) if unmaskable(c)  ⇒ this or new ArrayBasedPredicate(chars.toArray)
       case (CharMask(low, high), c) if c < 64 ⇒ CharMask(low | 1L << c, high)
-      case (CharMask(low, high), c)           ⇒ CharMask(low, high | 1L << (c - 64))
+      case (CharMask(low, high), c)           ⇒ CharMask(low, high | 1L << c)
       case (x, _)                             ⇒ x // once the fold acc is not a CharMask we are done
     }
 
@@ -156,9 +154,9 @@ object CharPredicate {
     def --(chars: Seq[Char]): CharPredicate =
       if (this != Empty) {
         chars.foldLeft(this: CharPredicate) {
-          case (_: CharMask, c) if !maskable(c)   ⇒ this andNot new ArrayBasedPredicate(chars.toArray)
+          case (_: CharMask, c) if unmaskable(c)  ⇒ this andNot new ArrayBasedPredicate(chars.toArray)
           case (CharMask(low, high), c) if c < 64 ⇒ CharMask(low & ~(1L << c), high)
-          case (CharMask(low, high), c)           ⇒ CharMask(low, high & ~(1L << (c - 64)))
+          case (CharMask(low, high), c)           ⇒ CharMask(low, high & ~(1L << c))
           case (x, _)                             ⇒ x // once the fold acc is not a CharMask we are done
         }
       } else this
