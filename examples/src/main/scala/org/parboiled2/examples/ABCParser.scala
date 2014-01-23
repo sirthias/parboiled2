@@ -24,8 +24,12 @@ object ABCParser extends App {
   repl()
 
   @tailrec
-  def repl(): Unit =
-    readLine("---\nEnter expression for abc-parser > ") match {
+  def repl(): Unit = {
+    // TODO: Replace next three lines with `scala.Predef.readLine(text: String, args: Any*)`
+    // once BUG https://issues.scala-lang.org/browse/SI-8167 is fixed
+    print("---\nEnter expression for abc-parser > ")
+    Console.out.flush()
+    readLine() match {
       case "" ⇒
       case line ⇒
         val parser = new ABCParser(line)
@@ -36,6 +40,7 @@ object ABCParser extends App {
         }
         repl()
     }
+  }
 }
 
 /**
