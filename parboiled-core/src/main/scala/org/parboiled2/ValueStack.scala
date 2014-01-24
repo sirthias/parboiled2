@@ -229,6 +229,12 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
   }
 
   /**
+   * Creates a string representation of the current value stack contents.
+   * Mostly useful for debugging.
+   */
+  def show: String = mkString("[", ", ", "]")
+
+  /**
    * Returns an iterator that iterates over a *snapshot* of the stack elements
    * at the time of this method call. I.e. subsequent mutations are not visible
    * to the iterator.
