@@ -21,18 +21,29 @@ import org.specs2.mutable.Specification
 class CharPredicateSpec extends Specification {
 
   "CharPredicates" should {
+
     "correctly mask characters" in {
       CharPredicate("4").toString === "CharMask(0010000000000000|0000000000000000)"
       CharPredicate("a").toString === "CharMask(0000000000000000|0000000200000000)"
       show(CharPredicate("&048z{~")) === "&048z{~"
     }
+
     "support `testAny`" in {
       CharPredicate("abc").matchesAny("0125!") must beFalse
       CharPredicate("abc").matchesAny("012c5!") must beTrue
     }
+
     "support `indexOfFirstMatch`" in {
       CharPredicate("abc").indexOfFirstMatch("0125!") === -1
       CharPredicate("abc").indexOfFirstMatch("012c5!") === 3
+    }
+
+    "correctly support non-masked content" in {
+      val colonSlashEOI = CharPredicate(':', '/', EOI)
+      colonSlashEOI(':') must beTrue
+      colonSlashEOI('/') must beTrue
+      colonSlashEOI(EOI) must beTrue
+      colonSlashEOI('x') must beFalse
     }
   }
 

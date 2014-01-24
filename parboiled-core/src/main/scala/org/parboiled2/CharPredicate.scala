@@ -181,7 +181,7 @@ object CharPredicate {
     import java.util.Arrays._
     sort(chars)
 
-    def apply(c: Char): Boolean = binarySearch(chars, c) > 0
+    def apply(c: Char): Boolean = binarySearch(chars, c) >= 0
 
     def ++(that: CharPredicate) = that match {
       case Empty                  ⇒ this
