@@ -21,6 +21,12 @@ import scala.annotation.tailrec
 sealed abstract class CharPredicate extends (Char ⇒ Boolean) {
   import CharPredicate._
 
+  /**
+   * determines wether this CharPredicate is an instance of the high-performance,
+   * constant-time `CharMask` implementation.
+   */
+  def isCharMask: Boolean = this.isInstanceOf[CharMask]
+
   def ++(that: CharPredicate): CharPredicate
   def ++(chars: Seq[Char]): CharPredicate
   def --(that: CharPredicate): CharPredicate
@@ -126,8 +132,8 @@ object CharPredicate {
   // efficient handling of 7bit-ASCII chars
   case class CharMask private[CharPredicate] (lowMask: Long, highMask: Long) extends CharPredicate {
     def apply(c: Char): Boolean = {
-      val b = (1L << c) & ((c - 128) >> 31) // branchless for `if (c < 128) 1 << c else 0`
-      ((if (c < 64) lowMask else highMask) & b) != 0L
+      val mask = if (c < 64) lowMask else highMask
+      ((1L << c) & ((c - 128) >> 31) & mask) != 0L // branchless for `(c < 128) && (mask & (1L << c) != 0)`
     }
 
     def ++(that: CharPredicate): CharPredicate = that match {
