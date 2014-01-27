@@ -341,40 +341,54 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   def Times(base: Tree, rule: OpTree, collector: Collector, separator: Separator = null): OpTree =
     base match {
-      case q"$a.this.int2NTimes(${ Literal(Constant(i: Int)) })" ⇒
-        if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
-        else if (i == 1) rule
-        else Times(i, i, rule, collector, separator)
-
-      case q"$a.this.range2NTimes(scala.this.Predef.intWrapper(${ Literal(Constant(min: Int)) }).to(${ Literal(Constant(max: Int)) }))" ⇒
-        if (min < 0) c.abort(base.pos, "`min` in `(min to max).times` must be non-negative")
-        else if (max < 0) c.abort(base.pos, "`max` in `(min to max).times` must be non-negative")
-        else if (max < min) c.abort(base.pos, "`max` in `(min to max).times` must be >= `min`")
-        else Times(min, max, rule, collector, separator)
-
-      case _ ⇒ c.abort(base.pos, "Invalid `x` in `x.times(...)`: " + base)
+      case q"$a.this.int2NTimes($n)" ⇒ n match {
+        case Literal(Constant(i: Int)) ⇒
+          if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
+          else if (i == 1) rule
+          else Times(rule, q"val min, max = $n", collector, separator)
+        case x @ (Ident(_) | Select(_, _)) ⇒ Times(rule, q"val min = $n; val max = min", collector, separator)
+        case _                             ⇒ c.abort(n.pos, "Invalid int base expression for `.times(...)`: " + n)
+      }
+      case q"$a.this.range2NTimes($r)" ⇒ r match {
+        case q"scala.this.Predef.intWrapper($mn).to($mx)" ⇒ (mn, mx) match {
+          case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) ⇒
+            if (min < 0) c.abort(mn.pos, "`min` in `(min to max).times` must be non-negative")
+            else if (max < 0) c.abort(mx.pos, "`max` in `(min to max).times` must be non-negative")
+            else if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
+            else Times(rule, q"val min = $mn; val max = $mx", collector, separator)
+          case ((Ident(_) | Select(_, _)), (Ident(_) | Select(_, _))) ⇒
+            Times(rule, q"val min = $mn; val max = $mx", collector, separator)
+          case _ ⇒ c.abort(r.pos, "Invalid int range expression for `.times(...)`: " + r)
+        }
+        case x @ (Ident(_) | Select(_, _)) ⇒
+          Times(rule, q"val r = $r; val min = r.start; val max = r.end", collector, separator)
+        case _ ⇒ c.abort(r.pos, "Invalid range base expression for `.times(...)`: " + r)
+      }
+      case _ ⇒ c.abort(base.pos, "Invalid base expression for `.times(...)`: " + base)
     }
 
-  case class Times(min: Int, max: Int, op: OpTree, collector: Collector, separator: Separator) extends OpTree {
-    def ruleFrame = q"RuleFrame.Times(${c.literal(min).tree}, ${c.literal(max).tree})"
+  case class Times(op: OpTree, init: Tree, collector: Collector, separator: Separator) extends OpTree {
+    val Block(inits, _) = init
+    def ruleFrame = q"..$inits; RuleFrame.Times(min, max)"
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
         if (separator eq null) q"rec(count + 1, p.__saveState)"
         else q"""
           val m = p.__saveState; if (${separator(wrapped)}) rec(count + 1, m)
-          else (count >= ${c.literal(min).tree}) && { p.__restoreState(m); true }"""
+          else (count >= min) && { p.__restoreState(m); true }"""
 
       q"""
       ${collector.valBuilder}
+      ..$inits
 
       @annotation.tailrec def rec(count: Int, mark: Parser.Mark): Boolean = {
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
-          if (count < ${c.literal(max).tree}) $recurse else true
-        } else (count > ${c.literal(min).tree}) && { p.__restoreState(mark); true }
+          if (count < max) $recurse else true
+        } else (count > min) && { p.__restoreState(mark); true }
       }
 
-      rec(1, p.__saveState) && ${collector.pushBuilderResult}"""
+      (max <= 0) || rec(1, p.__saveState) && ${collector.pushBuilderResult}"""
     }
   }
 

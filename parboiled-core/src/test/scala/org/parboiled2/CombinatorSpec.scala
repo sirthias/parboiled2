@@ -154,8 +154,9 @@ class CombinatorSpec extends TestParserSpec {
       "xxx" must beMatched
     }
 
-    "`2.times(Rule0)` modifier (example 2)" in new TestParser0 {
-      def targetRule = rule { 2.times("x") ~ EOI }
+    "`n.times(Rule0)` modifier (example 2)" in new TestParser0 {
+      val n = 2
+      def targetRule = rule { n.times("x") ~ EOI }
       "x" must beMismatched
       "xx" must beMatched
       "xxx" must beMismatched
