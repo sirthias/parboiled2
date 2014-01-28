@@ -152,10 +152,10 @@ abstract class Parser(initialValueStackSize: Int = 16,
     }
 
     @tailrec
-    def errorPosition(ix: Int = math.min(maxCursor, input.length - 1), line: Int = 1, col: Int = -1): Position =
-      if (ix < 0) Position(maxCursor, line, if (col == -1) maxCursor + 1 else col)
-      else if (input.charAt(ix) != '\n') errorPosition(ix - 1, line, col)
-      else errorPosition(ix - 1, line + 1, if (col == -1) maxCursor - ix else col)
+    def errorPosition(ix: Int = 0, line: Int = 1, col: Int = 1): Position =
+      if (ix >= maxCursor) Position(maxCursor, line, col)
+      else if (ix >= input.length || input.charAt(ix) != '\n') errorPosition(ix + 1, line, col + 1)
+      else errorPosition(ix + 1, line + 1, 1)
 
     @tailrec
     def buildParseError(errorRuleIx: Int = 0, traces: VectorBuilder[RuleTrace] = new VectorBuilder): ParseError = {
@@ -193,7 +193,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
       _cursorChar =
         if (c == max) EOI
         else input charAt c
-      if (currentErrorRuleStackIx == -1 && c > maxCursor)
+      if (currentErrorRuleStackIx == -1 && c > maxCursor) // TODO: remove completely for non-error-collecting logic
         maxCursor = c // if we are in the first "regular" parser run, we need to keep track of maxCursor here
     }
     true

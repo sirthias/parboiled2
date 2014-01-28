@@ -115,5 +115,18 @@ class ErrorReportingSpec extends TestParserSpec {
           |  targetRule / this:that
           |""")
     }
+
+    "if the error location is the newline at line-end" in new TestParser0 {
+      def targetRule = rule { "abc" ~ EOI }
+
+      "ab\nc" must beMismatchedWithErrorMsg(
+        """Invalid input '\n', expected 'c' (line 1, column 3):
+          |ab
+          |  ^
+          |
+          |1 rule mismatched at error location:
+          |  targetRule / "abc" / 'c'
+          |""")
+    }
   }
 }
