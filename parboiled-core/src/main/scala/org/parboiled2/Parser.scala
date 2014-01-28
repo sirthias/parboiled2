@@ -301,13 +301,12 @@ object Parser {
   def runImpl[L <: HList: c.WeakTypeTag](c: RunnableRuleContext[L])()(scheme: c.Expr[DeliveryScheme[L]]): c.Expr[scheme.value.Result] = {
     import c.universe._
     val runCall = c.prefix.tree match {
-      case q"parboiled2.this.Rule.Runnable[$l]($ruleExpr)" ⇒ ruleExpr match {
-        case q"$p.$r"        ⇒ q"val p = $p; p.__run[$l](p.$r)($scheme)"
-        case q"$p.$r($args)" ⇒ q"val p = $p; p.__run[$l](p.$r($args))($scheme)"
-        case q"$p.$r[$t]" ⇒
-          if (p.tpe.typeSymbol == typeOf[RuleX].typeSymbol) q"__run[$l]($ruleExpr)($scheme)"
-          else q"val p = $p; p.__run[$l](p.$r[$t])($scheme)"
-        case x ⇒ c.abort(x.pos, "Illegal rule expression for `run()` call: " + x)
+      case q"parboiled2.this.Rule.AutoRunnable[$l]($ruleExpr)" ⇒ ruleExpr match {
+        case q"$p.$r" if p.tpe <:< typeOf[Parser] ⇒ q"val p = $p; p.__run[$l](p.$r)($scheme)"
+        case q"$p.$r($args)" if p.tpe <:< typeOf[Parser] ⇒ q"val p = $p; p.__run[$l](p.$r($args))($scheme)"
+        case q"$p.$r[$t]" if p.tpe <:< typeOf[Parser] ⇒ q"val p = $p; p.__run[$l](p.$r[$t])($scheme)"
+        case q"$p.$r[$t]" if p.tpe <:< typeOf[RuleX] ⇒ q"__run[$l]($ruleExpr)($scheme)"
+        case x ⇒ c.abort(x.pos, "Illegal `.run()` call base: " + x)
       }
       case x ⇒ c.abort(x.pos, "Illegal `Runnable.apply` call: " + x)
     }

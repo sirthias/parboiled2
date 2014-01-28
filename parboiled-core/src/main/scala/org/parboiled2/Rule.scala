@@ -73,6 +73,10 @@ sealed class Rule[-I <: HList, +O <: HList](val matched: Boolean) extends RuleX 
  * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
  */
 object Rule {
+  trait Runnable[L <: HList] {
+    def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result
+  }
+
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
@@ -91,7 +95,7 @@ object Rule {
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  implicit class Runnable[L <: HList](rule: RuleN[L]) {
+  implicit class AutoRunnable[L <: HList](rule: RuleN[L]) {
     def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = macro Parser.runImpl[L]
   }
 }

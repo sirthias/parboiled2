@@ -447,7 +447,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
               def rewrite(tree: Tree): Tree =
                 tree match {
                   case Block(statements, res) ⇒ block(statements, rewrite(res))
-                  case x if resultTypeTree.tpe.typeSymbol == ruleTypeSymbol ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
+                  case x if resultTypeTree.tpe <:< typeOf[Rule[_, _]] ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
                   case x ⇒ q"p.__push($x)"
                 }
               val valDefs = args.zip(argTypeTrees).map { case (a, t) ⇒ q"val ${a.name} = p.valueStack.pop().asInstanceOf[${t.tpe}]" }.reverse
@@ -559,7 +559,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             def rewrite(tree: Tree): Tree =
               tree match {
                 case Block(statements, res) ⇒ block(statements, rewrite(res))
-                case x if actionType.last.typeSymbol == ruleTypeSymbol ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
+                case x if actionType.last <:< typeOf[Rule[_, _]] ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
                 case x ⇒ q"p.__push($x)"
               }
             block(popToVals(args.map(_.name)), rewrite(body))
@@ -594,7 +594,6 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   def Separator(op: OpTree): Separator = wrapped ⇒ op.render(wrapped)
 
-  lazy val ruleTypeSymbol = typeOf[Rule[_, _]].typeSymbol
   lazy val HListConsTypeSymbol = typeOf[shapeless.::[_, _]].typeSymbol
   lazy val HNilTypeSymbol = typeOf[shapeless.HNil].typeSymbol
 
