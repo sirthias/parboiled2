@@ -82,12 +82,12 @@ trait RuleDSLBasics {
   /**
    * Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
    */
-  def EMPTY: Rule0 = Rule.Matched
+  def EMPTY: Rule0 = Rule
 
   /**
    * A rule that always fails.
    */
-  def NOTHING: Rule0 = Rule.Mismatched
+  def NOTHING: Rule0 = null
 
   @compileTimeOnly("Calls to `str2CharRangeSupport` must be inside `rule` macro")
   implicit def str2CharRangeSupport(s: String): CharRangeSupport = `n/a`

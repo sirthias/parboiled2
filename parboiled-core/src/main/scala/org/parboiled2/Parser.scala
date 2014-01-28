@@ -148,7 +148,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
       valueStack.clear()
       mismatchesAtErrorCursor = 0
       currentErrorRuleStackIx = errorRuleStackIx
-      rule.matched
+      rule ne null
     }
 
     @tailrec

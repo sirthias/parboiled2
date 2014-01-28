@@ -30,15 +30,12 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def renderRule(ruleName: String): Tree = q"""
       // split out into separate method so as to not double the rule method size
       // which would effectively decrease method inlining by about 50%
-      def wrapped: Boolean = {
-        val p = ${c.prefix.tree}
-        ${render(wrapped = true, ruleName)}
-      }
-      Rule {
-        val p = ${c.prefix.tree}
+      val p = ${c.prefix.tree}
+      def wrapped: Boolean = ${render(wrapped = true, ruleName)}
+      val matched =
         if (p.__collectingErrors) wrapped
         else ${render(wrapped = false)}
-      }"""
+      if (matched) Rule else null""" // we encode the "matched" boolean as 'ruleResult ne null'
 
     // renders a Boolean Tree
     def render(wrapped: Boolean, ruleName: String = ""): Tree =
@@ -467,7 +464,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class RuleCall(call: Tree) extends OpTree {
     def calleeName = callName(call) getOrElse c.abort(call.pos, "Illegal rule call: " + call)
     def ruleFrame = reify(RuleFrame.RuleCall(c.literal(calleeName).splice)).tree
-    def renderInner(wrapped: Boolean): Tree = q"$call.matched"
+    def renderInner(wrapped: Boolean): Tree = q"$call ne null"
   }
 
   def CharRange(lower: String, upper: String, pos: Position): CharacterRange = {
@@ -553,7 +550,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   lazy val HNilTypeSymbol = typeOf[shapeless.HNil].typeSymbol
 
   def matchAndExpandOpTreeIfPossible(tree: Tree, wrapped: Boolean): Tree =
-    opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) ⇒ q"$t.matched")
+    opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) ⇒ q"$t ne null")
 
   @tailrec
   private def callName(tree: Tree): Option[String] =

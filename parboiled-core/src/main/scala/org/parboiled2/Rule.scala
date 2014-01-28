@@ -21,9 +21,7 @@ import scala.reflect.internal.annotations.compileTimeOnly
 import org.parboiled2.support._
 import shapeless.HList
 
-sealed trait RuleX {
-  def matched: Boolean
-}
+sealed trait RuleX
 
 /**
  * The general model of a parser rule.
@@ -34,9 +32,9 @@ sealed trait RuleX {
  * At runtime there are only two instances of this class which signal whether the rule has matched (or mismatched)
  * at the current point in the input.
  */
-sealed class Rule[-I <: HList, +O <: HList](val matched: Boolean) extends RuleX {
+sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
   // TODO: model as value class
-  // This would give us a performance benefit since we'd save the heap access to the `matched` member
+  // This would give us a small performance benefit.
   // However, https://issues.scala-lang.org/browse/SI-6260 is quite a serious problem for this design,
   // so until this issue is fixed we better stick to this non-value-class-based model
 
@@ -72,25 +70,10 @@ sealed class Rule[-I <: HList, +O <: HList](val matched: Boolean) extends RuleX 
 /**
  * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
  */
-object Rule {
+object Rule extends Rule0 {
   trait Runnable[L <: HList] {
     def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result
   }
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
-  val Matched = new Rule0(true)
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
-  val Mismatched = new Rule0(false)
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
-  def apply(matched: Boolean): RuleX = if (matched) Matched else Mismatched
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
