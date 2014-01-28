@@ -40,6 +40,13 @@ trait RuleDSLBasics {
   implicit def predicate(p: CharPredicate): Rule0 = `n/a`
 
   /**
+   * Matches any of the given maps keys and pushes the respective value upon
+   * a successful match.
+   */
+  @compileTimeOnly("Calls to `valueMap` must be inside `rule` macro")
+  implicit def valueMap[T](m: Map[String, T])(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
+
+  /**
    * Matches any single one of the given characters.
    */
   @compileTimeOnly("Calls to `anyOf` must be inside `rule` macro")

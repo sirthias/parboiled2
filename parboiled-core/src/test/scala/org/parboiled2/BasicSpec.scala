@@ -148,6 +148,15 @@ class BasicSpec extends TestParserSpec {
       def baz(s: String, i: Int) = rule { "-baz" ~ s ~ i.toString }
       "foo-bar42-baz1337-free" must beMatched
     }
+
+    "Map[String, T]" in new TestParser1[Int] {
+      val colors = Map("red" -> 1, "green" -> 2, "blue" -> 3)
+      def targetRule = rule { colors ~ EOI }
+      "red" must beMatchedWith(1)
+      "green" must beMatchedWith(2)
+      "blue" must beMatchedWith(3)
+      "black" must beMismatched
+    }
   }
 
   "The Parser" should {

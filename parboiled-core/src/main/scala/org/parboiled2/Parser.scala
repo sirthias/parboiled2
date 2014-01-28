@@ -249,6 +249,90 @@ abstract class Parser(initialValueStackSize: Int = 16,
     }
     true
   }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  @tailrec final def __matchString(string: String, ix: Int = 0): Boolean =
+    if (ix < string.length)
+      if (cursorChar == string.charAt(ix)) {
+        __advance()
+        __matchString(string, ix + 1)
+      } else false
+    else true
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  @tailrec final def __matchStringWrapped(string: String, ruleName: String, ix: Int = 0): Boolean =
+    if (ix < string.length)
+      if (cursorChar == string.charAt(ix)) {
+        __advance()
+        __matchStringWrapped(string, ruleName, ix + 1)
+      } else {
+        try __registerMismatch()
+        catch {
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(RuleFrame(RuleFrame.StringMatch(string), ruleName), RuleFrame.CharMatch(string charAt ix))
+        }
+      }
+    else true
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  @tailrec final def __matchStringIgnoreCase(string: String, ix: Int = 0): Int =
+    if (ix < string.length)
+      if (cursorChar.toLower == string.charAt(ix)) {
+        __advance()
+        __matchStringIgnoreCase(string, ix + 1)
+      } else ix
+    else -1
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  @tailrec final def __matchAnyOf(string: String, ix: Int = 0): Boolean =
+    if (ix < string.length)
+      if (string.charAt(ix) == cursorChar) __advance()
+      else __matchAnyOf(string, ix + 1)
+    else false
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __matchMap(m: Map[String, Any]): Boolean = {
+    val keys = m.keysIterator
+    while (keys.hasNext) {
+      val mark = __saveState
+      val key = keys.next()
+      if (__matchString(key)) {
+        __push(m(key))
+        return true
+      } else __restoreState(mark)
+    }
+    false
+  }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __matchMapWrapped(m: Map[String, Any], ruleName: String): Boolean = {
+    val keys = m.keysIterator
+    try {
+      while (keys.hasNext) {
+        val mark = __saveState
+        val key = keys.next()
+        if (__matchStringWrapped(key, "")) {
+          __push(m(key))
+          return true
+        } else __restoreState(mark)
+      }
+      false
+    } catch {
+      case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame(RuleFrame.MapMatch(m), ruleName))
+    }
+  }
 }
 
 object Parser {

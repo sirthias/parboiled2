@@ -69,6 +69,7 @@ sealed abstract class RuleFrame {
       case FirstOf(_)                           ⇒ "|"
       case CharMatch(c)                         ⇒ "'" + escape(c) + '\''
       case StringMatch(s)                       ⇒ '"' + escape(s) + '"'
+      case MapMatch(m)                          ⇒ m.toString()
       case IgnoreCaseChar(c)                    ⇒ "'" + escape(c) + '\''
       case IgnoreCaseString(s)                  ⇒ '"' + escape(s) + '"'
       case CharPredicateMatch(_, name)          ⇒ if (name.nonEmpty) name else "<anon predicate>"
@@ -100,6 +101,7 @@ object RuleFrame {
   case class FirstOf(subs: Int) extends Anonymous
   case class CharMatch(char: Char) extends Anonymous
   case class StringMatch(string: String) extends Anonymous
+  case class MapMatch(map: Map[String, Any]) extends Anonymous
   case class IgnoreCaseChar(char: Char) extends Anonymous
   case class IgnoreCaseString(string: String) extends Anonymous
   case class CharPredicateMatch(predicate: CharPredicate, name: String) extends Anonymous

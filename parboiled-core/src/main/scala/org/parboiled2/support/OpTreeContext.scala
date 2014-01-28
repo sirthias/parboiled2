@@ -23,7 +23,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   val c: OpTreeCtx
   import c.universe._
 
-  sealed trait OpTree {
+  sealed abstract class OpTree {
     def ruleFrame: Tree
 
     // renders a RuleX Tree
@@ -67,6 +67,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
     case q"$a.this.ch($c)"                       ⇒ CharMatch(c)
     case q"$a.this.str($s)"                      ⇒ StringMatch(s)
+    case q"$a.this.valueMap[$b]($m)($hl)"        ⇒ MapMatch(m)
     case q"$a.this.ignoreCase($t)"               ⇒ IgnoreCase(t)
     case q"$a.this.predicate($p)"                ⇒ CharPredicateMatch(p)
     case q"$a.this.anyOf($s)"                    ⇒ AnyOf(s)
@@ -136,70 +137,46 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class StringMatch(stringTree: Tree) extends OpTree {
-    final private val autoExpandStringSize = 8
-
+    final private val autoExpandMaxStringLength = 8
     def renderInner(wrapped: Boolean): Tree = `n/a`
     def ruleFrame = q"RuleFrame.StringMatch($stringTree)"
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
-      def renderStringLiteralMatch(str: String): Tree = {
-        def unrollUnwrapped(ix: Int = 0): Tree =
-          if (ix == str.length - 1) q"p.cursorChar == ${str.charAt(ix)} && p.__advance()"
-          else q"p.cursorChar == ${str.charAt(ix)} && p.__advance() && ${unrollUnwrapped(ix + 1)}"
-
-        def unrollWrapped(ix: Int = 0): Tree =
-          if (ix == str.length) q"-1"
-          else q"""
-            if (p.cursorChar == ${str.charAt(ix)}) {
-              p.__advance()
-              ${unrollWrapped(ix + 1)}
-            } else $ix
-          """
-
-        if (str.isEmpty) q"true"
-        else if (wrapped) q"""
-          val mismatchIx = ${unrollWrapped()}
-          try mismatchIx == -1 || p.__registerMismatch()
-          catch {
-            case e: Parser.CollectingRuleStackException ⇒
-              e.save(RuleFrame(RuleFrame.StringMatch($str), ${c.literal(ruleName).tree}),
-                RuleFrame.CharMatch($str charAt mismatchIx))
-          }"""
-        else unrollUnwrapped()
+      def unrollUnwrapped(s: String, ix: Int = 0): Tree = {
+        val base = q"p.cursorChar == ${s charAt ix} && p.__advance()"
+        if (ix < s.length - 1) q"$base && ${unrollUnwrapped(s, ix + 1)}" else base
       }
-
-      def renderRegularStringMatch(): Tree =
-        if (wrapped) q"""
-          val string = $stringTree
-          @annotation.tailrec def rec(ix: Int): Int =
-            if (ix < string.length)
-              if (p.cursorChar == string.charAt(ix)) {
-                p.__advance()
-                rec(ix + 1)
-              } else ix
-            else -1
-          val mismatchIx = rec(0)
-          try mismatchIx == -1 || p.__registerMismatch()
-          catch {
-            case e: Parser.CollectingRuleStackException ⇒
-              e.save(RuleFrame(RuleFrame.StringMatch(string), ${c.literal(ruleName).tree}),
-                RuleFrame.CharMatch(string charAt mismatchIx))
+      def unrollWrapped(s: String, ix: Int = 0): Tree =
+        if (ix < s.length) {
+          val ch = s charAt ix
+          q"""
+          if (p.cursorChar == $ch) {
+            p.__advance()
+            ${unrollWrapped(s, ix + 1)}
+          } else {
+            try p.__registerMismatch()
+            catch {
+              case e: Parser.CollectingRuleStackException ⇒
+                e.save(RuleFrame(RuleFrame.StringMatch($s), ${c.literal(ruleName).tree}), RuleFrame.CharMatch($ch))
+            }
           }"""
-        else q"""
-          val string = $stringTree
-          @annotation.tailrec def rec(ix: Int): Boolean =
-            if (ix < string.length)
-              if (p.cursorChar == string.charAt(ix)) {
-                p.__advance()
-                rec(ix + 1)
-              } else false
-            else true
-          rec(0)"""
+        } else c.literalTrue.tree
 
       stringTree match {
-        case Literal(Constant(str: String)) if str.length <= autoExpandStringSize ⇒ renderStringLiteralMatch(str)
-        case _ ⇒ renderRegularStringMatch()
+        case Literal(Constant(s: String)) if s.length <= autoExpandMaxStringLength ⇒
+          if (s.isEmpty) c.literalTrue.tree else if (wrapped) unrollWrapped(s) else unrollUnwrapped(s)
+        case _ ⇒
+          if (wrapped) q"p.__matchStringWrapped($stringTree, ${c.literal(ruleName).tree})"
+          else q"p.__matchString($stringTree)"
       }
     }
+  }
+
+  case class MapMatch(mapTree: Tree) extends OpTree {
+    def ruleFrame = q"RuleFrame.MapMatch($mapTree)"
+    def renderInner(wrapped: Boolean): Tree = `n/a`
+    override def render(wrapped: Boolean, ruleName: String = ""): Tree =
+      if (wrapped) q"p.__matchMapWrapped($mapTree, ${c.literal(ruleName).tree})"
+      else q"p.__matchMap($mapTree)"
   }
 
   def IgnoreCase(argTree: Tree): OpTree = {
@@ -224,30 +201,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     override def render(wrapped: Boolean, ruleName: String = ""): Tree =
       if (wrapped) q"""
         val string = $stringTree
-        @annotation.tailrec def rec(ix: Int): Int =
-          if (ix < string.length)
-            if (p.cursorChar.toLower == string.charAt(ix)) {
-              p.__advance()
-              rec(ix + 1)
-            } else ix
-          else -1
-        val mismatchIx = rec(0)
+        val mismatchIx = p.__matchStringIgnoreCase($stringTree)
         try mismatchIx == -1 || p.__registerMismatch()
         catch {
           case e: Parser.CollectingRuleStackException ⇒
             e.save(RuleFrame(RuleFrame.IgnoreCaseString(string), ${c.literal(ruleName).tree}),
               RuleFrame.CharMatch(string charAt mismatchIx))
         }"""
-      else q"""
-        val string = $stringTree
-        @annotation.tailrec def rec(ix: Int): Boolean =
-          if (ix < string.length)
-            if (p.cursorChar.toLower == string.charAt(ix)) {
-              p.__advance()
-              rec(ix + 1)
-            } else false
-          else true
-        rec(0)"""
+      else q"p.__matchStringIgnoreCase($stringTree) == -1"
   }
 
   case class CharPredicateMatch(predicateTree: Tree) extends OpTree {
@@ -261,15 +222,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   case class AnyOf(stringTree: Tree) extends OpTree {
     def ruleFrame = q"RuleFrame.AnyOf($stringTree)"
-    def renderInner(wrapped: Boolean): Tree = q"""
-      val string = $stringTree
-      val c = p.cursorChar
-      @annotation.tailrec def rec(ix: Int): Boolean =
-        if (ix < string.length)
-          if (string.charAt(ix) == c) p.__advance()
-          else rec(ix + 1)
-        else false
-      ${if (wrapped) q"rec(0) || p.__registerMismatch()" else q"rec(0)"}"""
+    def renderInner(wrapped: Boolean): Tree =
+      if (wrapped) q"__matchAnyOf($stringTree) || p.__registerMismatch()"
+      else q"__matchAnyOf($stringTree)"
   }
 
   case object ANY extends OpTree {
