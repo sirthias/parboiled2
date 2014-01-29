@@ -27,11 +27,16 @@ object Utils {
    * Note that there is no reflection involved and compilation will fail, if one of the given rule names
    * does not constitute a method of parser type `T`.
    */
-  def createDynamicRuleDispatch[T <: Parser, L <: HList](ruleNames: String*): (T, String) ⇒ Option[Rule.Runnable[L]] = macro Macros.createDynamicRuleDispatchImpl[T, L]
+  def createDynamicRuleDispatch[P <: Parser, L <: HList](ruleNames: String*): (P, String) ⇒ Option[RunnableRule[P, L]] = macro Macros.createDynamicRuleDispatchImpl[P, L]
+}
+
+trait RunnableRule[P <: Parser, L <: HList] {
+  def parserInstance: P
+  def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result
 }
 
 object Macros {
-  def createDynamicRuleDispatchImpl[T <: Parser, L <: HList](c: Context)(ruleNames: c.Expr[String]*)(implicit T: c.WeakTypeTag[T], L: c.WeakTypeTag[L]): c.Expr[(T, String) ⇒ Option[Rule.Runnable[L]]] = {
+  def createDynamicRuleDispatchImpl[P <: Parser, L <: HList](c: Context)(ruleNames: c.Expr[String]*)(implicit P: c.WeakTypeTag[P], L: c.WeakTypeTag[L]): c.Expr[(P, String) ⇒ Option[RunnableRule[P, L]]] = {
     import c.universe._
     val names: Array[String] = ruleNames.map {
       _.tree match {
@@ -45,20 +50,19 @@ object Macros {
       if (start <= end) {
         val mid = (start + end) >>> 1
         val name = names(mid)
-        q"""
-          math.signum(${c.literal(name)}.compare(s)) match {
+        q"""math.signum(${c.literal(name)}.compare(s)) match {
             case -1 => ${rec(mid + 1, end)}
             case 1 => ${rec(start, mid - 1)}
             case 0 => Some {
-              new Rule.Runnable[$L] with Function0[RuleN[$L]] {
+              new RunnableRule[$P, $L] with Function0[RuleN[$L]] {
+                def parserInstance: $P = p
                 def apply() = p.${newTermName(name)}
                 override def run()(implicit scheme: Parser.DeliveryScheme[$L]): scheme.Result = p.__run[$L](this.apply)(scheme)
               }
             }
-          }
-        """
+          }"""
       } else q"None"
 
-    c.Expr[(T, String) ⇒ Option[Rule.Runnable[L]]](q"(p: $T, s: String) => ${rec(0, names.length - 1)}")
+    c.Expr[(P, String) ⇒ Option[RunnableRule[P, L]]](q"(p: $P, s: String) => ${rec(0, names.length - 1)}")
   }
 }
