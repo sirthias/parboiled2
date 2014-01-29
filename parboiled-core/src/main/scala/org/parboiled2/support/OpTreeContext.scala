@@ -59,28 +59,31 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
 
   val opTreePF: PartialFunction[Tree, OpTree] = {
-    case q"$lhs.~[$a, $b]($rhs)($c, $d)"         ⇒ Sequence(OpTree(lhs), OpTree(rhs))
-    case q"$lhs.|[$a, $b]($rhs)"                 ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-    case q"$a.this.ch($c)"                       ⇒ CharMatch(c)
-    case q"$a.this.str($s)"                      ⇒ StringMatch(s)
-    case q"$a.this.valueMap[$b]($m)($hl)"        ⇒ MapMatch(m)
-    case q"$a.this.ignoreCase($t)"               ⇒ IgnoreCase(t)
-    case q"$a.this.predicate($p)"                ⇒ CharPredicateMatch(p)
-    case q"$a.this.anyOf($s)"                    ⇒ AnyOf(s)
-    case q"$a.this.ANY"                          ⇒ ANY
-    case q"$a.this.optional[$b, $c]($arg)($o)"   ⇒ Optional(OpTree(arg), collector(o))
-    case q"$a.this.zeroOrMore[$b, $c]($arg)($s)" ⇒ ZeroOrMore(OpTree(arg), collector(s))
-    case q"$a.this.oneOrMore[$b, $c]($arg)($s)"  ⇒ OneOrMore(OpTree(arg), collector(s))
-    case q"$base.times[$a, $b]($r)($s)"          ⇒ Times(base, OpTree(r), collector(s))
-    case q"$a.this.&($arg)"                      ⇒ AndPredicate(OpTree(arg))
-    case q"$a.unary_!()"                         ⇒ NotPredicate(OpTree(a))
-    case q"$a.this.test($flag)"                  ⇒ SemanticPredicate(flag)
-    case q"$a.this.capture[$b, $c]($arg)($d)"    ⇒ Capture(OpTree(arg))
-    case q"$a.this.run[$b]($arg)($rr)"           ⇒ RunAction(arg, rr)
-    case q"$a.this.push[$b]($arg)($hl)"          ⇒ PushAction(arg, hl)
-    case q"$a.this.drop[$b]($hl)"                ⇒ DropAction(hl)
-    case x @ q"$a.this.str2CharRangeSupport(${ Literal(Constant(l: String)) }).-(${ Literal(Constant(r: String)) })" ⇒
-      CharRange(l, r, x.pos)
+    case q"$lhs.~[$a, $b]($rhs)($c, $d)"               ⇒ Sequence(OpTree(lhs), OpTree(rhs))
+    case q"$lhs.|[$a, $b]($rhs)"                       ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
+    case q"$a.this.ch($c)"                             ⇒ CharMatch(c)
+    case q"$a.this.str($s)"                            ⇒ StringMatch(s)
+    case q"$a.this.valueMap[$b]($m)($hl)"              ⇒ MapMatch(m)
+    case q"$a.this.ignoreCase($t)"                     ⇒ IgnoreCase(t)
+    case q"$a.this.predicate($p)"                      ⇒ CharPredicateMatch(p)
+    case q"$a.this.anyOf($s)"                          ⇒ AnyOf(s)
+    case q"$a.this.ANY"                                ⇒ ANY
+    case q"$a.this.optional[$b, $c]($arg)($o)"         ⇒ Optional(OpTree(arg), collector(o))
+    case q"$a.this.zeroOrMore[$b, $c]($arg)($s)"       ⇒ ZeroOrMore(OpTree(arg), collector(s))
+    case q"$a.this.oneOrMore[$b, $c]($arg)($s)"        ⇒ OneOrMore(OpTree(arg), collector(s))
+    case q"$base.times[$a, $b]($r)($s)"                ⇒ Times(base, OpTree(r), collector(s))
+    case q"$a.this.&($arg)"                            ⇒ AndPredicate(OpTree(arg))
+    case q"$a.unary_!()"                               ⇒ NotPredicate(OpTree(a))
+    case q"$a.this.test($flag)"                        ⇒ SemanticPredicate(flag)
+    case q"$a.this.capture[$b, $c]($arg)($d)"          ⇒ Capture(OpTree(arg))
+    case q"$a.this.run[$b]($arg)($rr)"                 ⇒ RunAction(arg, rr)
+    case q"$a.this.push[$b]($arg)($hl)"                ⇒ PushAction(arg, hl)
+    case q"$a.this.drop[$b]($hl)"                      ⇒ DropAction(hl)
+    case x @ q"$a.this.str2CharRangeSupport($l).-($r)" ⇒ CharRange(l, r)
+    case q"$a.this.charAndValue[$t]($b.any2ArrowAssoc[$t1]($c).->[$t2]($v))($hl)" ⇒
+      Sequence(CharMatch(c), PushAction(v, hl))
+    case q"$a.this.stringAndValue[$t]($b.any2ArrowAssoc[$t1]($s).->[$t2]($v))($hl)" ⇒
+      Sequence(StringMatch(s), PushAction(v, hl))
     case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
       Sequence(OpTree(r), Action(f, ts))
     case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
@@ -98,9 +101,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     opTreePF.applyOrElse(tree, (t: Tree) ⇒ c.abort(t.pos, "Invalid rule definition: " + t))
 
   def Sequence(lhs: OpTree, rhs: OpTree): Sequence =
-    lhs match {
-      case Sequence(ops) ⇒ Sequence(ops :+ rhs)
-      case _             ⇒ Sequence(Seq(lhs, rhs))
+    lhs -> rhs match {
+      case (Sequence(lops), Sequence(rops)) ⇒ Sequence(lops ++ rops)
+      case (Sequence(lops), _)              ⇒ Sequence(lops :+ rhs)
+      case (_, Sequence(ops))               ⇒ Sequence(lhs +: ops)
+      case _                                ⇒ Sequence(Seq(lhs, rhs))
     }
 
   case class Sequence(ops: Seq[OpTree]) extends OpTree {
@@ -487,12 +492,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def renderInner(wrapped: Boolean): Tree = q"$call ne null"
   }
 
-  def CharRange(lower: String, upper: String, pos: Position): CharacterRange = {
-    if (lower.length != 1) c.abort(pos, "lower bound must be a single char string")
-    if (upper.length != 1) c.abort(pos, "upper bound must be a single char string")
+  def CharRange(lowerTree: Tree, upperTree: Tree): CharacterRange = {
+    val (lower, upper) = lowerTree -> upperTree match {
+      case (Literal(Constant(l: String)), Literal(Constant(u: String))) ⇒ l -> u
+      case _ ⇒ c.abort(lowerTree.pos, "Character ranges must be specified with string literals")
+    }
+    if (lower.length != 1) c.abort(lowerTree.pos, "lower bound must be a single char string")
+    if (upper.length != 1) c.abort(upperTree.pos, "upper bound must be a single char string")
     val lowerBoundChar = lower.charAt(0)
     val upperBoundChar = upper.charAt(0)
-    if (lowerBoundChar > upperBoundChar) c.abort(pos, "lower bound must not be > upper bound")
+    if (lowerBoundChar > upperBoundChar) c.abort(lowerTree.pos, "lower bound must not be > upper bound")
     CharacterRange(lowerBoundChar, upperBoundChar)
   }
 
