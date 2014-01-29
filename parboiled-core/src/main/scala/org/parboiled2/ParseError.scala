@@ -27,14 +27,14 @@ case class ParseError(position: Position, traces: Seq[RuleTrace]) extends Runtim
       case _ ⇒ expected.init.mkString(", ") + " or " + expected.last
     }
   }
-  def formatExpectedAsSeq: Vector[String] =
+  def formatExpectedAsSeq: Seq[String] =
     traces.map { trace ⇒
       if (trace.frames.nonEmpty) {
         val exp = trace.frames.last.format
         val nonEmptyExp = if (exp.isEmpty) "?" else exp
         if (trace.isNegated) "!" + nonEmptyExp else nonEmptyExp
       } else "???"
-    }(collection.breakOut)
+    }.distinct
 
   def formatTraces: String =
     traces.map(_.format).mkString(traces.size + " rule" + (if (traces.size != 1) "s" else "") +
