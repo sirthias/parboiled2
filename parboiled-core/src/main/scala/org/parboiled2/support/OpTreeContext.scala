@@ -30,10 +30,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def renderRule(ruleName: String): Tree = q"""
       // split out into separate method so as to not double the rule method size
       // which would effectively decrease method inlining by about 50%
-      val p = ${c.prefix.tree}
       def wrapped: Boolean = ${render(wrapped = true, ruleName)}
       val matched =
-        if (p.__collectingErrors) wrapped
+        if (__collectingErrors) wrapped
         else ${render(wrapped = false)}
       if (matched) Rule else null""" // we encode the "matched" boolean as 'ruleResult ne null'
 
@@ -120,16 +119,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class FirstOf(ops: Seq[OpTree]) extends OpTree {
     def ruleFrame = q"RuleFrame.FirstOf(${c.literal(ops.size).tree})"
     def renderInner(wrapped: Boolean): Tree =
-      q"""val mark = p.__saveState; ${
-        ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒ q"$l || { p.__restoreState(mark); $r }")
+      q"""val mark = __saveState; ${
+        ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒ q"$l || { __restoreState(mark); $r }")
       }"""
   }
 
   case class CharMatch(charTree: Tree) extends OpTree {
     def ruleFrame = q"RuleFrame.CharMatch($charTree)"
     def renderInner(wrapped: Boolean): Tree = {
-      val unwrappedTree = q"p.cursorChar == $charTree && p.__advance()"
-      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
+      val unwrappedTree = q"cursorChar == $charTree && __advance()"
+      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
     }
   }
 
@@ -139,19 +138,19 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = q"RuleFrame.StringMatch($stringTree)"
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
       def unrollUnwrapped(s: String, ix: Int = 0): Tree = {
-        val base = q"p.cursorChar == ${s charAt ix} && p.__advance()"
+        val base = q"cursorChar == ${s charAt ix} && __advance()"
         if (ix < s.length - 1) q"$base && ${unrollUnwrapped(s, ix + 1)}" else base
       }
       def unrollWrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) {
           val ch = s charAt ix
           q"""
-          if (p.cursorChar == $ch) {
-            p.__advance()
-            p.__updateMaxCursor()
+          if (cursorChar == $ch) {
+            __advance()
+            __updateMaxCursor()
             ${unrollWrapped(s, ix + 1)}
           } else {
-            try p.__registerMismatch()
+            try __registerMismatch()
             catch {
               case e: Parser.CollectingRuleStackException ⇒
                 e.save(RuleFrame(RuleFrame.StringMatch($s), ${c.literal(ruleName).tree}), RuleFrame.CharMatch($ch))
@@ -163,8 +162,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case Literal(Constant(s: String)) if s.length <= autoExpandMaxStringLength ⇒
           if (s.isEmpty) c.literalTrue.tree else if (wrapped) unrollWrapped(s) else unrollUnwrapped(s)
         case _ ⇒
-          if (wrapped) q"p.__matchStringWrapped($stringTree, ${c.literal(ruleName).tree})"
-          else q"p.__matchString($stringTree)"
+          if (wrapped) q"__matchStringWrapped($stringTree, ${c.literal(ruleName).tree})"
+          else q"__matchString($stringTree)"
       }
     }
   }
@@ -173,8 +172,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = q"RuleFrame.MapMatch($mapTree)"
     def renderInner(wrapped: Boolean): Tree = `n/a`
     override def render(wrapped: Boolean, ruleName: String = ""): Tree =
-      if (wrapped) q"p.__matchMapWrapped($mapTree, ${c.literal(ruleName).tree})"
-      else q"p.__matchMap($mapTree)"
+      if (wrapped) q"__matchMapWrapped($mapTree, ${c.literal(ruleName).tree})"
+      else q"__matchMap($mapTree)"
   }
 
   def IgnoreCase(argTree: Tree): OpTree = {
@@ -187,8 +186,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class IgnoreCaseChar(charTree: Tree) extends OpTree {
     def ruleFrame = q"RuleFrame.IgnoreCaseChar($charTree)"
     def renderInner(wrapped: Boolean): Tree = {
-      val unwrappedTree = q"p.cursorChar.toLower == $charTree && p.__advance()"
-      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
+      val unwrappedTree = q"cursorChar.toLower == $charTree && __advance()"
+      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
     }
   }
 
@@ -198,19 +197,19 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = q"RuleFrame.IgnoreCaseString($stringTree)"
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
       def unrollUnwrapped(s: String, ix: Int = 0): Tree = {
-        val base = q"Character.toLowerCase(p.cursorChar) == ${s charAt ix} && p.__advance()"
+        val base = q"Character.toLowerCase(cursorChar) == ${s charAt ix} && __advance()"
         if (ix < s.length - 1) q"$base && ${unrollUnwrapped(s, ix + 1)}" else base
       }
       def unrollWrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) {
           val ch = s charAt ix
           q"""
-          if (Character.toLowerCase(p.cursorChar) == $ch) {
-            p.__advance()
-            p.__updateMaxCursor()
+          if (Character.toLowerCase(cursorChar) == $ch) {
+            __advance()
+            __updateMaxCursor()
             ${unrollWrapped(s, ix + 1)}
           } else {
-            try p.__registerMismatch()
+            try __registerMismatch()
             catch {
               case e: Parser.CollectingRuleStackException ⇒
                 e.save(RuleFrame(RuleFrame.IgnoreCaseString($s), ${c.literal(ruleName).tree}),
@@ -223,8 +222,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         case Literal(Constant(s: String)) if s.length <= autoExpandMaxStringLength ⇒
           if (s.isEmpty) c.literalTrue.tree else if (wrapped) unrollWrapped(s) else unrollUnwrapped(s)
         case _ ⇒
-          if (wrapped) q"p.__matchIgnoreCaseStringWrapped($stringTree, ${c.literal(ruleName).tree})"
-          else q"p.__matchIgnoreCaseString($stringTree)"
+          if (wrapped) q"__matchIgnoreCaseStringWrapped($stringTree, ${c.literal(ruleName).tree})"
+          else q"__matchIgnoreCaseString($stringTree)"
       }
     }
   }
@@ -233,34 +232,34 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def predicateName = callName(predicateTree) getOrElse ""
     def ruleFrame = q"RuleFrame.CharPredicateMatch($predicateTree, ${c.literal(predicateName).tree})"
     def renderInner(wrapped: Boolean): Tree = {
-      val unwrappedTree = q"val pred = $predicateTree; pred(p.cursorChar) && p.__advance()"
-      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
+      val unwrappedTree = q"val pred = $predicateTree; pred(cursorChar) && __advance()"
+      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
     }
   }
 
   case class AnyOf(stringTree: Tree) extends OpTree {
     def ruleFrame = q"RuleFrame.AnyOf($stringTree)"
     def renderInner(wrapped: Boolean): Tree =
-      if (wrapped) q"p.__matchAnyOf($stringTree) && p.__updateMaxCursor() || p.__registerMismatch()"
-      else q"p.__matchAnyOf($stringTree)"
+      if (wrapped) q"__matchAnyOf($stringTree) && __updateMaxCursor() || __registerMismatch()"
+      else q"__matchAnyOf($stringTree)"
   }
 
   case object ANY extends OpTree {
     def ruleFrame = reify(RuleFrame.ANY).tree
     def renderInner(wrapped: Boolean): Tree = {
-      val unwrappedTree = q"p.cursorChar != EOI && p.__advance()"
-      if (wrapped) q"$unwrappedTree && p.__updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
+      val unwrappedTree = q"cursorChar != EOI && __advance()"
+      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
     }
   }
 
   case class Optional(op: OpTree, collector: Collector) extends OpTree {
     def ruleFrame = reify(RuleFrame.Optional).tree
     def renderInner(wrapped: Boolean): Tree = q"""
-      val mark = p.__saveState
+      val mark = __saveState
       if (${op.render(wrapped)}) {
         ${collector.pushSomePop}
       } else {
-        p.__restoreState(mark)
+        __restoreState(mark)
         ${collector.pushNone}
       }
       true"""
@@ -270,8 +269,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = reify(RuleFrame.ZeroOrMore).tree
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
-        if (separator eq null) q"rec(p.__saveState)"
-        else q"val m = p.__saveState; if (${separator(wrapped)}) rec(m) else m"
+        if (separator eq null) q"rec(__saveState)"
+        else q"val m = __saveState; if (${separator(wrapped)}) rec(m) else m"
 
       q"""
       ${collector.valBuilder}
@@ -282,7 +281,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           $recurse
         } else mark
 
-      p.__restoreState(rec(p.__saveState))
+      __restoreState(rec(__saveState))
       ${collector.pushBuilderResult}"""
     }
   }
@@ -291,11 +290,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = reify(RuleFrame.OneOrMore).tree
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
-        if (separator eq null) q"rec(p.__saveState)"
-        else q"val m = p.__saveState; if (${separator(wrapped)}) rec(m) else m"
+        if (separator eq null) q"rec(__saveState)"
+        else q"val m = __saveState; if (${separator(wrapped)}) rec(m) else m"
 
       q"""
-      val firstMark = p.__saveState
+      val firstMark = __saveState
       ${collector.valBuilder}
 
       @annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
@@ -306,7 +305,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
       val mark = rec(firstMark)
       mark != firstMark && {
-        p.__restoreState(mark)
+        __restoreState(mark)
         ${collector.pushBuilderResult}
       }"""
     }
@@ -345,10 +344,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = q"..$inits; RuleFrame.Times(min, max)"
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
-        if (separator eq null) q"rec(count + 1, p.__saveState)"
+        if (separator eq null) q"rec(count + 1, __saveState)"
         else q"""
-          val m = p.__saveState; if (${separator(wrapped)}) rec(count + 1, m)
-          else (count >= min) && { p.__restoreState(m); true }"""
+          val m = __saveState; if (${separator(wrapped)}) rec(count + 1, m)
+          else (count >= min) && { __restoreState(m); true }"""
 
       q"""
       ${collector.valBuilder}
@@ -358,19 +357,19 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
           if (count < max) $recurse else true
-        } else (count > min) && { p.__restoreState(mark); true }
+        } else (count > min) && { __restoreState(mark); true }
       }
 
-      (max <= 0) || rec(1, p.__saveState) && ${collector.pushBuilderResult}"""
+      (max <= 0) || rec(1, __saveState) && ${collector.pushBuilderResult}"""
     }
   }
 
   case class AndPredicate(op: OpTree) extends OpTree {
     def ruleFrame = reify(RuleFrame.AndPredicate).tree
     def renderInner(wrapped: Boolean): Tree = q"""
-      val mark = p.__saveState
+      val mark = __saveState
       val result = ${op.render(wrapped)}
-      p.__restoreState(mark)
+      __restoreState(mark)
       result"""
   }
 
@@ -379,14 +378,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = reify(RuleFrame.NotPredicate).tree
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
       val unwrappedTree = q"""
-        val mark = p.__saveState
-        val saved = p.__enterNotPredicate
+        val mark = __saveState
+        val saved = __enterNotPredicate
         val result = ${op.render(wrapped)}
-        p.__exitNotPredicate(saved)
-        p.__restoreState(mark)
+        __exitNotPredicate(saved)
+        __restoreState(mark)
         !result"""
       if (wrapped) q"""
-        try $unwrappedTree || p.__registerMismatch()
+        try $unwrappedTree || __registerMismatch()
         catch {
           case e: Parser.CollectingRuleStackException ⇒
             e.save(RuleFrame($ruleFrame, ${c.literal(ruleName).tree}), ${op.ruleFrame})
@@ -398,14 +397,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class SemanticPredicate(flagTree: Tree) extends OpTree {
     def ruleFrame = reify(RuleFrame.SemanticPredicate).tree
     def renderInner(wrapped: Boolean): Tree =
-      if (wrapped) flagTree else q"$flagTree || p.__registerMismatch()"
+      if (wrapped) flagTree else q"$flagTree || __registerMismatch()"
   }
 
   case class Capture(op: OpTree) extends OpTree {
     def ruleFrame = reify(RuleFrame.Capture).tree
     def renderInner(wrapped: Boolean): Tree = q"""
-      val start = p.cursor
-      ${op.render(wrapped)} && {p.valueStack.push(p.input.sliceString(start, p.cursor)); true}"""
+      val start = cursor
+      ${op.render(wrapped)} && {valueStack.push(input.sliceString(start, cursor)); true}"""
   }
 
   case class RunAction(argTree: Tree, rrTree: Tree) extends OpTree {
@@ -421,9 +420,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
                 tree match {
                   case Block(statements, res) ⇒ block(statements, rewrite(res))
                   case x if resultTypeTree.tpe <:< typeOf[Rule[_, _]] ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
-                  case x ⇒ q"p.__push($x)"
+                  case x ⇒ q"__push($x)"
                 }
-              val valDefs = args.zip(argTypeTrees).map { case (a, t) ⇒ q"val ${a.name} = p.valueStack.pop().asInstanceOf[${t.tpe}]" }.reverse
+              val valDefs = args.zip(argTypeTrees).map { case (a, t) ⇒ q"val ${a.name} = valueStack.pop().asInstanceOf[${t.tpe}]" }.reverse
               block(valDefs, rewrite(body))
 
             case x ⇒ c.abort(argTree.pos, "Unexpected `run` argument: " + show(argTree))
@@ -459,8 +458,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def renderInner(wrapped: Boolean): Tree =
       block(hlTree match {
         case q"support.this.HListable.fromUnit"       ⇒ argTree
-        case q"support.this.HListable.fromHList[$t]"  ⇒ q"p.valueStack.pushAll(${c.resetLocalAttrs(argTree)})"
-        case q"support.this.HListable.fromAnyRef[$t]" ⇒ q"p.valueStack.push($argTree)"
+        case q"support.this.HListable.fromHList[$t]"  ⇒ q"valueStack.pushAll(${c.resetLocalAttrs(argTree)})"
+        case q"support.this.HListable.fromAnyRef[$t]" ⇒ q"valueStack.push($argTree)"
         case x                                        ⇒ c.abort(hlTree.pos, "Unexpected HListable: " + show(x))
       }, c.literalTrue.tree)
   }
@@ -470,11 +469,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def renderInner(wrapped: Boolean): Tree =
       hlTree match {
         case q"support.this.HListable.fromUnit"       ⇒ c.literalTrue.tree
-        case q"support.this.HListable.fromAnyRef[$t]" ⇒ q"p.valueStack.pop(); true"
+        case q"support.this.HListable.fromAnyRef[$t]" ⇒ q"valueStack.pop(); true"
         case q"support.this.HListable.fromHList[$t]" ⇒
           @tailrec def rec(t: Type, result: List[Tree] = Nil): List[Tree] =
             t match { // TODO: how can we use type quotes here, e.g. tq"shapeless.HNil"?
-              case TypeRef(_, sym, List(_, tail)) if sym == HListConsTypeSymbol ⇒ rec(tail, q"p.valueStack.pop()" :: result)
+              case TypeRef(_, sym, List(_, tail)) if sym == HListConsTypeSymbol ⇒ rec(tail, q"valueStack.pop()" :: result)
               case TypeRef(_, sym, _) if sym == HNilTypeSymbol                  ⇒ result
             }
           Block(rec(t.tpe), c.literalTrue.tree)
@@ -501,9 +500,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = reify(RuleFrame.CharRange(c.literal(lowerBound).splice, c.literal(upperBound).splice)).tree
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"""
-        val char = p.cursorChar
-        ${c.literal(lowerBound).tree} <= char && char <= ${c.literal(upperBound).tree} && p.__advance()"""
-      if (wrapped) q"$unwrappedTree && p.__updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
+        val char = cursorChar
+        ${c.literal(lowerBound).tree} <= char && char <= ${c.literal(upperBound).tree} && __advance()"""
+      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
     }
   }
 
@@ -517,7 +516,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val argTypes = actionType dropRight 1
 
       def popToVals(valNames: List[TermName]): List[Tree] =
-        (valNames zip argTypes).map { case (n, t) ⇒ q"val $n = p.valueStack.pop().asInstanceOf[$t]" }.reverse
+        (valNames zip argTypes).map { case (n, t) ⇒ q"val $n = valueStack.pop().asInstanceOf[$t]" }.reverse
 
       def actionBody(tree: Tree): Tree =
         tree match {
@@ -526,14 +525,14 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           case x @ (Ident(_) | Select(_, _)) ⇒
             val valNames: List[TermName] = argTypes.indices.map { i ⇒ newTermName("value" + i) }(collection.breakOut)
             val args = valNames map Ident.apply
-            block(popToVals(valNames), q"p.__push($x(..$args))")
+            block(popToVals(valNames), q"__push($x(..$args))")
 
           case q"(..$args ⇒ $body)" ⇒
             def rewrite(tree: Tree): Tree =
               tree match {
                 case Block(statements, res) ⇒ block(statements, rewrite(res))
                 case x if actionType.last <:< typeOf[Rule[_, _]] ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
-                case x ⇒ q"p.__push($x)"
+                case x ⇒ q"__push($x)"
               }
             block(popToVals(args.map(_.name)), rewrite(body))
         }
@@ -558,10 +557,10 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   lazy val rule1Collector = new Collector(
     valBuilder = q"val builder = new org.parboiled2.support.SeqBuilder",
-    popToBuilder = q"builder += p.valueStack.pop()",
-    pushBuilderResult = q"p.valueStack.push(builder.result()); true",
-    pushSomePop = q"p.valueStack.push(Some(p.valueStack.pop()))",
-    pushNone = q"p.valueStack.push(None)")
+    popToBuilder = q"builder += valueStack.pop()",
+    pushBuilderResult = q"valueStack.push(builder.result()); true",
+    pushSomePop = q"valueStack.push(Some(valueStack.pop()))",
+    pushNone = q"valueStack.push(None)")
 
   type Separator = Boolean ⇒ Tree
 
