@@ -129,7 +129,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = q"RuleFrame.CharMatch($charTree)"
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"p.cursorChar == $charTree && p.__advance()"
-      if (wrapped) q"$unwrappedTree || p.__registerMismatch()" else unwrappedTree
+      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
     }
   }
 
@@ -148,6 +148,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           q"""
           if (p.cursorChar == $ch) {
             p.__advance()
+            p.__updateMaxCursor()
             ${unrollWrapped(s, ix + 1)}
           } else {
             try p.__registerMismatch()
@@ -185,27 +186,47 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   case class IgnoreCaseChar(charTree: Tree) extends OpTree {
     def ruleFrame = q"RuleFrame.IgnoreCaseChar($charTree)"
-    def renderInner(wrapped: Boolean): Tree =
-      if (wrapped)
-        q"if (p.cursorChar.toLower == $charTree) p.__advance() else p.__registerMismatch()"
-      else
-        q"p.cursorChar.toLower == $charTree && p.__advance()"
+    def renderInner(wrapped: Boolean): Tree = {
+      val unwrappedTree = q"p.cursorChar.toLower == $charTree && p.__advance()"
+      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
+    }
   }
 
   case class IgnoreCaseString(stringTree: Tree) extends OpTree {
+    final private val autoExpandMaxStringLength = 8
     def renderInner(wrapped: Boolean): Tree = `n/a`
     def ruleFrame = q"RuleFrame.IgnoreCaseString($stringTree)"
-    override def render(wrapped: Boolean, ruleName: String = ""): Tree =
-      if (wrapped) q"""
-        val string = $stringTree
-        val mismatchIx = p.__matchStringIgnoreCase($stringTree)
-        try mismatchIx == -1 || p.__registerMismatch()
-        catch {
-          case e: Parser.CollectingRuleStackException ⇒
-            e.save(RuleFrame(RuleFrame.IgnoreCaseString(string), ${c.literal(ruleName).tree}),
-              RuleFrame.CharMatch(string charAt mismatchIx))
-        }"""
-      else q"p.__matchStringIgnoreCase($stringTree) == -1"
+    override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
+      def unrollUnwrapped(s: String, ix: Int = 0): Tree = {
+        val base = q"Character.toLowerCase(p.cursorChar) == ${s charAt ix} && p.__advance()"
+        if (ix < s.length - 1) q"$base && ${unrollUnwrapped(s, ix + 1)}" else base
+      }
+      def unrollWrapped(s: String, ix: Int = 0): Tree =
+        if (ix < s.length) {
+          val ch = s charAt ix
+          q"""
+          if (Character.toLowerCase(p.cursorChar) == $ch) {
+            p.__advance()
+            p.__updateMaxCursor()
+            ${unrollWrapped(s, ix + 1)}
+          } else {
+            try p.__registerMismatch()
+            catch {
+              case e: Parser.CollectingRuleStackException ⇒
+                e.save(RuleFrame(RuleFrame.IgnoreCaseString($s), ${c.literal(ruleName).tree}),
+                  RuleFrame.IgnoreCaseChar($ch))
+            }
+          }"""
+        } else c.literalTrue.tree
+
+      stringTree match {
+        case Literal(Constant(s: String)) if s.length <= autoExpandMaxStringLength ⇒
+          if (s.isEmpty) c.literalTrue.tree else if (wrapped) unrollWrapped(s) else unrollUnwrapped(s)
+        case _ ⇒
+          if (wrapped) q"p.__matchIgnoreCaseStringWrapped($stringTree, ${c.literal(ruleName).tree})"
+          else q"p.__matchIgnoreCaseString($stringTree)"
+      }
+    }
   }
 
   case class CharPredicateMatch(predicateTree: Tree) extends OpTree {
@@ -213,22 +234,22 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def ruleFrame = q"RuleFrame.CharPredicateMatch($predicateTree, ${c.literal(predicateName).tree})"
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"val pred = $predicateTree; pred(p.cursorChar) && p.__advance()"
-      if (wrapped) q"$unwrappedTree || p.__registerMismatch()" else unwrappedTree
+      if (wrapped) q"$unwrappedTree && __updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
     }
   }
 
   case class AnyOf(stringTree: Tree) extends OpTree {
     def ruleFrame = q"RuleFrame.AnyOf($stringTree)"
     def renderInner(wrapped: Boolean): Tree =
-      if (wrapped) q"__matchAnyOf($stringTree) || p.__registerMismatch()"
-      else q"__matchAnyOf($stringTree)"
+      if (wrapped) q"p.__matchAnyOf($stringTree) && p.__updateMaxCursor() || p.__registerMismatch()"
+      else q"p.__matchAnyOf($stringTree)"
   }
 
   case object ANY extends OpTree {
     def ruleFrame = reify(RuleFrame.ANY).tree
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"p.cursorChar != EOI && p.__advance()"
-      if (wrapped) q"$unwrappedTree || p.__registerMismatch()" else unwrappedTree
+      if (wrapped) q"$unwrappedTree && p.__updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
     }
   }
 
@@ -482,7 +503,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val unwrappedTree = q"""
         val char = p.cursorChar
         ${c.literal(lowerBound).tree} <= char && char <= ${c.literal(upperBound).tree} && p.__advance()"""
-      if (wrapped) q"$unwrappedTree || p.__registerMismatch()" else unwrappedTree
+      if (wrapped) q"$unwrappedTree && p.__updateMaxCursor() || p.__registerMismatch()" else unwrappedTree
     }
   }
 

@@ -123,6 +123,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
   private[this] var _cursor: Int = _
 
   // the highest input index we have seen in the current run
+  // special value: -1 (not collecting errors)
   private[this] var maxCursor: Int = _
 
   // the number of times we have already seen a character mismatch at the error index
@@ -130,13 +131,13 @@ abstract class Parser(initialValueStackSize: Int = 16,
 
   // the index of the RuleStack we are currently constructing
   // for the ParseError to be (potentially) returned in the current parser run,
-  // as long as we do not yet know whether we have to construct a ParseError object this value is -1
+  // special value: -1 (during the run to establish the error location (maxCursor))
   private[this] var currentErrorRuleStackIx: Int = _
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __collectingErrors = currentErrorRuleStackIx >= 0
+  def __collectingErrors = maxCursor >= 0
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -174,8 +175,12 @@ abstract class Parser(initialValueStackSize: Int = 16,
       maxCursor = -1
       if (runRule())
         scheme.success(valueStack.toHList[L]())
-      else
+      else {
+        maxCursor = 0 // establish the error location with the next run
+        if (runRule()) sys.error("Parsing unexpectedly succeeded while trying to establish the error location")
+        // now maxCursor holds the error location, we can now build the parser error info
         scheme.parseError(buildParseError())
+      }
     } catch {
       case NonFatal(e) ⇒ scheme.failure(e)
     }
@@ -190,12 +195,16 @@ abstract class Parser(initialValueStackSize: Int = 16,
     if (c < max) {
       c += 1
       _cursor = c
-      _cursorChar =
-        if (c == max) EOI
-        else input charAt c
-      if (currentErrorRuleStackIx == -1 && c > maxCursor) // TODO: remove completely for non-error-collecting logic
-        maxCursor = c // if we are in the first "regular" parser run, we need to keep track of maxCursor here
+      _cursorChar = if (c == max) EOI else input charAt c
     }
+    true
+  }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __updateMaxCursor(): Boolean = {
+    if (_cursor > maxCursor) maxCursor = _cursor
     true
   }
 
@@ -217,15 +226,15 @@ abstract class Parser(initialValueStackSize: Int = 16,
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __enterNotPredicate: Int = {
-    val saved = currentErrorRuleStackIx
-    currentErrorRuleStackIx = -2 // disables maxCursor update as well as error rulestack collection
+    val saved = maxCursor
+    maxCursor = -1 // disables maxCursor update as well as error rulestack collection
     saved
   }
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __exitNotPredicate(saved: Int): Unit = currentErrorRuleStackIx = saved
+  def __exitNotPredicate(saved: Int): Unit = maxCursor = saved
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -268,6 +277,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
     if (ix < string.length)
       if (cursorChar == string.charAt(ix)) {
         __advance()
+        __updateMaxCursor()
         __matchStringWrapped(string, ruleName, ix + 1)
       } else {
         try __registerMismatch()
@@ -281,13 +291,31 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  @tailrec final def __matchStringIgnoreCase(string: String, ix: Int = 0): Int =
+  @tailrec final def __matchIgnoreCaseString(string: String, ix: Int = 0): Boolean =
     if (ix < string.length)
-      if (cursorChar.toLower == string.charAt(ix)) {
+      if (Character.toLowerCase(cursorChar) == string.charAt(ix)) {
         __advance()
-        __matchStringIgnoreCase(string, ix + 1)
-      } else ix
-    else -1
+        __matchIgnoreCaseString(string, ix + 1)
+      } else false
+    else true
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  @tailrec final def __matchIgnoreCaseStringWrapped(string: String, ruleName: String, ix: Int = 0): Boolean =
+    if (ix < string.length)
+      if (Character.toLowerCase(cursorChar) == string.charAt(ix)) {
+        __advance()
+        __updateMaxCursor()
+        __matchIgnoreCaseStringWrapped(string, ruleName, ix + 1)
+      } else {
+        try __registerMismatch()
+        catch {
+          case e: Parser.CollectingRuleStackException ⇒
+            e.save(RuleFrame(RuleFrame.IgnoreCaseString(string), ruleName), RuleFrame.IgnoreCaseChar(string charAt ix))
+        }
+      }
+    else true
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
