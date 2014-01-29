@@ -56,7 +56,7 @@ object Macros {
             case 0 => Some {
               new RunnableRule[$P, $L] with Function0[RuleN[$L]] {
                 def parserInstance: $P = p
-                def apply() = p.${newTermName(name)}
+                def apply() = p.${newTermName(name).encodedName}
                 override def run()(implicit scheme: Parser.DeliveryScheme[$L]): scheme.Result = p.__run[$L](this.apply)(scheme)
               }
             }
