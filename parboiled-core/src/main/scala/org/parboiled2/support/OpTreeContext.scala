@@ -59,27 +59,27 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
 
   val opTreePF: PartialFunction[Tree, OpTree] = {
-    case q"$lhs.~[$a, $b]($rhs)($c, $d)"               ⇒ Sequence(OpTree(lhs), OpTree(rhs))
-    case q"$lhs.|[$a, $b]($rhs)"                       ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
-    case q"$a.this.ch($c)"                             ⇒ CharMatch(c)
-    case q"$a.this.str($s)"                            ⇒ StringMatch(s)
-    case q"$a.this.valueMap[$b]($m)($hl)"              ⇒ MapMatch(m)
-    case q"$a.this.ignoreCase($t)"                     ⇒ IgnoreCase(t)
-    case q"$a.this.predicate($p)"                      ⇒ CharPredicateMatch(p)
-    case q"$a.this.anyOf($s)"                          ⇒ AnyOf(s)
-    case q"$a.this.ANY"                                ⇒ ANY
-    case q"$a.this.optional[$b, $c]($arg)($o)"         ⇒ Optional(OpTree(arg), collector(o))
-    case q"$a.this.zeroOrMore[$b, $c]($arg)($s)"       ⇒ ZeroOrMore(OpTree(arg), collector(s))
-    case q"$a.this.oneOrMore[$b, $c]($arg)($s)"        ⇒ OneOrMore(OpTree(arg), collector(s))
-    case q"$base.times[$a, $b]($r)($s)"                ⇒ Times(base, OpTree(r), collector(s))
-    case q"$a.this.&($arg)"                            ⇒ AndPredicate(OpTree(arg))
-    case q"$a.unary_!()"                               ⇒ NotPredicate(OpTree(a))
-    case q"$a.this.test($flag)"                        ⇒ SemanticPredicate(flag)
-    case q"$a.this.capture[$b, $c]($arg)($d)"          ⇒ Capture(OpTree(arg))
-    case q"$a.this.run[$b]($arg)($rr)"                 ⇒ RunAction(arg, rr)
-    case q"$a.this.push[$b]($arg)($hl)"                ⇒ PushAction(arg, hl)
-    case q"$a.this.drop[$b]($hl)"                      ⇒ DropAction(hl)
-    case x @ q"$a.this.str2CharRangeSupport($l).-($r)" ⇒ CharRange(l, r)
+    case q"$lhs.~[$a, $b]($rhs)($c, $d)"                   ⇒ Sequence(OpTree(lhs), OpTree(rhs))
+    case q"$lhs.|[$a, $b]($rhs)"                           ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
+    case q"$a.this.ch($c)"                                 ⇒ CharMatch(c)
+    case q"$a.this.str($s)"                                ⇒ StringMatch(s)
+    case q"$a.this.valueMap[$b]($m)($hl)"                  ⇒ MapMatch(m)
+    case q"$a.this.ignoreCase($t)"                         ⇒ IgnoreCase(t)
+    case q"$a.this.predicate($p)"                          ⇒ CharPredicateMatch(p)
+    case q"$a.this.anyOf($s)"                              ⇒ AnyOf(s)
+    case q"$a.this.ANY"                                    ⇒ ANY
+    case q"$a.this.optional[$b, $c]($arg)($o)"             ⇒ Optional(OpTree(arg), collector(o))
+    case q"$a.this.zeroOrMore[$b, $c]($arg)($s)"           ⇒ ZeroOrMore(OpTree(arg), collector(s))
+    case q"$a.this.oneOrMore[$b, $c]($arg)($s)"            ⇒ OneOrMore(OpTree(arg), collector(s))
+    case q"$base.times[$a, $b]($r)($s)"                    ⇒ Times(base, OpTree(r), collector(s))
+    case q"$a.this.&($arg)"                                ⇒ AndPredicate(OpTree(arg))
+    case q"$a.unary_!()"                                   ⇒ NotPredicate(OpTree(a))
+    case q"$a.this.test($flag)"                            ⇒ SemanticPredicate(flag)
+    case q"$a.this.capture[$b, $c]($arg)($d)"              ⇒ Capture(OpTree(arg))
+    case q"$a.this.run[$b]($arg)($c.fromAux[$d, $e]($rr))" ⇒ RunAction(arg, rr)
+    case q"$a.this.push[$b]($arg)($hl)"                    ⇒ PushAction(arg, hl)
+    case q"$a.this.drop[$b]($hl)"                          ⇒ DropAction(hl)
+    case x @ q"$a.this.str2CharRangeSupport($l).-($r)"     ⇒ CharRange(l, r)
     case q"$a.this.charAndValue[$t]($b.any2ArrowAssoc[$t1]($c).->[$t2]($v))($hl)" ⇒
       Sequence(CharMatch(c), PushAction(v, hl))
     case q"$a.this.stringAndValue[$t]($b.any2ArrowAssoc[$t1]($s).->[$t2]($v))($hl)" ⇒
@@ -116,9 +116,11 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
-    lhs match {
-      case FirstOf(ops) ⇒ FirstOf(ops :+ rhs)
-      case _            ⇒ FirstOf(Seq(lhs, rhs))
+    lhs -> rhs match {
+      case (FirstOf(lops), FirstOf(rops)) ⇒ FirstOf(lops ++ rops)
+      case (FirstOf(lops), _)             ⇒ FirstOf(lops :+ rhs)
+      case (_, FirstOf(ops))              ⇒ FirstOf(lhs +: ops)
+      case _                              ⇒ FirstOf(Seq(lhs, rhs))
     }
 
   case class FirstOf(ops: Seq[OpTree]) extends OpTree {
@@ -142,10 +144,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def renderInner(wrapped: Boolean): Tree = `n/a`
     def ruleFrame = q"RuleFrame.StringMatch($stringTree)"
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
-      def unrollUnwrapped(s: String, ix: Int = 0): Tree = {
-        val base = q"cursorChar == ${s charAt ix} && __advance()"
-        if (ix < s.length - 1) q"$base && ${unrollUnwrapped(s, ix + 1)}" else base
-      }
+      def unrollUnwrapped(s: String, ix: Int = 0): Tree =
+        if (ix < s.length) q"""
+          if (cursorChar == ${s charAt ix}) {
+            __advance()
+            ${unrollUnwrapped(s, ix + 1)}
+          } else false"""
+        else c.literalTrue.tree
       def unrollWrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) {
           val ch = s charAt ix
@@ -201,10 +206,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def renderInner(wrapped: Boolean): Tree = `n/a`
     def ruleFrame = q"RuleFrame.IgnoreCaseString($stringTree)"
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
-      def unrollUnwrapped(s: String, ix: Int = 0): Tree = {
-        val base = q"Character.toLowerCase(cursorChar) == ${s charAt ix} && __advance()"
-        if (ix < s.length - 1) q"$base && ${unrollUnwrapped(s, ix + 1)}" else base
-      }
+      def unrollUnwrapped(s: String, ix: Int = 0): Tree =
+        if (ix < s.length) q"""
+          if (Character.toLowerCase(cursorChar) == ${s charAt ix}) {
+            __advance()
+            ${unrollUnwrapped(s, ix + 1)}
+          } else false"""
+        else c.literalTrue.tree
       def unrollWrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) {
           val ch = s charAt ix
@@ -237,7 +245,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def predicateName = callName(predicateTree) getOrElse ""
     def ruleFrame = q"RuleFrame.CharPredicateMatch($predicateTree, ${c.literal(predicateName).tree})"
     def renderInner(wrapped: Boolean): Tree = {
-      val unwrappedTree = q"val pred = $predicateTree; pred(cursorChar) && __advance()"
+      val unwrappedTree = q"$predicateTree(cursorChar) && __advance()"
       if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
     }
   }
@@ -437,9 +445,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       }
 
       rrTree match {
-        case q"support.this.RunResult.forAny[$t]" ⇒ block(argTree, c.literalTrue.tree)
+        case q"RunResult.this.Aux.forAny[$t]" ⇒ block(argTree, c.literalTrue.tree)
 
-        case q"support.this.RunResult.forRule[$t]" ⇒
+        case q"RunResult.this.Aux.forRule[$t]" ⇒
           def body(tree: Tree): Tree =
             tree match {
               case Block(statements, res) ⇒ block(statements, body(res))
@@ -447,13 +455,16 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             }
           body(argTree)
 
-        case q"support.this.RunResult.forF1[$z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, z)
-        case q"support.this.RunResult.forF2[$y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, y, z)
-        case q"support.this.RunResult.forF3[$x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, x, y, z)
-        case q"support.this.RunResult.forF4[$w, $x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, w, x, y, z)
-        case q"support.this.RunResult.forF5[$v, $w, $x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, v, w, x, y, z)
+        case q"RunResult.this.Aux.forF1[$z, $r, $in, $out]($a)"                 ⇒ renderFunctionAction(r, z)
+        case q"RunResult.this.Aux.forF2[$y, $z, $r, $in, $out]($a)"             ⇒ renderFunctionAction(r, y, z)
+        case q"RunResult.this.Aux.forF3[$x, $y, $z, $r, $in, $out]($a)"         ⇒ renderFunctionAction(r, x, y, z)
+        case q"RunResult.this.Aux.forF4[$w, $x, $y, $z, $r, $in, $out]($a)"     ⇒ renderFunctionAction(r, w, x, y, z)
+        case q"RunResult.this.Aux.forF5[$v, $w, $x, $y, $z, $r, $in, $out]($a)" ⇒ renderFunctionAction(r, v, w, x, y, z)
 
-        case x ⇒ c.abort(rrTree.pos, "Unexpected RunResult: " + show(x))
+        case q"RunResult.this.Aux.forFHList[$il, $r, $in, $out]($a)" ⇒
+          c.abort(argTree.pos, "`run` with a function taking an HList is not yet implemented") // TODO: implement
+
+        case x ⇒ c.abort(rrTree.pos, "Unexpected RunResult.Aux: " + show(x))
       }
     }
   }

@@ -83,6 +83,11 @@ class ActionSpec extends TestParserSpec {
       "5" must beMismatched
     }
 
+    //    "`run(F1TakingHList)`" in new TestParser1[Int] {
+    //      def targetRule = rule { push(42 :: "X" :: HNil) ~ run((l: Int :: String :: HNil) ⇒ l.head * 2) }
+    //      "" must beMatchedWith(84)
+    //    }
+
     "`push` simple value" in new TestParser1[String] {
       def targetRule = rule { 'x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI }
       "xy" must beMatchedWith("yeah")
