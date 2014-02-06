@@ -132,8 +132,8 @@ class BasicSpec extends TestParserSpec {
       "8" must beMismatched
     }
 
-    "EMPTY" in new TestParser0 {
-      def targetRule = rule { EMPTY ~ EOI }
+    "MATCH" in new TestParser0 {
+      def targetRule = rule { MATCH ~ EOI }
       "" must beMatched
       "x" must beMismatched
     }
