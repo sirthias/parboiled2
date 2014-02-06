@@ -18,6 +18,7 @@ package org.parboiled2
 
 import scala.reflect.internal.annotations.compileTimeOnly
 import org.parboiled2.support._
+import shapeless.HList
 
 trait RuleDSLBasics {
 
@@ -99,7 +100,7 @@ trait RuleDSLBasics {
   /**
    * A rule that always fails.
    */
-  def MISMATCH: Rule0 = null
+  def MISMATCH[I <: HList, O <: HList]: Rule[I, O] = null
 
   @compileTimeOnly("Calls to `str2CharRangeSupport` must be inside `rule` macro")
   implicit def str2CharRangeSupport(s: String): CharRangeSupport = `n/a`
