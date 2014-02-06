@@ -62,6 +62,24 @@ class ActionSpec extends TestParserSpec {
       "ab" must beMatched
     }
 
+    "`run(ruleBlockWithRuleIf)`" in new TestParser0 {
+      var flag = false
+      def targetRule = rule { 'a' ~ run { flag = true; if (flag) oneOrMore(b) else MISMATCH } ~ EOI }
+      def b = rule { 'b' }
+      "a" must beMismatched
+      flag must beTrue
+      "abbb" must beMatched
+    }
+
+    "`run(ruleBlockWithRuleMatch)`" in new TestParser0 {
+      var flag = false
+      def targetRule = rule { 'a' ~ run { flag = true; flag match { case true ⇒ oneOrMore(b); case _ ⇒ MISMATCH } } ~ EOI }
+      def b = rule { 'b' }
+      "a" must beMismatched
+      flag must beTrue
+      "abbb" must beMatched
+    }
+
     "`run(F1producingUnit)`" in new TestParser1[Int] {
       def targetRule = rule { push(1 :: "X" :: HNil) ~ run((x: String) ⇒ require(x == "X")) ~ EOI }
       "" must beMatchedWith(1)
@@ -163,7 +181,7 @@ class ActionSpec extends TestParserSpec {
     }
 
     "`~>` producing an expression evaluating to a rule" in new TestParser0 {
-      def testRule = rule { capture(anyOf("ab")) ~> (s ⇒ if (s == "a") rule('b') else rule('a')) ~ EOI }
+      def testRule = rule { capture(anyOf("ab")) ~> (s ⇒ if (s == "a") ch('b') else ch('a')) ~ EOI }
       def targetRule = testRule
       "ab" must beMatched
       "ba" must beMatched

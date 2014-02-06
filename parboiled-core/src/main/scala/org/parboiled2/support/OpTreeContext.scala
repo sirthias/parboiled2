@@ -432,7 +432,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
               def rewrite(tree: Tree): Tree =
                 tree match {
                   case Block(statements, res) ⇒ block(statements, rewrite(res))
-                  case x if resultTypeTree.tpe <:< typeOf[Rule[_, _]] ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
+                  case x if resultTypeTree.tpe <:< typeOf[Rule[_, _]] ⇒ expand(x, wrapped)
                   case x ⇒ q"__push($x)"
                 }
               val valDefs = args.zip(argTypeTrees).map { case (a, t) ⇒ q"val ${a.name} = valueStack.pop().asInstanceOf[${t.tpe}]" }.reverse
@@ -445,15 +445,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       }
 
       rrTree match {
-        case q"RunResult.this.Aux.forAny[$t]" ⇒ block(argTree, c.literalTrue.tree)
+        case q"RunResult.this.Aux.forAny[$t]"                                   ⇒ block(argTree, c.literalTrue.tree)
 
-        case q"RunResult.this.Aux.forRule[$t]" ⇒
-          def body(tree: Tree): Tree =
-            tree match {
-              case Block(statements, res) ⇒ block(statements, body(res))
-              case x                      ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
-            }
-          body(argTree)
+        case q"RunResult.this.Aux.forRule[$t]"                                  ⇒ expand(argTree, wrapped)
 
         case q"RunResult.this.Aux.forF1[$z, $r, $in, $out]($a)"                 ⇒ renderFunctionAction(r, z)
         case q"RunResult.this.Aux.forF2[$y, $z, $r, $in, $out]($a)"             ⇒ renderFunctionAction(r, y, z)
@@ -551,7 +545,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
             def rewrite(tree: Tree): Tree =
               tree match {
                 case Block(statements, res) ⇒ block(statements, rewrite(res))
-                case x if actionType.last <:< typeOf[Rule[_, _]] ⇒ matchAndExpandOpTreeIfPossible(x, wrapped)
+                case x if actionType.last <:< typeOf[Rule[_, _]] ⇒ expand(x, wrapped)
                 case x ⇒ q"__push($x)"
               }
             block(popToVals(args.map(_.name)), rewrite(body))
@@ -589,8 +583,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   lazy val HListConsTypeSymbol = typeOf[shapeless.::[_, _]].typeSymbol
   lazy val HNilTypeSymbol = typeOf[shapeless.HNil].typeSymbol
 
-  def matchAndExpandOpTreeIfPossible(tree: Tree, wrapped: Boolean): Tree =
-    opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) ⇒ q"$t ne null")
+  // tries to match and expand the leaves of the given Tree  
+  def expand(tree: Tree, wrapped: Boolean): Tree =
+    tree match {
+      case Block(statements, res)     ⇒ block(statements, expand(res, wrapped))
+      case If(cond, thenExp, elseExp) ⇒ If(cond, expand(thenExp, wrapped), expand(elseExp, wrapped))
+      case Match(selector, cases)     ⇒ Match(selector, cases.map(expand(_, wrapped).asInstanceOf[CaseDef]))
+      case CaseDef(pat, guard, body)  ⇒ CaseDef(pat, guard, expand(body, wrapped))
+      case x                          ⇒ opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) ⇒ q"$t ne null")
+    }
 
   @tailrec
   private def callName(tree: Tree): Option[String] =
