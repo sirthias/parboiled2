@@ -18,6 +18,7 @@ package org.parboiled2
 
 import java.nio.charset.Charset
 import scala.annotation.tailrec
+import java.nio.ByteBuffer
 
 trait ParserInput {
   /**
@@ -37,6 +38,11 @@ trait ParserInput {
    * Returns the characters between index `start` (inclusively) and `end` (exclusively) as a `String`.
    */
   def sliceString(start: Int, end: Int): String
+
+  /**
+   * Returns the characters between index `start` (inclusively) and `end` (exclusively) as an `Array[Char]`.
+   */
+  def sliceCharArray(start: Int, end: Int): Array[Char]
 
   /**
    * Gets the input line with the given number as a String.
@@ -70,17 +76,24 @@ object ParserInput {
     def charAt(ix: Int) = bytes(ix).toChar
     def length = bytes.length
     def sliceString(start: Int, end: Int) = new String(bytes, start, end - start, charset)
+    def sliceCharArray(start: Int, end: Int) = charset.decode(ByteBuffer.wrap(bytes)).array()
   }
 
   class StringBasedParser(string: String) extends DefaultParserInput {
     def charAt(ix: Int) = string.charAt(ix)
     def length = string.length
     def sliceString(start: Int, end: Int) = string.substring(start, end)
+    def sliceCharArray(start: Int, end: Int) = {
+      val chars = new Array[Char](end - start)
+      string.getChars(start, end, chars, 0)
+      chars
+    }
   }
 
   class CharArrayBasedParser(chars: Array[Char]) extends DefaultParserInput {
     def charAt(ix: Int) = chars(ix)
     def length = chars.length
     def sliceString(start: Int, end: Int) = new String(chars, start, end - start)
+    def sliceCharArray(start: Int, end: Int) = java.util.Arrays.copyOfRange(chars, start, end)
   }
 }
