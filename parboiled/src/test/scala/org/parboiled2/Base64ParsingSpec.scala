@@ -37,7 +37,7 @@ class Base64ParsingSpec extends Specification {
     "enable parsing of custom-Base64 Blocks" in test("base64CustomBlock", Base64.rfc2045())
   }
 
-  val dispatch = Utils.createDynamicRuleDispatch[TestParser, Array[Byte] :: HNil](
+  val dispatch = DynamicRuleDispatch[TestParser, Array[Byte] :: HNil](
     "rfc2045String", "rfc2045Block", "base64CustomString", "base64CustomBlock")
 
   def test(ruleName: String, base64: Base64) =

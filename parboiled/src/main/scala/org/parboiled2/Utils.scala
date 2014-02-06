@@ -19,7 +19,7 @@ package org.parboiled2
 import shapeless.HList
 import scala.reflect.macros.Context
 
-object Utils {
+object DynamicRuleDispatch {
   /**
    * Implements efficient runtime dispatch to a predefined set of parser rules.
    * Given a number of rule names this macro-supported method creates a function instance,
@@ -27,16 +27,11 @@ object Utils {
    * Note that there is no reflection involved and compilation will fail, if one of the given rule names
    * does not constitute a method of parser type `T`.
    */
-  def createDynamicRuleDispatch[P <: Parser, L <: HList](ruleNames: String*): (P, String) ⇒ Option[RunnableRule[P, L]] = macro Macros.createDynamicRuleDispatchImpl[P, L]
-}
+  def apply[P <: Parser, L <: HList](ruleNames: String*): (P, String) ⇒ Option[RunnableRule[P, L]] = macro __create[P, L]
 
-trait RunnableRule[P <: Parser, L <: HList] {
-  def parserInstance: P
-  def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result
-}
+  ///////////////////// INTERNAL ////////////////////////
 
-object Macros {
-  def createDynamicRuleDispatchImpl[P <: Parser, L <: HList](c: Context)(ruleNames: c.Expr[String]*)(implicit P: c.WeakTypeTag[P], L: c.WeakTypeTag[L]): c.Expr[(P, String) ⇒ Option[RunnableRule[P, L]]] = {
+  def __create[P <: Parser, L <: HList](c: Context)(ruleNames: c.Expr[String]*)(implicit P: c.WeakTypeTag[P], L: c.WeakTypeTag[L]): c.Expr[(P, String) ⇒ Option[RunnableRule[P, L]]] = {
     import c.universe._
     val names: Array[String] = ruleNames.map {
       _.tree match {
@@ -65,4 +60,9 @@ object Macros {
 
     c.Expr[(P, String) ⇒ Option[RunnableRule[P, L]]](q"(p: $P, s: String) => ${rec(0, names.length - 1)}")
   }
+}
+
+trait RunnableRule[P <: Parser, L <: HList] {
+  def parserInstance: P
+  def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result
 }

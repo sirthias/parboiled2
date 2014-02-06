@@ -32,29 +32,29 @@ class UtilsSpec extends Specification {
 
   "Utils.createDynamicRuleDispatch" should {
     "work as expected when selecting from 0 rules" in {
-      val dispatch = Utils.createDynamicRuleDispatch[TestParser, HNil]()
+      val dispatch = DynamicRuleDispatch[TestParser, HNil]()
       dispatch(new TestParser("a"), "A") === None
     }
     "work as expected when selecting from 1 rule" in {
-      val dispatch = Utils.createDynamicRuleDispatch[TestParser, HNil]("A")
+      val dispatch = DynamicRuleDispatch[TestParser, HNil]("A")
       dispatch(new TestParser("a"), "A").get.run() === Success(())
       dispatch(new TestParser("b"), "B") === None
     }
     "work as expected when selecting from 2 rules" in {
-      val dispatch = Utils.createDynamicRuleDispatch[TestParser, HNil]("A", "B")
+      val dispatch = DynamicRuleDispatch[TestParser, HNil]("A", "B")
       dispatch(new TestParser("a"), "A").get.run() === Success(())
       dispatch(new TestParser("b"), "B").get.run() === Success(())
       dispatch(new TestParser("c"), "C") === None
     }
     "work as expected when selecting from 3 rules" in {
-      val dispatch = Utils.createDynamicRuleDispatch[TestParser, HNil]("A", "B", "C")
+      val dispatch = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C")
       dispatch(new TestParser("a"), "A").get.run() === Success(())
       dispatch(new TestParser("b"), "B").get.run() === Success(())
       dispatch(new TestParser("c"), "C").get.run() === Success(())
       dispatch(new TestParser("d"), "D") === None
     }
     "work as expected when selecting from 4 rules" in {
-      val dispatch = Utils.createDynamicRuleDispatch[TestParser, HNil]("A", "B", "C", "D")
+      val dispatch = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C", "D")
       dispatch(new TestParser("a"), "A").get.run() === Success(())
       dispatch(new TestParser("b"), "B").get.run() === Success(())
       dispatch(new TestParser("c"), "C").get.run() === Success(())
@@ -62,7 +62,7 @@ class UtilsSpec extends Specification {
       dispatch(new TestParser("e"), "E") === None
     }
     "work as expected when selecting from 5 rules" in {
-      val dispatch = Utils.createDynamicRuleDispatch[TestParser, HNil]("A", "B", "C", "D", "E")
+      val dispatch = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C", "D", "E")
       dispatch(new TestParser("a"), "A").get.run() === Success(())
       dispatch(new TestParser("b"), "B").get.run() === Success(())
       dispatch(new TestParser("c"), "C").get.run() === Success(())
