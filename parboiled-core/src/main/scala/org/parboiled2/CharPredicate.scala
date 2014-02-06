@@ -27,6 +27,12 @@ sealed abstract class CharPredicate extends (Char ⇒ Boolean) {
    */
   def isCharMask: Boolean = this.isInstanceOf[CharMask]
 
+  def asCharMask: CharMask =
+    this match {
+      case x: CharMask ⇒ x
+      case _           ⇒ sys.error("CharPredicate is not a CharMask")
+    }
+
   def ++(that: CharPredicate): CharPredicate
   def ++(chars: Seq[Char]): CharPredicate
   def --(that: CharPredicate): CharPredicate
@@ -117,6 +123,7 @@ object CharPredicate {
   object ApplyMagnet {
     implicit def fromPredicate(predicate: Char ⇒ Boolean): ApplyMagnet = new ApplyMagnet(from(predicate))
     implicit def fromChar(c: Char): ApplyMagnet = fromChars(c :: Nil)
+    implicit def fromCharArray(array: Array[Char]): ApplyMagnet = fromChars(array)
     implicit def fromString(chars: String): ApplyMagnet = fromChars(chars)
     implicit def fromChars(chars: Seq[Char]): ApplyMagnet = {
       @tailrec def rec(ix: Int, result: CharPredicate): CharPredicate =
