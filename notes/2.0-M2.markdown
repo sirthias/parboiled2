@@ -1,0 +1,36 @@
+This is the second (and likely last) milestone release on the way towards parboiled 2.0.
+It improves upon 2.0-M1 in many ways, fixing bugs, adding features and increasing parsing performance by about 30%.
+
+The release announcement on the mailing list can be found
+[here](https://groups.google.com/d/msg/parboiled-user/bIQuz21aGwg/coHmtqTphdUJ).
+
+CHANGELOG:
+
+- Renamed `CharPredicate.HexAlpha` to `HexDigit`
+- Renamed `EMPTY` to `MATCH` and `NOTHING` to `MISMATCH`
+- Changed `MISMATCH` type from `Rule0` to `Rule[I, O]`
+- Fixed "Invalid rule definition" error with certain actions (#41)
+- Fixed "Invalid rule definition" when calling free rule methods (#43)
+- Fixed "Identifiers not decoded in error messages' (#44)
+- Fixed `ArrayBasedPredicate` not recognizing char at index 0
+- Fixed error reporting incorrectly positioning unexpected newline errors
+- Added `Parser::charAt(offset)`, `Parser::charAtRC(offset)` and `Parser::lastChar: Char`
+- Added `org.parboiled2.util.Base64` codec from pb1
+- Added `StringBuilding` and `Base64Parsing` helper traits
+- Added `drop` action
+- Added `ValueStack::show`
+- Added `DynamicRuleDispatch` facility
+- Added support for variable `.times` bases (ints and ranges)
+- Added support for more `.run` bases (Apply, TypeApply in addition to Select)
+- Added support for `Map[String, T]` rules
+- Added support for `char -> value` and `string -> value` rules
+- Added `ParserInput::sliceCharArray`
+- Extended `~>` action function parameter maximum from 5 to 9 (#45)
+- Extended `run` action with support for rule expansion
+- Extended `run` action with support for value stack consumption (#39)
+- Refactored and optimized rule rendering (#47)
+- Implemented string literal auto expansion (#46)
+- Improved/flexibilized parse error formatting infrastructure
+- Improved compilation errors (@implicitNotFound on `TailSwitch`)
+- Improved CharPredicate implementation
+- Other smaller improvement and polishings
