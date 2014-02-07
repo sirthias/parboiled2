@@ -42,7 +42,7 @@ trait RuleDSLActions {
    * A `run` rule can have several shapes, depending on its argument type. If the `arg` evaluates to
    *
    * - a rule (i.e. has type `R <: Rule[_, _]`) the result type of `run` is this rule's type (i.e. `R`) and the
-   *   produced rule immediately executed.
+   *   produced rule is immediately executed.
    *
    * - a function with 1 to 5 parameters these parameters are mapped against the top of the value stack, popped
    *   and the function executed. Thereby the function behaves just like an action function for the `~>` operator,

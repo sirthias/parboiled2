@@ -46,9 +46,9 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.0-M1"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.0-M2"
 
-The latest released version is **2.0-M1**.
+The latest released version is **2.0-M2**.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
 (currently version 2.0.0-M1).
@@ -276,7 +276,7 @@ The following basic character matching rules are the only way to cause the parse
 
 ----
 
-``implicit def ch(c: Char): Rule0``
+implicit def ch(c: Char): Rule0
     ``Char`` values can be directly used in the rule DSL and match themselves. There is one notable case where you will
     have to use the explicit ``ch`` wrapper: You cannot use the ``|`` operator directly on chars as it denotes the
     built-in Scala binary "or" operator defined on numeric types (``Char`` is an unsigned 16-bit integer).
@@ -284,53 +284,75 @@ The following basic character matching rules are the only way to cause the parse
 
 ----
 
-``implicit def str(s: String): Rule0``
+implicit def str(s: String): Rule0
     ``String`` values can be directly used in the rule DSL and match themselves.
 
 ----
 
-``implicit def predicate(p: CharPredicate): Rule0``
+implicit def predicate(p: CharPredicate): Rule0
     You can use ``org.parboiled2.CharPredicate`` values directly in the rule DSL. ``CharPredicate`` is an efficient
-    implementation of character sets and already comes with pre-defined character classes like ``CharPredicate.Digit``
-    or ``CharPredicate.LowerHexLetter``.
+    implementation of character sets and already comes with a number pre-defined character classes like
+    ``CharPredicate.Digit`` or ``CharPredicate.LowerHexLetter``.
 
 ----
 
-``def anyOf(chars: String): Rule0``
+implicit def valueMap[T](m: Map[String, T]): R
+    Values of type ``Map[String, T]`` can be directly used in the rule DSL and match any of the given map's keys and
+    push the respective value upon a successful match. The resulting rule type depends on ``T``:
+
+    =================== =========================================
+    ``T``               ``R``
+    =================== =========================================
+    ``Unit``            ``Rule0``
+    ``L <: HList``      ``RuleN[L]`` (pushes all values of ``L``)
+    ``T`` (otherwise)   ``Rule1[T]`` (pushes only one value)
+    =================== =========================================
+
+----
+
+``implicit def charAndValue[T](t: (Char, T)): R`` / ``implicit def stringAndValue[T](t: (String, T)): R``
+    Tuple values with the first component being either a ``Char`` or a ``String`` can be directly used in the rule DSL
+    and match the respective character or string and push the respectively associated value upon a successful match.
+    The resulting rule type depends on ``T`` and be looked in the table for ``valueMap`` above.
+
+----
+
+def anyOf(chars: String): Rule0
     This constructs a ``Rule0`` which matches any of the given strings characters.
 
 ----
 
-``def ignoreCase(c: Char): Rule0``
+def ignoreCase(c: Char): Rule0
     Matches the given single character case insensitively.
     Note: **The given character must be specified in lower-case!** This requirement is currently NOT enforced!
 
 ----
 
-``def ignoreCase(s: String): Rule0``
+def ignoreCase(s: String): Rule0
     Matches the given string of characters case insensitively.
     Note: **The given string must be specified in all lower-case!** This requirement is currently NOT enforced!
 
 ----
 
-``def ANY: Rule0``
+def ANY: Rule0
     Matches any character except *EOI* (end-of-input).
 
 ----
 
-``def EOI: Char``
+def EOI: Char
     The *EOI* (end-of-input) character, which is a virtual character that the parser "appends" after the last
     character of the actual input.
 
 ----
 
-``def EMPTY: Rule0``
-    Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always (as a rule).
+def MATCH: Rule0
+    Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always. It's the "empty"
+    rule that is mostly used as a neutral element in rule composition.
 
 ----
 
-``def NOTHING: Rule0``
-    A rule that always fails.
+def MISMATCH[I <: HList, O <: HList]: Rule[I, O]
+    A rule that always fails. Fits any rule signature.
 
 
 Rule Combinators and Modifiers
@@ -345,13 +367,14 @@ a ~ b
     ``a`` matches and then ``b`` matches. The computation of the resulting rule type is somewhat involved.
     Here is an illustration (using an abbreviated HList notation):
 
-    ====================== ==================== ========================
+    ====================== ==================== =========================
     a                      b                    a ~ b
-    ====================== ==================== ========================
+    ====================== ==================== =========================
     ``Rule[, A]``          ``Rule[, B]``        ``Rule[, A:B]``
     ``Rule[A:B:C, D:E:F]`` ``Rule[F, G:H]``     ``Rule[A:B:C, D:E:G:H]``
     ``Rule[A, B:C]``       ``Rule[D:B:C, E:F]`` ``Rule[D:A, E:F]``
-    ====================== ==================== ========================
+    ``Rule[A, B:C]``       ``Rule[D:C, E:F]``   Illegal if ``D`` != ``B``
+    ====================== ==================== =========================
 
 ----
 
@@ -395,7 +418,7 @@ optional(a)
 
     .. code:: Scala
 
-        capture(CharPredicate.Digit) ~ optional('h' ~> ((s: String) => s + "hex"))
+        capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
 
     The inner rule of ``optional`` here has type ``Rule[String :: HNil, String :: HNil]``, i.e. it pops one ``String``
     off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
@@ -453,9 +476,8 @@ oneOrMore(a)
 ----
 
 xxx.times(a)
-    Repeats a rule a given number of times. ``xxx`` can be either an non-negative ``Int`` constant (!) or a range
-    ``(<x> to <y>)`` whereby both ``<x>`` and ``<y>`` are non-negative ``Int`` constants and ``<x> <= <y>``.
-    If the upper bound is zero the rule is equivalent to ``EMPTY``.
+    Repeats a rule a given number of times. ``xxx`` can be either an ``Int`` value or a range ``(<x> to <y>)`` whereby
+    both ``<x>`` and ``<y>`` are ``Int`` values. If the upper bound is zero the rule is equivalent to ``MATCH``.
     The resulting rule type depends on the type of the inner rule:
 
     =================== =======================
@@ -490,34 +512,21 @@ Parser Actions
 --------------
 
 The `Basic Character Matching`_  rules and the `Rule Combinators and Modifiers`_ allow you to build *recognizers* for
-potentially complex languages, but usually your parser is supposed to do more than simply determining whether a given
+potentially complex languages, but usually your parser is supposed to do more than simply determine whether a given
 input conforms to the defined grammar. In order to run custom logic during parser execution, e.g. for creating custom
 objects (like an AST_), you will have to add some "actions" to your rules.
 
 ----
 
-``def run(block: Unit): Rule0``
-    ``run`` is the simplest parser action. It produces a ``Rule0`` which executes its argument block and always
-    succeeds (as a rule). Since it doesn't interact with the value stack and doesn't match any input all it can do is
-    perform "unchecked" side effects. Note that by using ``run`` you are leaving the "safety-net" that the value stack
-    and the rule type system gives you! Make sure you understand what you are doing before using ``run`` actions!
-
-    Also note that, due to the macro expansion the *parboiled2* rule DSL is based on, the given block behaves like a
-    call-by-name parameter even though it is not marked as one! This means that the argument expression to ``run`` is
-    (re-)evaluated for every rule execution, just as if ``run`` would have been defined as
-    ``def run(block: => Unit): Rule0``.
-
-----
-
 push(value)
     ``push(value)`` creates a rule that matches no input (but always succeeds, as a rule) and pushes the given value
-    onto the value stack. It's rule type depends on the given value:
+    onto the value stack. Its rule type depends on the given value:
 
     ================= =============================================
     Type of ``value`` Type of ``push(value)``
     ================= =============================================
     ``Unit``          ``Rule0`` (identical to ``run`` in this case)
-    ``L <: HList``    ``RuleN[L]`` (pushes all HList values)
+    ``L <: HList``    ``RuleN[L]`` (pushes all values of ``L``)
     ``T`` (otherwise) ``Rule1[T]`` (pushes only one value)
     ================= =============================================
 
@@ -539,11 +548,11 @@ capture(a)
 
 ----
 
-``def test(condition: Boolean): Rule0``
+def test(condition: Boolean): Rule0
     ``test`` implements "semantic predicates". It creates a rule that matches no input and succeeds only if the given
     condition expression evaluates to true. Note that, due to the macro expansion the *parboiled2* rule DSL is based on,
     the given argument behaves like a call-by-name parameter even though it is not marked as one!
-    This means that the argument expression to ``run`` is (re-)evaluated for every rule execution, just as if ``test``
+    This means that the argument expression to ``test`` is (re-)evaluated for every rule execution, just as if ``test``
     would have been defined as ``def test(condition: => Boolean): Rule0``.
 
 ----
@@ -554,7 +563,7 @@ a ~> (...)
     functions are allowed and what the resulting rule type is depends on the type of ``a``.
 
     The basic idea is that the input of the function is popped of the value stack and the result of the function is
-    pushed back onto it. In its basic form the ``~>`` operator therefore transform the top elements of the value stack
+    pushed back onto it. In its basic form the ``~>`` operator therefore transforms the top elements of the value stack
     into some other object(s).
 
     Let's look at some examples:
@@ -588,8 +597,8 @@ a ~> (...)
     This results in a ``Rule[Int :: HNil, String :: HNil]``, i.e. a rule that pops one ``Int`` value off the stack and
     replaces it with a ``String``. Note that, while the parameter types to the action function can be inferred if they
     can be matched against an "output" of the underlying rule, this is not the case for parameters that don't directly
-    correspond to an underlying output. In these cases you need to add an explicit type annotation to the action
-    function parameter.
+    correspond to an underlying output. In these cases you need to add an explicit type annotation to the respective
+    action function parameter(s).
 
     If an action function returns ``Unit`` it doesn't push anything on the stack. So this rule
 
@@ -655,22 +664,70 @@ a ~> (...)
 
 ----
 
-There are two more members of the ``Parser`` class that are useful for writing efficient action logic:
+run(expression)
+    ``run`` is the most versatile parser action. It can have several shapes, depending on the type of its argument
+    expression. If the argument expression evaluates to
 
-``def cursor: Int``
+    - a rule (i.e. has type ``R <: Rule[_, _]``) the result type of ``run`` is this rule's type (i.e. ``R``) and the
+      produced rule is immediately executed.
+
+    - a function with 1 to 5 parameters these parameters are mapped against the top of the value stack, popped
+      and the function executed. Thereby the function behaves just like an action function for the ``~>`` operator,
+      i.e. if it produces a ``Unit`` value this result is simply dropped. ``HList`` results are pushed onto the value
+      stack (all their elements individually), rule results are immediately executed and other result values are pushed
+      onto the value stack as a single element.
+      The difference between using ``run`` and attaching an action function with the ``~>`` operator is that in the
+      latter case the compiler can usually infer the types of the function parameters (if they map to "output" values
+      of the base rule) while with ``run`` you *always* have to explicitly attach type annotation to the function
+      parameters.
+
+    - a function with one ``HList`` parameter the behavior is similar to the previous case with the difference that the
+      elements of this parameter ``HList`` are mapped against the value stack top. This allows for consumption of an
+      arbitrary number of value stack elements.
+
+    - any other value the result type of ``run`` is an always succeeding ``Rule0``. Since in this case it doesn't
+      interact with the value stack and doesn't match any input all it can do is perform "unchecked" side effects.
+      Note that by using ``run`` in this way you are leaving the "safety-net" that the value stack and the rule type
+      system gives you! Make sure you understand what you are doing before using these kinds of ``run`` actions!
+
+    Also note that, due to the macro expansion the *parboiled2* rule DSL is based on, the given block behaves like a
+    call-by-name parameter even though it is not marked as one! This means that the argument expression to ``run`` is
+    (re-)evaluated for every rule execution.
+
+----
+
+There are a few more members of the ``Parser`` class that are useful for writing efficient action logic:
+
+def cursor: Int
     The index of the next (yet unmatched) input character.
     Note: Might be equal to ``input.length`` if the cursor is currently behind the last input character!
 
-``def cursorChar: Char``
+def cursorChar: Char
     The next (yet unmatched) input character, i.e. the one at the ``cursor`` index.
     Identical to ``if (cursor < input.length) input.charAt(cursor) else EOI`` but more efficient.
+
+def lastChar: Char
+    Returns the last character that was matched, i.e. the one at index ``cursor - 1`` and as such is equivalent
+    to ``charAt(-1)``. Note that for performance optimization this method does *not* do a range check, i.e. depending on
+    the ``ParserInput`` implementation you might get an exception when calling this method before any character was
+    matched by the parser.
+
+def charAt(offset: Int): Char
+    Returns the character at the input index with the given delta to the cursor and as such is equivalent to
+    ``input.charAt(cursor + offset)``. Note that for performance optimization this method does *not* do a range check,
+    i.e. depending on the ``ParserInput`` implementation you might get an exception if the computed index is out of
+    bounds.
+
+def charAtRC(offset: Int): Char
+    Same as ``charAt`` but range-checked. Returns the input character at the index with the given offset from the
+    cursor. If this index is out of range the method returns ``EOI``.
 
 You can use these to write efficient character-level logic like this:
 
 .. code:: Scala
 
     def hexDigit: Rule1[Int] = rule {
-      CharPredicate.HexAlpha ~ push(CharUtils.hexValue(input.charAt(cursor - 1)))
+      CharPredicate.HexAlpha ~ push(CharUtils.hexValue(lastChar))
     }
 
 
@@ -857,8 +914,8 @@ parboiled2 vs. Scala Parser Combinators
 
 TODO
 
-(much much faster, better error reporting, more concise and elegant DSL, similarly powerful in terms of language class
-capabilities, but Scala 2.10.3+ only, 2 added dependencies (parboiled2 + shapeless))
+(several hundred times (!) faster, better error reporting, more concise and elegant DSL, similarly powerful in terms of
+language class capabilities, but Scala 2.10.3+ only, 2 added dependencies (parboiled2 + shapeless))
 
 parboiled2 vs. Regular Expressions
 ----------------------------------

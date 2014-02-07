@@ -67,7 +67,7 @@ trait RuleDSLCombinators {
     /**
      * Repeats the given sub rule `r` the given number of times.
      * Both bounds of the range must be non-negative and the upper bound must be >= the lower bound.
-     * If the upper bound is zero the rule is equivalent to `EMPTY`.
+     * If the upper bound is zero the rule is equivalent to `MATCH`.
      *
      * Resulting rule type is
      *   Rule0          if r == Rule0
