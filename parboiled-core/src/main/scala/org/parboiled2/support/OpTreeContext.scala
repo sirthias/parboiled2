@@ -288,7 +288,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       q"""
       ${collector.valBuilder}
 
-      @annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
+      @_root_.scala.annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
           $recurse
@@ -310,7 +310,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val firstMark = __saveState
       ${collector.valBuilder}
 
-      @annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
+      @_root_.scala.annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
           $recurse
@@ -366,7 +366,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       ${collector.valBuilder}
       ..$inits
 
-      @annotation.tailrec def rec(count: Int, mark: Parser.Mark): Boolean = {
+      @_root_.scala.annotation.tailrec def rec(count: Int, mark: Parser.Mark): Boolean = {
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
           if (count < max) $recurse else true
