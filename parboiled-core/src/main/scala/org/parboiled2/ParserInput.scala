@@ -54,10 +54,9 @@ trait ParserInput {
 object ParserInput {
   val Empty = apply(Array.empty[Byte])
 
-  implicit def apply(bytes: Array[Byte]): ByteArrayBasedParser = apply(bytes, UTF8)
-  implicit def apply(string: String): StringBasedParser = new StringBasedParser(string)
-  implicit def apply(chars: Array[Char]): CharArrayBasedParser = new CharArrayBasedParser(chars)
-  def apply(bytes: Array[Byte], charset: Charset): ByteArrayBasedParser = new ByteArrayBasedParser(bytes, charset)
+  implicit def apply(bytes: Array[Byte]): ByteArrayBasedParserInput = new ByteArrayBasedParserInput(bytes)
+  implicit def apply(string: String): StringBasedParserInput = new StringBasedParserInput(string)
+  implicit def apply(chars: Array[Char]): CharArrayBasedParserInput = new CharArrayBasedParserInput(chars)
 
   abstract class DefaultParserInput extends ParserInput {
     def getLine(line: Int): String = {
@@ -72,14 +71,26 @@ object ParserInput {
     }
   }
 
-  class ByteArrayBasedParser(bytes: Array[Byte], charset: Charset) extends DefaultParserInput {
-    def charAt(ix: Int) = bytes(ix).toChar
+  /**
+   * ParserInput reading directly off a byte array.
+   * This avoids a separate decoding step but assumes that each byte represents exactly one character,
+   * which is encoded by ISO-8859-1!
+   * You can therefore use this ParserInput type only if you know that all input will be `ISO-8859-1`-encoded,
+   * or only contains 7-bit ASCII characters (which is a subset of ISO-8859-1)!
+   *
+   * Note that this ParserInput type will NOT work with general `UTF-8`-encoded input as this can contain
+   * character representations spanning multiple bytes. However, if you know that your input will only ever contain
+   * 7-bit ASCII characters (0x00-0x7F) then UTF-8 is fine, since the first 127 UTF-8 characters are
+   * encoded with only one byte that is identical to 7-bit ASCII and ISO-8859-1.
+   */
+  class ByteArrayBasedParserInput(bytes: Array[Byte]) extends DefaultParserInput {
+    def charAt(ix: Int) = (bytes(ix) & 0xFF).toChar
     def length = bytes.length
-    def sliceString(start: Int, end: Int) = new String(bytes, start, end - start, charset)
-    def sliceCharArray(start: Int, end: Int) = charset.decode(ByteBuffer.wrap(bytes)).array()
+    def sliceString(start: Int, end: Int) = new String(bytes, start, end - start, `ISO-8859-1`)
+    def sliceCharArray(start: Int, end: Int) = `ISO-8859-1`.decode(ByteBuffer.wrap(bytes)).array()
   }
 
-  class StringBasedParser(string: String) extends DefaultParserInput {
+  class StringBasedParserInput(string: String) extends DefaultParserInput {
     def charAt(ix: Int) = string.charAt(ix)
     def length = string.length
     def sliceString(start: Int, end: Int) = string.substring(start, end)
@@ -90,7 +101,7 @@ object ParserInput {
     }
   }
 
-  class CharArrayBasedParser(chars: Array[Char]) extends DefaultParserInput {
+  class CharArrayBasedParserInput(chars: Array[Char]) extends DefaultParserInput {
     def charAt(ix: Int) = chars(ix)
     def length = chars.length
     def sliceString(start: Int, end: Int) = new String(chars, start, end - start)
