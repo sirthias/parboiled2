@@ -196,7 +196,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class IgnoreCaseChar(charTree: Tree) extends OpTree {
     def ruleFrame = q"RuleFrame.IgnoreCaseChar($charTree)"
     def renderInner(wrapped: Boolean): Tree = {
-      val unwrappedTree = q"cursorChar.toLower == $charTree && __advance()"
+      val unwrappedTree = q"_root_.java.lang.Character.toLowerCase(cursorChar) == $charTree && __advance()"
       if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
     }
   }
@@ -208,7 +208,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
       def unrollUnwrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) q"""
-          if (Character.toLowerCase(cursorChar) == ${s charAt ix}) {
+          if (_root_.java.lang.Character.toLowerCase(cursorChar) == ${s charAt ix}) {
             __advance()
             ${unrollUnwrapped(s, ix + 1)}
           } else false"""
@@ -217,7 +217,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         if (ix < s.length) {
           val ch = s charAt ix
           q"""
-          if (Character.toLowerCase(cursorChar) == $ch) {
+          if (_root_.java.lang.Character.toLowerCase(cursorChar) == $ch) {
             __advance()
             __updateMaxCursor()
             ${unrollWrapped(s, ix + 1)}
@@ -570,7 +570,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   lazy val rule1Collector = new Collector(
-    valBuilder = q"val builder = new org.parboiled2.support.SeqBuilder",
+    valBuilder = q"val builder = new _root_.org.parboiled2.support.SeqBuilder",
     popToBuilder = q"builder += valueStack.pop()",
     pushBuilderResult = q"valueStack.push(builder.result()); true",
     pushSomePop = q"valueStack.push(Some(valueStack.pop()))",

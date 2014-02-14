@@ -21,7 +21,7 @@ class JsonParserBenchmark extends com.google.caliper.SimpleBenchmark {
     for (i <- 0 to reps)
       argonaut.Parse.parseOption(Test.json).get
 
-  def timeParserCombinators(reps: Int): Unit =
-    for (i <- 0 to reps)
-      util.parsing.json.JSON.parseRaw(Test.json).get
+//  def timeParserCombinators(reps: Int): Unit =
+//    for (i <- 0 to reps)
+//      util.parsing.json.JSON.parseRaw(Test.json).get
 }
