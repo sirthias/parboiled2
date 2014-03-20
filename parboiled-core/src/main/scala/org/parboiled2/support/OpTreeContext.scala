@@ -34,15 +34,15 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val matched =
         if (__collectingErrors) wrapped
         else ${render(wrapped = false)}
-      if (matched) Rule else null""" // we encode the "matched" boolean as 'ruleResult ne null'
+      if (matched) org.parboiled2.Rule else null""" // we encode the "matched" boolean as 'ruleResult ne null'
 
     // renders a Boolean Tree
     def render(wrapped: Boolean, ruleName: String = ""): Tree =
       if (wrapped) q"""
         try ${renderInner(wrapped)}
         catch {
-          case e: Parser.CollectingRuleStackException ⇒
-            e.save(RuleFrame($ruleFrame, ${c.literal(ruleName).tree}))
+          case e: org.parboiled2.Parser.CollectingRuleStackException ⇒
+            e.save(org.parboiled2.RuleFrame($ruleFrame, ${c.literal(ruleName).tree}))
         }"""
       else renderInner(wrapped)
 
@@ -110,7 +110,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   case class Sequence(ops: Seq[OpTree]) extends OpTree {
     require(ops.size >= 2)
-    def ruleFrame = q"RuleFrame.Sequence(${c.literal(ops.size).tree})"
+    def ruleFrame = q"org.parboiled2.RuleFrame.Sequence(${c.literal(ops.size).tree})"
     def renderInner(wrapped: Boolean): Tree =
       ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒ q"$l && $r")
   }
@@ -124,7 +124,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     }
 
   case class FirstOf(ops: Seq[OpTree]) extends OpTree {
-    def ruleFrame = q"RuleFrame.FirstOf(${c.literal(ops.size).tree})"
+    def ruleFrame = q"org.parboiled2.RuleFrame.FirstOf(${c.literal(ops.size).tree})"
     def renderInner(wrapped: Boolean): Tree =
       q"""val mark = __saveState; ${
         ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒ q"$l || { __restoreState(mark); $r }")
@@ -132,7 +132,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class CharMatch(charTree: Tree) extends OpTree {
-    def ruleFrame = q"RuleFrame.CharMatch($charTree)"
+    def ruleFrame = q"org.parboiled2.RuleFrame.CharMatch($charTree)"
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"cursorChar == $charTree && __advance()"
       if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
@@ -142,7 +142,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class StringMatch(stringTree: Tree) extends OpTree {
     final private val autoExpandMaxStringLength = 8
     def renderInner(wrapped: Boolean): Tree = `n/a`
-    def ruleFrame = q"RuleFrame.StringMatch($stringTree)"
+    def ruleFrame = q"org.parboiled2.RuleFrame.StringMatch($stringTree)"
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
       def unrollUnwrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) q"""
@@ -162,8 +162,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           } else {
             try __registerMismatch()
             catch {
-              case e: Parser.CollectingRuleStackException ⇒
-                e.save(RuleFrame(RuleFrame.StringMatch($s), ${c.literal(ruleName).tree}), RuleFrame.CharMatch($ch))
+              case e: org.parboiled2.Parser.CollectingRuleStackException ⇒
+                e.save(org.parboiled2.RuleFrame(org.parboiled2.RuleFrame.StringMatch($s), ${c.literal(ruleName).tree}),
+                     org.parboiled2.RuleFrame.CharMatch($ch))
             }
           }"""
         } else c.literalTrue.tree
@@ -179,7 +180,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class MapMatch(mapTree: Tree) extends OpTree {
-    def ruleFrame = q"RuleFrame.MapMatch($mapTree)"
+    def ruleFrame = q"org.parboiled2.RuleFrame.MapMatch($mapTree)"
     def renderInner(wrapped: Boolean): Tree = `n/a`
     override def render(wrapped: Boolean, ruleName: String = ""): Tree =
       if (wrapped) q"__matchMapWrapped($mapTree, ${c.literal(ruleName).tree})"
@@ -194,7 +195,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class IgnoreCaseChar(charTree: Tree) extends OpTree {
-    def ruleFrame = q"RuleFrame.IgnoreCaseChar($charTree)"
+    def ruleFrame = q"org.parboiled2.RuleFrame.IgnoreCaseChar($charTree)"
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"_root_.java.lang.Character.toLowerCase(cursorChar) == $charTree && __advance()"
       if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
@@ -204,7 +205,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   case class IgnoreCaseString(stringTree: Tree) extends OpTree {
     final private val autoExpandMaxStringLength = 8
     def renderInner(wrapped: Boolean): Tree = `n/a`
-    def ruleFrame = q"RuleFrame.IgnoreCaseString($stringTree)"
+    def ruleFrame = q"org.parboiled2.RuleFrame.IgnoreCaseString($stringTree)"
     override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
       def unrollUnwrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) q"""
@@ -224,9 +225,9 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           } else {
             try __registerMismatch()
             catch {
-              case e: Parser.CollectingRuleStackException ⇒
-                e.save(RuleFrame(RuleFrame.IgnoreCaseString($s), ${c.literal(ruleName).tree}),
-                  RuleFrame.IgnoreCaseChar($ch))
+              case e: org.parboiled2.Parser.CollectingRuleStackException ⇒
+                e.save(org.parboiled2.RuleFrame(org.parboiled2.RuleFrame.IgnoreCaseString($s), ${c.literal(ruleName).tree}),
+                  org.parboiled2.RuleFrame.IgnoreCaseChar($ch))
             }
           }"""
         } else c.literalTrue.tree
@@ -243,7 +244,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   case class CharPredicateMatch(predicateTree: Tree) extends OpTree {
     def predicateName = callName(predicateTree) getOrElse ""
-    def ruleFrame = q"RuleFrame.CharPredicateMatch($predicateTree, ${c.literal(predicateName).tree})"
+    def ruleFrame = q"org.parboiled2.RuleFrame.CharPredicateMatch($predicateTree, ${c.literal(predicateName).tree})"
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"$predicateTree(cursorChar) && __advance()"
       if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
@@ -251,7 +252,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   case class AnyOf(stringTree: Tree) extends OpTree {
-    def ruleFrame = q"RuleFrame.AnyOf($stringTree)"
+    def ruleFrame = q"org.parboiled2.RuleFrame.AnyOf($stringTree)"
     def renderInner(wrapped: Boolean): Tree =
       if (wrapped) q"__matchAnyOf($stringTree) && __updateMaxCursor() || __registerMismatch()"
       else q"__matchAnyOf($stringTree)"
@@ -288,7 +289,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       q"""
       ${collector.valBuilder}
 
-      @_root_.scala.annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
+      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark =
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
           $recurse
@@ -310,7 +311,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       val firstMark = __saveState
       ${collector.valBuilder}
 
-      @_root_.scala.annotation.tailrec def rec(mark: Parser.Mark): Parser.Mark =
+      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark =
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
           $recurse
@@ -354,7 +355,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
 
   case class Times(op: OpTree, init: Tree, collector: Collector, separator: Separator) extends OpTree {
     val Block(inits, _) = init
-    def ruleFrame = q"..$inits; RuleFrame.Times(min, max)"
+    def ruleFrame = q"..$inits; org.parboiled2.RuleFrame.Times(min, max)"
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
         if (separator eq null) q"rec(count + 1, __saveState)"
@@ -366,7 +367,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       ${collector.valBuilder}
       ..$inits
 
-      @_root_.scala.annotation.tailrec def rec(count: Int, mark: Parser.Mark): Boolean = {
+      @_root_.scala.annotation.tailrec def rec(count: Int, mark: org.parboiled2.Parser.Mark): Boolean = {
         if (${op.render(wrapped)}) {
           ${collector.popToBuilder}
           if (count < max) $recurse else true
@@ -400,8 +401,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       if (wrapped) q"""
         try $unwrappedTree || __registerMismatch()
         catch {
-          case e: Parser.CollectingRuleStackException ⇒
-            e.save(RuleFrame($ruleFrame, ${c.literal(ruleName).tree}), ${op.ruleFrame})
+          case e: org.parboiled2.Parser.CollectingRuleStackException ⇒
+            e.save(org.parboiled2.RuleFrame($ruleFrame, ${c.literal(ruleName).tree}), ${op.ruleFrame})
         }"""
       else unwrappedTree
     }
