@@ -469,7 +469,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
       block(hlTree match {
         case q"support.this.HListable.fromUnit"       ⇒ argTree
         case q"support.this.HListable.fromHList[$t]"  ⇒ q"valueStack.pushAll(${c.resetLocalAttrs(argTree)})"
-        case q"support.this.HListable.fromAnyRef[$t]" ⇒ q"valueStack.push($argTree)"
+        case q"support.this.HListable.fromAnyRef[$t]" ⇒ q"valueStack.push(${c.resetLocalAttrs(argTree)})"
         case x                                        ⇒ c.abort(hlTree.pos, "Unexpected HListable: " + show(x))
       }, c.literalTrue.tree)
   }
