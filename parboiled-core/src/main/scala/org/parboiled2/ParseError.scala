@@ -75,6 +75,7 @@ sealed abstract class RuleFrame {
       case CharPredicateMatch(_, name)          ⇒ if (name.nonEmpty) name else "<anon predicate>"
       case RuleCall(callee)                     ⇒ '(' + callee + ')'
       case AnyOf(s)                             ⇒ '[' + escape(s) + ']'
+      case NoneOf(s)                            ⇒ s"[^${escape(s)}]"
       case Times(_, _)                          ⇒ "times"
       case CharRange(from, to)                  ⇒ s"'${escape(from)}'-'${escape(to)}'"
       case ANY                                  ⇒ "ANY"
@@ -106,6 +107,7 @@ object RuleFrame {
   case class IgnoreCaseString(string: String) extends Anonymous
   case class CharPredicateMatch(predicate: CharPredicate, name: String) extends Anonymous
   case class AnyOf(string: String) extends Anonymous
+  case class NoneOf(string: String) extends Anonymous
   case class Times(min: Int, max: Int) extends Anonymous
   case class RuleCall(callee: String) extends Anonymous
   case class CharRange(from: Char, to: Char) extends Anonymous

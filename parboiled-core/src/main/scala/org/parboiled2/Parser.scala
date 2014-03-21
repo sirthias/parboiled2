@@ -329,6 +329,14 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
+  @tailrec final def __matchNoneOf(string: String, ix: Int = 0): Boolean =
+    if (ix < string.length)
+      cursorChar != EOI && string.charAt(ix) != cursorChar && __matchNoneOf(string, ix + 1)
+    else __advance()
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
   def __matchMap(m: Map[String, Any]): Boolean = {
     val keys = m.keysIterator
     while (keys.hasNext) {

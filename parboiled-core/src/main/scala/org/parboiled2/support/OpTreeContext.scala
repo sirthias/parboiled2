@@ -67,6 +67,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     case q"$a.this.ignoreCase($t)"                         ⇒ IgnoreCase(t)
     case q"$a.this.predicate($p)"                          ⇒ CharPredicateMatch(p)
     case q"$a.this.anyOf($s)"                              ⇒ AnyOf(s)
+    case q"$a.this.noneOf($s)"                             ⇒ NoneOf(s)
     case q"$a.this.ANY"                                    ⇒ ANY
     case q"$a.this.optional[$b, $c]($arg)($o)"             ⇒ Optional(OpTree(arg), collector(o))
     case q"$a.this.zeroOrMore[$b, $c]($arg)($s)"           ⇒ ZeroOrMore(OpTree(arg), collector(s))
@@ -255,6 +256,13 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     def renderInner(wrapped: Boolean): Tree =
       if (wrapped) q"__matchAnyOf($stringTree) && __updateMaxCursor() || __registerMismatch()"
       else q"__matchAnyOf($stringTree)"
+  }
+
+  case class NoneOf(stringTree: Tree) extends OpTree {
+    def ruleFrame = q"RuleFrame.NoneOf($stringTree)"
+    def renderInner(wrapped: Boolean): Tree =
+      if (wrapped) q"__matchNoneOf($stringTree) && __updateMaxCursor() || __registerMismatch()"
+      else q"__matchNoneOf($stringTree)"
   }
 
   case object ANY extends OpTree {
@@ -583,7 +591,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   lazy val HListConsTypeSymbol = typeOf[shapeless.::[_, _]].typeSymbol
   lazy val HNilTypeSymbol = typeOf[shapeless.HNil].typeSymbol
 
-  // tries to match and expand the leaves of the given Tree  
+  // tries to match and expand the leaves of the given Tree
   def expand(tree: Tree, wrapped: Boolean): Tree =
     tree match {
       case Block(statements, res)     ⇒ block(statements, expand(res, wrapped))

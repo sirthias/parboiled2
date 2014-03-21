@@ -66,6 +66,12 @@ trait RuleDSLBasics {
   def anyOf(chars: String): Rule0 = `n/a`
 
   /**
+   * Matches any single character except the ones in the given string and except EOI.
+   */
+  @compileTimeOnly("Calls to `noneOf` must be inside `rule` macro")
+  def noneOf(chars: String): Rule0 = `n/a`
+
+  /**
    * Matches the given single character case insensitively.
    * Note: the given character must be specified in lower-case!
    * This requirement is currently NOT enforced!

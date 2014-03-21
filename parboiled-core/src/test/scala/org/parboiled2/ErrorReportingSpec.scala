@@ -25,7 +25,7 @@ class ErrorReportingSpec extends TestParserSpec {
       val hex = CharPredicate.UpperHexLetter
 
       def targetRule = rule {
-        'a' ~ oneOrMore('b') ~ anyOf("cde") ~ ("fgh" | CharPredicate.Digit | hex | UpperAlpha) ~ EOI
+        'a' ~ oneOrMore('b') ~ anyOf("cde") ~ ("fgh" | CharPredicate.Digit | hex | UpperAlpha) ~ noneOf("def") ~ EOI
       }
 
       "" must beMismatchedWithErrorMsg(
@@ -66,6 +66,15 @@ class ErrorReportingSpec extends TestParserSpec {
           |  targetRule / | / Digit
           |  targetRule / | / hex
           |  targetRule / | / UpperAlpha
+          |""")
+
+      "abcfghe" must beMismatchedWithErrorMsg(
+        """Invalid input 'e', expected [^def] (line 1, column 7):
+          |abcfghe
+          |      ^
+          |
+          |1 rule mismatched at error location:
+          |  targetRule / [^def]
           |""")
     }
 

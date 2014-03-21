@@ -90,6 +90,16 @@ class BasicSpec extends TestParserSpec {
       "ab" must beMismatched
     }
 
+    "noneOf" in new TestParser0 {
+      def targetRule = rule { noneOf("abc") ~ EOI }
+      "" must beMismatched
+      "a" must beMismatched
+      "b" must beMismatched
+      "c" must beMismatched
+      "d" must beMatched
+      "ab" must beMismatched
+    }
+
     "ignoreCase(char)" in new TestParser0 {
       def targetRule = rule { ignoreCase('x') ~ EOI }
       "" must beMismatched

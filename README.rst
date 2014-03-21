@@ -322,6 +322,11 @@ def anyOf(chars: String): Rule0
 
 ----
 
+def noneOf(chars: String): Rule0
+    This constructs a ``Rule0`` which matches any single character except the ones in the given string and except EOI.
+
+----
+
 def ignoreCase(c: Char): Rule0
     Matches the given single character case insensitively.
     Note: **The given character must be specified in lower-case!** This requirement is currently NOT enforced!
