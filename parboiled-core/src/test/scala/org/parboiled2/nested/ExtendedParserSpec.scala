@@ -19,11 +19,16 @@ package org.parboiled2.nested
 import scala.util.Success
 import org.specs2.mutable.Specification
 
-/**
- * Tests if a parser will compile when org.parboiled2._ is not explicitly imported
- */
-
 class ExtendedParserSpec extends Specification {
+
+  abstract class AbstractParser(val input: org.parboiled2.ParserInput) extends org.parboiled2.Parser {
+    import org.parboiled2.{ Rule1, CharPredicate }
+
+    def foo: Rule1[String] = rule {
+      capture("foo" ~ zeroOrMore(CharPredicate.Digit))
+    }
+
+  }
 
   class FooParser(input: String) extends AbstractParser(input) {
     def Go = rule {
