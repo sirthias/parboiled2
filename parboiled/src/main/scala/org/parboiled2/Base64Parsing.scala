@@ -19,10 +19,7 @@ package org.parboiled2
 import org.parboiled2.util.Base64
 
 /**
- * For certain high-performance use-cases it is better to construct Strings
- * that the parser is to produce/extract from the input in a char-by-char fashion.
- *
- * Mixing this trait into your parser gives you a simple facility to support this.
+ * Rules for parsing Base-64 encoded strings.
  */
 trait Base64Parsing { this: Parser ⇒
   import Base64Parsing._
