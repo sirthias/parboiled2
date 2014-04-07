@@ -34,4 +34,33 @@ trait StringBuilding { this: Parser ⇒
   def append(c: Char): Rule0 = rule { run(sb.append(c)) }
 
   def append(s: String): Rule0 = rule { run(sb.append(s)) }
+
+  def prepend(): Rule0 = rule { run(doPrepend(lastChar)) }
+
+  def prepend(offset: Int): Rule0 = rule { run(doPrepend(charAt(offset))) }
+
+  def prepend(c: Char): Rule0 = rule { run(doPrepend(c)) }
+
+  def prepend(s: String): Rule0 = rule { run(doPrepend(s)) }
+
+  def setSB(s: String): Rule0 = rule { run(doSet(s)) }
+
+  private def doPrepend(c: Char): Unit = {
+    val saved = sb.toString
+    sb.setLength(0)
+    sb.append(c)
+    sb.append(saved)
+  }
+
+  private def doPrepend(s: String): Unit = {
+    val saved = sb.toString
+    sb.setLength(0)
+    sb.append(s)
+    sb.append(saved)
+  }
+
+  private def doSet(s: String): Unit = {
+    sb.setLength(0)
+    sb.append(s)
+  }
 }
