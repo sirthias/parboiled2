@@ -27,21 +27,21 @@ trait StringBuilding { this: Parser ⇒
 
   def clearSB(): Rule0 = rule { run(sb.setLength(0)) }
 
-  def append(): Rule0 = rule { run(sb.append(lastChar)) }
+  def appendSB(): Rule0 = rule { run(sb.append(lastChar)) }
 
-  def append(offset: Int): Rule0 = rule { run(sb.append(charAt(offset))) }
+  def appendSB(offset: Int): Rule0 = rule { run(sb.append(charAt(offset))) }
 
-  def append(c: Char): Rule0 = rule { run(sb.append(c)) }
+  def appendSB(c: Char): Rule0 = rule { run(sb.append(c)) }
 
-  def append(s: String): Rule0 = rule { run(sb.append(s)) }
+  def appendSB(s: String): Rule0 = rule { run(sb.append(s)) }
 
-  def prepend(): Rule0 = rule { run(doPrepend(lastChar)) }
+  def prependSB(): Rule0 = rule { run(doPrepend(lastChar)) }
 
-  def prepend(offset: Int): Rule0 = rule { run(doPrepend(charAt(offset))) }
+  def prependSB(offset: Int): Rule0 = rule { run(doPrepend(charAt(offset))) }
 
-  def prepend(c: Char): Rule0 = rule { run(doPrepend(c)) }
+  def prependSB(c: Char): Rule0 = rule { run(doPrepend(c)) }
 
-  def prepend(s: String): Rule0 = rule { run(doPrepend(s)) }
+  def prependSB(s: String): Rule0 = rule { run(doPrepend(s)) }
 
   def setSB(s: String): Rule0 = rule { run(doSet(s)) }
 

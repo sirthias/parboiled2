@@ -63,15 +63,15 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
 
   def Characters = rule { zeroOrMore(NormalChar | '\\' ~ EscapedChar) }
 
-  def NormalChar = rule { !QuoteBackslash ~ ANY ~ append() }
+  def NormalChar = rule { !QuoteBackslash ~ ANY ~ appendSB() }
 
   def EscapedChar = rule (
-    QuoteSlashBackSlash ~ append()
-      | 'b' ~ append('\b')
-      | 'f' ~ append('\f')
-      | 'n' ~ append('\n')
-      | 'r' ~ append('\r')
-      | 't' ~ append('\t')
+    QuoteSlashBackSlash ~ appendSB()
+      | 'b' ~ appendSB('\b')
+      | 'f' ~ appendSB('\f')
+      | 'n' ~ appendSB('\n')
+      | 'r' ~ appendSB('\r')
+      | 't' ~ appendSB('\t')
       | Unicode ~> { code => sb.append(code.asInstanceOf[Char]); () }
   )
 
