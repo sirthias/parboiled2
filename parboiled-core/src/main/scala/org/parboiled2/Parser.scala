@@ -83,7 +83,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
    * In most cases you shouldn't need to access the value stack directly from your code.
    * Use only if you know what you are doing!
    */
-  val valueStack = new ValueStack(initialValueStackSize, maxValueStackSize)
+  def valueStack: ValueStack = _valueStack
 
   /**
    * Pretty prints the given `ParseError` instance in the context of the `ParserInput` of this parser.
@@ -117,22 +117,34 @@ abstract class Parser(initialValueStackSize: Int = 16,
   ////////////////////// INTERNAL /////////////////////////
 
   // the char at the current input index
-  private[this] var _cursorChar: Char = _
+  private var _cursorChar: Char = _
 
   // the index of the current input char
-  private[this] var _cursor: Int = _
+  private var _cursor: Int = _
+
+  // the value stack instance we operate on
+  private var _valueStack: ValueStack = _
 
   // the highest input index we have seen in the current run
   // special value: -1 (not collecting errors)
-  private[this] var maxCursor: Int = _
+  private var maxCursor: Int = _
 
   // the number of times we have already seen a character mismatch at the error index
-  private[this] var mismatchesAtErrorCursor: Int = _
+  private var mismatchesAtErrorCursor: Int = _
 
   // the index of the RuleStack we are currently constructing
   // for the ParseError to be (potentially) returned in the current parser run,
   // special value: -1 (during the run to establish the error location (maxCursor))
-  private[this] var currentErrorRuleStackIx: Int = _
+  private var currentErrorRuleStackIx: Int = _
+
+  def copyStateFrom(other: Parser, offset: Int): Unit = {
+    _cursorChar = other._cursorChar
+    _cursor = other._cursor - offset
+    _valueStack = other._valueStack
+    maxCursor = other.maxCursor - offset
+    mismatchesAtErrorCursor = other.mismatchesAtErrorCursor
+    currentErrorRuleStackIx = other.currentErrorRuleStackIx
+  }
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -171,6 +183,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
       else buildParseError(errorRuleIx + 1, traces += RuleTrace(ruleFrames.toVector))
     }
 
+    _valueStack = new ValueStack(initialValueStackSize, maxValueStackSize)
     try {
       maxCursor = -1
       if (runRule())
@@ -368,6 +381,15 @@ abstract class Parser(initialValueStackSize: Int = 16,
     } catch {
       case e: Parser.CollectingRuleStackException ⇒ e.save(RuleFrame(RuleFrame.MapMatch(m), ruleName))
     }
+  }
+
+  protected class __SubParserInput extends ParserInput {
+    val offset = cursor // the number of chars the input the sub-parser sees is offset from the outer input start
+    def getLine(line: Int): String = ??? // TODO
+    def sliceCharArray(start: Int, end: Int): Array[Char] = input.sliceCharArray(start + offset, end + offset)
+    def sliceString(start: Int, end: Int): String = input.sliceString(start + offset, end + offset)
+    def length: Int = input.length - offset
+    def charAt(ix: Int): Char = input.charAt(offset + ix)
   }
 }
 

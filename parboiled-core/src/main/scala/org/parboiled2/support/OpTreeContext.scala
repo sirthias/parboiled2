@@ -80,6 +80,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
     case q"$a.this.run[$b]($arg)($c.fromAux[$d, $e]($rr))" ⇒ RunAction(arg, rr)
     case q"$a.this.push[$b]($arg)($hl)"                    ⇒ PushAction(arg, hl)
     case q"$a.this.drop[$b]($hl)"                          ⇒ DropAction(hl)
+    case q"$a.this.runSubParser[$b, $c]($f)"               ⇒ RunSubParser(f)
     case x @ q"$a.this.str2CharRangeSupport($l).-($r)"     ⇒ CharRange(l, r)
     case q"$a.this.charAndValue[$t]($b.any2ArrowAssoc[$t1]($c).->[$t2]($v))($hl)" ⇒
       Sequence(CharMatch(c), PushAction(v, hl))
@@ -561,6 +562,27 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
         }
 
       actionBody(c.resetLocalAttrs(actionTree))
+    }
+  }
+
+  case class RunSubParser(fTree: Tree) extends OpTree {
+    def ruleFrame = reify(RuleFrame.RunSubParser).tree
+    def renderInner(wrapped: Boolean): Tree = {
+      def rewrite(arg: TermName, tree: Tree): Tree =
+        tree match {
+          case Block(statements, res) ⇒ block(statements, rewrite(arg, res))
+          case q"$p.$rule" ⇒ q"""
+            val $arg = new __SubParserInput()  // TODO: avoid re-allocation by re-using a cached instance
+            val __subParser = $p
+            val offset = cursor
+            __subParser.copyStateFrom(this, offset)
+            try __subParser.$rule ne null
+            finally this.copyStateFrom(__subParser, -offset)"""
+          case x ⇒ c.abort(x.pos, "Illegal runSubParser expr: " + show(x))
+        }
+
+      val q"($arg ⇒ $body)" = fTree
+      rewrite(arg.name, c.resetAllAttrs(body))
     }
   }
 

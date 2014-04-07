@@ -59,6 +59,14 @@ trait RuleDSLCombinators {
   @compileTimeOnly("Calls to `&` must be inside `rule` macro")
   def &(r: Rule[_, _]): Rule0 = `n/a`
 
+  /**
+   * Allows creation of a sub parser and running of one of its rules as part of the current parsing process.
+   * The subparser will start parsing at the current input position and the outer parser (this parser)
+   * will continue where the sub-parser stopped.
+   */
+  @compileTimeOnly("Calls to `runSubParser` must be inside `rule` macro")
+  def runSubParser[I <: HList, O <: HList](f: ParserInput ⇒ Rule[I, O]): Rule[I, O] = `n/a`
+
   @compileTimeOnly("Calls to `int2NTimes` must be inside `rule` macro")
   implicit def int2NTimes(i: Int): NTimes = `n/a`
   @compileTimeOnly("Calls to `range2NTimes` must be inside `rule` macro")
