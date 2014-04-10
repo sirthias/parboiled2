@@ -66,9 +66,9 @@ val publishingSettings = Seq(
 /////////////////////// DEPENDENCIES /////////////////////////
 
 val scalaReflect = "org.scala-lang"  %  "scala-reflect"    % "2.10.4"   % "provided"
-val shapeless    = "com.chuusai"     %  "shapeless_2.10.3" % "2.0.0-M1" % "compile"
+val shapeless    = "com.chuusai"     %  "shapeless_2.10.4" % "2.0.0"    % "compile"
 val quasiquotes  = "org.scalamacros" %% "quasiquotes"      % "2.0.0-M6" % "compile" cross CrossVersion.full
-val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.10"   % "test"
+val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.11"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -80,7 +80,7 @@ lazy val examples = project
     publishTo := None,
     libraryDependencies ++= Seq(
       specs2,
-      "io.spray" %%  "spray-json" % "1.2.5",
+      "io.spray" %%  "spray-json" % "1.2.6",
       "org.json4s" %% "json4s-native" % "3.2.8",
       "org.json4s" %% "json4s-jackson" % "3.2.8",
       "io.argonaut" %% "argonaut" % "6.0.3"))

@@ -601,7 +601,7 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
   }
 
   lazy val rule1Collector = new Collector(
-    valBuilder = q"val builder = new _root_.org.parboiled2.support.SeqBuilder",
+    valBuilder = q"val builder = new scala.collection.immutable.VectorBuilder[Any]",
     popToBuilder = q"builder += valueStack.pop()",
     pushBuilderResult = q"valueStack.push(builder.result()); true",
     pushSomePop = q"valueStack.push(Some(valueStack.pop()))",
