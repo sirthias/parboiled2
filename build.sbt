@@ -67,7 +67,8 @@ val publishingSettings = Seq(
 
 val scalaReflect = "org.scala-lang"  %  "scala-reflect"    % "2.10.4"   % "provided"
 val shapeless    = "com.chuusai"     %  "shapeless_2.10.4" % "2.0.0"    % "compile"
-val quasiquotes  = "org.scalamacros" %% "quasiquotes"      % "2.0.0-M6" % "compile" cross CrossVersion.full
+val quasiquotes  = "org.scalamacros" %% "quasiquotes"      % "2.0.0-M8" % "compile"
+val paradise     = "org.scalamacros" %  "paradise_2.10.4"  % "2.0.0-M8"
 val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.11"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
@@ -91,7 +92,7 @@ lazy val parboiled = project
   .settings(formattingSettings: _*)
   .settings(publishingSettings: _*)
   .settings(
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0-M6" cross CrossVersion.full),
+    addCompilerPlugin(paradise),
     libraryDependencies ++= Seq(scalaReflect, shapeless, quasiquotes, specs2),
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCore.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCore.project, Compile, packageSrc)).value,
@@ -110,5 +111,5 @@ lazy val parboiledCore = project.in(file("parboiled-core"))
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.0.0-M6" cross CrossVersion.full),
+    addCompilerPlugin(paradise),
     libraryDependencies ++= Seq(scalaReflect, shapeless, quasiquotes, specs2))
