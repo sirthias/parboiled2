@@ -16,22 +16,43 @@
 
 package org.parboiled2
 
-import shapeless.HList
+import scala.collection.immutable
 import scala.reflect.macros.Context
+import shapeless.HList
+
+/**
+ * An application needs to implement this interface to receive the result
+ * of a dynamic parsing run.
+ * Often times this interface is directly implemented by the Parser class itself
+ * (even though this is not a requirement).
+ */
+trait DynamicRuleHandler[P <: Parser, L <: HList] extends Parser.DeliveryScheme[L] {
+  def parser: P
+  def ruleNotFound(ruleName: String): Result
+}
+
+/**
+ * Runs one of the rules of a parser instance of type `P` given the rules name.
+ * The rule must have type `RuleN[L]`.
+ */
+trait DynamicRuleDispatch[P <: Parser, L <: HList] {
+  def apply(handler: DynamicRuleHandler[P, L], ruleName: String): handler.Result
+}
 
 object DynamicRuleDispatch {
+
   /**
    * Implements efficient runtime dispatch to a predefined set of parser rules.
-   * Given a number of rule names this macro-supported method creates a function instance,
-   * which can be used to run one of the respective parser rules given a parser instance and a rule name.
+   * Given a number of rule names this macro-supported method creates a `DynamicRuleDispatch` instance along with
+   * a sequence of the given rule names.
    * Note that there is no reflection involved and compilation will fail, if one of the given rule names
-   * does not constitute a method of parser type `T`.
+   * does not constitute a method of parser type `P` or has a type different from `RuleN[L]`.
    */
-  def apply[P <: Parser, L <: HList](ruleNames: String*): (P, String) ⇒ Option[RunnableRule[P, L]] = macro __create[P, L]
+  def apply[P <: Parser, L <: HList](ruleNames: String*): (DynamicRuleDispatch[P, L], immutable.Seq[String]) = macro __create[P, L]
 
   ///////////////////// INTERNAL ////////////////////////
 
-  def __create[P <: Parser, L <: HList](c: Context)(ruleNames: c.Expr[String]*)(implicit P: c.WeakTypeTag[P], L: c.WeakTypeTag[L]): c.Expr[(P, String) ⇒ Option[RunnableRule[P, L]]] = {
+  def __create[P <: Parser, L <: HList](c: Context)(ruleNames: c.Expr[String]*)(implicit P: c.WeakTypeTag[P], L: c.WeakTypeTag[L]): c.Expr[(DynamicRuleDispatch[P, L], immutable.Seq[String])] = {
     import c.universe._
     val names: Array[String] = ruleNames.map {
       _.tree match {
@@ -45,24 +66,22 @@ object DynamicRuleDispatch {
       if (start <= end) {
         val mid = (start + end) >>> 1
         val name = names(mid)
-        q"""math.signum(${c.literal(name)}.compare(s)) match {
-            case -1 => ${rec(mid + 1, end)}
-            case 1 => ${rec(start, mid - 1)}
-            case 0 => Some {
-              new RunnableRule[$P, $L] with Function0[RuleN[$L]] {
-                def parserInstance: $P = p
-                def apply() = p.${newTermName(name).encodedName.toTermName}
-                override def run()(implicit scheme: Parser.DeliveryScheme[$L]): scheme.Result = p.__run[$L](this.apply)(scheme)
-              }
+        q"""val c = ${c.literal(name)} compare ruleName
+            if (c < 0) ${rec(mid + 1, end)}
+            else if (c > 0) ${rec(start, mid - 1)}
+            else {
+              val p = handler.parser
+              p.__run[$L](p.${newTermName(name).encodedName.toTermName})(handler)
+            }"""
+      } else q"handler.ruleNotFound(ruleName)"
+
+    c.Expr[(DynamicRuleDispatch[P, L], immutable.Seq[String])] {
+      q"""val drd =
+            new org.parboiled2.DynamicRuleDispatch[$P, $L] {
+              def apply(handler: org.parboiled2.DynamicRuleHandler[$P, $L], ruleName: String): handler.Result =
+                 ${rec(0, names.length - 1)}
             }
-          }"""
-      } else q"None"
-
-    c.Expr[(P, String) ⇒ Option[RunnableRule[P, L]]](q"(p: $P, s: String) => ${rec(0, names.length - 1)}")
+          (drd, scala.collection.immutable.Seq(..$ruleNames))"""
+    }
   }
-}
-
-trait RunnableRule[P <: Parser, L <: HList] {
-  def parserInstance: P
-  def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result
 }

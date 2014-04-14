@@ -37,13 +37,21 @@ class Base64ParsingSpec extends Specification {
     "enable parsing of custom-Base64 Blocks" in test("base64CustomBlock", Base64.rfc2045())
   }
 
-  val dispatch = DynamicRuleDispatch[TestParser, Array[Byte] :: HNil](
+  val (dispatch, rules) = DynamicRuleDispatch[TestParser, Array[Byte] :: HNil](
     "rfc2045String", "rfc2045Block", "base64CustomString", "base64CustomBlock")
 
   def test(ruleName: String, base64: Base64) =
     (1 to 100).map { x ⇒
       val string = randomChars.take(x).toString()
       val encoded = base64.encodeToString(string getBytes UTF8, false)
-      dispatch(new TestParser(encoded), ruleName).get.run().map(new String(_, UTF8)) === Success(string)
+      val parser = new TestParser(encoded) with DynamicRuleHandler[TestParser, Array[Byte]:: HNil] {
+        type Result = String
+        def parser: TestParser = this
+        def ruleNotFound(ruleName: String): Result = "n/a"
+        def success(result: Array[Byte] :: HNil): Result = new String(result.head, UTF8)
+        def parseError(error: ParseError): Result = sys.error("unexpected parse error")
+        def failure(error: Throwable): Result = sys.error("unexpected parser exception")
+      }
+      dispatch(parser, ruleName) === string
     }.reduceLeft(_ and _)
 }
