@@ -87,11 +87,11 @@ sealed abstract class CharPredicate extends (Char ⇒ Boolean) {
       case ix ⇒ Some(string charAt ix)
     }
 
-  private def or(that: Char ⇒ Boolean): CharPredicate =
+  protected def or(that: Char ⇒ Boolean): CharPredicate =
     if (this == Empty) CharPredicate(that) else from(c ⇒ this(c) || that(c))
-  private def and(that: Char ⇒ Boolean) =
+  protected def and(that: Char ⇒ Boolean): CharPredicate =
     if (this == Empty) Empty else from(c ⇒ this(c) && that(c))
-  private def andNot(that: Char ⇒ Boolean) =
+  protected def andNot(that: Char ⇒ Boolean): CharPredicate =
     if (this == Empty) from(!that(_)) else from(c ⇒ this(c) && !that(c))
 }
 
@@ -190,29 +190,29 @@ object CharPredicate {
 
     def apply(c: Char): Boolean = binarySearch(chars, c) >= 0
 
-    def ++(that: CharPredicate) = that match {
+    def ++(that: CharPredicate): CharPredicate = that match {
       case Empty                  ⇒ this
       case x: ArrayBasedPredicate ⇒ this ++ x.chars
       case _                      ⇒ this or that
     }
 
-    def ++(other: Seq[Char]) =
+    def ++(other: Seq[Char]): CharPredicate =
       if (other.nonEmpty) new ArrayBasedPredicate((this -- other).chars ++ other.toArray[Char])
       else this
 
-    def --(that: CharPredicate) = that match {
+    def --(that: CharPredicate): CharPredicate = that match {
       case Empty                  ⇒ this
       case x: ArrayBasedPredicate ⇒ this -- x.chars
       case _                      ⇒ this andNot that
     }
 
-    def --(other: Seq[Char]) =
+    def --(other: Seq[Char]): ArrayBasedPredicate =
       if (other.nonEmpty) {
         val otherChars = other.toArray
         new ArrayBasedPredicate(chars.filter(binarySearch(otherChars, _) < 0))
       } else this
 
-    def intersect(that: CharPredicate) = that match {
+    def intersect(that: CharPredicate): CharPredicate = that match {
       case Empty                  ⇒ Empty
       case x: ArrayBasedPredicate ⇒ new ArrayBasedPredicate(chars.intersect(x.chars))
       case _                      ⇒ this and that
