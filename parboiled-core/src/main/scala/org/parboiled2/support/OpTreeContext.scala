@@ -581,8 +581,8 @@ trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
           case x ⇒ c.abort(x.pos, "Illegal runSubParser expr: " + show(x))
         }
 
-      val q"($arg ⇒ $body)" = fTree
-      rewrite(arg.name, c.resetAllAttrs(body))
+      val q"($arg ⇒ $body)" = c.resetLocalAttrs(fTree)
+      rewrite(arg.name, body)
     }
   }
 
