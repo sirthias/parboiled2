@@ -49,6 +49,7 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
         case 't' => JsonTrue
         case 'f' => JsonFalse
         case 'n' => JsonNull
+        case _ => MISMATCH
       }
     }
   }
@@ -106,6 +107,6 @@ object Test {
 }
 
 object JsonParser extends App {
-  for (i <- 0 to 1000)
+  for (i <- 0 to 100)
     new JsonParser(Test.json).Json.run().get
 }
