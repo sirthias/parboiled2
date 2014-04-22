@@ -65,11 +65,12 @@ val publishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val scalaReflect = "org.scala-lang"  %  "scala-reflect"    % "2.10.4"   % "provided"
-val shapeless    = "com.chuusai"     %  "shapeless_2.10.4" % "2.0.0"    % "compile"
-val quasiquotes  = "org.scalamacros" %% "quasiquotes"      % "2.0.0-M8" % "compile"
-val paradise     = "org.scalamacros" %  "paradise_2.10.4"  % "2.0.0-M8"
-val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.11"   % "test"
+val paradiseVersion = "2.0.0"
+
+val scalaReflect = "org.scala-lang"  %  "scala-reflect"    % "2.10.4"        % "provided"
+val shapeless    = "com.chuusai"     %  "shapeless_2.10.4" % "2.0.0"         % "compile"
+val quasiquotes  = "org.scalamacros" %% "quasiquotes"      % paradiseVersion % "compile"
+val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.11"        % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -82,9 +83,9 @@ lazy val examples = project
     libraryDependencies ++= Seq(
       specs2,
       "io.spray" %%  "spray-json" % "1.2.6",
-      "org.json4s" %% "json4s-native" % "3.2.8",
-      "org.json4s" %% "json4s-jackson" % "3.2.8",
-      "io.argonaut" %% "argonaut" % "6.0.3"))
+      "org.json4s" %% "json4s-native" % "3.2.9",
+      "org.json4s" %% "json4s-jackson" % "3.2.9",
+      "io.argonaut" %% "argonaut" % "6.0.4"))
 
 lazy val parboiled = project
   .dependsOn(parboiledCore)
@@ -92,7 +93,7 @@ lazy val parboiled = project
   .settings(formattingSettings: _*)
   .settings(publishingSettings: _*)
   .settings(
-    addCompilerPlugin(paradise),
+    addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full),
     libraryDependencies ++= Seq(scalaReflect, shapeless, quasiquotes, specs2),
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCore.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCore.project, Compile, packageSrc)).value,
@@ -111,5 +112,5 @@ lazy val parboiledCore = project.in(file("parboiled-core"))
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(
-    addCompilerPlugin(paradise),
+    addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full),
     libraryDependencies ++= Seq(scalaReflect, shapeless, quasiquotes, specs2))
