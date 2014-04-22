@@ -46,12 +46,12 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.0-M2"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.0.0-RC1"
 
-The latest released version is **2.0-M2**.
+The latest released version is **2.0.0-RC1**. It is available for Scala 2.10.3+ as well as Scala 2.11.0.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
-(currently version 2.0.0-M1).
+(currently version 2.0.0).
 
 Once on your classpath you can use this single import to bring everything you need into scope:
 
@@ -63,10 +63,8 @@ There might be potentially newer snapshot builds available in the *sonatype snap
 https://oss.sonatype.org/content/repositories/snapshots/
 
 You can find the latest ones here:
-https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.10/
-
-(If you are seeing an `IllegalArgumentException: Could not find proxy for val p` you are using a Scala version that is
-too old. Upgrade to Scala `2.10.3` or later!)
+https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.10/ (Scala 2.10) and
+https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.11/ (Scala 2.11)
 
 .. _Maven Central: http://search.maven.org/
 .. _shapeless: https://github.com/milessabin/shapeless
@@ -164,7 +162,7 @@ search of another parsing alternative that might succeed.
 
 For example consider this simple *parboiled2* rule:
 
-.. code::
+.. code:: Scala
 
     def foo = rule { 'a' ~ ('b' ~ 'c' | 'b' ~ 'd') }
 
@@ -358,6 +356,12 @@ def MATCH: Rule0
 
 def MISMATCH[I <: HList, O <: HList]: Rule[I, O]
     A rule that always fails. Fits any rule signature.
+
+----
+
+def MISMATCH0: Rule0
+    Same as ``MISMATCH`` but with a clearly defined type. Use it (rather then ``MISMATCH``) if the call site doesn't
+    clearly "dictate" a certain rule type and using ``MISMATCH`` therefore gives you a compiler error.
 
 
 Rule Combinators and Modifiers
@@ -553,7 +557,7 @@ capture(a)
 
 ----
 
-def test(condition: Boolean): Rule0
+test(condition: Boolean): Rule0
     ``test`` implements "semantic predicates". It creates a rule that matches no input and succeeds only if the given
     condition expression evaluates to true. Note that, due to the macro expansion the *parboiled2* rule DSL is based on,
     the given argument behaves like a call-by-name parameter even though it is not marked as one!
@@ -656,7 +660,7 @@ a ~> (...)
 
     .. code:: Scala
 
-        (foo: Rule1[Int]) ~> (i => test(i % 2 == 0))
+        (foo: Rule1[Int]) ~> (i => test(i % 2 == 0) ~ push(i))
 
     which is a ``Rule1[Int]`` that only produces even integers and fails for all others. Or, somewhat unusual
     but still perfectly legal:
@@ -688,7 +692,7 @@ run(expression)
 
     - a function with one ``HList`` parameter the behavior is similar to the previous case with the difference that the
       elements of this parameter ``HList`` are mapped against the value stack top. This allows for consumption of an
-      arbitrary number of value stack elements.
+      arbitrary number of value stack elements (Note: This feature of ``run`` is not yet currently implemented.)
 
     - any other value the result type of ``run`` is an always succeeding ``Rule0``. Since in this case it doesn't
       interact with the value stack and doesn't match any input all it can do is perform "unchecked" side effects.
@@ -698,6 +702,13 @@ run(expression)
     Also note that, due to the macro expansion the *parboiled2* rule DSL is based on, the given block behaves like a
     call-by-name parameter even though it is not marked as one! This means that the argument expression to ``run`` is
     (re-)evaluated for every rule execution.
+
+----
+
+runSubParser(f: ParserInput ⇒ Rule[I, O]): Rule[I, O]
+    This action allows creation of a sub parser and running of one of its rules as part of the current parsing process.
+    The subparser will start parsing at the current input position and the outer parser (the one calling
+    ``runSubParser``) will continue where the sub-parser stopped.
 
 ----
 
@@ -734,6 +745,42 @@ You can use these to write efficient character-level logic like this:
     def hexDigit: Rule1[Int] = rule {
       CharPredicate.HexAlpha ~ push(CharUtils.hexValue(lastChar))
     }
+
+
+Additional Helpers
+------------------
+
+Base64Parsing
+    For parsing RFC2045__(Base64)-encoded strings *parboiled* provides the ``Base64Parsing`` trait which you can
+    mix into your ``Parser`` class. See `its source`__ for more info on what exactly it provides.
+    *parboiled* also comes with the ``org.parboiled2.util.Base64`` class which provides an efficient Base64
+    encoder/decoder for the standard as well as custom alphabets.
+
+    __ http://tools.ietf.org/html/rfc2045#section-6.8
+    __ https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/main/scala/org/parboiled2/Base64Parsing.scala
+
+----
+
+DynamicRuleDispatch
+    Sometimes an application cannot fully specify at compile-time which of a given set of rules is to be called at
+    runtime. For example, a parser for parsing HTTP header values might need to select the right parser rule for a
+    header name that is only known once the HTTP request has actually been read from the network.
+    To prevent you from having to write a large (and not really efficient) ``match`` against the header name for
+    separating out all the possible cases *parboiled* provides the ``DynamicRuleDispatch`` facility.
+    Check out `its test`__ for more info on how to use it.
+
+    __ https://github.com/sirthias/parboiled2/blob/v2.0-M2/parboiled/src/test/scala/org/parboiled2/DynamicRuleDispatchSpec.scala
+
+----
+
+StringBuilding
+    For certain high-performance use-cases it is sometimes better to construct Strings that the parser is to
+    produce/extract from the input in a char-by-char fashion. To support you in doing this *parboiled* provides
+    the ``StringBuilding`` trait which you can mix into your ``Parser`` class.
+    It provides convenient access to a **single** and **mutable** ``StringBuilder`` instance.
+    As such it operates outside of the value stack and therefore without the full "safety net" that parboiled's
+    DSL otherwise gives you. If you don't understand what this means you probably shouldn't be using
+    the ``StringBuilding`` trait but resort to ``capture`` and ordinary parser actions instead.
 
 
 Common Mistakes
