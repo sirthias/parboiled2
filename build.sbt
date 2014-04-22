@@ -4,7 +4,7 @@ import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
 
 val commonSettings = Seq(
-  version := "2.0-SNAPSHOT",
+  version := "2.0.0-RC1",
   scalaVersion := "2.11.0",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
@@ -26,7 +26,10 @@ val commonSettings = Seq(
     "-language:_",
     "-target:jvm-1.6",
     "-Xlog-reflective-calls"),
-  resolvers ++= Seq(Resolver.sonatypeRepo("snapshots"), Resolver.sonatypeRepo("releases")),
+  resolvers ++= Seq(
+    Resolver.sonatypeRepo("snapshots"),
+    Resolver.sonatypeRepo("releases"),
+    "spray repo" at "http://repo.spray.io"),
   shellPrompt := { s => Project.extract(s).currentProject.id + " > " })
 
 val formattingSettings = scalariformSettings ++ Seq(

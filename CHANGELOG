@@ -1,3 +1,15 @@
+Version 2.0.0-RC1 (2014-04-22)
+------------------------------
+- Added `noneOf` helper (#63)
+- Added support for `runSubParser`
+- Added `MISMATCH0` rule
+- Refactored `DynamicRuleDispatch` for performance and access to `ruleNames` Seq
+- Extended `StringBuilding` trait with some more helpers, renamed `append`/`prepend` to `appendSB`/`prependSB`
+- Removed `ByteArrayBasedParserInput::charset` member (#59)
+- Fixed problems resulting from not-fully-qualified type references (#57, #60)
+- Changed scope of `scala-reflect` dependency from `compile` to `provided` (#62)
+
+
 Version 2.0-M2 (2014-02-07)
 ---------------------------
 - Renamed `CharPredicate.HexAlpha` to `HexDigit`
