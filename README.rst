@@ -751,13 +751,13 @@ Additional Helpers
 ------------------
 
 Base64Parsing
-    For parsing RFC2045__(Base64)-encoded strings *parboiled* provides the ``Base64Parsing`` trait which you can
-    mix into your ``Parser`` class. See `its source`__ for more info on what exactly it provides.
+    For parsing RFC2045_ (Base64) encoded strings *parboiled* provides the ``Base64Parsing`` trait which you can
+    mix into your ``Parser`` class. See `its source`_ for more info on what exactly it provides.
     *parboiled* also comes with the ``org.parboiled2.util.Base64`` class which provides an efficient Base64
     encoder/decoder for the standard as well as custom alphabets.
 
-    __ http://tools.ietf.org/html/rfc2045#section-6.8
-    __ https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/main/scala/org/parboiled2/Base64Parsing.scala
+.. _RFC2045: http://tools.ietf.org/html/rfc2045#section-6.8
+.. _its source: https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/main/scala/org/parboiled2/Base64Parsing.scala
 
 ----
 
@@ -767,9 +767,9 @@ DynamicRuleDispatch
     header name that is only known once the HTTP request has actually been read from the network.
     To prevent you from having to write a large (and not really efficient) ``match`` against the header name for
     separating out all the possible cases *parboiled* provides the ``DynamicRuleDispatch`` facility.
-    Check out `its test`__ for more info on how to use it.
+    Check out `its test`_ for more info on how to use it.
 
-    __ https://github.com/sirthias/parboiled2/blob/v2.0-M2/parboiled/src/test/scala/org/parboiled2/DynamicRuleDispatchSpec.scala
+.. _its test: https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/test/scala/org/parboiled2/DynamicRuleDispatchSpec.scala
 
 ----
 
