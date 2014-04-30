@@ -167,18 +167,6 @@ class BasicSpec extends TestParserSpec {
       "blue" must beMatchedWith(3)
       "black" must beMismatched
     }
-
-    "(Char, T)" in new TestParser1[Int] {
-      def targetRule = rule { ('a' -> 42) ~ EOI }
-      "a" must beMatchedWith(42)
-      "x" must beMismatched
-    }
-
-    "(String, T)" in new TestParser1[Int] {
-      def targetRule = rule { ("abc" -> 42) ~ EOI }
-      "abc" must beMatchedWith(42)
-      "x" must beMismatched
-    }
   }
 
   "The Parser" should {

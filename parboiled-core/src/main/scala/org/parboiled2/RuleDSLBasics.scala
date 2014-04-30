@@ -48,18 +48,6 @@ trait RuleDSLBasics {
   implicit def valueMap[T](m: Map[String, T])(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
 
   /**
-   * Matches a character and pushes the associated value.
-   */
-  @compileTimeOnly("Calls to `charAndValue` must be inside `rule` macro")
-  implicit def charAndValue[T](t: (Char, T))(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
-
-  /**
-   * Matches a string and pushes the associated value.
-   */
-  @compileTimeOnly("Calls to `stringAndValue` must be inside `rule` macro")
-  implicit def stringAndValue[T](t: (String, T))(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
-
-  /**
    * Matches any single one of the given characters.
    */
   @compileTimeOnly("Calls to `anyOf` must be inside `rule` macro")
