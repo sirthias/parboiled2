@@ -68,9 +68,10 @@ val publishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val scalaReflect = "org.scala-lang"  %  "scala-reflect"    % "2.11.0"   % "provided"
-val shapeless    = "com.chuusai"     %% "shapeless"        % "2.0.0"    % "compile"
-val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.11"   % "test"
+val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.0"   % "provided"
+val shapeless        = "com.chuusai"     %% "shapeless"         % "2.0.0"    % "compile"
+val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.3.11"   % "test"
+val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.3.11"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -81,7 +82,7 @@ lazy val examples = project
   .settings(
     publishTo := None,
     libraryDependencies ++= Seq(
-      specs2,
+      specs2Core,
       "io.spray" %%  "spray-json" % "1.2.6",
       "org.json4s" %% "json4s-native" % "3.2.9",
       "org.json4s" %% "json4s-jackson" % "3.2.9",
@@ -93,7 +94,7 @@ lazy val parboiled = project
   .settings(formattingSettings: _*)
   .settings(publishingSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2),
+    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core),
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCore.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCore.project, Compile, packageSrc)).value,
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCore.project, Compile, packageDoc)).value,
@@ -111,4 +112,4 @@ lazy val parboiledCore = project.in(file("parboiled-core"))
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2))
+    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core, specs2ScalaCheck))
