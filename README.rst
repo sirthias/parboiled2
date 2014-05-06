@@ -844,6 +844,26 @@ The common and highly recommended pattern is to
 This helps with keeping your grammar rules properly structured and white space "taken care of" without it getting in the
 way.
 
+----
+
+In order to reduce boilerplate in your grammar definition parboiled allows for cleanly factoring out whitespace matching
+logic into a dedicated rule. By defining a custom implicit conversion from ``String`` to ``Rule0`` you can implicitly
+match whitespace after a string terminal:
+
+.. code:: Scala
+
+    class FooParser(val input: ParserInput) extends Parser {
+      implicit def wspStr(s: String): Rule0 = rule {
+        str(s) ~ zeroOrMore(' ')
+      }
+
+      def foo = rule { "foo" | "foobar" } // implicitly matches trailing blanks
+      def fooNoWSP = rule { str("foo") | str("foobar") } // doesn't match trailing blanks
+    }
+
+In this example all usages of a plain string literal in the parser rules will implicitly match trailing space characters.
+In order to *not* apply the implicit whitespace matching in this case simply say ``str("foo")`` instead of just ``"foo"``.
+
 
 Grammar Debugging
 =================
