@@ -53,6 +53,9 @@ The latest released version is **2.0.0-RC1**. It is available for Scala 2.10.3+ 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
 (currently version 2.0.0).
 
+*parboiled2* also has a provided dependency toward scala-reflect, so make sure that the jar for 
+org.scala-lang:scala-reflect with the relevant scala version is in your classpath.
+
 Once on your classpath you can use this single import to bring everything you need into scope:
 
 .. code:: Scala
