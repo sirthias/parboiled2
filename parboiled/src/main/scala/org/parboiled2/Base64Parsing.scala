@@ -65,8 +65,8 @@ trait Base64Parsing { this: Parser ⇒
 object Base64Parsing {
   type Decoder = Array[Char] ⇒ Array[Byte]
 
-  val rfc2045Alphabet = CharPredicate(Base64.rfc2045().getAlphabet).asCharMask
-  val customAlphabet = CharPredicate(Base64.custom().getAlphabet).asCharMask
+  val rfc2045Alphabet = CharPredicate(Base64.rfc2045().getAlphabet).asMaskBased
+  val customAlphabet = CharPredicate(Base64.custom().getAlphabet).asMaskBased
 
   val rfc2045StringDecoder: Decoder = decodeString(Base64.rfc2045())
   val customStringDecoder: Decoder = decodeString(Base64.custom())
