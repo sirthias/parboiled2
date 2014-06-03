@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import scala.collection.immutable
-import scala.reflect.macros.Context
+import scala.reflect.macros.whitebox.Context
 import shapeless.HList
 
 /**
@@ -66,12 +66,12 @@ object DynamicRuleDispatch {
       if (start <= end) {
         val mid = (start + end) >>> 1
         val name = names(mid)
-        q"""val c = ${c.literal(name)} compare ruleName
+        q"""val c = $name compare ruleName
             if (c < 0) ${rec(mid + 1, end)}
             else if (c > 0) ${rec(start, mid - 1)}
             else {
               val p = handler.parser
-              p.__run[$L](p.${newTermName(name).encodedName.toTermName})(handler)
+              p.__run[$L](p.${TermName(name).encodedName.toTermName})(handler)
             }"""
       } else q"handler.ruleNotFound(ruleName)"
 

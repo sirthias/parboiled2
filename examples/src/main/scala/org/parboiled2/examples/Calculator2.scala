@@ -18,6 +18,7 @@ package org.parboiled2.examples
 
 import scala.annotation.tailrec
 import scala.util.{Failure, Success}
+import scala.io.StdIn
 import org.parboiled2._
 
 object Calculator2 extends App {
@@ -29,7 +30,7 @@ object Calculator2 extends App {
     // once BUG https://issues.scala-lang.org/browse/SI-8167 is fixed
     print("---\nEnter calculator expression > ")
     Console.out.flush()
-    readLine() match {
+    StdIn.readLine() match {
       case "" =>
       case line =>
         val parser = new Calculator2(line)

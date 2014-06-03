@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import scala.reflect.macros.Context
+import scala.reflect.macros.whitebox.Context
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
 import scala.util.{ Failure, Success, Try }
@@ -464,11 +464,7 @@ object Parser {
     val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
     val opTree = opTreeCtx.OpTree(r.tree)
     import ctx.universe._
-    val ruleName =
-      ctx.enclosingMethod match {
-        case DefDef(_, name, _, _, _, _) ⇒ name.decoded
-        case _                           ⇒ ctx.abort(r.tree.pos, "`rule` can only be used from within a method")
-      }
+    val ruleName = ctx.internal.enclosingOwner.name.decodedName.toString
     reify {
       ctx.Expr[RuleX](opTree.renderRule(ruleName)).splice.asInstanceOf[Rule[I, O]]
     }
