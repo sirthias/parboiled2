@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import scala.reflect.internal.annotations.compileTimeOnly
+import scala.annotation.compileTimeOnly
 import scala.collection.immutable
 import org.parboiled2.support._
 import shapeless._

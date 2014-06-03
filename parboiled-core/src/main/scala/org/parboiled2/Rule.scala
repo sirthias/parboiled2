@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import scala.annotation.unchecked.uncheckedVariance
-import scala.reflect.internal.annotations.compileTimeOnly
+import scala.annotation.compileTimeOnly
 import org.parboiled2.support._
 import shapeless.HList
 
