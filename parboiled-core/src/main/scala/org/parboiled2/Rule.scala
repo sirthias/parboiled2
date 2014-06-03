@@ -73,7 +73,7 @@ object Rule extends Rule0 {
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   implicit class Runnable[L <: HList](rule: RuleN[L]) {
-    def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = macro Parser.runImpl[L]
+    def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = macro ParserMacros.runImpl[L]
   }
 }
 

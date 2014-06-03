@@ -19,7 +19,7 @@ package org.parboiled2.support
 import scala.annotation.tailrec
 import org.parboiled2._
 
-trait OpTreeContext[OpTreeCtx <: Parser.ParserContext] {
+trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   val c: OpTreeCtx
   import c.universe._
 
