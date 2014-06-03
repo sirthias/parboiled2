@@ -23,8 +23,9 @@ class CharPredicateSpec extends Specification {
   "CharPredicates" should {
 
     "correctly mask characters" in {
-      CharPredicate("4").toString === "CharMask(0010000000000000|0000000000000000)"
-      CharPredicate("a").toString === "CharMask(0000000000000000|0000000200000000)"
+      inspectMask(CharPredicate("4")) === "0010000000000000|0000000000000000"
+      inspectMask(CharPredicate("a")) === "0000000000000000|0000000200000000"
+      CharPredicate("&048z{~").toString === "CharPredicate.MaskBased(&048z{~)"
       show(CharPredicate("&048z{~")) === "&048z{~"
     }
 
@@ -45,6 +46,21 @@ class CharPredicateSpec extends Specification {
       colonSlashEOI(EOI) must beTrue
       colonSlashEOI('x') must beFalse
     }
+
+    "be backed by a mask where possible" in {
+      CharPredicate('1' to '9').toString === "CharPredicate.MaskBased(123456789)"
+      (CharPredicate('1' to '3') ++ CharPredicate('5' to '8')).toString === "CharPredicate.MaskBased(1235678)"
+      (CharPredicate('1' to '3') ++ "5678").toString === "CharPredicate.MaskBased(1235678)"
+      (CharPredicate('1' to '6') -- CharPredicate('2' to '4')).toString === "CharPredicate.MaskBased(156)"
+      (CharPredicate('1' to '6') -- "234").toString === "CharPredicate.MaskBased(156)"
+    }
+    "be backed by an array where possible" in {
+      CharPredicate("abcäüö").toString === "CharPredicate.ArrayBased(abcäöü)"
+      (CharPredicate("abcäüö") -- "äö").toString === "CharPredicate.ArrayBased(abcü)"
+    }
+    "be backed by a range where possible" in {
+      CharPredicate('1' to 'Ä').toString === "CharPredicate.RangeBased(start = 1, end = Ä, step = 1, inclusive = true)"
+    }
   }
 
   def show(pred: CharPredicate): String = {
@@ -52,4 +68,8 @@ class CharPredicateSpec extends Specification {
     new String(chars)
   }
 
+  def inspectMask(pred: CharPredicate) = {
+    val CharPredicate.MaskBased(lowMask, highMask) = pred
+    "%016x|%016x" format (lowMask, highMask)
+  }
 }

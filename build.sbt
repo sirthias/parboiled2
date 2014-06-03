@@ -66,25 +66,34 @@ val publishingSettings = Seq(
       </developer>
     </developers>)
 
+val noPublishingSettings = Seq(
+  publishArtifact := false,
+  publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))))
+
 /////////////////////// DEPENDENCIES /////////////////////////
 
 val paradiseVersion = "2.0.0"
 
-val scalaReflect = "org.scala-lang"  %  "scala-reflect"    % "2.10.4"        % "provided"
-val shapeless    = "com.chuusai"     %  "shapeless_2.10.4" % "2.0.0"         % "compile"
-val quasiquotes  = "org.scalamacros" %% "quasiquotes"      % paradiseVersion % "compile"
-val specs2       = "org.specs2"      %% "specs2-core"      % "2.3.11"        % "test"
+val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.10.4"        % "provided"
+val shapeless        = "com.chuusai"     %  "shapeless_2.10.4"  % "2.0.0"         % "compile"
+val quasiquotes      = "org.scalamacros" %% "quasiquotes"       % paradiseVersion % "compile"
+val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.3.11"        % "test"
+val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.3.11"        % "test"
 
 /////////////////////// PROJECTS /////////////////////////
+
+lazy val root = project.in(file("."))
+  .aggregate(examples, parboiled, parboiledCore)
+  .settings(noPublishingSettings: _*)
 
 lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
   .settings(cappiSettings: _*)
+  .settings(noPublishingSettings: _*)
   .settings(
-    publishTo := None,
     libraryDependencies ++= Seq(
-      specs2,
+      specs2Core,
       "io.spray" %%  "spray-json" % "1.2.6",
       "org.json4s" %% "json4s-native" % "3.2.9",
       "org.json4s" %% "json4s-jackson" % "3.2.9",
@@ -97,7 +106,7 @@ lazy val parboiled = project
   .settings(publishingSettings: _*)
   .settings(
     addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full),
-    libraryDependencies ++= Seq(scalaReflect, shapeless, quasiquotes, specs2),
+    libraryDependencies ++= Seq(scalaReflect, shapeless, quasiquotes, specs2Core),
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCore.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCore.project, Compile, packageSrc)).value,
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCore.project, Compile, packageDoc)).value,
@@ -114,6 +123,7 @@ lazy val parboiled = project
 lazy val parboiledCore = project.in(file("parboiled-core"))
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
+  .settings(noPublishingSettings: _*)
   .settings(
     addCompilerPlugin("org.scalamacros" % "paradise" % paradiseVersion cross CrossVersion.full),
-    libraryDependencies ++= Seq(scalaReflect, shapeless, quasiquotes, specs2))
+    libraryDependencies ++= Seq(scalaReflect, shapeless, quasiquotes, specs2Core, specs2ScalaCheck))

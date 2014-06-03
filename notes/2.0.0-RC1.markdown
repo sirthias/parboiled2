@@ -1,0 +1,16 @@
+This is the first release candidate of parboiled 2.0.
+It improves upon 2.0-M2 by rounding off the feature set and fixing a few remaining problems.
+
+The release announcement on the mailing list can be found
+[here](https://groups.google.com/d/msg/parboiled-user/qtCJz4_KP8E/dDFiOjwsiawJ).
+
+CHANGELOG:
+
+- Added `noneOf` helper (#63)
+- Added support for `runSubParser`
+- Added `MISMATCH0` rule
+- Refactored `DynamicRuleDispatch` for performance and access to `ruleNames` Seq
+- Extended `StringBuilding` trait with some more helpers, renamed `append`/`prepend` to `appendSB`/`prependSB`
+- Removed `ByteArrayBasedParserInput::charset` member (#59)
+- Fixed problems resulting from not-fully-qualified type references (#57, #60)
+- Changed scope of `scala-reflect` dependency from `compile` to `provided` (#62)

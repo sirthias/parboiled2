@@ -66,7 +66,7 @@ object DynamicRuleDispatch {
       if (start <= end) {
         val mid = (start + end) >>> 1
         val name = names(mid)
-        q"""val c = ${c.literal(name)} compare ruleName
+        q"""val c = $name compare ruleName
             if (c < 0) ${rec(mid + 1, end)}
             else if (c > 0) ${rec(start, mid - 1)}
             else {

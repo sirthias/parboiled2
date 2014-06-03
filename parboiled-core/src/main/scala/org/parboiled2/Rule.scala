@@ -33,10 +33,8 @@ sealed trait RuleX
  * at the current point in the input.
  */
 sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
-  // TODO: model as value class
-  // This would give us a small performance benefit.
-  // However, https://issues.scala-lang.org/browse/SI-6260 is quite a serious problem for this design,
-  // so until this issue is fixed we better stick to this non-value-class-based model
+  // Note: we could model `Rule` as a value class, however, tests have shown that this doesn't result in any measurable
+  // performance benefit and, in addition, comes with other drawbacks (like generated bridge methods)
 
   /**
    * Concatenates this rule with the given other one.
@@ -75,7 +73,7 @@ object Rule extends Rule0 {
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   implicit class Runnable[L <: HList](rule: RuleN[L]) {
-    def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = macro Parser.runImpl[L]
+    def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = macro ParserMacros.runImpl[L]
   }
 }
 

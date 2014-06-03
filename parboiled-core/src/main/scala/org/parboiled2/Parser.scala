@@ -16,7 +16,6 @@
 
 package org.parboiled2
 
-import scala.reflect.macros.Context
 import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
 import scala.util.{ Failure, Success, Try }
@@ -38,7 +37,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * Converts a compile-time only rule definition into the corresponding rule method implementation.
    */
-  def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ruleImpl[I, O]
+  def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ParserMacros.ruleImpl[I, O]
 
   /**
    * The index of the next (yet unmatched) input character.
@@ -428,8 +427,6 @@ object Parser {
       }
   }
 
-  ////////////////////////////// INTERNAL //////////////////////////////
-
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
@@ -438,9 +435,25 @@ object Parser {
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
+  class CollectingRuleStackException extends RuntimeException with NoStackTrace {
+    private[this] var frames = List.empty[RuleFrame]
+    def save(newFrames: RuleFrame*): Nothing = {
+      frames = newFrames.foldRight(frames)(_ :: _)
+      throw this
+    }
+    def ruleFrames: List[RuleFrame] = frames
+  }
+}
+
+object ParserMacros {
+  import scala.reflect.macros.Context
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
   type RunnableRuleContext[L <: HList] = Context { type PrefixType = Rule.Runnable[L] }
 
-  def runImpl[L <: HList: c.WeakTypeTag](c: RunnableRuleContext[L])()(scheme: c.Expr[DeliveryScheme[L]]): c.Expr[scheme.value.Result] = {
+  def runImpl[L <: HList: c.WeakTypeTag](c: RunnableRuleContext[L])()(scheme: c.Expr[Parser.DeliveryScheme[L]]): c.Expr[scheme.value.Result] = {
     import c.universe._
     val runCall = c.prefix.tree match {
       case q"parboiled2.this.Rule.Runnable[$l]($ruleExpr)" ⇒ ruleExpr match {
@@ -472,17 +485,5 @@ object Parser {
     reify {
       ctx.Expr[RuleX](opTree.renderRule(ruleName)).splice.asInstanceOf[Rule[I, O]]
     }
-  }
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
-  class CollectingRuleStackException extends RuntimeException with NoStackTrace {
-    private[this] var frames = List.empty[RuleFrame]
-    def save(newFrames: RuleFrame*): Nothing = {
-      frames = newFrames.foldRight(frames)(_ :: _)
-      throw this
-    }
-    def ruleFrames: List[RuleFrame] = frames
   }
 }
