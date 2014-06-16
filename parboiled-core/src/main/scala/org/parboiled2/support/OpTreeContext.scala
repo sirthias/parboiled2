@@ -114,7 +114,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     require(ops.size >= 2)
     def ruleFrame = q"org.parboiled2.RuleFrame.Sequence(${ops.size})"
     def renderInner(wrapped: Boolean): Tree =
-      ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒ q"$l && $r")
+      ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒
+        q"val l = $l; if (l) $r else false // work-around for https://issues.scala-lang.org/browse/SI-8657")
   }
 
   def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
@@ -129,7 +130,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def ruleFrame = q"org.parboiled2.RuleFrame.FirstOf(${ops.size})"
     def renderInner(wrapped: Boolean): Tree =
       q"""val mark = __saveState; ${
-        ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒ q"$l || { __restoreState(mark); $r }")
+        ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒
+          q"val l = $l; if (!l) { __restoreState(mark); $r } else true // work-around for https://issues.scala-lang.org/browse/SI-8657")
       }"""
   }
 
