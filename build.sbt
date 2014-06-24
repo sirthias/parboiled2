@@ -29,8 +29,7 @@ val commonSettings = Seq(
   resolvers ++= Seq(
     Resolver.sonatypeRepo("snapshots"),
     Resolver.sonatypeRepo("releases"),
-    "spray repo" at "http://repo.spray.io"),
-  shellPrompt := { s => Project.extract(s).currentProject.id + " > " })
+    "spray repo" at "http://repo.spray.io"))
 
 val formattingSettings = scalariformSettings ++ Seq(
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
