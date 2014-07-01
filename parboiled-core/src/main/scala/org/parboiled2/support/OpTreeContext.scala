@@ -444,7 +444,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
               def rewrite(tree: Tree): Tree =
                 tree match {
                   case Block(statements, res) ⇒ block(statements, rewrite(res))
-                  case x if resultTypeTree.tpe <:< typeOf[Rule[_, _]] ⇒ expand(x, wrapped)
+                  case x if isSubClass(resultTypeTree.tpe, "org.parboiled2.Rule") ⇒ expand(x, wrapped)
                   case x ⇒ q"__push($x)"
                 }
               val valDefs = args.zip(argTypeTrees).map { case (a, t) ⇒ q"val ${a.name} = valueStack.pop().asInstanceOf[${t.tpe}]" }.reverse
@@ -557,7 +557,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
             def rewrite(tree: Tree): Tree =
               tree match {
                 case Block(statements, res) ⇒ block(statements, rewrite(res))
-                case x if actionType.last <:< typeOf[Rule[_, _]] ⇒ expand(x, wrapped)
+                case x if isSubClass(actionType.last, "org.parboiled2.Rule") ⇒ expand(x, wrapped)
                 case x ⇒ q"__push($x)"
               }
             block(popToVals(args.map(_.name)), rewrite(body))
@@ -613,8 +613,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
   def Separator(op: OpTree): Separator = wrapped ⇒ op.render(wrapped)
 
-  lazy val HListConsTypeSymbol = typeOf[shapeless.::[_, _]].typeSymbol
-  lazy val HNilTypeSymbol = typeOf[shapeless.HNil].typeSymbol
+  lazy val HListConsTypeSymbol = c.mirror.staticClass("shapeless.$colon$colon")
+  lazy val HNilTypeSymbol = c.mirror.staticClass("shapeless.HNil")
 
   // tries to match and expand the leaves of the given Tree
   def expand(tree: Tree, wrapped: Boolean): Tree =
@@ -652,4 +652,6 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       case Block(a, b) ⇒ block(stmts ::: a ::: Nil, b)
       case _           ⇒ Block(stmts, expr)
     }
+
+  def isSubClass(t: Type, fqn: String) = t.baseClasses.contains(c.mirror.staticClass(fqn))
 }
