@@ -308,13 +308,6 @@ implicit def valueMap[T](m: Map[String, T]): R
 
 ----
 
-``implicit def charAndValue[T](t: (Char, T)): R`` / ``implicit def stringAndValue[T](t: (String, T)): R``
-    Tuple values with the first component being either a ``Char`` or a ``String`` can be directly used in the rule DSL
-    and match the respective character or string and push the respectively associated value upon a successful match.
-    The resulting rule type depends on ``T`` and be looked in the table for ``valueMap`` above.
-
-----
-
 def anyOf(chars: String): Rule0
     This constructs a ``Rule0`` which matches any of the given strings characters.
 
