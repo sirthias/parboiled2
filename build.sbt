@@ -120,4 +120,6 @@ lazy val parboiledCore = project.in(file("parboiled-core"))
   .settings(formattingSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core, specs2ScalaCheck))
+    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core, specs2ScalaCheck),
+    (sourceGenerators in Compile) <+= (sourceManaged in Compile) map Boilerplate.gen
+  )

@@ -24,6 +24,7 @@ import shapeless.ops.hlist.ReversePrepend
 
 // provides the supported `~>` "overloads" for rule of type `Rule[I, O]` as `Out`
 // as a phantom type, which is only used for rule DSL typing
+/*
 sealed trait ActionOps[I <: HList, O <: HList] { type Out }
 object ActionOps {
   private type SJoin[I <: HList, O <: HList, R] = Join[I, HNil, O, R]
@@ -160,6 +161,7 @@ object ActionOps {
     def apply[R](f: (A, B, C, D, E, F, G, H, J) ⇒ R)(implicit j: Join[I, OI, HNil, R], c: FCapture[(A, B, C, D, E, F, G, H, J) ⇒ R]): Rule[j.In, j.Out]
   }
 }
+*/
 
 // we want to support the "short case class notation" `... ~> Foo`
 // unfortunately the Tree for the function argument to the `apply` overloads above does *not* allow us to inspect the
