@@ -1,6 +1,6 @@
-addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.2.1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8.1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8.3")
 
 resolvers += Resolver.url(
   "bintray-sbt-plugin-releases",

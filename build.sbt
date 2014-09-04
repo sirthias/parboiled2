@@ -5,7 +5,7 @@ import scala.xml.{Node => XNode, NodeSeq}
 
 val commonSettings = Seq(
   version := "2.0.1-SNAPSHOT",
-  scalaVersion := "2.11.1",
+  scalaVersion := "2.11.2",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -71,10 +71,10 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.1"   % "provided"
+val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.2"   % "provided"
 val shapeless        = "com.chuusai"     %% "shapeless"         % "2.0.0"    % "compile"
-val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.3.11"   % "test"
-val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.3.11"   % "test"
+val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.2"   % "test"
+val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.2"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -91,8 +91,8 @@ lazy val examples = project
     libraryDependencies ++= Seq(
       specs2Core,
       "io.spray" %%  "spray-json" % "1.2.6",
-      "org.json4s" %% "json4s-native" % "3.2.9",
-      "org.json4s" %% "json4s-jackson" % "3.2.9",
+      "org.json4s" %% "json4s-native" % "3.2.10",
+      "org.json4s" %% "json4s-jackson" % "3.2.10",
       "io.argonaut" %% "argonaut" % "6.0.4"))
 
 lazy val parboiled = project
