@@ -85,7 +85,7 @@ lazy val root = project.in(file("."))
 lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
-  .settings(cappiSettings: _*)
+  .settings(jmhSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(

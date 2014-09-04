@@ -100,13 +100,3 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
   val QuoteBackslash = CharPredicate("\"\\")
   val QuoteSlashBackSlash = QuoteBackslash ++ "/"
 }
-
-object Test {
-  // 744kb test JSON produced with http://www.json-generator.com/
-  val json = io.Source.fromInputStream(getClass.getResourceAsStream("/test.json")).mkString
-}
-
-object JsonParser extends App {
-  for (i <- 0 to 100)
-    new JsonParser(Test.json).Json.run().get
-}
