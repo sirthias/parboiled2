@@ -115,11 +115,14 @@ lazy val parboiled = project
     }
   )
 
+lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
+
 lazy val parboiledCore = project.in(file("parboiled-core"))
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core, specs2ScalaCheck),
-    (sourceGenerators in Compile) <+= (sourceManaged in Compile) map Boilerplate.gen
+    generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
+    (sourceGenerators in Compile) += generateActionOps.taskValue
   )
