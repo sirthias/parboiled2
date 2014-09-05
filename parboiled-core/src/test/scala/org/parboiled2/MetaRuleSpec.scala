@@ -24,7 +24,7 @@ class MetaRuleSpec extends TestParserSpec {
       val ab = () ⇒ rule { "ab" }
       val cd = () ⇒ rule { "cd" }
       def targetRule = rule { bracketed(ab) ~ bracketed(cd) }
-      def bracketed(inner: () ⇒ Rule0) = rule { '[' ~ run(inner()) ~ ']' }
+      def bracketed(inner: () ⇒ Rule0) = rule { '[' ~ inner() ~ ']' }
 
       "[ab][cd]" must beMatched
       "abcd" must beMismatched

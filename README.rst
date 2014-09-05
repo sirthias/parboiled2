@@ -46,9 +46,9 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.0.0"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.0.1"
 
-The latest released version is **2.0.0**. It is available for Scala 2.10.3+ as well as Scala 2.11.
+The latest released version is **2.0.1**. It is available for Scala 2.10.3+ as well as Scala 2.11.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
 (currently version 2.0.0).
@@ -774,6 +774,47 @@ StringBuilding
     As such it operates outside of the value stack and therefore without the full "safety net" that parboiled's
     DSL otherwise gives you. If you don't understand what this means you probably shouldn't be using
     the ``StringBuilding`` trait but resort to ``capture`` and ordinary parser actions instead.
+
+
+Advanced Techniques
+===================
+
+Meta-Rules
+----------
+
+Sometimes you might find yourself in a situation where you'd like to DRY up your grammar definition by factoring out
+common constructs in several rule definitions in a "meta-rule" that modifies/decorates other rules.
+Essentially you'd like to write something like this (which is *not* directly possible):
+
+.. code:: Scala
+
+    def expression = rule { bracketed(ab) ~ bracketed(cd) }
+    def ab = rule { "ab" }
+    def cd = rule { "cd" }
+    def bracketed(inner: Rule0) = rule { '[' ~ inner ~ ']' }
+
+In this hypothetical example ``bracketed`` is a meta-rule which take another rule as parameter and calls it from within
+its own rule definition.
+
+Unfortunately enabling a syntax such as the one shown above it not directly possible with parboiled.
+When looking at how the parser generation in parboiled actually works the reason becomes clear.
+parboiled "expands" the rule definition that is passed as argument to the ``rule`` macro into actual Scala code.
+The rule methods themselves however remain what they are: instance methods on the parser class.
+And since you cannot simply pass a method name as argument to another method the calls ``bracketed(ab)`` and
+``bracketed(cd)`` from above don't compile.
+
+However, there is a work-around which might be good enough for your meta-rule needs:
+
+.. code:: Scala
+
+    def expression = rule { bracketed(ab) ~ bracketed(cd) }
+    val ab = () ⇒ rule { "ab" }
+    val cd = () ⇒ rule { "cd" }
+    def bracketed(inner: () ⇒ Rule0) = rule { '[' ~ inner() ~ ']' }
+
+If you model the rules that you want to pass as arguments to other rules as ``Function0`` instances you *can* pass
+them around. Assigning those function instances to ``val``s avoids re-allocation which would otherwise happen during
+*every* execution of the ``expression`` rule and which would come with a potentially significant performance cost.
 
 
 Common Mistakes
