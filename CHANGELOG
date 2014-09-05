@@ -1,6 +1,6 @@
 Version 2.0.1 (2014-09-05)
 --------------------------
-- Fixed  ScalaReflectionException under Scala 2.11 when scala-reflect is not on the classpath (#81)
+- Fixed ScalaReflectionException under Scala 2.11 when scala-reflect is not on the classpath (#81)
 - Increased operator argument limit from 9 to 22 (#85)
 - Added `named` rule modifier and `namedRule` helper for explicit naming of inner rules (#50)
 - Moved JSON benchmark into dedicated sub-project
