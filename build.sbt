@@ -25,11 +25,7 @@ val commonSettings = Seq(
     "-Xlint",
     "-language:_",
     "-target:jvm-1.6",
-    "-Xlog-reflective-calls"),
-  resolvers ++= Seq(
-    Resolver.sonatypeRepo("snapshots"),
-    Resolver.sonatypeRepo("releases"),
-    "spray repo" at "http://repo.spray.io"))
+    "-Xlog-reflective-calls"))
 
 val formattingSettings = scalariformSettings ++ Seq(
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
