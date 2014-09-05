@@ -81,15 +81,22 @@ lazy val root = project.in(file("."))
 lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
+  .settings(noPublishingSettings: _*)
+  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.2.6"))
+
+lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
+
+lazy val jsonBenchmark = project
+  .dependsOn(examples)
+  .settings(commonSettings: _*)
   .settings(jmhSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      specs2Core,
-      "io.spray" %%  "spray-json" % "1.2.6",
       "org.json4s" %% "json4s-native" % "3.2.10",
       "org.json4s" %% "json4s-jackson" % "3.2.10",
-      "io.argonaut" %% "argonaut" % "6.0.4"))
+      "io.argonaut" %% "argonaut" % "6.0.4"),
+    bench := (run in Compile).partialInput(" -i 5 -wi 5 -f1 -t1").evaluated)
 
 lazy val parboiled = project
   .dependsOn(parboiledCore)
