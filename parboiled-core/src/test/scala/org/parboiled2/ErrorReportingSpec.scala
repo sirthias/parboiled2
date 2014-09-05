@@ -137,5 +137,28 @@ class ErrorReportingSpec extends TestParserSpec {
           |  targetRule / "abc" / 'c'
           |""")
     }
+
+    "for rules with an explicitly attached name" in new TestParser0 {
+      def targetRule = rule { "abc".named("prefix") ~ ("def" | "xyz").named("suffix") ~ EOI }
+
+      "abx" must beMismatchedWithErrorMsg(
+        """Invalid input 'x', expected 'c' (line 1, column 3):
+          |abx
+          |  ^
+          |
+          |1 rule mismatched at error location:
+          |  targetRule / prefix / 'c'
+          |""")
+
+      "abc-" must beMismatchedWithErrorMsg(
+        """Invalid input '-', expected 'd' or 'x' (line 1, column 4):
+          |abc-
+          |   ^
+          |
+          |2 rules mismatched at error location:
+          |  targetRule / suffix / "def" / 'd'
+          |  targetRule / suffix / "xyz" / 'x'
+          |""")
+    }
   }
 }

@@ -30,14 +30,14 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def renderRule(ruleName: String): Tree = q"""
       // split out into separate method so as to not double the rule method size
       // which would effectively decrease method inlining by about 50%
-      def wrapped: Boolean = ${render(wrapped = true, ruleName)}
+      def wrapped: Boolean = ${render(wrapped = true, Literal(Constant(ruleName)))}
       val matched =
         if (__collectingErrors) wrapped
         else ${render(wrapped = false)}
       if (matched) org.parboiled2.Rule else null""" // we encode the "matched" boolean as 'ruleResult ne null'
 
     // renders a Boolean Tree
-    def render(wrapped: Boolean, ruleName: String = ""): Tree =
+    def render(wrapped: Boolean, ruleName: Tree = Literal(Constant(""))): Tree =
       if (wrapped) q"""
         try ${renderInner(wrapped)}
         catch {
@@ -81,6 +81,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     case q"$a.this.push[$b]($arg)($hl)"                    ⇒ PushAction(arg, hl)
     case q"$a.this.drop[$b]($hl)"                          ⇒ DropAction(hl)
     case q"$a.this.runSubParser[$b, $c]($f)"               ⇒ RunSubParser(f)
+    case q"$a.named($name)"                                ⇒ Named(OpTree(a), name)
     case x @ q"$a.this.str2CharRangeSupport($l).-($r)"     ⇒ CharRange(l, r)
     case q"$a.this.charAndValue[$t]($b.ArrowAssoc[$t1]($c).->[$t2]($v))($hl)" ⇒
       Sequence(CharMatch(c), PushAction(v, hl))
@@ -147,7 +148,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     final private val autoExpandMaxStringLength = 8
     def renderInner(wrapped: Boolean): Tree = `n/a`
     def ruleFrame = q"org.parboiled2.RuleFrame.StringMatch($stringTree)"
-    override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
+    override def render(wrapped: Boolean, ruleName: Tree): Tree = {
       def unrollUnwrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) q"""
           if (cursorChar == ${s charAt ix}) {
@@ -186,7 +187,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   case class MapMatch(mapTree: Tree) extends OpTree {
     def ruleFrame = q"org.parboiled2.RuleFrame.MapMatch($mapTree)"
     def renderInner(wrapped: Boolean): Tree = `n/a`
-    override def render(wrapped: Boolean, ruleName: String = ""): Tree =
+    override def render(wrapped: Boolean, ruleName: Tree): Tree =
       if (wrapped) q"__matchMapWrapped($mapTree, $ruleName)"
       else q"__matchMap($mapTree)"
   }
@@ -210,7 +211,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     final private val autoExpandMaxStringLength = 8
     def renderInner(wrapped: Boolean): Tree = `n/a`
     def ruleFrame = q"org.parboiled2.RuleFrame.IgnoreCaseString($stringTree)"
-    override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
+    override def render(wrapped: Boolean, ruleName: Tree): Tree = {
       def unrollUnwrapped(s: String, ix: Int = 0): Tree =
         if (ix < s.length) q"""
           if (_root_.java.lang.Character.toLowerCase(cursorChar) == ${s charAt ix}) {
@@ -401,7 +402,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   case class NotPredicate(op: OpTree) extends OpTree {
     def renderInner(wrapped: Boolean): Tree = `n/a`
     def ruleFrame = reify(RuleFrame.NotPredicate).tree
-    override def render(wrapped: Boolean, ruleName: String = ""): Tree = {
+    override def render(wrapped: Boolean, ruleName: Tree): Tree = {
       val unwrappedTree = q"""
         val mark = __saveState
         val saved = __enterNotPredicate
@@ -586,6 +587,13 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       val q"($arg ⇒ $body)" = c.untypecheck(fTree)
       rewrite(arg.name, body)
     }
+  }
+
+  case class Named(op: OpTree, stringTree: Tree) extends OpTree {
+    def ruleFrame = `n/a`
+    override def render(wrapped: Boolean, ruleName: Tree): Tree =
+      op.render(wrapped, stringTree) // explicit naming takes precedence
+    def renderInner(wrapped: Boolean): Tree = `n/a`
   }
 
   /////////////////////////////////// helpers ////////////////////////////////////

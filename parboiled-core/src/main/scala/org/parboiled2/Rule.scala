@@ -63,6 +63,12 @@ sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
    */
   @compileTimeOnly("Calls to `unary_!` must be inside `rule` macro")
   def unary_!(): Rule0 = `n/a`
+
+  /**
+   * Attaches the given explicit name to this rule.
+   */
+  @compileTimeOnly("Calls to `named` must be inside `rule` macro")
+  def named(name: String): this.type = `n/a`
 }
 
 /**
