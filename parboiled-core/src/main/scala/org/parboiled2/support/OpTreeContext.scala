@@ -27,10 +27,10 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def ruleFrame: Tree
 
     // renders a RuleX Tree
-    def renderRule(ruleName: String): Tree = q"""
+    def renderRule(ruleName: Tree): Tree = q"""
       // split out into separate method so as to not double the rule method size
       // which would effectively decrease method inlining by about 50%
-      def wrapped: Boolean = ${render(wrapped = true, Literal(Constant(ruleName)))}
+      def wrapped: Boolean = ${render(wrapped = true, ruleName)}
       val matched =
         if (__collectingErrors) wrapped
         else ${render(wrapped = false)}
