@@ -52,7 +52,7 @@ trait RuleDSLActions {
    *
    * - a function with one HList parameter the behavior is similar to the previous case with the difference that the
    *   elements of this parameter HList are mapped against the value stack top. This allows for consumption of an
-   *   arbitrary number of value stack elements.
+   *   arbitrary number of value stack elements. (Note: This feature of ``run`` is not yet currently implemented.)
    *
    * - any other value the result type of `run` is an always succeeding `Rule0`.
    *

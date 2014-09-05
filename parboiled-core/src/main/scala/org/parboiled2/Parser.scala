@@ -40,6 +40,12 @@ abstract class Parser(initialValueStackSize: Int = 16,
   def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ParserMacros.ruleImpl[I, O]
 
   /**
+   * Converts a compile-time only rule definition into the corresponding rule method implementation
+   * with an explicitly given name.
+   */
+  def namedRule[I <: HList, O <: HList](name: String)(r: Rule[I, O]): Rule[I, O] = macro ParserMacros.namedRuleImpl[I, O]
+
+  /**
    * The index of the next (yet unmatched) input character.
    * Might be equal to `input.length`!
    */
@@ -474,16 +480,21 @@ object ParserMacros {
   type ParserContext = Context { type PrefixType = Parser }
 
   def ruleImpl[I <: HList: ctx.WeakTypeTag, O <: HList: ctx.WeakTypeTag](ctx: ParserContext)(r: ctx.Expr[Rule[I, O]]): ctx.Expr[Rule[I, O]] = {
-    val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
-    val opTree = opTreeCtx.OpTree(r.tree)
     import ctx.universe._
     val ruleName =
       ctx.enclosingMethod match {
         case DefDef(_, name, _, _, _, _) ⇒ name.decoded
         case _                           ⇒ ctx.abort(r.tree.pos, "`rule` can only be used from within a method")
       }
+    namedRuleImpl(ctx)(ctx.Expr[String](Literal(Constant(ruleName))))(r)
+  }
+
+  def namedRuleImpl[I <: HList: ctx.WeakTypeTag, O <: HList: ctx.WeakTypeTag](ctx: ParserContext)(name: ctx.Expr[String])(r: ctx.Expr[Rule[I, O]]): ctx.Expr[Rule[I, O]] = {
+    val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
+    val opTree = opTreeCtx.OpTree(r.tree)
+    import ctx.universe._
     reify {
-      ctx.Expr[RuleX](opTree.renderRule(ruleName)).splice.asInstanceOf[Rule[I, O]]
+      ctx.Expr[RuleX](opTree.renderRule(name.tree)).splice.asInstanceOf[Rule[I, O]]
     }
   }
 }

@@ -172,11 +172,11 @@ class BasicSpec extends TestParserSpec {
   "The Parser" should {
     "disallow compilation of an illegal character range" in new Parser with Scope {
       def input = ParserInput.Empty
-      illTyped("""rule { "00" - "5" }""", "lower bound must be a single char string")
-      illTyped("""rule { "0" - "55" }""", "upper bound must be a single char string")
-      illTyped("""rule { "" - "5" }""", "lower bound must be a single char string")
-      illTyped("""rule { "0" - "" }""", "upper bound must be a single char string")
-      illTyped("""rule { "5" - "1" }""", "lower bound must not be > upper bound")
+      illTyped("""def foo = rule { "00" - "5" }""", "lower bound must be a single char string")
+      illTyped("""def foo = rule { "0" - "55" }""", "upper bound must be a single char string")
+      illTyped("""def foo = rule { "" - "5" }""", "lower bound must be a single char string")
+      illTyped("""def foo = rule { "0" - "" }""", "upper bound must be a single char string")
+      illTyped("""def foo = rule { "5" - "1" }""", "lower bound must not be > upper bound")
       success
     }
   }

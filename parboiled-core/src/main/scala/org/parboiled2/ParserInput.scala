@@ -16,7 +16,6 @@
 
 package org.parboiled2
 
-import java.nio.charset.Charset
 import scala.annotation.tailrec
 import java.nio.ByteBuffer
 

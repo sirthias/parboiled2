@@ -1,0 +1,11 @@
+This is the final release of parboiled 2.0.
+
+parboiled 2 improves upon parboiled 1.x in many ways, most importantly parsing performance and DSL flexibility.
+The final adds only one small patch to the preceding RC2 and fixes an issue causing stack overflows in certain situations involving large input.
+
+The release announcement on the mailing list can be found
+[here](https://groups.google.com/d/msg/parboiled-user/fKiTldnhd6s/Dcf2lEvinKgJ).
+
+CHANGELOG:
+
+- Fixed stack overflow caused by scala issue 8657 (#78)
