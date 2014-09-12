@@ -97,7 +97,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         case "times"      ⇒ Times(base, op, coll, separator)
         case _            ⇒ c.abort(x.pos, "Unexpected Repeated fun: " + fun)
       }
-    case call @ (Apply(_, _) | Select(_, _) | Ident(_)) ⇒ RuleCall(call)
+    case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _)) ⇒ RuleCall(call)
   }
 
   def OpTree(tree: Tree): OpTree =
@@ -637,10 +637,11 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   @tailrec
   private def callName(tree: Tree): Option[String] =
     tree match {
-      case Ident(name)     ⇒ Some(name.decodedName.toString)
-      case Select(_, name) ⇒ Some(name.decodedName.toString)
-      case Apply(fun, _)   ⇒ callName(fun)
-      case _               ⇒ None
+      case Ident(name)       ⇒ Some(name.decodedName.toString)
+      case Select(_, name)   ⇒ Some(name.decodedName.toString)
+      case Apply(fun, _)     ⇒ callName(fun)
+      case TypeApply(fun, _) ⇒ callName(fun)
+      case _                 ⇒ None
     }
 
   def block(a: Tree, b: Tree): Tree =
