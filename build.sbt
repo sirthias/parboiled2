@@ -69,8 +69,8 @@ val noPublishingSettings = Seq(
 
 val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.2"   % "provided"
 val shapeless        = "com.chuusai"     %% "shapeless"         % "2.0.0"    % "compile"
-val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.2"   % "test"
-val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.2"   % "test"
+val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.4"   % "test"
+val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.4"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -82,7 +82,7 @@ lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
-  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.2.6"))
+  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.0"))
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 

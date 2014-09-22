@@ -12,8 +12,8 @@ class TestState {
 class JsonParserBenchmark {
 
   @Benchmark
-  def parboiled1JsonParser(state: TestState) =
-    spray.json.JsonParser(state.json) // the spray-json parser is implemented with parboiled 1.x
+  def sprayJsonParser(state: TestState) =
+    spray.json.JsonParser(state.json)
 
   @Benchmark
   def parboiled2JsonParser(state: TestState) =
