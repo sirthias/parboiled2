@@ -341,7 +341,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     base match {
       case q"$a.this.int2NTimes($n)" ⇒ n match {
         case Literal(Constant(i: Int)) ⇒
-          if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
+          if (i <= 0) c.abort(base.pos, "`x` in `x.times` must be positive")
           else if (i == 1) rule
           else Times(rule, q"val min, max = $n", collector, separator)
         case x @ (Ident(_) | Select(_, _)) ⇒ Times(rule, q"val min = $n; val max = min", collector, separator)
@@ -350,8 +350,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       case q"$a.this.range2NTimes($r)" ⇒ r match {
         case q"scala.this.Predef.intWrapper($mn).to($mx)" ⇒ (mn, mx) match {
           case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) ⇒
-            if (min < 0) c.abort(mn.pos, "`min` in `(min to max).times` must be non-negative")
-            else if (max < 0) c.abort(mx.pos, "`max` in `(min to max).times` must be non-negative")
+            if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
+            else if (max <= 0) c.abort(mx.pos, "`max` in `(min to max).times` must be positive")
             else if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
             else Times(rule, q"val min = $mn; val max = $mx", collector, separator)
           case ((Ident(_) | Select(_, _)), (Ident(_) | Select(_, _))) ⇒

@@ -140,10 +140,10 @@ class CombinatorSpec extends TestParserSpec {
       "" must beMismatched
     }
 
-    "`0.times(Rule0)` modifier" in new TestParser0 {
-      def targetRule = rule { 0.times("a") }
-      "" must beMatched
-      "x" must beMatched
+    "`1.times(Rule0)` modifier" in new TestParser0 {
+      def targetRule = rule { 1.times("a") }
+      "a" must beMatched
+      "" must beMismatched
     }
 
     "`2.times(Rule0)` modifier (example 1)" in new TestParser0 {
