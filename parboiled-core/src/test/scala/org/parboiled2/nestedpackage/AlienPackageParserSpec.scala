@@ -14,32 +14,26 @@
  * limitations under the License.
  */
 
-package org.parboiled2.nested
+package org.parboiled2.nestedpackage
 
 import scala.util.Success
 import org.specs2.mutable.Specification
 
-class ExtendedParserSpec extends Specification {
+class AlienPackageParserSpec extends Specification {
 
   abstract class AbstractParser(val input: org.parboiled2.ParserInput) extends org.parboiled2.Parser {
     import org.parboiled2.{ Rule1, CharPredicate }
 
-    def foo: Rule1[String] = rule {
-      capture("foo" ~ zeroOrMore(CharPredicate.Digit))
-    }
-
+    def foo: Rule1[String] = rule { capture("foo" ~ zeroOrMore(CharPredicate.Digit)) }
   }
 
   class FooParser(input: String) extends AbstractParser(input) {
-    def Go = rule {
-      foo ~ EOI
-    }
+    def Go = rule { foo ~ EOI }
   }
 
   "Parsers in files that dont explicitly import org.parboiled2._" should {
     "compile" in {
-      new FooParser("foo123").Go.run() should_== Success("foo123")
+      new FooParser("foo123").Go.run() === Success("foo123")
     }
   }
-
 }

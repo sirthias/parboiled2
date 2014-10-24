@@ -19,19 +19,17 @@ package org.parboiled2
 import org.specs2.mutable._
 import scala.util.Success
 
-class PushResetSpec extends Specification {
+class DefaultArgumentsSpec extends Specification {
 
   case class A(a: Int = 0, b: Int = 1)
 
   class Foo(val input: ParserInput) extends Parser {
-    def Foo: Rule1[A] = rule {
-      "foo" ~ push(A(b = 2))
-    }
+    def Foo: Rule1[A] = rule { "foo" ~ push(A(b = 2)) }
   }
 
-  "push action" should {
-    "handle default arguments" in {
-      new Foo("foo").Foo.run() should_== Success(A(0, 2))
+  "The `push` action" should {
+    "properly handle default arguments" in {
+      new Foo("foo").Foo.run() === Success(A(0, 2))
     }
   }
 }
