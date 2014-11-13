@@ -478,8 +478,8 @@ oneOrMore(a)
 ----
 
 xxx.times(a)
-    Repeats a rule a given number of times. ``xxx`` can be either an ``Int`` value or a range ``(<x> to <y>)`` whereby
-    both ``<x>`` and ``<y>`` are ``Int`` values. If the upper bound is zero the rule is equivalent to ``MATCH``.
+    Repeats a rule a given number of times. ``xxx`` can be either a positive ``Int`` value or a range ``(<x> to <y>)``
+    whereby both ``<x>`` and ``<y>`` are positive ``Int`` values.
     The resulting rule type depends on the type of the inner rule:
 
     =================== =======================
@@ -495,7 +495,7 @@ xxx.times(a)
 
     .. code:: Scala
 
-        (factor :Rule1[Int]) ~ (0 to 5).times('*' ~ factor ~> ((a: Int, b) => a * b))
+        (factor :Rule1[Int]) ~ (1 to 5).times('*' ~ factor ~> ((a: Int, b) => a * b))
 
     The inner rule here has type ``Rule[Int :: HNil, Int :: HNil]``, i.e. it pops one ``Int`` off the stack and pushes
     another one onto it, which means that the number of elements on the value stack as well as their types remain the
@@ -891,11 +891,11 @@ match whitespace after a string terminal:
         str(s) ~ zeroOrMore(' ')
       }
 
-      def foo = rule { "foo" | "foobar" } // implicitly matches trailing blanks
-      def fooNoWSP = rule { str("foo") | str("foobar") } // doesn't match trailing blanks
+      def foo = rule { "foobar" | "foo" } // implicitly matches trailing blanks
+      def fooNoWSP = rule { str("foobar") | str("foo") } // doesn't match trailing blanks
     }
 
-In this example all usages of a plain string literal in the parser rules will implicitly match trailing space characters.
+In this example all usages of a plain string literals in the parser rules will implicitly match trailing space characters.
 In order to *not* apply the implicit whitespace matching in this case simply say ``str("foo")`` instead of just ``"foo"``.
 
 
