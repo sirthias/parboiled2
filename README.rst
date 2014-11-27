@@ -842,6 +842,26 @@ specific alternatives first are the canonical solutions.
 If your parser is not behaving the way you expect it to watch out for this "wrong ordering" problem, which might be
 not that easy to spot in more complicated rule structures.
 
+Not advancing the cursor when using ``!``
+-----------------------------------------
+
+The negative syntactic predicate combinator, ``!``, does not cause the parser to advance so combining it with a repeating
+repeating combinator (``zeroOrMore``, ``oneOrMore``, ``xxx.times``) will lead to stack overflows as the parser repeatedly
+runs the negative syntactic predicate on the same point in the data it's trying to parse.
+
+For example
+
+.. code:: Scala
+
+    def foo = rule { capture(zerOrMore( !',' )) }
+
+will overflow the stack when run on anything except commas, while
+
+.. code:: Scala
+
+   def foo = rule { capture(zeroOrMore( !',' ~ ANY )) }
+
+will capture all input until it reaches a comma.
 
 Unchecked Mutable State
 -----------------------
