@@ -69,8 +69,8 @@ val noPublishingSettings = Seq(
 
 val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.4"   % "provided"
 val shapeless        = "com.chuusai"     %% "shapeless"         % "2.0.0"    % "compile"
-val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.9"   % "test"
-val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.9"   % "test"
+val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.13"   % "test"
+val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.13"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
