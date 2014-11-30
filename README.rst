@@ -393,6 +393,9 @@ a | b
     have had on the value stack are cleared out, the resulting rule type is therefore always ``Rule0``,
     independently of the type of the underlying rule.
 
+    Note that ``&`` not causing the parser to make any progress can have surprising implications in repeating 
+    contructs, see `Stack overflow when using the  or  operator`_ for more details.
+
 ----
 
 !a
@@ -400,6 +403,9 @@ a | b
     versa. A syntactic predicate doesn't cause the parser to make any progress (i.e. match any input) and also clears
     out all effects that the underlying rule might have had on the value stack. The resulting rule type is therefore
     always ``Rule0``, independently of the type of the underlying rule.
+
+    Note that ``&`` not causing the parser to make any progress can have surprising implications in repeating 
+    contructs, see `Stack overflow when using the  or  operator`_ for more details.
 
 ----
 
@@ -842,18 +848,18 @@ specific alternatives first are the canonical solutions.
 If your parser is not behaving the way you expect it to watch out for this "wrong ordering" problem, which might be
 not that easy to spot in more complicated rule structures.
 
-Not advancing the cursor when using ``!``
------------------------------------------
+Stack overflow when using the ``!`` or ``&`` operator
+-----------------------------------------------------
 
-The negative syntactic predicate combinator, ``!``, does not cause the parser to advance so combining it with a repeating
-repeating combinator (``zeroOrMore``, ``oneOrMore``, ``xxx.times``) will lead to stack overflows as the parser repeatedly
-runs the negative syntactic predicate on the same point in the data it's trying to parse.
+The syntactic predicate combinators, ``!`` and ``&``, do not cause the parser to advance so combining them with a repeating
+repeating combinator (``zeroOrMore``, ``oneOrMore``, ``xxx.times``) will lead to a stack overflow as the parser repeatedly
+runs the syntactic predicate on the same point in the data it's trying to parse.
 
 For example
 
 .. code:: Scala
 
-    def foo = rule { capture(zerOrMore( !',' )) }
+    def foo = rule { capture(zeroOrMore( !',' )) }
 
 will overflow the stack when run on anything except commas, while
 
