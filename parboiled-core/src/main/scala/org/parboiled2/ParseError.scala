@@ -82,10 +82,9 @@ sealed abstract class RuleFrame {
       case NotPredicate                ⇒ "!"
       case SemanticPredicate           ⇒ "test"
       case ANY                         ⇒ "ANY"
-      case _ ⇒ {
+      case _ ⇒
         val s = toString
         s.updated(0, s.charAt(0).toLower)
-      }
     }
 }
 

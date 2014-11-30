@@ -282,7 +282,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def ruleFrame = reify(RuleFrame.Optional).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       val mark = __saveState
-      if (${op.render(wrapped)}) {
+      val matched = ${op.render(wrapped)}
+      if (matched) {
         ${collector.pushSomePop}
       } else {
         __restoreState(mark)
@@ -306,11 +307,13 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       q"""
       ${collector.valBuilder}
 
-      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark =
-        if (${op.render(wrapped)}) {
+      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
+        val matched = ${op.render(wrapped)}
+        if (matched) {
           ${collector.popToBuilder}
           $recurse
         } else mark
+      }
 
       __restoreState(rec(__saveState))
       ${collector.pushBuilderResult}"""
@@ -329,11 +332,13 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       val firstMark = __saveState
       ${collector.valBuilder}
 
-      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark =
-        if (${op.render(wrapped)}) {
+      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
+        val matched = ${op.render(wrapped)}
+        if (matched) {
           ${collector.popToBuilder}
           $recurse
         } else mark
+      }
 
       val mark = rec(firstMark)
       mark != firstMark && {
@@ -387,7 +392,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       ..$inits
 
       @_root_.scala.annotation.tailrec def rec(count: Int, mark: org.parboiled2.Parser.Mark): Boolean = {
-        if (${op.render(wrapped)}) {
+        val matched = ${op.render(wrapped)}
+        if (matched) {
           ${collector.popToBuilder}
           if (count < max) $recurse else true
         } else (count > min) && { __restoreState(mark); true }
@@ -437,7 +443,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def ruleFrame = reify(RuleFrame.Capture).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       val start = cursor
-      ${op.render(wrapped)} && {valueStack.push(input.sliceString(start, cursor)); true}"""
+      val matched = ${op.render(wrapped)}
+      matched && {valueStack.push(input.sliceString(start, cursor)); true}"""
   }
 
   case class RunAction(argTree: Tree, rrTree: Tree) extends OpTree {
@@ -606,11 +613,11 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   /////////////////////////////////// helpers ////////////////////////////////////
 
   class Collector(
-    val valBuilder: Tree,
-    val popToBuilder: Tree,
-    val pushBuilderResult: Tree,
-    val pushSomePop: Tree,
-    val pushNone: Tree)
+                   val valBuilder: Tree,
+                   val popToBuilder: Tree,
+                   val pushBuilderResult: Tree,
+                   val pushSomePop: Tree,
+                   val pushNone: Tree)
 
   lazy val rule0Collector = {
     val unit = q"()"
