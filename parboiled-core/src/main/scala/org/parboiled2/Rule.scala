@@ -50,6 +50,14 @@ sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
                                                       o: TailSwitch[O @uncheckedVariance, I2, O2]): Rule[i.Out, o.Out] = `n/a`
 
   /**
+   * Same as `~` but with "cut" semantics, meaning that the parser will never backtrack across this boundary.
+   * If the rule being concatenated doesn't match a parse error will be triggered immediately.
+   */
+  @compileTimeOnly("Calls to `~!~` must be inside `rule` macro")
+  def ~!~[I2 <: HList, O2 <: HList](that: Rule[I2, O2])(implicit i: TailSwitch[I2, O @uncheckedVariance, I @uncheckedVariance],
+                                                        o: TailSwitch[O @uncheckedVariance, I2, O2]): Rule[i.Out, o.Out] = `n/a`
+
+  /**
    * Combines this rule with the given other one in a way that the resulting rule matches if this rule matches
    * or the other one matches. If this rule doesn't match the parser is reset and the given alternative tried.
    * This operators therefore implements the "ordered choice' PEG combinator.
@@ -106,3 +114,6 @@ abstract class RuleDSL
   extends RuleDSLBasics
   with RuleDSLCombinators
   with RuleDSLActions
+
+// phantom type for WithSeparatedBy pimp
+trait Repeated

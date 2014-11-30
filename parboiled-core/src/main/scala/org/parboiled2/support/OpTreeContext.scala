@@ -60,6 +60,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
   val opTreePF: PartialFunction[Tree, OpTree] = {
     case q"$lhs.~[$a, $b]($rhs)($c, $d)"                   ⇒ Sequence(OpTree(lhs), OpTree(rhs))
+    case q"$lhs.~!~[$a, $b]($rhs)($c, $d)"                 ⇒ CutSequence(OpTree(lhs), OpTree(rhs))
     case q"$lhs.|[$a, $b]($rhs)"                           ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
     case q"$a.this.ch($c)"                                 ⇒ CharMatch(c)
     case q"$a.this.str($s)"                                ⇒ StringMatch(s)
@@ -117,6 +118,17 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def renderInner(wrapped: Boolean): Tree =
       ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒
         q"val l = $l; if (l) $r else false // work-around for https://issues.scala-lang.org/browse/SI-8657")
+  }
+
+  case class CutSequence(lhs: OpTree, rhs: OpTree) extends OpTree {
+    def ruleFrame = reify(RuleFrame.Cut).tree
+    def renderInner(wrapped: Boolean): Tree =
+      q"""var matched = ${lhs.render(wrapped)}
+          if (matched) {
+            matched = ${rhs.render(wrapped)}
+            if (!matched) throw org.parboiled2.Parser.CutError
+            true
+          } else false // work-around for https://issues.scala-lang.org/browse/SI-8657"""
   }
 
   def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
@@ -613,11 +625,11 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   /////////////////////////////////// helpers ////////////////////////////////////
 
   class Collector(
-                   val valBuilder: Tree,
-                   val popToBuilder: Tree,
-                   val pushBuilderResult: Tree,
-                   val pushSomePop: Tree,
-                   val pushNone: Tree)
+    val valBuilder: Tree,
+    val popToBuilder: Tree,
+    val pushBuilderResult: Tree,
+    val pushSomePop: Tree,
+    val pushNone: Tree)
 
   lazy val rule0Collector = {
     val unit = q"()"

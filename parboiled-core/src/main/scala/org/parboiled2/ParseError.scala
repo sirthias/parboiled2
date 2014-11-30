@@ -123,4 +123,5 @@ object RuleFrame {
   case object Drop extends Anonymous
   case object Action extends Anonymous
   case object RunSubParser extends Anonymous
+  case object Cut extends Anonymous
 }

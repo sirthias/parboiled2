@@ -98,6 +98,3 @@ trait RuleDSLCombinators {
     def sep(separator: Rule0): Rule[I, O] = `n/a`
   }
 }
-
-// phantom type for WithSeparatedBy pimp
-trait Repeated

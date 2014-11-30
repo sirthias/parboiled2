@@ -166,7 +166,8 @@ abstract class Parser(initialValueStackSize: Int = 16,
       valueStack.clear()
       mismatchesAtErrorCursor = 0
       currentErrorRuleStackIx = errorRuleStackIx
-      rule ne null
+      try rule ne null
+      catch { case CutError ⇒ false }
     }
 
     @tailrec
@@ -449,6 +450,11 @@ object Parser {
     }
     def ruleFrames: List[RuleFrame] = frames
   }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  object CutError extends RuntimeException with NoStackTrace
 }
 
 object ParserMacros {
