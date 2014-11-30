@@ -60,6 +60,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
   val opTreePF: PartialFunction[Tree, OpTree] = {
     case q"$lhs.~[$a, $b]($rhs)($c, $d)"                   ⇒ Sequence(OpTree(lhs), OpTree(rhs))
+    case q"$lhs.~!~[$a, $b]($rhs)($c, $d)"                 ⇒ CutSequence(OpTree(lhs), OpTree(rhs))
     case q"$lhs.|[$a, $b]($rhs)"                           ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
     case q"$a.this.ch($c)"                                 ⇒ CharMatch(c)
     case q"$a.this.str($s)"                                ⇒ StringMatch(s)
@@ -69,9 +70,12 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     case q"$a.this.anyOf($s)"                              ⇒ AnyOf(s)
     case q"$a.this.noneOf($s)"                             ⇒ NoneOf(s)
     case q"$a.this.ANY"                                    ⇒ ANY
-    case q"$a.this.optional[$b, $c]($arg)($o)"             ⇒ Optional(OpTree(arg), collector(o))
-    case q"$a.this.zeroOrMore[$b, $c]($arg)($s)"           ⇒ ZeroOrMore(OpTree(arg), collector(s))
-    case q"$a.this.oneOrMore[$b, $c]($arg)($s)"            ⇒ OneOrMore(OpTree(arg), collector(s))
+    case q"$a.this.optional[$b, $c]($arg)($l)"             ⇒ Optional(OpTree(arg), collector(l))
+    case q"$base.?($l)"                                    ⇒ Optional(OpTree(base), collector(l))
+    case q"$a.this.zeroOrMore[$b, $c]($arg)($l)"           ⇒ ZeroOrMore(OpTree(arg), collector(l))
+    case q"$base.*($l)"                                    ⇒ ZeroOrMore(OpTree(base), collector(l))
+    case q"$a.this.oneOrMore[$b, $c]($arg)($l)"            ⇒ OneOrMore(OpTree(arg), collector(l))
+    case q"$base.+($l)"                                    ⇒ OneOrMore(OpTree(base), collector(l))
     case q"$base.times[$a, $b]($r)($s)"                    ⇒ Times(base, OpTree(r), collector(s))
     case q"$a.this.&($arg)"                                ⇒ AndPredicate(OpTree(arg))
     case q"$a.unary_!()"                                   ⇒ NotPredicate(OpTree(a))
@@ -89,15 +93,12 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       Sequence(StringMatch(s), PushAction(v, hl))
     case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
       Sequence(OpTree(r), Action(f, ts))
-    case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
-      val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
-      fun.decodedName.toString match {
-        case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
-        case "oneOrMore"  ⇒ OneOrMore(op, coll, separator)
-        case "times"      ⇒ Times(base, op, coll, separator)
-        case _            ⇒ c.abort(x.pos, "Unexpected Repeated fun: " + fun)
+    case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base).$f($sep)" ⇒
+      OpTree(base) match {
+        case x: WithSeparator ⇒ x.withSeparator(Separator(OpTree(sep)))
+        case _                ⇒ c.abort(x.pos, "Illegal `separatedBy` base: " + base)
       }
-    case call @ (Apply(_, _) | Select(_, _) | Ident(_)) ⇒ RuleCall(call)
+    case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _)) ⇒ RuleCall(call)
   }
 
   def OpTree(tree: Tree): OpTree =
@@ -117,6 +118,17 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def renderInner(wrapped: Boolean): Tree =
       ops.map(_.render(wrapped)).reduceLeft((l, r) ⇒
         q"val l = $l; if (l) $r else false // work-around for https://issues.scala-lang.org/browse/SI-8657")
+  }
+
+  case class CutSequence(lhs: OpTree, rhs: OpTree) extends OpTree {
+    def ruleFrame = reify(RuleFrame.Cut).tree
+    def renderInner(wrapped: Boolean): Tree =
+      q"""var matched = ${lhs.render(wrapped)}
+          if (matched) {
+            matched = ${rhs.render(wrapped)}
+            if (!matched) throw org.parboiled2.Parser.CutError
+            true
+          } else false // work-around for https://issues.scala-lang.org/browse/SI-8657"""
   }
 
   def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
@@ -282,7 +294,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def ruleFrame = reify(RuleFrame.Optional).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       val mark = __saveState
-      if (${op.render(wrapped)}) {
+      val matched = ${op.render(wrapped)}
+      if (matched) {
         ${collector.pushSomePop}
       } else {
         __restoreState(mark)
@@ -291,7 +304,12 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       true"""
   }
 
-  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends OpTree {
+  sealed abstract class WithSeparator extends OpTree {
+    def withSeparator(sep: Separator): OpTree
+  }
+
+  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
     def ruleFrame = reify(RuleFrame.ZeroOrMore).tree
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
@@ -301,18 +319,21 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       q"""
       ${collector.valBuilder}
 
-      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark =
-        if (${op.render(wrapped)}) {
+      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
+        val matched = ${op.render(wrapped)}
+        if (matched) {
           ${collector.popToBuilder}
           $recurse
         } else mark
+      }
 
       __restoreState(rec(__saveState))
       ${collector.pushBuilderResult}"""
     }
   }
 
-  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends OpTree {
+  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
     def ruleFrame = reify(RuleFrame.OneOrMore).tree
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
@@ -323,11 +344,13 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       val firstMark = __saveState
       ${collector.valBuilder}
 
-      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark =
-        if (${op.render(wrapped)}) {
+      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
+        val matched = ${op.render(wrapped)}
+        if (matched) {
           ${collector.popToBuilder}
           $recurse
         } else mark
+      }
 
       val mark = rec(firstMark)
       mark != firstMark && {
@@ -341,7 +364,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     base match {
       case q"$a.this.int2NTimes($n)" ⇒ n match {
         case Literal(Constant(i: Int)) ⇒
-          if (i < 0) c.abort(base.pos, "`x` in `x.times` must be non-negative")
+          if (i <= 0) c.abort(base.pos, "`x` in `x.times` must be positive")
           else if (i == 1) rule
           else Times(rule, q"val min, max = $n", collector, separator)
         case x @ (Ident(_) | Select(_, _)) ⇒ Times(rule, q"val min = $n; val max = min", collector, separator)
@@ -350,8 +373,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       case q"$a.this.range2NTimes($r)" ⇒ r match {
         case q"scala.this.Predef.intWrapper($mn).to($mx)" ⇒ (mn, mx) match {
           case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) ⇒
-            if (min < 0) c.abort(mn.pos, "`min` in `(min to max).times` must be non-negative")
-            else if (max < 0) c.abort(mx.pos, "`max` in `(min to max).times` must be non-negative")
+            if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
+            else if (max <= 0) c.abort(mx.pos, "`max` in `(min to max).times` must be positive")
             else if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
             else Times(rule, q"val min = $mn; val max = $mx", collector, separator)
           case ((Ident(_) | Select(_, _)), (Ident(_) | Select(_, _))) ⇒
@@ -365,7 +388,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       case _ ⇒ c.abort(base.pos, "Invalid base expression for `.times(...)`: " + base)
     }
 
-  case class Times(op: OpTree, init: Tree, collector: Collector, separator: Separator) extends OpTree {
+  case class Times(op: OpTree, init: Tree, collector: Collector, separator: Separator) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
     val Block(inits, _) = init
     def ruleFrame = q"..$inits; org.parboiled2.RuleFrame.Times(min, max)"
     def renderInner(wrapped: Boolean): Tree = {
@@ -380,7 +404,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       ..$inits
 
       @_root_.scala.annotation.tailrec def rec(count: Int, mark: org.parboiled2.Parser.Mark): Boolean = {
-        if (${op.render(wrapped)}) {
+        val matched = ${op.render(wrapped)}
+        if (matched) {
           ${collector.popToBuilder}
           if (count < max) $recurse else true
         } else (count > min) && { __restoreState(mark); true }
@@ -430,7 +455,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def ruleFrame = reify(RuleFrame.Capture).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       val start = cursor
-      ${op.render(wrapped)} && {valueStack.push(input.sliceString(start, cursor)); true}"""
+      val matched = ${op.render(wrapped)}
+      matched && {valueStack.push(input.sliceString(start, cursor)); true}"""
   }
 
   case class RunAction(argTree: Tree, rrTree: Tree) extends OpTree {
@@ -637,10 +663,11 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   @tailrec
   private def callName(tree: Tree): Option[String] =
     tree match {
-      case Ident(name)     ⇒ Some(name.decodedName.toString)
-      case Select(_, name) ⇒ Some(name.decodedName.toString)
-      case Apply(fun, _)   ⇒ callName(fun)
-      case _               ⇒ None
+      case Ident(name)       ⇒ Some(name.decodedName.toString)
+      case Select(_, name)   ⇒ Some(name.decodedName.toString)
+      case Apply(fun, _)     ⇒ callName(fun)
+      case TypeApply(fun, _) ⇒ callName(fun)
+      case _                 ⇒ None
     }
 
   def block(a: Tree, b: Tree): Tree =

@@ -4,13 +4,13 @@ import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
 
 val commonSettings = Seq(
-  version := "2.0.1",
+  version := "2.0.2-SNAPSHOT",
   scalaVersion := "2.10.4",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
   startYear := Some(2009),
-  licenses := Seq("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  licenses := Seq("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   javacOptions ++= Seq(
     "-encoding", "UTF-8",
     "-source", "1.6",
@@ -85,7 +85,7 @@ lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
-  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.2.6"))
+  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.1"))
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
@@ -99,7 +99,7 @@ lazy val jsonBenchmark = project
       "org.json4s" %% "json4s-native" % "3.2.10",
       "org.json4s" %% "json4s-jackson" % "3.2.10",
       "io.argonaut" %% "argonaut" % "6.0.4"),
-    bench := (run in Compile).partialInput(" -i 5 -wi 5 -f1 -t1").evaluated)
+    bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val parboiled = project
   .dependsOn(parboiledCore)

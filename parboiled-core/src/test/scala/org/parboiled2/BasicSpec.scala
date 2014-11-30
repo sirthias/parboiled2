@@ -151,11 +151,12 @@ class BasicSpec extends TestParserSpec {
     "called rules" in new TestParser0 {
       def targetRule = {
         def free() = rule { "-free" }
-        rule { foo ~ bar(42) ~ baz("", 1337) ~ free() ~ EOI }
+        rule { foo ~ bar(42) ~ baz("", 1337) ~ typed[String] ~ free() ~ EOI }
       }
       def foo = rule { "foo" }
       def bar(i: Int) = rule { "-bar" ~ i.toString }
       def baz(s: String, i: Int) = rule { "-baz" ~ s ~ i.toString }
+      def typed[S <: String] = rule { MATCH }
       "foo-bar42-baz1337-free" must beMatched
     }
 

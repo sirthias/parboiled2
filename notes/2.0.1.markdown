@@ -1,0 +1,12 @@
+This is mainly a maintenance release bringing these improvements:
+
+- Fixed ScalaReflectionException under Scala 2.11 when scala-reflect is not on the classpath (#81)
+- Increased operator argument limit from 9 to 22 (#85)
+- Added `named` rule modifier and `namedRule` helper for explicit naming of inner rules (#50)
+- Smaller project-internal cleanup
+
+Additionally I have added a new documentation chapter on “Meta-Rules” [here](https://github.com/sirthias/parboiled2#advanced-techniques),
+a topic which appears to become a frequently asked question on the parboiled2 mailing list.
+
+The release announcement on the mailing list can be found
+[here](https://groups.google.com/forum/#!topic/parboiled-user/Ygb_M6XU5P8).

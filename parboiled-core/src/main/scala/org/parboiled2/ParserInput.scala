@@ -86,7 +86,8 @@ object ParserInput {
     def charAt(ix: Int) = (bytes(ix) & 0xFF).toChar
     def length = bytes.length
     def sliceString(start: Int, end: Int) = new String(bytes, start, end - start, `ISO-8859-1`)
-    def sliceCharArray(start: Int, end: Int) = `ISO-8859-1`.decode(ByteBuffer.wrap(bytes)).array()
+    def sliceCharArray(start: Int, end: Int) =
+      `ISO-8859-1`.decode(ByteBuffer.wrap(java.util.Arrays.copyOfRange(bytes, start, end))).array()
   }
 
   class StringBasedParserInput(string: String) extends DefaultParserInput {

@@ -49,12 +49,20 @@ trait RuleDSLBasics {
 
   /**
    * Matches any single one of the given characters.
+   *
+   * Note: This helper has O(n) runtime with n being the length of the given string.
+   * If your string consists only of 7-bit ASCII chars using a pre-allocated
+   * [[CharPredicate]] will be more efficient.
    */
   @compileTimeOnly("Calls to `anyOf` must be inside `rule` macro")
   def anyOf(chars: String): Rule0 = `n/a`
 
   /**
    * Matches any single character except the ones in the given string and except EOI.
+   *
+   * Note: This helper has O(n) runtime with n being the length of the given string.
+   * If your string consists only of 7-bit ASCII chars using a pre-allocated
+   * [[CharPredicate]] will be more efficient.
    */
   @compileTimeOnly("Calls to `noneOf` must be inside `rule` macro")
   def noneOf(chars: String): Rule0 = `n/a`

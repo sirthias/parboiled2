@@ -160,5 +160,21 @@ class ErrorReportingSpec extends TestParserSpec {
           |  foo / suffix / "xyz" / 'x'
           |""")
     }
+
+    "respecting the `errorTraceCollectionLimit`" in new TestParser0 {
+      def targetRule = rule { "a" | "b" | "c" | "d" | "e" | "f" }
+      override def errorTraceCollectionLimit = 3
+
+      "x" must beMismatchedWithErrorMsg(
+        """Invalid input 'x', expected 'a', 'b' or 'c' (line 1, column 1):
+          |x
+          |^
+          |
+          |3 rules mismatched at error location:
+          |  targetRule / "a" / 'a'
+          |  targetRule / "b" / 'b'
+          |  targetRule / "c" / 'c'
+          |""")
+    }
   }
 }

@@ -478,8 +478,8 @@ oneOrMore(a)
 ----
 
 xxx.times(a)
-    Repeats a rule a given number of times. ``xxx`` can be either an ``Int`` value or a range ``(<x> to <y>)`` whereby
-    both ``<x>`` and ``<y>`` are ``Int`` values. If the upper bound is zero the rule is equivalent to ``MATCH``.
+    Repeats a rule a given number of times. ``xxx`` can be either a positive ``Int`` value or a range ``(<x> to <y>)``
+    whereby both ``<x>`` and ``<y>`` are positive ``Int`` values.
     The resulting rule type depends on the type of the inner rule:
 
     =================== =======================
@@ -495,7 +495,7 @@ xxx.times(a)
 
     .. code:: Scala
 
-        (factor :Rule1[Int]) ~ (0 to 5).times('*' ~ factor ~> ((a: Int, b) => a * b))
+        (factor :Rule1[Int]) ~ (1 to 5).times('*' ~ factor ~> ((a: Int, b) => a * b))
 
     The inner rule here has type ``Rule[Int :: HNil, Int :: HNil]``, i.e. it pops one ``Int`` off the stack and pushes
     another one onto it, which means that the number of elements on the value stack as well as their types remain the
@@ -783,8 +783,8 @@ Meta-Rules
 ----------
 
 Sometimes you might find yourself in a situation where you'd like to DRY up your grammar definition by factoring out
-common constructs in several rule definitions in a "meta-rule" that modifies/decorates other rules.
-Essentially you'd like to write something like this (which is *not* directly possible):
+common constructs from several rule definitions in a "meta-rule" that modifies/decorates other rules.
+Essentially you'd like to write something like this (*illegal* code!):
 
 .. code:: Scala
 
@@ -793,12 +793,12 @@ Essentially you'd like to write something like this (which is *not* directly pos
     def cd = rule { "cd" }
     def bracketed(inner: Rule0) = rule { '[' ~ inner ~ ']' }
 
-In this hypothetical example ``bracketed`` is a meta-rule which take another rule as parameter and calls it from within
+In this hypothetical example ``bracketed`` is a meta-rule which takes another rule as parameter and calls it from within
 its own rule definition.
 
-Unfortunately enabling a syntax such as the one shown above it not directly possible with parboiled.
-When looking at how the parser generation in parboiled actually works the reason becomes clear.
-parboiled "expands" the rule definition that is passed as argument to the ``rule`` macro into actual Scala code.
+Unfortunately enabling a syntax such as the one shown above it not directly possible with *parboiled*.
+When looking at how the parser generation in *parboiled* actually works the reason becomes clear.
+*parboiled* "expands" the rule definition that is passed as argument to the ``rule`` macro into actual Scala code.
 The rule methods themselves however remain what they are: instance methods on the parser class.
 And since you cannot simply pass a method name as argument to another method the calls ``bracketed(ab)`` and
 ``bracketed(cd)`` from above don't compile.
@@ -813,8 +813,8 @@ However, there is a work-around which might be good enough for your meta-rule ne
     def bracketed(inner: () ⇒ Rule0) = rule { '[' ~ inner() ~ ']' }
 
 If you model the rules that you want to pass as arguments to other rules as ``Function0`` instances you *can* pass
-them around. Assigning those function instances to ``val``s avoids re-allocation which would otherwise happen during
-*every* execution of the ``expression`` rule and which would come with a potentially significant performance cost.
+them around. Assigning those function instances to ``val`` members avoids re-allocation during *every* execution of
+the ``expression`` rule which would come with a potentially significant performance cost.
 
 
 Common Mistakes
@@ -891,11 +891,11 @@ match whitespace after a string terminal:
         str(s) ~ zeroOrMore(' ')
       }
 
-      def foo = rule { "foo" | "foobar" } // implicitly matches trailing blanks
-      def fooNoWSP = rule { str("foo") | str("foobar") } // doesn't match trailing blanks
+      def foo = rule { "foobar" | "foo" } // implicitly matches trailing blanks
+      def fooNoWSP = rule { str("foobar") | str("foo") } // doesn't match trailing blanks
     }
 
-In this example all usages of a plain string literal in the parser rules will implicitly match trailing space characters.
+In this example all usages of a plain string literals in the parser rules will implicitly match trailing space characters.
 In order to *not* apply the implicit whitespace matching in this case simply say ``str("foo")`` instead of just ``"foo"``.
 
 

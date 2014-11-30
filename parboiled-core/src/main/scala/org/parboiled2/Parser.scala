@@ -119,6 +119,14 @@ abstract class Parser(initialValueStackSize: Int = 16,
   def formatErrorLine(error: ParseError): String =
     (input getLine error.position.line) + '\n' + (" " * (error.position.column - 1) + '^')
 
+  /**
+   * The maximum number of error traces that parser will collect in case of a parse error.
+   * Override with a custom value if required.
+   * Set to zero to completely disable error trace collection (which will cause `formatError`
+   * to no be able to render any "expected" string!).
+   */
+  def errorTraceCollectionLimit: Int = 12
+
   ////////////////////// INTERNAL /////////////////////////
 
   // the char at the current input index
@@ -166,7 +174,8 @@ abstract class Parser(initialValueStackSize: Int = 16,
       valueStack.clear()
       mismatchesAtErrorCursor = 0
       currentErrorRuleStackIx = errorRuleStackIx
-      rule ne null
+      try rule ne null
+      catch { case CutError ⇒ false }
     }
 
     @tailrec
@@ -177,15 +186,18 @@ abstract class Parser(initialValueStackSize: Int = 16,
 
     @tailrec
     def buildParseError(errorRuleIx: Int = 0, traces: VectorBuilder[RuleTrace] = new VectorBuilder): ParseError = {
-      val ruleFrames: List[RuleFrame] =
-        try {
-          runRule(errorRuleIx)
-          Nil // we managed to complete the run w/o exception, i.e. we have collected all frames
-        } catch {
-          case e: Parser.CollectingRuleStackException ⇒ e.ruleFrames
-        }
-      if (ruleFrames.isEmpty) ParseError(errorPosition(), traces.result())
-      else buildParseError(errorRuleIx + 1, traces += RuleTrace(ruleFrames.toVector))
+      def done = ParseError(errorPosition(), traces.result())
+      if (errorRuleIx < errorTraceCollectionLimit) {
+        val ruleFrames: List[RuleFrame] =
+          try {
+            runRule(errorRuleIx)
+            Nil // we managed to complete the run w/o exception, i.e. we have collected all frames
+          } catch {
+            case e: Parser.CollectingRuleStackException ⇒ e.ruleFrames
+          }
+        if (ruleFrames.isEmpty) done
+        else buildParseError(errorRuleIx + 1, traces += RuleTrace(ruleFrames.toVector))
+      } else done
     }
 
     _valueStack = new ValueStack(initialValueStackSize, maxValueStackSize)
@@ -449,6 +461,11 @@ object Parser {
     }
     def ruleFrames: List[RuleFrame] = frames
   }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  object CutError extends RuntimeException with NoStackTrace
 }
 
 object ParserMacros {
