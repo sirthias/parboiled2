@@ -18,6 +18,7 @@ package org.parboiled2
 
 import scala.annotation.unchecked.uncheckedVariance
 import scala.annotation.compileTimeOnly
+import scala.collection.immutable
 import org.parboiled2.support._
 import shapeless.HList
 
@@ -69,6 +70,24 @@ sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
    */
   @compileTimeOnly("Calls to `named` must be inside `rule` macro")
   def named(name: String): this.type = `n/a`
+
+  /**
+   * Postfix shortcut for `optional`.
+   */
+  @compileTimeOnly("Calls to `.?` must be inside `rule` macro")
+  def ?(implicit l: Lifter[Option, I @uncheckedVariance, O @uncheckedVariance]): Rule[l.In, l.OptionalOut] = `n/a`
+
+  /**
+   * Postfix shortcut for `zeroOrMore`.
+   */
+  @compileTimeOnly("Calls to `.*` must be inside `rule` macro")
+  def *(implicit l: Lifter[immutable.Seq, I @uncheckedVariance, O @uncheckedVariance]): Rule[l.In, l.OptionalOut] with Repeated = `n/a`
+
+  /**
+   * Postfix shortcut for `oneOrMore`.
+   */
+  @compileTimeOnly("Calls to `.+` must be inside `rule` macro")
+  def +(implicit l: Lifter[immutable.Seq, I @uncheckedVariance, O @uncheckedVariance]): Rule[l.In, l.StrictOut] with Repeated = `n/a`
 }
 
 /**

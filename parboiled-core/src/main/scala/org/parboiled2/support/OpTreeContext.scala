@@ -69,9 +69,12 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     case q"$a.this.anyOf($s)"                              ⇒ AnyOf(s)
     case q"$a.this.noneOf($s)"                             ⇒ NoneOf(s)
     case q"$a.this.ANY"                                    ⇒ ANY
-    case q"$a.this.optional[$b, $c]($arg)($o)"             ⇒ Optional(OpTree(arg), collector(o))
-    case q"$a.this.zeroOrMore[$b, $c]($arg)($s)"           ⇒ ZeroOrMore(OpTree(arg), collector(s))
-    case q"$a.this.oneOrMore[$b, $c]($arg)($s)"            ⇒ OneOrMore(OpTree(arg), collector(s))
+    case q"$a.this.optional[$b, $c]($arg)($l)"             ⇒ Optional(OpTree(arg), collector(l))
+    case q"$base.?($l)"                                    ⇒ Optional(OpTree(base), collector(l))
+    case q"$a.this.zeroOrMore[$b, $c]($arg)($l)"           ⇒ ZeroOrMore(OpTree(arg), collector(l))
+    case q"$base.*($l)"                                    ⇒ ZeroOrMore(OpTree(base), collector(l))
+    case q"$a.this.oneOrMore[$b, $c]($arg)($l)"            ⇒ OneOrMore(OpTree(arg), collector(l))
+    case q"$base.+($l)"                                    ⇒ OneOrMore(OpTree(base), collector(l))
     case q"$base.times[$a, $b]($r)($s)"                    ⇒ Times(base, OpTree(r), collector(s))
     case q"$a.this.&($arg)"                                ⇒ AndPredicate(OpTree(arg))
     case q"$a.unary_!()"                                   ⇒ NotPredicate(OpTree(a))
@@ -89,13 +92,10 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       Sequence(StringMatch(s), PushAction(v, hl))
     case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
       Sequence(OpTree(r), Action(f, ts))
-    case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base.$fun[$d, $e]($arg)($s)).separatedBy($sep)" ⇒
-      val (op, coll, separator) = (OpTree(arg), collector(s), Separator(OpTree(sep)))
-      fun.decodedName.toString match {
-        case "zeroOrMore" ⇒ ZeroOrMore(op, coll, separator)
-        case "oneOrMore"  ⇒ OneOrMore(op, coll, separator)
-        case "times"      ⇒ Times(base, op, coll, separator)
-        case _            ⇒ c.abort(x.pos, "Unexpected Repeated fun: " + fun)
+    case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base).$f($sep)" ⇒
+      OpTree(base) match {
+        case x: WithSeparator ⇒ x.withSeparator(Separator(OpTree(sep)))
+        case _                ⇒ c.abort(x.pos, "Illegal `separatedBy` base: " + base)
       }
     case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _)) ⇒ RuleCall(call)
   }
@@ -291,7 +291,12 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       true"""
   }
 
-  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends OpTree {
+  sealed abstract class WithSeparator extends OpTree {
+    def withSeparator(sep: Separator): OpTree
+  }
+
+  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
     def ruleFrame = reify(RuleFrame.ZeroOrMore).tree
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
@@ -312,7 +317,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     }
   }
 
-  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends OpTree {
+  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
     def ruleFrame = reify(RuleFrame.OneOrMore).tree
     def renderInner(wrapped: Boolean): Tree = {
       val recurse =
@@ -365,7 +371,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       case _ ⇒ c.abort(base.pos, "Invalid base expression for `.times(...)`: " + base)
     }
 
-  case class Times(op: OpTree, init: Tree, collector: Collector, separator: Separator) extends OpTree {
+  case class Times(op: OpTree, init: Tree, collector: Collector, separator: Separator) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
     val Block(inits, _) = init
     def ruleFrame = q"..$inits; org.parboiled2.RuleFrame.Times(min, max)"
     def renderInner(wrapped: Boolean): Tree = {

@@ -45,8 +45,26 @@ class CombinatorSpec extends TestParserSpec {
       "b" must beMismatched
     }
 
+    "`Rule0.*` modifier" in new TestParser0 {
+      def targetRule = rule { str("a").* ~ EOI }
+      "" must beMatched
+      "a" must beMatched
+      "aa" must beMatched
+      "b" must beMismatched
+    }
+
     "`zeroOrMore(Rule0).separatedBy('|')` modifier" in new TestParser0 {
       def targetRule = rule { zeroOrMore("a").separatedBy('|') ~ EOI }
+      "" must beMatched
+      "a" must beMatched
+      "a|a" must beMatched
+      "a|a|" must beMismatched
+      "aa" must beMismatched
+      "b" must beMismatched
+    }
+
+    "`Rule0.*.sep('|')` modifier" in new TestParser0 {
+      def targetRule = rule { str("a").*.sep('|') ~ EOI }
       "" must beMatched
       "a" must beMatched
       "a|a" must beMatched
@@ -96,6 +114,14 @@ class CombinatorSpec extends TestParserSpec {
       "" must beMismatched
     }
 
+    "`Rule1[T].+` modifier" in new TestParser1[Seq[String]] {
+      def targetRule = rule { capture("a").+ ~ EOI }
+      "a" must beMatchedWith(Seq("a"))
+      "aa" must beMatchedWith(Seq("a", "a"))
+      "b" must beMismatched
+      "" must beMismatched
+    }
+
     "`oneOrMore(Rule[I, O <: I])` modifier" in new TestParser1[String] {
       def targetRule = rule { capture("a") ~ oneOrMore(ch('x') ~> ((_: String) + 'x')) ~ EOI }
       "a" must beMismatched
@@ -120,6 +146,13 @@ class CombinatorSpec extends TestParserSpec {
 
     "`optional(Rule[I, O <: I])` modifier" in new TestParser1[String] {
       def targetRule = rule { capture("a") ~ optional(ch('x') ~> ((_: String) + 'x')) ~ EOI }
+      "a" must beMatchedWith("a")
+      "ax" must beMatchedWith("ax")
+      "axx" must beMismatched
+    }
+
+    "`Rule[I, O <: I].?` modifier" in new TestParser1[String] {
+      def targetRule = rule { capture("a") ~ (ch('x') ~> ((_: String) + 'x')).? ~ EOI }
       "a" must beMatchedWith("a")
       "ax" must beMatchedWith("ax")
       "axx" must beMismatched
