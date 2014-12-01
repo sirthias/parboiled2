@@ -100,10 +100,5 @@ trait RuleDSLCombinators {
   implicit def rule2WithSeparatedBy[I <: HList, O <: HList](r: Rule[I, O] with Repeated): WithSeparatedBy[I, O] = `n/a`
   trait WithSeparatedBy[I <: HList, O <: HList] {
     def separatedBy(separator: Rule0): Rule[I, O] = `n/a`
-
-    /**
-     * Shortcut alias for `separatedBy`.
-     */
-    def sep(separator: Rule0): Rule[I, O] = `n/a`
   }
 }
