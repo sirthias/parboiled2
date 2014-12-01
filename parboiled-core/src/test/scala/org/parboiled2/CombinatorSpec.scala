@@ -64,7 +64,7 @@ class CombinatorSpec extends TestParserSpec {
     }
 
     "`Rule0.*.sep('|')` modifier" in new TestParser0 {
-      def targetRule = rule { str("a").*.sep('|') ~ EOI }
+      def targetRule = rule { str("a").*('|') ~ EOI }
       "" must beMatched
       "a" must beMatched
       "a|a" must beMatched

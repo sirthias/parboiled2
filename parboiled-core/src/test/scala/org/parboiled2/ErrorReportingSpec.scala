@@ -176,5 +176,20 @@ class ErrorReportingSpec extends TestParserSpec {
           |  targetRule / "c" / 'c'
           |""")
     }
+
+    "respecting `atomic` markers" in new TestParser0 {
+      def targetRule = rule { atomic("foo") | atomic("bar") | atomic("baz") }
+
+      "fox" must beMismatchedWithErrorMsg(
+        """Invalid input "fox", expected "foo", "bar" or "baz" (line 1, column 1):
+          |fox
+          |^
+          |
+          |3 rules mismatched at error location:
+          |  targetRule / "foo"
+          |  targetRule / "bar"
+          |  targetRule / "baz"
+          |""")
+    }
   }
 }

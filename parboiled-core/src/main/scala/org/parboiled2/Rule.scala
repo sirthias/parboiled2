@@ -92,10 +92,22 @@ sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
   def *(implicit l: Lifter[immutable.Seq, I @uncheckedVariance, O @uncheckedVariance]): Rule[l.In, l.OptionalOut] with Repeated = `n/a`
 
   /**
+   * Postfix shortcut for `zeroOrMore(...).separatedBy(...)`.
+   */
+  @compileTimeOnly("Calls to `.*` must be inside `rule` macro")
+  def *(separator: Rule0)(implicit l: Lifter[immutable.Seq, I @uncheckedVariance, O @uncheckedVariance]): Rule[l.In, l.OptionalOut] = `n/a`
+
+  /**
    * Postfix shortcut for `oneOrMore`.
    */
   @compileTimeOnly("Calls to `.+` must be inside `rule` macro")
   def +(implicit l: Lifter[immutable.Seq, I @uncheckedVariance, O @uncheckedVariance]): Rule[l.In, l.StrictOut] with Repeated = `n/a`
+
+  /**
+   * Postfix shortcut for `oneOrMore(...).separatedBy(...)`.
+   */
+  @compileTimeOnly("Calls to `.+` must be inside `rule` macro")
+  def +(separator: Rule0)(implicit l: Lifter[immutable.Seq, I @uncheckedVariance, O @uncheckedVariance]): Rule[l.In, l.StrictOut] = `n/a`
 }
 
 /**

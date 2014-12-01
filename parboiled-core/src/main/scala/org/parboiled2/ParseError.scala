@@ -16,9 +16,12 @@
 
 package org.parboiled2
 
+import scala.annotation.tailrec
 import CharUtils.escape
 
-case class ParseError(position: Position, traces: Seq[RuleTrace]) extends RuntimeException {
+case class ParseError(position: Position, charCount: Int, traces: Seq[RuleTrace]) extends RuntimeException {
+  require(charCount > 0, "`charCount` must be > 0")
+
   def formatExpectedAsString: String = {
     val expected = formatExpectedAsSeq
     expected.size match {
@@ -42,6 +45,16 @@ case class ParseError(position: Position, traces: Seq[RuleTrace]) extends Runtim
 }
 
 case class Position(index: Int, line: Int, column: Int)
+
+object Position {
+  def apply(index: Int, input: ParserInput): Position = {
+    @tailrec def rec(ix: Int, line: Int, col: Int): Position =
+      if (ix >= index) Position(index, line, col)
+      else if (ix >= input.length || input.charAt(ix) != '\n') rec(ix + 1, line, col + 1)
+      else rec(ix + 1, line + 1, 1)
+    rec(ix = 0, line = 1, col = 1)
+  }
+}
 
 // outermost (i.e. highest-level) rule first
 case class RuleTrace(frames: Seq[RuleFrame]) {

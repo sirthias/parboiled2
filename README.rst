@@ -937,7 +937,7 @@ defined like this
 
 .. code:: Scala
 
-    case class ParseError(position: Position, traces: Seq[RuleTrace]) extends RuntimeException
+    case class ParseError(position: Position, charCount: Int, traces: Seq[RuleTrace]) extends RuntimeException
 
 In such cases the ``Try`` is completed with a ``scala.util.Failure`` holding the ``ParseError``.
 If other exceptions occur during the parsing run (e.g. because some parser action failed) these will also end up as

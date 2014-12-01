@@ -108,9 +108,13 @@ abstract class Parser(initialValueStackSize: Int = 16,
    * Pretty prints the input line in which the error occurred and underlines the error position in the line
    * with a caret.
    */
-  def formatErrorProblem(error: ParseError): String =
-    if (error.position.index < input.length) s"Invalid input '${CharUtils.escape(input charAt error.position.index)}'"
-    else "Unexpected end of input"
+  def formatErrorProblem(error: ParseError): String = {
+    val ix = error.position.index
+    if (ix < input.length) {
+      if (error.charCount == 1) s"Invalid input '${CharUtils.escape(input charAt ix)}'"
+      else s"""Invalid input "${CharUtils.escape(input.sliceString(ix, ix + error.charCount))}""""
+    } else "Unexpected end of input"
+  }
 
   /**
    * Pretty prints the input line in which the error occurred and underlines the error position in the line
@@ -179,25 +183,24 @@ abstract class Parser(initialValueStackSize: Int = 16,
     }
 
     @tailrec
-    def errorPosition(ix: Int = 0, line: Int = 1, col: Int = 1): Position =
-      if (ix >= maxCursor) Position(maxCursor, line, col)
-      else if (ix >= input.length || input.charAt(ix) != '\n') errorPosition(ix + 1, line, col + 1)
-      else errorPosition(ix + 1, line + 1, 1)
-
-    @tailrec
-    def buildParseError(errorRuleIx: Int = 0, traces: VectorBuilder[RuleTrace] = new VectorBuilder): ParseError = {
-      def done = ParseError(errorPosition(), traces.result())
+    def buildParseError(errorStart: Int = maxCursor, errorEnd: Int = maxCursor, errorRuleIx: Int = 0,
+                        traces: VectorBuilder[RuleTrace] = new VectorBuilder): ParseError = {
+      def done(end: Int) = ParseError(Position(errorStart, input), end - errorStart + 1, traces.result())
       if (errorRuleIx < errorTraceCollectionLimit) {
+        var end = errorEnd
         val ruleFrames: List[RuleFrame] =
           try {
             runRule(errorRuleIx)
             Nil // we managed to complete the run w/o exception, i.e. we have collected all frames
           } catch {
-            case e: Parser.CollectingRuleStackException ⇒ e.ruleFrames
+            case e: Parser.CollectingRuleStackException ⇒
+              // maxCursor can be > errorStart if `__resetMaxCursor` in `atomic` was skipped by the exception
+              end = math.max(end, maxCursor)
+              e.ruleFrames
           }
-        if (ruleFrames.isEmpty) done
-        else buildParseError(errorRuleIx + 1, traces += RuleTrace(ruleFrames.toVector))
-      } else done
+        if (ruleFrames.isEmpty) done(end)
+        else buildParseError(errorStart, end, errorRuleIx + 1, traces += RuleTrace(ruleFrames.toVector))
+      } else done(errorEnd)
     }
 
     _valueStack = new ValueStack(initialValueStackSize, maxValueStackSize)
@@ -237,6 +240,11 @@ abstract class Parser(initialValueStackSize: Int = 16,
     if (_cursor > maxCursor) maxCursor = _cursor
     true
   }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __resetMaxCursor(saved: Int): Unit = maxCursor = saved
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -457,6 +465,10 @@ object Parser {
     private[this] var frames = List.empty[RuleFrame]
     def save(newFrames: RuleFrame*): Nothing = {
       frames = newFrames.foldRight(frames)(_ :: _)
+      throw this
+    }
+    def truncateFrames(): Nothing = {
+      if (frames.nonEmpty) frames = frames.head :: Nil
       throw this
     }
     def ruleFrames: List[RuleFrame] = frames

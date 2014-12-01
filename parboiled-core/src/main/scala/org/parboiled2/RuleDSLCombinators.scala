@@ -61,6 +61,15 @@ trait RuleDSLCombinators {
   def &(r: Rule[_, _]): Rule0 = `n/a`
 
   /**
+   * Marks a rule as "undividable" from an error reporting perspective.
+   * The parser will never report errors *inside* of the marked rule.
+   * Rather, if the rule mismatches, the error will be reported at the
+   * very beginning of the attempted rule match.
+   */
+  @compileTimeOnly("Calls to `atomic` must be inside `rule` macro")
+  def atomic[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = `n/a`
+
+  /**
    * Allows creation of a sub parser and running of one of its rules as part of the current parsing process.
    * The subparser will start parsing at the current input position and the outer parser (this parser)
    * will continue where the sub-parser stopped.
@@ -91,10 +100,5 @@ trait RuleDSLCombinators {
   implicit def rule2WithSeparatedBy[I <: HList, O <: HList](r: Rule[I, O] with Repeated): WithSeparatedBy[I, O] = `n/a`
   trait WithSeparatedBy[I <: HList, O <: HList] {
     def separatedBy(separator: Rule0): Rule[I, O] = `n/a`
-
-    /**
-     * Shortcut alias for `separatedBy`.
-     */
-    def sep(separator: Rule0): Rule[I, O] = `n/a`
   }
 }

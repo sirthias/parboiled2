@@ -74,11 +74,14 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     case q"$base.?($l)"                                    ⇒ Optional(OpTree(base), collector(l))
     case q"$a.this.zeroOrMore[$b, $c]($arg)($l)"           ⇒ ZeroOrMore(OpTree(arg), collector(l))
     case q"$base.*($l)"                                    ⇒ ZeroOrMore(OpTree(base), collector(l))
+    case q"$base.*($sep)($l)"                              ⇒ ZeroOrMore(OpTree(base), collector(l), Separator(OpTree(sep)))
     case q"$a.this.oneOrMore[$b, $c]($arg)($l)"            ⇒ OneOrMore(OpTree(arg), collector(l))
     case q"$base.+($l)"                                    ⇒ OneOrMore(OpTree(base), collector(l))
+    case q"$base.+($sep)($l)"                              ⇒ OneOrMore(OpTree(base), collector(l), Separator(OpTree(sep)))
     case q"$base.times[$a, $b]($r)($s)"                    ⇒ Times(base, OpTree(r), collector(s))
     case q"$a.this.&($arg)"                                ⇒ AndPredicate(OpTree(arg))
     case q"$a.unary_!()"                                   ⇒ NotPredicate(OpTree(a))
+    case q"$a.this.atomic[$b, $c]($arg)"                   ⇒ Atomic(OpTree(arg))
     case q"$a.this.test($flag)"                            ⇒ SemanticPredicate(flag)
     case q"$a.this.capture[$b, $c]($arg)($d)"              ⇒ Capture(OpTree(arg))
     case q"$a.this.run[$b]($arg)($c.fromAux[$d, $e]($rr))" ⇒ RunAction(arg, rr)
@@ -93,7 +96,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       Sequence(StringMatch(s), PushAction(v, hl))
     case q"$a.this.rule2ActionOperator[$b1, $b2]($r)($o).~>.apply[..$e]($f)($g, support.this.FCapture.apply[$ts])" ⇒
       Sequence(OpTree(r), Action(f, ts))
-    case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base).$f($sep)" ⇒
+    case x @ q"$a.this.rule2WithSeparatedBy[$b1, $b2]($base).separatedBy($sep)" ⇒
       OpTree(base) match {
         case x: WithSeparator ⇒ x.withSeparator(Separator(OpTree(sep)))
         case _                ⇒ c.abort(x.pos, "Illegal `separatedBy` base: " + base)
@@ -443,6 +446,22 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         }"""
       else unwrappedTree
     }
+  }
+
+  case class Atomic(op: OpTree) extends OpTree {
+    def ruleFrame = throw new IllegalStateException
+    def renderInner(wrapped: Boolean) = throw new IllegalStateException
+    override def render(wrapped: Boolean, ruleName: Tree): Tree =
+      if (wrapped) q"""
+        val start = cursor
+        try {
+          val matched = ${op.render(wrapped, ruleName)}
+          if (!matched) __resetMaxCursor(start)
+          matched
+        } catch {
+          case e: org.parboiled2.Parser.CollectingRuleStackException ⇒ e.truncateFrames()
+        }"""
+      else op.render(wrapped, ruleName)
   }
 
   case class SemanticPredicate(flagTree: Tree) extends OpTree {
