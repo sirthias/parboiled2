@@ -75,7 +75,7 @@ val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.13"   % "
 /////////////////////// PROJECTS /////////////////////////
 
 lazy val root = project.in(file("."))
-  .aggregate(examples, parboiled, parboiledCore)
+  .aggregate(examples, jsonBenchmark, scalaParser, parboiled, parboiledCore)
   .settings(noPublishingSettings: _*)
 
 lazy val examples = project
@@ -97,6 +97,12 @@ lazy val jsonBenchmark = project
       "org.json4s" %% "json4s-jackson" % "3.2.10",
       "io.argonaut" %% "argonaut" % "6.0.4"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
+
+lazy val scalaParser = project
+  .dependsOn(parboiled)
+  .settings(commonSettings: _*)
+  .settings(noPublishingSettings: _*)
+  .settings(libraryDependencies ++= Seq(shapeless, specs2Core))
 
 lazy val parboiled = project
   .dependsOn(parboiledCore)
