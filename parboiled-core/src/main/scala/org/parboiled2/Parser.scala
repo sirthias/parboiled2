@@ -185,7 +185,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
     @tailrec
     def buildParseError(errorStart: Int = maxCursor, errorEnd: Int = maxCursor, errorRuleIx: Int = 0,
                         traces: VectorBuilder[RuleTrace] = new VectorBuilder): ParseError = {
-      def done(end: Int) = ParseError(Position(errorStart, input), end - errorStart + 1, traces.result())
+      def done(end: Int) = ParseError(Position(errorStart, input), end - errorStart + 1, traces.result().distinct)
       if (errorRuleIx < errorTraceCollectionLimit) {
         var end = errorEnd
         val ruleFrames: List[RuleFrame] =
