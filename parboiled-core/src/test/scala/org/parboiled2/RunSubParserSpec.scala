@@ -43,7 +43,7 @@ class RunSubParserSpec extends TestParserSpec {
           |     ^
           |
           |1 rule mismatched at error location:
-          |  InputLine / oneOrMore / runSubParser / intNumber / capture / oneOrMore / Digit
+          |  /InputLine/ +,-5 / runSubParser,0 /intNumber/ capture / +,0 / Digit:<CharPredicate>
           |""")
     }
   }

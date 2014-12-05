@@ -33,8 +33,8 @@ class CutSpec extends TestParserSpec {
           | ^
           |
           |2 rules mismatched at error location:
-          |  targetRule / foo / "abc" / 'b'
-          |  targetRule / foo / cut / "de" / 'd'
+          |  /targetRule/ /foo/ | / "abc",1 / 'b'
+          |  /targetRule/ /foo/ | / cut,-1 / "de",0 / 'd'
           |""")
     }
   }

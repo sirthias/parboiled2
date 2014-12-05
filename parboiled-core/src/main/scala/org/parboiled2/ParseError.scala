@@ -17,33 +17,27 @@
 package org.parboiled2
 
 import scala.annotation.tailrec
-import CharUtils.escape
+import scala.collection.immutable
 
-case class ParseError(position: Position, charCount: Int, traces: Seq[RuleTrace]) extends RuntimeException {
-  require(charCount > 0, "`charCount` must be > 0")
+case class ParseError(position: Position,
+                      principalPosition: Position,
+                      traces: immutable.Seq[RuleTrace]) extends RuntimeException {
+  require(principalPosition.index >= position.index, "principalPosition must be > position")
+  def format(parser: Parser): String = format(parser.input)
+  def format(parser: Parser, formatter: ErrorFormatter): String = format(parser.input, formatter)
+  def format(input: ParserInput): String = format(input, new ErrorFormatter())
+  def format(input: ParserInput, formatter: ErrorFormatter): String = formatter.format(this, input)
 
-  def formatExpectedAsString: String = {
-    val expected = formatExpectedAsSeq
-    expected.size match {
-      case 0 ⇒ "??"
-      case 1 ⇒ expected.head
-      case _ ⇒ expected.init.mkString(", ") + " or " + expected.last
-    }
-  }
-  def formatExpectedAsSeq: Seq[String] =
-    traces.map { trace ⇒
-      if (trace.frames.nonEmpty) {
-        val exp = trace.frames.last.format
-        val nonEmptyExp = if (exp.isEmpty) "?" else exp
-        if (trace.isNegated) "!" + nonEmptyExp else nonEmptyExp
-      } else "???"
-    }.distinct
-
-  def formatTraces: String =
-    traces.map(_.format).mkString(traces.size + " rule" + (if (traces.size != 1) "s" else "") +
-      " mismatched at error location:\n  ", "\n  ", "\n")
+  override def toString = s"ParseError($position, $principalPosition, <${traces.size} traces>)"
 }
 
+/**
+ * Defines a position in an [[ParserInput]].
+ *
+ * @param index index into the input buffer (0-based)
+ * @param line the text line the error occurred in (1-based)
+ * @param column the text column the error occurred in (1-based)
+ */
 case class Position(index: Int, line: Int, column: Int)
 
 object Position {
@@ -56,85 +50,115 @@ object Position {
   }
 }
 
-// outermost (i.e. highest-level) rule first
-case class RuleTrace(frames: Seq[RuleFrame]) {
-  def format: String =
-    frames.size match {
-      case 0 ⇒ "<empty>"
-      case 1 ⇒ frames.head.format
-      case _ ⇒
-        // we don't want to show intermediate Sequence and RuleCall frames in the trace
-        def show(frame: RuleFrame) = !(frame.isInstanceOf[RuleFrame.Sequence] || frame.isInstanceOf[RuleFrame.RuleCall])
-        frames.init.filter(show).map(_.format).mkString("", " / ", " / " + frames.last.format)
-    }
+sealed abstract class RuleTrace {
+  import RuleTrace._
 
-  def isNegated: Boolean = (frames.count(_.anon == RuleFrame.NotPredicate) & 0x01) > 0
-}
+  /**
+   * The number of characters before the principal error location that the rule corresponding
+   * to this trace head started matching.
+   */
+  def offset: Int
 
-sealed abstract class RuleFrame {
-  import RuleFrame._
-  def anon: RuleFrame.Anonymous
-
-  def format: String =
-    this match {
-      case Named(name, _)              ⇒ name
-      case Sequence(_)                 ⇒ "~"
-      case FirstOf(_)                  ⇒ "|"
-      case CharMatch(c)                ⇒ "'" + escape(c) + '\''
-      case StringMatch(s)              ⇒ '"' + escape(s) + '"'
-      case MapMatch(m)                 ⇒ m.toString()
-      case IgnoreCaseChar(c)           ⇒ "'" + escape(c) + '\''
-      case IgnoreCaseString(s)         ⇒ '"' + escape(s) + '"'
-      case CharPredicateMatch(_, name) ⇒ if (name.nonEmpty) name else "<anon predicate>"
-      case RuleCall(callee)            ⇒ '(' + callee + ')'
-      case AnyOf(s)                    ⇒ '[' + escape(s) + ']'
-      case NoneOf(s)                   ⇒ s"[^${escape(s)}]"
-      case Times(_, _)                 ⇒ "times"
-      case CharRange(from, to)         ⇒ s"'${escape(from)}'-'${escape(to)}'"
-      case AndPredicate                ⇒ "&"
-      case NotPredicate                ⇒ "!"
-      case SemanticPredicate           ⇒ "test"
-      case ANY                         ⇒ "ANY"
-      case _ ⇒
-        val s = toString
-        s.updated(0, s.charAt(0).toLower)
-    }
-}
-
-object RuleFrame {
-  def apply(frame: Anonymous, name: String): RuleFrame =
-    if (name.isEmpty) frame else Named(name, frame)
-
-  case class Named(name: String, anon: Anonymous) extends RuleFrame
-
-  sealed abstract class Anonymous extends RuleFrame {
-    def anon: Anonymous = this
+  /**
+   * Folds the given function across this trace.
+   */
+  def fold[T](zero: T)(f: (T, RuleTrace) ⇒ T): T = {
+    @tailrec def rec(current: RuleTrace, acc: T): T =
+      current match {
+        case x: NonTerminal ⇒ rec(x.tail, f(acc, x))
+        case x: Terminal    ⇒ f(acc, x)
+      }
+    rec(this, zero)
   }
-  case class Sequence(subs: Int) extends Anonymous
-  case class FirstOf(subs: Int) extends Anonymous
-  case class CharMatch(char: Char) extends Anonymous
-  case class StringMatch(string: String) extends Anonymous
-  case class MapMatch(map: Map[String, Any]) extends Anonymous
-  case class IgnoreCaseChar(char: Char) extends Anonymous
-  case class IgnoreCaseString(string: String) extends Anonymous
-  case class CharPredicateMatch(predicate: CharPredicate, name: String) extends Anonymous
-  case class AnyOf(string: String) extends Anonymous
-  case class NoneOf(string: String) extends Anonymous
-  case class Times(min: Int, max: Int) extends Anonymous
-  case class RuleCall(callee: String) extends Anonymous
-  case class CharRange(from: Char, to: Char) extends Anonymous
-  case object ANY extends Anonymous
-  case object Optional extends Anonymous
-  case object ZeroOrMore extends Anonymous
-  case object OneOrMore extends Anonymous
-  case object AndPredicate extends Anonymous
-  case object NotPredicate extends Anonymous
-  case object SemanticPredicate extends Anonymous
-  case object Capture extends Anonymous
-  case object Run extends Anonymous
-  case object Push extends Anonymous
-  case object Drop extends Anonymous
-  case object Action extends Anonymous
-  case object RunSubParser extends Anonymous
-  case object Cut extends Anonymous
+
+  /**
+   * Applies the given function to all frames of the trace and returns
+   * the first non-empty result or None.
+   */
+  def findMap[T](f: RuleTrace ⇒ Option[T]): Option[T] = {
+    @tailrec def rec(current: RuleTrace): Option[T] =
+      current match {
+        case x: NonTerminal ⇒
+          val r = f(x); if (r.isDefined) r else rec(x.tail)
+        case x: Terminal ⇒ f(x)
+      }
+    rec(this)
+  }
+
+  /**
+   * Applies the given partial function to all frames of the trace and returns
+   * the first defined result or None.
+   */
+  def collect[T](pf: PartialFunction[RuleTrace, T]): Option[T] = findMap(pf.lift)
+
+  /**
+   * Returns the tail of the first [[RuleTrace.Atomic]] element or the [[RuleTrace.Terminal]].
+   * If this is wrapped in one or more [[RuleTrace.Named]] the outermost of these is returned instead.
+   */
+  def firstAtomicChildOrTerminal: RuleTrace = {
+    @tailrec def rec(current: RuleTrace, named: Option[RuleTrace]): RuleTrace =
+      current match {
+        case x: Named       ⇒ rec(x.tail, named orElse Some(x))
+        case x: Terminal    ⇒ named getOrElse x
+        case x: Atomic      ⇒ named getOrElse x.tail
+        case x: NonTerminal ⇒ rec(x.tail, None)
+      }
+    rec(this, None)
+  }
+
+  /**
+   * Wraps this trace with a [[RuleTrace.Named]] wrapper if the given name is non-empty.
+   */
+  def named(name: String): RuleTrace =
+    if (name.isEmpty) this else Named(name, this)
+}
+
+object RuleTrace {
+
+  sealed trait NonTerminal extends RuleTrace {
+    def tail: RuleTrace
+  }
+  case class Sequence(subs: Int, offset: Int, tail: RuleTrace) extends NonTerminal
+  case class Cut(offset: Int, tail: RuleTrace) extends NonTerminal
+  case class StringMatch(string: String, offset: Int, tail: CharMatch) extends NonTerminal
+  case class IgnoreCaseString(string: String, offset: Int, tail: IgnoreCaseChar) extends NonTerminal
+  case class MapMatch(map: Map[String, Any], offset: Int, tail: StringMatch) extends NonTerminal
+  case class ZeroOrMore(offset: Int, tail: RuleTrace) extends NonTerminal
+  case class OneOrMore(offset: Int, tail: RuleTrace) extends NonTerminal
+  case class Times(min: Int, max: Int, offset: Int, tail: RuleTrace) extends NonTerminal
+  case class Run(offset: Int, tail: RuleTrace) extends NonTerminal
+  case class Action(offset: Int, tail: RuleTrace) extends NonTerminal
+  case class RunSubParser(offset: Int, tail: RuleTrace) extends NonTerminal
+
+  sealed abstract class DirectNonTerminal extends NonTerminal {
+    def offset = tail.offset
+  }
+  case class Named(name: String, tail: RuleTrace) extends DirectNonTerminal
+  case class FirstOf(subs: Int, tail: RuleTrace) extends DirectNonTerminal
+  case class Optional(tail: RuleTrace) extends DirectNonTerminal
+  case class Capture(tail: RuleTrace) extends DirectNonTerminal
+  case class AndPredicate(tail: RuleTrace) extends DirectNonTerminal
+  case class Atomic(tail: RuleTrace) extends DirectNonTerminal
+  case class RuleCall(tail: RuleTrace) extends DirectNonTerminal
+
+  sealed abstract class Terminal extends RuleTrace {
+    def offset = 0
+  }
+  case class CharMatch(char: Char) extends Terminal
+  case class IgnoreCaseChar(char: Char) extends Terminal
+  case class CharPredicateMatch(predicate: CharPredicate) extends Terminal
+  case class AnyOf(string: String) extends Terminal
+  case class NoneOf(string: String) extends Terminal
+  case class CharRange(from: Char, to: Char) extends Terminal
+  case class NotPredicate(base: NotPredicate.Base) extends Terminal
+  case object ANY extends Terminal
+  case object SemanticPredicate extends Terminal
+
+  object NotPredicate {
+    sealed trait Base
+    case class Terminal(trace: RuleTrace) extends Base // `trace` can be a `Terminal` or `Named`
+    case class RuleCall(target: String) extends Base
+    case class Named(name: String) extends Base
+    case object Anonymous extends Base
+  }
 }

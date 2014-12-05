@@ -63,8 +63,8 @@ class CalculatorSpec extends TestParserSpec {
           |^
           |
           |2 rules mismatched at error location:
-          |  InputLine / Expression / Term / Factor / Number / capture / Digits / Digit
-          |  InputLine / Expression / Term / Factor / Parens / '('
+          |  /InputLine/ /Expression/ /Term/ /Factor/ | /Number/ capture /Digits/ +,0 / Digit:<CharPredicate>
+          |  /InputLine/ /Expression/ /Term/ /Factor/ | /Parens/ '('
           |""")
 
       "()" must beMismatchedWithErrorMsg(
@@ -73,22 +73,22 @@ class CalculatorSpec extends TestParserSpec {
           | ^
           |
           |2 rules mismatched at error location:
-          |  InputLine / Expression / Term / Factor / Parens / Expression / Term / Factor / Number / capture / Digits / Digit
-          |  InputLine / Expression / Term / Factor / Parens / Expression / Term / Factor / Parens / '('
+          |  ...Expression/ /Term/ /Factor/ | /Parens/ /Expression/ /Term/ /Factor/ | /Number/ capture /Digits/ +,0 / Digit:<CharPredicate>
+          |  /InputLine/ /Expression/ /Term/ /Factor/ | /Parens/ /Expression/ /Term/ /Factor/ | /Parens/ '('
           |""")
 
       "1+2)" must beMismatchedWithErrorMsg(
-        """Invalid input ')', expected Digit, '*', '/', '+', '-' or 'EOI' (line 1, column 4):
+        """Invalid input ')', expected Digit, '*', '/', '+', '-' or EOI (line 1, column 4):
           |1+2)
           |   ^
           |
           |6 rules mismatched at error location:
-          |  InputLine / Expression / zeroOrMore / | / Term / Factor / Number / capture / Digits / Digit
-          |  InputLine / Expression / zeroOrMore / | / Term / zeroOrMore / | / '*'
-          |  InputLine / Expression / zeroOrMore / | / Term / zeroOrMore / | / '/'
-          |  InputLine / Expression / zeroOrMore / | / '+'
-          |  InputLine / Expression / zeroOrMore / | / '-'
-          |  InputLine / 'EOI'
+          |  /InputLine/ /Expression/ *,-2 / | /Term/ /Factor/ | /Number/ capture /Digits/ +,-1 / Digit:<CharPredicate>
+          |  /InputLine/ /Expression/ *,-2 / | /Term/ *,0 / | / '*'
+          |  /InputLine/ /Expression/ *,-2 / | /Term/ *,0 / | / '/'
+          |  /InputLine/ /Expression/ *,-2 / | / '+'
+          |  /InputLine/ /Expression/ *,-2 / | / '-'
+          |  /InputLine/ EOI:'EOI'
           |""")
 
       "(1+)2" must beMismatchedWithErrorMsg(
@@ -97,8 +97,8 @@ class CalculatorSpec extends TestParserSpec {
           |   ^
           |
           |2 rules mismatched at error location:
-          |  InputLine / Expression / Term / Factor / Parens / Expression / zeroOrMore / | / Term / Factor / Number / capture / Digits / Digit
-          |  InputLine / Expression / Term / Factor / Parens / Expression / zeroOrMore / | / Term / Factor / Parens / '('
+          |  ...n/ /Term/ /Factor/ | /Parens/ /Expression/ *,-1 / | /Term/ /Factor/ | /Number/ capture /Digits/ +,0 / Digit:<CharPredicate>
+          |  /InputLine/ /Expression/ /Term/ /Factor/ | /Parens/ /Expression/ *,-1 / | /Term/ /Factor/ | /Parens/ '('
           |""")
     }
   }

@@ -28,15 +28,17 @@ abstract class TestParserSpec extends Specification with NoToHtmlLinkFragments w
   type TestParserN[L <: HList] = TestParser[L, L]
 
   abstract class TestParser[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) extends Parser with Scope {
+    var input: ParserInput = _
+    def errorFormatter: ErrorFormatter = new ErrorFormatter(showTraces = true)
+
+    def targetRule: RuleN[L]
+
     def beMatched = beTrue ^^ (parse(_: String).isRight)
     def beMatchedWith(r: Out) = parse(_: String) === Right(r)
     def beMismatched = beTrue ^^ (parse(_: String).isLeft)
     def beMismatchedWithError(pe: ParseError) = parse(_: String).left.toOption.get === pe
     def beMismatchedWithErrorMsg(msg: String) =
-      parse(_: String).left.toOption.map(formatError(_, showTraces = true)).get === msg.stripMargin
-
-    var input: ParserInput = _
-    def targetRule: RuleN[L]
+      parse(_: String).left.toOption.map(formatError(_, errorFormatter)).get === msg.stripMargin
 
     def parse(input: String): Either[ParseError, Out] = {
       this.input = input

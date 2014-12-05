@@ -34,7 +34,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |^
           |
           |1 rule mismatched at error location:
-          |  targetRule / 'a'
+          |  /targetRule/ 'a'
           |""")
 
       "ax" must beMismatchedWithErrorMsg(
@@ -43,7 +43,7 @@ class ErrorReportingSpec extends TestParserSpec {
           | ^
           |
           |1 rule mismatched at error location:
-          |  targetRule / oneOrMore / 'b'
+          |  /targetRule/ +,0 / 'b'
           |""")
 
       "abx" must beMismatchedWithErrorMsg(
@@ -52,8 +52,8 @@ class ErrorReportingSpec extends TestParserSpec {
           |  ^
           |
           |2 rules mismatched at error location:
-          |  targetRule / oneOrMore / 'b'
-          |  targetRule / [cde]
+          |  /targetRule/ +,-1 / 'b'
+          |  /targetRule/ [cde]
           |""")
 
       "abcx" must beMismatchedWithErrorMsg(
@@ -62,10 +62,10 @@ class ErrorReportingSpec extends TestParserSpec {
           |   ^
           |
           |4 rules mismatched at error location:
-          |  targetRule / | / "fgh" / 'f'
-          |  targetRule / | / Digit
-          |  targetRule / | / hex
-          |  targetRule / | / UpperAlpha
+          |  /targetRule/ | / "fgh",0 / 'f'
+          |  /targetRule/ | / Digit:<CharPredicate>
+          |  /targetRule/ | / hex:<CharPredicate>
+          |  /targetRule/ | / UpperAlpha:<CharPredicate>
           |""")
 
       "abcfghe" must beMismatchedWithErrorMsg(
@@ -74,7 +74,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |      ^
           |
           |1 rule mismatched at error location:
-          |  targetRule / [^def]
+          |  /targetRule/ [^def]
           |""")
     }
 
@@ -88,23 +88,24 @@ class ErrorReportingSpec extends TestParserSpec {
           |^
           |
           |1 rule mismatched at error location:
-          |  targetRule / ! / "a"
+          |  /targetRule/ !"a"
           |""")
 
       "xbcd" must beMismatchedWithErrorMsg(
-        """Invalid input 'b', expected !(foo) (line 1, column 2):
+        """Invalid input 'b', expected !foo (line 1, column 2):
           |xbcd
           | ^
           |
           |1 rule mismatched at error location:
-          |  targetRule / ! / (foo)
+          |  /targetRule/ !foo
           |""")
     }
 
     "for rules with backtick identifiers" in new TestParser0 {
-      val `this:that` = CharPredicate.Alpha
-      def targetRule = rule { `foo-bar` ~ `this:that` ~ EOI }
-      def `foo-bar` = rule { 'x' }
+      val `this*that` = CharPredicate.Alpha
+      def targetRule = rule { `foo-bar` ~ `this*that` ~ `#hash#` ~ EOI }
+      def `foo-bar` = 'x'
+      def `#hash#` = rule { '#' }
 
       "a" must beMismatchedWithErrorMsg(
         """Invalid input 'a', expected foo-bar (line 1, column 1):
@@ -112,16 +113,25 @@ class ErrorReportingSpec extends TestParserSpec {
           |^
           |
           |1 rule mismatched at error location:
-          |  targetRule / foo-bar
+          |  /targetRule/ foo-bar:'x'
           |""")
 
       "x" must beMismatchedWithErrorMsg(
-        """Unexpected end of input, expected this:that (line 1, column 2):
+        """Unexpected end of input, expected this*that (line 1, column 2):
           |x
           | ^
           |
           |1 rule mismatched at error location:
-          |  targetRule / this:that
+          |  /targetRule/ this*that:<CharPredicate>
+          |""")
+
+      "xyz" must beMismatchedWithErrorMsg(
+        """Invalid input 'z', expected '#' (line 1, column 3):
+          |xyz
+          |  ^
+          |
+          |1 rule mismatched at error location:
+          |  /targetRule/ /#hash#/ '#'
           |""")
     }
 
@@ -134,7 +144,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |  ^
           |
           |1 rule mismatched at error location:
-          |  targetRule / "abc" / 'c'
+          |  /targetRule/ "abc",2 / 'c'
           |""")
     }
 
@@ -147,7 +157,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |  ^
           |
           |1 rule mismatched at error location:
-          |  foo / prefix / 'c'
+          |  /foo/ prefix:"abc",2 / 'c'
           |""")
 
       "abc-" must beMismatchedWithErrorMsg(
@@ -156,13 +166,13 @@ class ErrorReportingSpec extends TestParserSpec {
           |   ^
           |
           |2 rules mismatched at error location:
-          |  foo / suffix / "def" / 'd'
-          |  foo / suffix / "xyz" / 'x'
+          |  /foo/ suffix:| / "def",0 / 'd'
+          |  /foo/ suffix:| / "xyz",0 / 'x'
           |""")
     }
 
     "respecting the `errorTraceCollectionLimit`" in new TestParser0 {
-      def targetRule = rule { "a" | "b" | "c" | "d" | "e" | "f" }
+      def targetRule = rule { "a" | 'b' | "c" | "d" | "e" | "f" }
       override def errorTraceCollectionLimit = 3
 
       "x" must beMismatchedWithErrorMsg(
@@ -171,24 +181,43 @@ class ErrorReportingSpec extends TestParserSpec {
           |^
           |
           |3 rules mismatched at error location:
-          |  targetRule / "a" / 'a'
-          |  targetRule / "b" / 'b'
-          |  targetRule / "c" / 'c'
+          |  /targetRule/ | / "a",0 / 'a'
+          |  /targetRule/ | / 'b'
+          |  /targetRule/ | / "c",0 / 'c'
           |""")
     }
 
     "respecting `atomic` markers" in new TestParser0 {
-      def targetRule = rule { atomic("foo") | atomic("bar") | atomic("baz") }
+      def targetRule = rule { ch('-').* ~ (atomic("foo") | atomic("bar") | atomic("baz")) }
 
-      "fox" must beMismatchedWithErrorMsg(
-        """Invalid input "fox", expected "foo", "bar" or "baz" (line 1, column 1):
-          |fox
-          |^
+      "---fox" must beMismatchedWithErrorMsg(
+        """Invalid input "fox", expected '-', "foo", "bar" or "baz" (line 1, column 4):
+          |---fox
+          |   ^
           |
-          |3 rules mismatched at error location:
-          |  targetRule / "foo"
-          |  targetRule / "bar"
-          |  targetRule / "baz"
+          |4 rules mismatched at error location:
+          |  /targetRule/ *,-3 / '-'
+          |  /targetRule/ | / atomic,2 / "foo",2 / 'o'
+          |  /targetRule/ | / atomic,0 / "bar",0 / 'b'
+          |  /targetRule/ | / atomic,0 / "baz",0 / 'b'
+          |""")
+    }
+
+    "expanding tabs as configured" in new TestParser0 {
+      def targetRule = rule { ch('\t').* ~ (atomic("foo") | atomic("bar") | atomic("baz")) }
+
+      override def errorFormatter = new ErrorFormatter(expandTabs = 4, showTraces = true)
+
+      "\t\t\tfox\t\tbar" must beMismatchedWithErrorMsg(
+        """Invalid input "fox", expected '\t', "foo", "bar" or "baz" (line 1, column 4):
+          |            fox     bar
+          |            ^
+          |
+          |4 rules mismatched at error location:
+          |  /targetRule/ *,-3 / '\t'
+          |  /targetRule/ | / atomic,2 / "foo",2 / 'o'
+          |  /targetRule/ | / atomic,0 / "bar",0 / 'b'
+          |  /targetRule/ | / atomic,0 / "baz",0 / 'b'
           |""")
     }
   }
