@@ -73,13 +73,28 @@ class ErrorFormatter(showExpected: Boolean = true,
    * Formats a description of the error's cause into the given StringBuilder.
    */
   def formatProblem(sb: JStringBuilder, error: ParseError, input: ParserInput): JStringBuilder = {
-    import error._
-    val ix = position.index
+    val ix = error.position.index
     if (ix < input.length) {
-      val chars = principalPosition.index - position.index + 1
+      val chars = mismatchLength(error)
       if (chars == 1) sb.append("Invalid input '").append(CharUtils.escape(input charAt ix)).append(''')
       else sb.append("Invalid input \"").append(CharUtils.escape(input.sliceString(ix, ix + chars))).append('"')
     } else sb.append("Unexpected end of input")
+  }
+
+  /**
+   * Determines the number of characters to be shown as "mismatched" for the given [[ParseError]].
+   */
+  def mismatchLength(error: ParseError): Int = {
+    def mmLen(trace: RuleTrace): Int =
+      trace match {
+        case RuleTrace.NotPredicate(_, x) ⇒ x
+        case RuleTrace.Atomic(tail)       ⇒ mmLen(tail.terminal) + tail.offset
+        case _                            ⇒ 1
+      }
+
+    error.traces.foldLeft(error.principalPosition.index - error.position.index + 1) { (len, trace) ⇒
+      math.max(mmLen(trace.firstAtomicChildOrTerminal), len)
+    }
   }
 
   /**
@@ -214,39 +229,39 @@ class ErrorFormatter(showExpected: Boolean = true,
     import CharUtils.escape
     val base = trace match {
       // non-terminals
-      case x: Named                               ⇒ x.name
-      case x: Sequence                            ⇒ "~"
-      case x: FirstOf                             ⇒ "|"
-      case x: StringMatch                         ⇒ '"' + escape(x.string) + '"'
-      case x: IgnoreCaseString                    ⇒ '"' + escape(x.string) + '"'
-      case x: MapMatch                            ⇒ x.map.toString()
-      case x: Optional                            ⇒ "?"
-      case x: ZeroOrMore                          ⇒ "*"
-      case x: OneOrMore                           ⇒ "+"
-      case x: Times                               ⇒ "times"
-      case x: Run                                 ⇒ "<run>"
-      case x: Action                              ⇒ "<action>"
-      case x: RunSubParser                        ⇒ "runSubParser"
-      case x: Capture                             ⇒ "capture"
-      case x: Cut                                 ⇒ "cut"
-      case x: AndPredicate                        ⇒ "&"
-      case x: Atomic                              ⇒ "atomic"
-      case x: Quiet                               ⇒ "quiet"
-      case x: RuleCall                            ⇒ "call"
+      case x: Named                                  ⇒ x.name
+      case x: Sequence                               ⇒ "~"
+      case x: FirstOf                                ⇒ "|"
+      case x: StringMatch                            ⇒ '"' + escape(x.string) + '"'
+      case x: IgnoreCaseString                       ⇒ '"' + escape(x.string) + '"'
+      case x: MapMatch                               ⇒ x.map.toString()
+      case x: Optional                               ⇒ "?"
+      case x: ZeroOrMore                             ⇒ "*"
+      case x: OneOrMore                              ⇒ "+"
+      case x: Times                                  ⇒ "times"
+      case x: Run                                    ⇒ "<run>"
+      case x: Action                                 ⇒ "<action>"
+      case x: RunSubParser                           ⇒ "runSubParser"
+      case x: Capture                                ⇒ "capture"
+      case x: Cut                                    ⇒ "cut"
+      case x: AndPredicate                           ⇒ "&"
+      case x: Atomic                                 ⇒ "atomic"
+      case x: Quiet                                  ⇒ "quiet"
+      case x: RuleCall                               ⇒ "call"
 
       // terminals
-      case CharMatch(c)                           ⇒ "'" + escape(c) + '\''
-      case IgnoreCaseChar(c)                      ⇒ "'" + escape(c) + '\''
-      case CharPredicateMatch(_)                  ⇒ "<CharPredicate>"
-      case AnyOf(s)                               ⇒ '[' + escape(s) + ']'
-      case NoneOf(s)                              ⇒ s"[^${escape(s)}]"
-      case CharRange(from, to)                    ⇒ s"'${escape(from)}'-'${escape(to)}'"
-      case NotPredicate(NotPredicate.Terminal(t)) ⇒ "!" + formatTraceHead(t)
-      case NotPredicate(NotPredicate.RuleCall(t)) ⇒ "!" + t
-      case NotPredicate(NotPredicate.Named(n))    ⇒ "!" + n
-      case NotPredicate(NotPredicate.Anonymous)   ⇒ "!<anon>"
-      case ANY                                    ⇒ "ANY"
-      case SemanticPredicate                      ⇒ "test"
+      case CharMatch(c)                              ⇒ "'" + escape(c) + '\''
+      case IgnoreCaseChar(c)                         ⇒ "'" + escape(c) + '\''
+      case CharPredicateMatch(_)                     ⇒ "<CharPredicate>"
+      case AnyOf(s)                                  ⇒ '[' + escape(s) + ']'
+      case NoneOf(s)                                 ⇒ s"[^${escape(s)}]"
+      case CharRange(from, to)                       ⇒ s"'${escape(from)}'-'${escape(to)}'"
+      case NotPredicate(NotPredicate.Terminal(t), _) ⇒ "!" + formatTraceHead(t)
+      case NotPredicate(NotPredicate.RuleCall(t), _) ⇒ "!" + t
+      case NotPredicate(NotPredicate.Named(n), _)    ⇒ "!" + n
+      case NotPredicate(NotPredicate.Anonymous, _)   ⇒ "!<anon>"
+      case ANY                                       ⇒ "ANY"
+      case SemanticPredicate                         ⇒ "test"
     }
     trace match {
       case _: Named | _: FirstOf | _: Optional | _: Capture | _: AndPredicate | _: RuleCall ⇒ base

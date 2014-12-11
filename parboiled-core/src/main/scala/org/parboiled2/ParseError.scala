@@ -60,6 +60,19 @@ sealed abstract class RuleTrace {
   def offset: Int
 
   /**
+   * Returns the [[Terminal]] trace of this trace.
+   * If this trace is already a [[Terminal]] the method returns `this`.
+   */
+  def terminal: Terminal = {
+    @tailrec def rec(current: RuleTrace): Terminal =
+      current match {
+        case x: NonTerminal ⇒ rec(x.tail)
+        case x: Terminal    ⇒ x
+      }
+    rec(this)
+  }
+
+  /**
    * Folds the given function across this trace.
    */
   def fold[T](zero: T)(f: (T, RuleTrace) ⇒ T): T = {
@@ -99,7 +112,7 @@ sealed abstract class RuleTrace {
     @tailrec def rec(current: RuleTrace, named: Option[RuleTrace]): RuleTrace =
       current match {
         case x: Named       ⇒ rec(x.tail, named orElse Some(x))
-        case x: RuleCall    ⇒ rec(x.tail, named) // RuleCall elements allow the name be carried over
+        case x: RuleCall    ⇒ rec(x.tail, named) // RuleCall elements allow the name to be carried over
         case x: Terminal    ⇒ named getOrElse x
         case x: Atomic      ⇒ named getOrElse x.tail
         case x: NonTerminal ⇒ rec(x.tail, None)
@@ -152,7 +165,7 @@ object RuleTrace {
   case class AnyOf(string: String) extends Terminal
   case class NoneOf(string: String) extends Terminal
   case class CharRange(from: Char, to: Char) extends Terminal
-  case class NotPredicate(base: NotPredicate.Base) extends Terminal
+  case class NotPredicate(base: NotPredicate.Base, baseMatchLength: Int) extends Terminal
   case object ANY extends Terminal
   case object SemanticPredicate extends Terminal
 

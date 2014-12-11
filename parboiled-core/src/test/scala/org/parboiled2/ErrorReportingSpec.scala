@@ -92,7 +92,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |""")
 
       "xbcd" must beMismatchedWithErrorMsg(
-        """Invalid input 'b', expected !foo (line 1, column 2):
+        """Invalid input "bcd", expected !foo (line 1, column 2):
           |xbcd
           | ^
           |

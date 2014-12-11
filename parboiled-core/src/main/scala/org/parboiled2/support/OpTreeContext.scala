@@ -441,6 +441,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         val saved = __enterNotPredicate()
         val matched = ${op.render(wrapped)}
         __exitNotPredicate(saved)
+        ${if (wrapped) q"matchEnd = cursor" else q"()"}
         __restoreState(mark)
         !matched"""
       if (wrapped) {
@@ -453,9 +454,12 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
           case _                        ⇒ q"org.parboiled2.RuleTrace.NotPredicate.Anonymous"
         }
         q"""
+        var matchEnd = 0
         try $unwrappedTree || __registerMismatch()
         catch {
-          case org.parboiled2.Parser.StartTracingException ⇒ __bubbleUp { org.parboiled2.RuleTrace.NotPredicate($base) }
+          case org.parboiled2.Parser.StartTracingException ⇒ __bubbleUp {
+            org.parboiled2.RuleTrace.NotPredicate($base, matchEnd - cursor)
+          }
         }"""
       } else unwrappedTree
     }
