@@ -108,12 +108,12 @@ class ErrorReportingSpec extends TestParserSpec {
       def `#hash#` = rule { '#' }
 
       "a" must beMismatchedWithErrorMsg(
-        """Invalid input 'a', expected foo-bar (line 1, column 1):
+        """Invalid input 'a', expected 'x' (line 1, column 1):
           |a
           |^
           |
           |1 rule mismatched at error location:
-          |  /targetRule/ foo-bar:'x'
+          |  /targetRule/ 'x'
           |""")
 
       "x" must beMismatchedWithErrorMsg(
@@ -126,7 +126,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |""")
 
       "xyz" must beMismatchedWithErrorMsg(
-        """Invalid input 'z', expected '#' (line 1, column 3):
+        """Invalid input 'z', expected #hash# (line 1, column 3):
           |xyz
           |  ^
           |
@@ -187,7 +187,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |""")
     }
 
-    "respecting `atomic` markers" in new TestParser0 {
+    "respecting `atomic` markers (example 1)" in new TestParser0 {
       def targetRule = rule { ch('-').* ~ (atomic("foo") | atomic("bar") | atomic("baz")) }
 
       "---fox" must beMismatchedWithErrorMsg(
@@ -200,6 +200,20 @@ class ErrorReportingSpec extends TestParserSpec {
           |  /targetRule/ | / atomic,2 / "foo",2 / 'o'
           |  /targetRule/ | / atomic,0 / "bar",0 / 'b'
           |  /targetRule/ | / atomic,0 / "baz",0 / 'b'
+          |""")
+    }
+
+    "respecting `atomic` markers (example 2)" in new TestParser0 {
+      def targetRule = rule { atomic(ch('a') | 'b') }
+
+      "c" must beMismatchedWithErrorMsg(
+        """Invalid input 'c', expected targetRule (line 1, column 1):
+          |c
+          |^
+          |
+          |2 rules mismatched at error location:
+          |  /targetRule/ atomic,0 / | / 'a'
+          |  /targetRule/ atomic,0 / | / 'b'
           |""")
     }
 

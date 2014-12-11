@@ -78,7 +78,7 @@ class CalculatorSpec extends TestParserSpec {
           |""")
 
       "1+2)" must beMismatchedWithErrorMsg(
-        """Invalid input ')', expected Digit, '*', '/', '+', '-' or EOI (line 1, column 4):
+        """Invalid input ')', expected '/', '+', '*', 'EOI', '-' or Digit (line 1, column 4):
           |1+2)
           |   ^
           |
@@ -88,7 +88,7 @@ class CalculatorSpec extends TestParserSpec {
           |  /InputLine/ /Expression/ *,-2 / | /Term/ *,0 / | / '/'
           |  /InputLine/ /Expression/ *,-2 / | / '+'
           |  /InputLine/ /Expression/ *,-2 / | / '-'
-          |  /InputLine/ EOI:'EOI'
+          |  /InputLine/ 'EOI'
           |""")
 
       "(1+)2" must beMismatchedWithErrorMsg(

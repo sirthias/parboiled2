@@ -164,7 +164,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class CharMatch(charTree: Tree) extends DefaultTerminalOpTree {
-    def ruleTrace = potentiallyNamed(charTree, q"org.parboiled2.RuleTrace.CharMatch($charTree)")
+    def ruleTrace = q"org.parboiled2.RuleTrace.CharMatch($charTree)"
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"cursorChar == $charTree && __advance()"
       if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree
@@ -222,7 +222,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class IgnoreCaseChar(charTree: Tree) extends DefaultTerminalOpTree {
-    def ruleTrace = potentiallyNamed(charTree, q"org.parboiled2.RuleTrace.IgnoreCaseChar($charTree)")
+    def ruleTrace = q"org.parboiled2.RuleTrace.IgnoreCaseChar($charTree)"
     def renderInner(wrapped: Boolean): Tree = {
       val unwrappedTree = q"_root_.java.lang.Character.toLowerCase(cursorChar) == $charTree && __advance()"
       if (wrapped) q"$unwrappedTree && __updateMaxCursor() || __registerMismatch()" else unwrappedTree

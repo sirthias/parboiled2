@@ -99,6 +99,7 @@ sealed abstract class RuleTrace {
     @tailrec def rec(current: RuleTrace, named: Option[RuleTrace]): RuleTrace =
       current match {
         case x: Named       ⇒ rec(x.tail, named orElse Some(x))
+        case x: RuleCall    ⇒ rec(x.tail, named) // RuleCall elements allow the name be carried over
         case x: Terminal    ⇒ named getOrElse x
         case x: Atomic      ⇒ named getOrElse x.tail
         case x: NonTerminal ⇒ rec(x.tail, None)
