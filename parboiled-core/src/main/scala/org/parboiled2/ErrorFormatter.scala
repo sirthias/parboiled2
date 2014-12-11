@@ -117,8 +117,10 @@ class ErrorFormatter(showExpected: Boolean = true,
   /**
    * Formats what is expected at the error location as a [[List]] of Strings.
    */
-  def formatExpectedAsList(error: ParseError): List[String] =
-    error.traces.map(formatAsExpected)(collection.breakOut)
+  def formatExpectedAsList(error: ParseError): List[String] = {
+    val distinctStrings: Set[String] = error.traces.map(formatAsExpected)(collection.breakOut)
+    distinctStrings.toList
+  }
 
   /**
    * Formats the given trace into an "expected" string.
@@ -229,6 +231,7 @@ class ErrorFormatter(showExpected: Boolean = true,
       case x: Cut                                 ⇒ "cut"
       case x: AndPredicate                        ⇒ "&"
       case x: Atomic                              ⇒ "atomic"
+      case x: Quiet                               ⇒ "quiet"
       case x: RuleCall                            ⇒ "call"
 
       // terminals
