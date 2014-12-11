@@ -21,17 +21,19 @@ trait L3_Literals { self: Parser with L0_Basics with L1_KeywordsAndOperators wit
 
   def Char = rule ( "'" ~ (UnicodeEscape | EscapedChars | !'\\' ~ test(isPrintableChar(cursorChar)) ~ ANY) ~ "'" )
 
-  def Symbol = rule( ''' ~ (PlainId | Keyword) ) // symbols can take on the same values as keywords!
+  def Symbol = rule( ''' ~ (RawIdNoBackticks | Keyword) ) // symbols can take on the same values as keywords!
 
   def String = {
     def TripleTail = rule( '"' ~ '"' ~ ch('"').+ )
-    def Inter = rule ( '$' ~ (PlainIdNoDollar | '{' ~ Block ~ WL ~ '}' | '$') )
+    def Inter = rule ( '$' ~ (RawIdNoDollarNoBackticks | '{' ~ Block ~ WL ~ '}' | '$') )
     def Raw = rule { '"'.? ~ '"'.? ~ !'\"' ~ ANY }
     def Simple = rule { '\\' ~ DQBS | !DQLF ~ ANY }
     rule(
-      Id ~ '"' ~ ('"' ~ '"' ~ (Inter | Raw).* ~ TripleTail | (Inter | Simple).* ~ '"')
+      RawId ~ '"' ~ ('"' ~ '"' ~ (Inter | Raw).* ~ TripleTail | (Inter | Simple).* ~ '"')
     | '"' ~ ('"' ~ '"' ~ Raw.* ~ TripleTail | Simple.* ~ '"'))
   }
+
+  def WLLiteral = rule( WL ~ Literal )
 
   //////////////////////////// PRIVATE ///////////////////////////////////
 

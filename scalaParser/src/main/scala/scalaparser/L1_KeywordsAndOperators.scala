@@ -64,6 +64,11 @@ trait L1_KeywordsAndOperators { this: Parser with L0_Basics =>
   def True = RawKey("true")
   def False = RawKey("false")
 
+  // keyword-like patterns (not really keywords though)
+  def `_*` = rule( `_` ~ WL ~ "*" )
+  def `}` = rule( Semis.? ~ WL ~ '}' )
+  def `{` = rule( WL ~ '{' ~ Semis.? )
+
   //////////////////////////// PRIVATE ///////////////////////////////////
 
   private def Key(s: String) = rule( WL ~ RawKey(s) )

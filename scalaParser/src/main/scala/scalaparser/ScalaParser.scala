@@ -7,8 +7,7 @@ class ScalaParser(val input: ParserInput) extends Parser with WhitespaceStringsA
   with L1_KeywordsAndOperators
   with L2_Identifiers
   with L3_Literals
-  with L4_Core
-  with L5_Types
-  with L5_Xml
-  with L6_Exprs
-  with L7_TopLevel
+  with L4_Types
+  with L4_Xml
+  with L5_Exprs
+  with L6_TopLevel

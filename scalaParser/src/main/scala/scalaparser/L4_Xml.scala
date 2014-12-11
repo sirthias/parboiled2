@@ -3,12 +3,11 @@ package scalaparser
 import scala.language.implicitConversions
 import org.parboiled2._
 
-trait L5_Xml { this: Parser
+trait L4_Xml { this: Parser
   with L0_Basics
   with L1_KeywordsAndOperators
   with L2_Identifiers
-  with L3_Literals
-  with L4_Core =>
+  with L3_Literals =>
   
   def Patterns: Rule0
   def XmlExpr = rule( WL ~ XmlContent ~ (WL ~ Element).* )

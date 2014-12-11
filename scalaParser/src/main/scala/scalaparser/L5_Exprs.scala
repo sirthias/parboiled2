@@ -2,12 +2,13 @@ package scalaparser
 
 import org.parboiled2._
 
-trait L6_Exprs { this: Parser with WhitespaceStringsAndChars
+trait L5_Exprs { this: Parser with WhitespaceStringsAndChars
   with L0_Basics
   with L1_KeywordsAndOperators
-  with L4_Core
-  with L5_Types
-  with L5_Xml =>
+  with L2_Identifiers
+  with L3_Literals
+  with L4_Types
+  with L4_Xml =>
 
   def NewBody: Rule0
   def BlockDef: Rule0
@@ -15,16 +16,16 @@ trait L6_Exprs { this: Parser with WhitespaceStringsAndChars
   def Import: Rule0 = {
     def ImportExpr: Rule0 = rule( StableId ~ ('.' ~ (`_` | Selectors)).? )
     def Selectors: Rule0 = rule( '{' ~ (Selector ~ ',').* ~ (Selector | `_`) ~ "}" )
-    def Selector: Rule0 = rule( WLId ~ (`=>` ~ (WLId | `_`)).? )
+    def Selector: Rule0 = rule( Id ~ (`=>` ~ (Id | `_`)).? )
     rule( `import` ~ ImportExpr.+(',') )
   }
 
   def Ascription = rule( `:` ~ (`_*` |  Type | Annot.+) )
 
   def LambdaHead: Rule0 = {
-    def Binding = rule( (WLId | `_`) ~ (`:` ~ Type).? )
+    def Binding = rule( (Id | `_`) ~ (`:` ~ Type).? )
     def Bindings = rule( '(' ~ Binding.*(',') ~ ')' )
-    def Implicit = rule( `implicit`.? ~ WLId ~ (`:` ~ InfixType).? )
+    def Implicit = rule( `implicit`.? ~ Id ~ (`:` ~ InfixType).? )
     rule( (Bindings | Implicit | `_` ~ Ascription.?) ~ `=>` )
   }
   object StatCtx extends WsCtx(true)
@@ -71,16 +72,16 @@ trait L6_Exprs { this: Parser with WhitespaceStringsAndChars
       def Assign = rule( SimpleExpr ~ (`=` ~ Expr).? )
       def PrefixExpr = rule( Prefixed | Assign )
 
-      def InfixExpr = rule( PrefixExpr ~ (NoSemis ~ WLId ~ TypeArgs.? ~ OneSemiMax ~ PrefixExpr).* )
-      rule( InfixExpr ~ (NotNewline ~ WLId ~ WLNewline.?).? )
+      def InfixExpr = rule( PrefixExpr ~ (NoSemis ~ Id ~ TypeArgs.? ~ OneSemiMax ~ PrefixExpr).* )
+      rule( InfixExpr ~ (NotNewline ~ Id ~ LineEnd.?).? )
     }
 
     def SimpleExpr: Rule0 = {
-      def Path = rule( (WLId ~ '.').* ~ `this` ~ ('.' ~ WLId).* | StableId )
+      def Path = rule( (Id ~ '.').* ~ `this` ~ ('.' ~ Id).* | StableId )
       def New = rule( `new` ~ NewBody )
       def Parened = rule ( '(' ~ Exprs.? ~ ")"  )
       def SimpleExpr1 = rule( XmlExpr | New | BlockExpr | WLLiteral | Path | `_` | Parened)
-      rule( SimpleExpr1 ~ ('.' ~ WLId | TypeArgs | NoSemis ~ ArgList).* ~ (NoSemis  ~ `_`).?)
+      rule( SimpleExpr1 ~ ('.' ~ Id | TypeArgs | NoSemis ~ ArgList).* ~ (NoSemis  ~ `_`).?)
     }
     def Guard : Rule0 = rule( `if` ~ PostfixExpr )
   }
@@ -89,7 +90,7 @@ trait L6_Exprs { this: Parser with WhitespaceStringsAndChars
     def Extractor = rule( StableId ~ ('(' ~ ExtractorArgs ~ ')').? )
     def TupleEx = rule( '(' ~ ExtractorArgs.? ~ ')' )
     def Thingy = rule( `_` ~ (`:` ~ TypePat).? ~ !"*" )
-    rule( XmlPattern | Thingy | WLLiteral | TupleEx | Extractor | WLVarId)
+    rule( XmlPattern | Thingy | WLLiteral | TupleEx | Extractor | VarId)
   }
 
   def BlockExpr: Rule0 = rule( '{' ~ (CaseClauses | Block) ~ `}` )
@@ -110,10 +111,10 @@ trait L6_Exprs { this: Parser with WhitespaceStringsAndChars
 
   def Patterns: Rule0 = rule( Pat.+(",") )
   def Pat: Rule0 = rule( Pat1.+('|') )
-  def Pat1: Rule0 = rule( `_` ~ `:` ~ TypePat | WLVarId ~ `:` ~ TypePat | Pat2 )
+  def Pat1: Rule0 = rule( `_` ~ `:` ~ TypePat | VarId ~ `:` ~ TypePat | Pat2 )
   def Pat2: Rule0 = {
-    def Pat3 = rule( `_*` | SimplePat ~ (WLId ~ SimplePat).* )
-    rule( WLVarId ~ `@` ~ Pat3 | Pat3 | WLVarId )
+    def Pat3 = rule( `_*` | SimplePat ~ (Id ~ SimplePat).* )
+    rule( VarId ~ `@` ~ Pat3 | Pat3 | VarId )
   }
 
   def TypePat = rule( CompoundType )

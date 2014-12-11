@@ -3,12 +3,12 @@ package scalaparser
 import scala.language.implicitConversions
 import org.parboiled2._
 
-trait L7_TopLevel { this: Parser with WhitespaceStringsAndChars
+trait L6_TopLevel { this: Parser with WhitespaceStringsAndChars
   with L0_Basics
   with L1_KeywordsAndOperators
-  with L4_Core
-  with L5_Types
-  with L6_Exprs =>
+  with L2_Identifiers
+  with L4_Types
+  with L5_Exprs =>
 
   def CompilationUnit: Rule0 = {
     def TopPackageSeq = rule( (`package` ~ QualId ~ !(WS ~ "{")).+(Semis) )
@@ -19,7 +19,7 @@ trait L7_TopLevel { this: Parser with WhitespaceStringsAndChars
   def TmplBody: Rule0 = {
     def Prelude = rule( (Annot ~ OneNLMax).* ~ Mod.* )
     def TmplStat = rule( Import | Prelude ~ (Def | Dcl) | StatCtx.Expr )
-    def SelfType = rule( (`this` | WLId | `_`) ~ (`:` ~ InfixType).? ~ `=>` )
+    def SelfType = rule( (`this` | Id | `_`) ~ (`:` ~ InfixType).? ~ `=>` )
     rule( '{' ~ SelfType.? ~ Semis.? ~ TmplStat.*(Semis) ~ `}` )
   }
 
@@ -29,7 +29,7 @@ trait L7_TopLevel { this: Parser with WhitespaceStringsAndChars
 
   def ValVarDef: Rule0 = {
     def Val = rule( Pat2.+(',') ~ (`:` ~ Type).? ~ `=` ~ StatCtx.Expr )
-    def Var = rule( WLIds ~ `:` ~ Type ~ `=` ~ `_` | Val )
+    def Var = rule( Ids ~ `:` ~ Type ~ `=` ~ `_` | Val )
     rule( `val` ~ Val | `var` ~ Var )
   }
   def Def: Rule0 = {
@@ -43,23 +43,23 @@ trait L7_TopLevel { this: Parser with WhitespaceStringsAndChars
       def ClsAnnot = rule( `@` ~ SimpleType ~ ArgList )
       def Prelude = rule( NotNewline ~ ( ClsAnnot.+ ~ AccessMod.? | ClsAnnot.* ~ AccessMod) )
       def ClsArgMod = rule( (Mod.* ~ (`val` | `var`)).? )
-      def ClsArg = rule( Annot.* ~ ClsArgMod ~ WLId ~ `:` ~ ParamType ~ (`=` ~ ExprCtx.Expr).? )
+      def ClsArg = rule( Annot.* ~ ClsArgMod ~ Id ~ `:` ~ ParamType ~ (`=` ~ ExprCtx.Expr).? )
 
       def Implicit = rule( OneNLMax ~ '(' ~ `implicit` ~ ClsArg.+(",") ~ ")" )
       def ClsArgs = rule( OneNLMax ~'(' ~ ClsArg.*(',') ~ ")" )
       def AllArgs = rule( ClsArgs.+ ~ Implicit.? | Implicit )
-      rule( `class` ~ WLId ~ TypeArgList.? ~ Prelude.? ~ AllArgs.? ~ ClsTmplOpt )
+      rule( `class` ~ Id ~ TypeArgList.? ~ Prelude.? ~ AllArgs.? ~ ClsTmplOpt )
     }
     def TraitTmplOpt = {
       def TraitParents = rule( AnnotType ~ (`with` ~ AnnotType).* )
       def TraitTmpl = rule( EarlyDefs.? ~ TraitParents ~ TmplBody.? )
       rule( `extends` ~ TraitTmpl | (`extends`.? ~ TmplBody).? )
     }
-    def TraitDef = rule( `trait` ~ WLId ~ TypeArgList.? ~ TraitTmplOpt )
+    def TraitDef = rule( `trait` ~ Id ~ TypeArgList.? ~ TraitTmplOpt )
     rule( TraitDef | `case`.? ~ (ClsDef | ObjDef) )
   }
 
-  def ObjDef: Rule0 = rule( `object` ~ WLId ~ ClsTmplOpt )
+  def ObjDef: Rule0 = rule( `object` ~ Id ~ ClsTmplOpt )
   def ClsTmplOpt: Rule0 = rule( `extends` ~ ClsTmpl | (`extends`.? ~ TmplBody).? )
 
   def ClsTmpl: Rule0 = {
@@ -80,4 +80,8 @@ trait L7_TopLevel { this: Parser with WhitespaceStringsAndChars
     def TopStat = rule( PkgBlock | PkgObj | Import | Tmpl )
     rule( TopStat.+(Semis) )
   }
+
+  //////////////////////////// PRIVATE ///////////////////////////////////
+
+  private def QualId = rule( WL ~ Id.+('.') )
 }

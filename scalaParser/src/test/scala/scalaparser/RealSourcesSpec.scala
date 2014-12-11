@@ -47,6 +47,7 @@ class RealSourcesSpec extends Specification {
   }
 
   val utf8 = Charset.forName("UTF-8")
+  val formatter = new ErrorFormatter(showTraces = true)
 
   def checkDir(path: String, blackList: String*): String => Boolean = { exampleName =>
     def checkFile(path: String): Int = {
@@ -58,7 +59,7 @@ class RealSourcesSpec extends Specification {
       val parser = new ScalaParser(ParserInput(charBuffer.array(), charBuffer.remaining()))
       def fail(msg: String) = throw new FailureException(org.specs2.execute.Failure(msg))
       parser.CompilationUnit.run().failed foreach {
-        case error: ParseError => fail(s"Error in file `$path`:\n" + parser.formatError(error, showTraces = true))
+        case error: ParseError => fail(s"Error in file `$path`:\n" + error.format(parser, formatter))
         case error => fail(s"Exception in file `$path`:\n$error")
       }
       parser.input.length

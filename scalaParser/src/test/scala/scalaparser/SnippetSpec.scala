@@ -4,7 +4,7 @@ import scala.util.{Success, Failure}
 import org.specs2.execute.FailureException
 import org.specs2.mutable.Specification
 import org.specs2.specification.Fragment
-import org.parboiled2.ParseError
+import org.parboiled2._
 
 class SnippetSpec extends Specification {
 
@@ -822,11 +822,13 @@ class SnippetSpec extends Specification {
 //        |""")
   }
 
+  val formatter = new ErrorFormatter(showTraces = true)
+
   def check(nr: String, snippet: String): Fragment =
     s"example $nr" in {
       val parser = new ScalaParser(snippet.stripMargin)
       parser.CompilationUnit.run() match {
-        case Failure(error: ParseError) => failure(parser.formatError(error, showTraces = true))
+        case Failure(error: ParseError) => failure(error.format(parser, formatter))
         case Failure(error) => failure(error.toString)
         case Success(_) => success
       }
@@ -840,6 +842,6 @@ class SnippetSpec extends Specification {
         case Failure(e) => throw new FailureException(org.specs2.execute.Failure(e.toString))
         case Success(_) => throw new FailureException(org.specs2.execute.Failure("Parsing unexpectedly succeeded"))
       }
-      parser.formatError(error, showTraces = true) === expectedError
+      error.format(parser, formatter) === expectedError
     }
 }
