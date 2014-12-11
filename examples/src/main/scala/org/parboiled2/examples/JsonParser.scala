@@ -26,6 +26,7 @@ import spray.json.{ParserInput => _, _}
  */
 class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
   import CharPredicate.{Digit, Digit19, HexDigit}
+  import JsonParser._
 
   // the root rule
   def Json = rule { WhiteSpace ~ Value ~ EOI }
@@ -95,7 +96,9 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
   def WhiteSpace = rule { zeroOrMore(WhiteSpaceChar) }
 
   def ws(c: Char) = rule { c ~ WhiteSpace }
+}
 
+object JsonParser {
   val WhiteSpaceChar = CharPredicate(" \n\r\t\f")
   val QuoteBackslash = CharPredicate("\"\\")
   val QuoteSlashBackSlash = QuoteBackslash ++ "/"
