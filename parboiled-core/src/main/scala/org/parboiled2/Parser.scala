@@ -173,9 +173,19 @@ abstract class Parser(initialValueStackSize: Int = 16,
       phase2
     }
 
+    def phase3_determineReportQuiet(reportedErrorIndex: Int): Boolean = {
+      phase = new DetermineReportQuiet(reportedErrorIndex)
+      try {
+        if (runRule()) sys.error("Parsing unexpectedly succeeded while trying to determine quiet reporting")
+        true // if we got here we can only reach the reportedErrorIndex via quiet rules
+      } catch {
+        case UnquietMismatch ⇒ false // we mismatched beyond the reportedErrorIndex outside of a quiet rule
+      }
+    }
+
     @tailrec
-    def phase3_collectRuleTraces(reportedErrorIndex: Int, principalErrorIndex: Int)(
-      phase3: CollectingRuleTraces = new CollectingRuleTraces(reportedErrorIndex),
+    def phase4_collectRuleTraces(reportedErrorIndex: Int, principalErrorIndex: Int, reportQuiet: Boolean)(
+      phase3: CollectingRuleTraces = new CollectingRuleTraces(reportedErrorIndex, reportQuiet),
       traces: VectorBuilder[RuleTrace] = new VectorBuilder): ParseError = {
 
       def done = {
@@ -193,8 +203,8 @@ abstract class Parser(initialValueStackSize: Int = 16,
             case e: Parser.TracingBubbleException ⇒ e.trace
           }
         if (trace eq null) done
-        else phase3_collectRuleTraces(reportedErrorIndex,
-          principalErrorIndex)(new CollectingRuleTraces(reportedErrorIndex, phase3.traceNr + 1), traces += trace)
+        else phase4_collectRuleTraces(reportedErrorIndex, principalErrorIndex,
+          reportQuiet)(new CollectingRuleTraces(reportedErrorIndex, reportQuiet, phase3.traceNr + 1), traces += trace)
       } else done
     }
 
@@ -203,8 +213,9 @@ abstract class Parser(initialValueStackSize: Int = 16,
         scheme.success(valueStack.toHList[L]())
       else {
         val principalErrorIndex = phase1_establishPrincipalErrorIndex()
-        val p = phase2_establishReportedErrorIndex(principalErrorIndex)
-        val parseError = phase3_collectRuleTraces(p.reportedErrorIndex, p.principalErrorIndex)()
+        val p2 = phase2_establishReportedErrorIndex(principalErrorIndex)
+        val reportQuiet = phase3_determineReportQuiet(principalErrorIndex)
+        val parseError = phase4_collectRuleTraces(p2.reportedErrorIndex, principalErrorIndex, reportQuiet)()
         scheme.parseError(parseError)
       }
     } catch {
@@ -295,15 +306,48 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
+  def __enterQuiet(): Int =
+    phase match {
+      case x: DetermineReportQuiet ⇒
+        if (x.inQuiet) -1
+        else {
+          x.inQuiet = true
+          0
+        }
+      case x: CollectingRuleTraces if !x.reportQuiet ⇒
+        val saved = x.minErrorIndex
+        x.minErrorIndex = Int.MaxValue // disables triggering of StartTracingException in __registerMismatch
+        saved
+      case _ ⇒ -1
+    }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __exitQuiet(saved: Int): Unit =
+    if (saved >= 0) {
+      phase match {
+        case x: DetermineReportQuiet ⇒ x.inQuiet = false
+        case x: CollectingRuleTraces ⇒ x.minErrorIndex = saved
+        case _                       ⇒ throw new IllegalStateException
+      }
+    }
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
   def __registerMismatch(): Boolean = {
     phase match {
       case null | _: EstablishingPrincipalErrorIndex ⇒ // nothing to do
-      case x: EstablishingReportedErrorIndex ⇒
-        if (x.currentAtomicStart > x.maxAtomicErrorStart) x.maxAtomicErrorStart = x.currentAtomicStart
       case x: CollectingRuleTraces ⇒
         if (_cursor >= x.minErrorIndex) {
           if (x.errorMismatches == x.traceNr) throw Parser.StartTracingException else x.errorMismatches += 1
         }
+      case x: EstablishingReportedErrorIndex ⇒
+        if (x.currentAtomicStart > x.maxAtomicErrorStart) x.maxAtomicErrorStart = x.currentAtomicStart
+      case x: DetermineReportQuiet ⇒
+        // stop this run early because we just learned that reporting quiet traces is unnecessary
+        if (_cursor >= x.minErrorIndex & !x.inQuiet) throw UnquietMismatch
     }
     false
   }
@@ -503,6 +547,11 @@ object Parser {
    */
   object CutError extends RuntimeException with NoStackTrace
 
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  object UnquietMismatch extends RuntimeException with NoStackTrace
+
   // error analysis happens in 4 phases:
   // 0: initial run, no error analysis
   // 1: EstablishingPrincipalErrorIndex (1 run)
@@ -517,14 +566,13 @@ object Parser {
     def applyOffset(offset: Int) = maxCursor -= offset
   }
 
-  // establish the start index of the outermost atomic rule start
+  // establish the largest match-start index of all outermost atomic rules
   // that we are in when mismatching at the principal error index
   // or -1 if no atomic rule fails with a mismatch at the principal error index
   private class EstablishingReportedErrorIndex(
       private var _principalErrorIndex: Int,
       var currentAtomicStart: Int = Int.MinValue,
       var maxAtomicErrorStart: Int = Int.MinValue) extends ErrorAnalysisPhase {
-    def principalErrorIndex = _principalErrorIndex
     def reportedErrorIndex = if (maxAtomicErrorStart >= 0) maxAtomicErrorStart else _principalErrorIndex
     def applyOffset(offset: Int) = {
       _principalErrorIndex -= offset
@@ -533,15 +581,25 @@ object Parser {
     }
   }
 
-  // collect the traces of all mismatches happening at an index >= minErrorIndex (the reported error index)
-  // by throwing a StartTracingException which gets turned into a TracingBubbleException by the terminal rule
-  private class CollectingRuleTraces(
+  // determine whether the reported error location can only be reached via quiet rules
+  // in which case we need to report them even though they are marked as "quiet"
+  private class DetermineReportQuiet(
       private var _minErrorIndex: Int, // the smallest index at which a mismatch triggers a StartTracingException
-      val traceNr: Int = 0, // the zero-based index number of the RuleTrace we are currently building
-      var errorMismatches: Int = 0 // the number of times we have already seen a mismatch at >= minErrorIndex
+      var inQuiet: Boolean = false // are we currently in a quiet rule?
       ) extends ErrorAnalysisPhase {
     def minErrorIndex = _minErrorIndex
     def applyOffset(offset: Int) = _minErrorIndex -= offset
+  }
+
+  // collect the traces of all mismatches happening at an index >= minErrorIndex (the reported error index)
+  // by throwing a StartTracingException which gets turned into a TracingBubbleException by the terminal rule
+  private class CollectingRuleTraces(
+      var minErrorIndex: Int, // the smallest index at which a mismatch triggers a StartTracingException
+      val reportQuiet: Boolean, // do we need to trace mismatches from quiet rules?
+      val traceNr: Int = 0, // the zero-based index number of the RuleTrace we are currently building
+      var errorMismatches: Int = 0 // the number of times we have already seen a mismatch at >= minErrorIndex
+      ) extends ErrorAnalysisPhase {
+    def applyOffset(offset: Int) = minErrorIndex -= offset
   }
 }
 

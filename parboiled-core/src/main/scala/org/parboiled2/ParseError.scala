@@ -139,6 +139,7 @@ object RuleTrace {
   case class Capture(tail: RuleTrace) extends DirectNonTerminal
   case class AndPredicate(tail: RuleTrace) extends DirectNonTerminal
   case class Atomic(tail: RuleTrace) extends DirectNonTerminal
+  case class Quiet(tail: RuleTrace) extends DirectNonTerminal
   case class RuleCall(tail: RuleTrace) extends DirectNonTerminal
 
   sealed abstract class Terminal extends RuleTrace {

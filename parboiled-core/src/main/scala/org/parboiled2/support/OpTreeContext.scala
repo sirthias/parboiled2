@@ -92,6 +92,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     case q"$a.this.&($arg)"                                ⇒ AndPredicate(OpTree(arg))
     case q"$a.unary_!()"                                   ⇒ NotPredicate(OpTree(a))
     case q"$a.this.atomic[$b, $c]($arg)"                   ⇒ Atomic(OpTree(arg))
+    case q"$a.this.quiet[$b, $c]($arg)"                    ⇒ Quiet(OpTree(arg))
     case q"$a.this.test($flag)"                            ⇒ SemanticPredicate(flag)
     case q"$a.this.capture[$b, $c]($arg)($d)"              ⇒ Capture(OpTree(arg))
     case q"$a.this.run[$b]($arg)($c.fromAux[$d, $e]($rr))" ⇒ RunAction(arg, rr)
@@ -467,6 +468,17 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         val saved = __enterAtomic(start)
         val matched = ${op.render(wrapped)}
         __exitAtomic(saved)
+        matched"""
+      else op.render(wrapped)
+  }
+
+  case class Quiet(op: OpTree) extends DefaultNonTerminalOpTree {
+    def ruleTrace = q"org.parboiled2.RuleTrace.Quiet(e.trace)"
+    def renderInner(wrapped: Boolean): Tree =
+      if (wrapped) q"""
+        val saved = __enterQuiet()
+        val matched = ${op.render(wrapped)}
+        __exitQuiet(saved)
         matched"""
       else op.render(wrapped)
   }

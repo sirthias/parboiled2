@@ -203,6 +203,30 @@ class ErrorReportingSpec extends TestParserSpec {
           |""")
     }
 
+    "respecting `quiet` markers" in new TestParser0 {
+      def targetRule = rule { "abc" ~ (quiet("dxy") | "def") }
+
+      // quiet rule mismatch must be suppressed
+      "abcd-" must beMismatchedWithErrorMsg(
+        """Invalid input '-', expected 'e' (line 1, column 5):
+          |abcd-
+          |    ^
+          |
+          |1 rule mismatched at error location:
+          |  /targetRule/ | / "def",1 / 'e'
+          |""")
+
+      // since the error location is only reached by a quiet rule we need to report it
+      "abcdx" must beMismatchedWithErrorMsg(
+        """Unexpected end of input, expected 'y' (line 1, column 6):
+          |abcdx
+          |     ^
+          |
+          |1 rule mismatched at error location:
+          |  /targetRule/ | / quiet,2 / "dxy",2 / 'y'
+          |""")
+    }
+
     "expanding tabs as configured" in new TestParser0 {
       def targetRule = rule { ch('\t').* ~ (atomic("foo") | atomic("bar") | atomic("baz")) }
 
