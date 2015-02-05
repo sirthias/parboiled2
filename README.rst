@@ -898,6 +898,41 @@ match whitespace after a string terminal:
 In this example all usages of a plain string literals in the parser rules will implicitly match trailing space characters.
 In order to *not* apply the implicit whitespace matching in this case simply say ``str("foo")`` instead of just ``"foo"``.
 
+Parsing the whole input
+-----------------------
+
+If you don't include ``EOI`` (the special end-of-input pseudo-character) in the root rule of your parser, it may not behave as you expected when it is given invalid input.
+
+As an example, look at this parser for simple arithmetic expressions:
+
+.. code:: Scala
+
+    class MyParser(val input: ParserInput) extends Parser {
+      def Expr: Rule1[Int] = rule { Sum }
+      private def Sum = rule { 
+        oneOrMore(Product).separatedBy(" + ") ~> ((products: Seq[Int]) => products.sum) 
+      }
+      private def Product = rule { 
+        oneOrMore(Value).separatedBy(" * ") ~> ((values: Seq[Int]) => values.product) 
+      }
+      private def Value = rule { 
+        Constant | ('(' ~ Sum ~ ')') 
+      }
+      private def Constant = rule { 
+        capture(oneOrMore(Digit)) ~> ((digits: String) => digits.toInt) 
+      }
+    }
+    
+    new MyParser("1 + 2").Expr.run()  // Success(3)
+    new MyParser("1 + (2").Expr.run()  // Success(1)
+
+In the second run of the parser, we give it the invalid input ``1 + (2``. But instead of failing with a ``ParseError``, as you might expect, it successfully parses the ``1`` and ignores the rest of the input.
+
+To fix this, you need to tell the parser to parse the entire input. You can do this by appending ``EOI`` to the root rule as follows:
+
+.. code:: Scala
+
+    def Expr: Rule1[Int] = rule { Sum ~ EOI }
 
 Grammar Debugging
 =================
