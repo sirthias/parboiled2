@@ -5,7 +5,7 @@ import scala.xml.{Node => XNode, NodeSeq}
 
 val commonSettings = Seq(
   version := "2.1.0-SNAPSHOT",
-  scalaVersion := "2.11.4",
+  scalaVersion := "2.11.5",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -67,10 +67,10 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.4"   % "provided"
-val shapeless        = "com.chuusai"     %% "shapeless"         % "2.0.0"    % "compile"
-val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.13"   % "test"
-val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.13"   % "test"
+val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.5"   % "provided"
+val shapeless        = "com.chuusai"     %% "shapeless"         % "2.1.0"    % "compile"
+val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.16"   % "test"
+val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.16"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -93,8 +93,8 @@ lazy val jsonBenchmark = project
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.2.10",
-      "org.json4s" %% "json4s-jackson" % "3.2.10",
+      "org.json4s" %% "json4s-native" % "3.2.11",
+      "org.json4s" %% "json4s-jackson" % "3.2.11",
       "io.argonaut" %% "argonaut" % "6.0.4"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
@@ -133,5 +133,4 @@ lazy val parboiledCore = project.in(file("parboiled-core"))
   .settings(
     libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core, specs2ScalaCheck),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
-    (sourceGenerators in Compile) += generateActionOps.taskValue
-  )
+    (sourceGenerators in Compile) += generateActionOps.taskValue)
