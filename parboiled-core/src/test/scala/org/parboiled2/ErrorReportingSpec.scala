@@ -187,6 +187,21 @@ class ErrorReportingSpec extends TestParserSpec {
       "fox" must beMatched
     }
 
+    "for rules containing `hardFail`" in new TestParser0 {
+      def targetRule = rule { "foo" ~ hardFail("no `foo` prefix") | 3.times(ANY) ~ EOI }
+
+      "foot" must beMismatchedWithErrorMsg(
+        """Invalid input 't', expected no `foo` prefix (line 1, column 4):
+          |foot
+          |   ^
+          |
+          |1 rule mismatched at error location:
+          |  no `foo` prefix
+          |""")
+
+      "fox" must beMatched
+    }
+
     "respecting the `errorTraceCollectionLimit`" in new TestParser0 {
       def targetRule = rule { "a" | 'b' | "c" | "d" | "e" | "f" }
       override def errorTraceCollectionLimit = 3

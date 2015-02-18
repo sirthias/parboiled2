@@ -166,7 +166,7 @@ object RuleTrace {
   case class NoneOf(string: String) extends Terminal
   case class CharRange(from: Char, to: Char) extends Terminal
   case class NotPredicate(base: NotPredicate.Base, baseMatchLength: Int) extends Terminal
-  case class SoftFail(expected: String) extends Terminal
+  case class Fail(expected: String) extends Terminal
   case object ANY extends Terminal
   case object SemanticPredicate extends Terminal
 

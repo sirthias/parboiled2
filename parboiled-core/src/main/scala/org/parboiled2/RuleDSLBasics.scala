@@ -120,6 +120,18 @@ trait RuleDSLBasics {
    */
   def failX[I <: HList, O <: HList](expected: String): Rule[I, O] = `n/a`
 
+  /**
+   * A rule that always fails and causes the parser to produce the given error message.
+   * The difference to [[fail]] is that the parsing run is immediately terminated,
+   * without backtracking from the current position and trying to find an alternative match.
+   */
+  def hardFail(msg: String): Rule0 = `n/a`
+
+  /**
+   * Fully generic variant of [[hardFail]].
+   */
+  def hardFailX[I <: HList, O <: HList](msg: String): Rule[I, O] = `n/a`
+
   @compileTimeOnly("Calls to `str2CharRangeSupport` must be inside `rule` macro")
   implicit def str2CharRangeSupport(s: String): CharRangeSupport = `n/a`
   sealed trait CharRangeSupport {

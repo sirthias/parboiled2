@@ -219,6 +219,9 @@ abstract class Parser(initialValueStackSize: Int = 16,
         scheme.parseError(parseError)
       }
     } catch {
+      case e: Parser.HardFail ⇒
+        val pos = Position(cursor, input)
+        scheme.parseError(ParseError(pos, pos, RuleTrace.Fail(e.expected) :: Nil))
       case NonFatal(e) ⇒
         e.printStackTrace()
         scheme.failure(e)
@@ -482,6 +485,11 @@ abstract class Parser(initialValueStackSize: Int = 16,
     }
   }
 
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __hardFail(expected: String) = throw new Parser.HardFail(expected)
+
   protected class __SubParserInput extends ParserInput {
     val offset = _cursor // the number of chars the input the sub-parser sees is offset from the outer input start
     def getLine(line: Int): String = ??? // TODO
@@ -551,6 +559,11 @@ object Parser {
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   object UnquietMismatch extends RuntimeException with NoStackTrace
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  class HardFail(val expected: String) extends RuntimeException with NoStackTrace
 
   // error analysis happens in 4 phases:
   // 0: initial run, no error analysis
