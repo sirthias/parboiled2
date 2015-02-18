@@ -100,10 +100,25 @@ trait RuleDSLBasics {
   def MATCH: Rule0 = Rule
 
   /**
-   * A rule that always fails.
+   * A Rule0 that always fails.
+   */
+  def MISMATCH0: Rule0 = MISMATCH
+
+  /**
+   * A generic Rule that always fails.
    */
   def MISMATCH[I <: HList, O <: HList]: Rule[I, O] = null
-  def MISMATCH0: Rule0 = MISMATCH
+
+  /**
+   * A rule that always fails and causes the parser to produce the given "expected" error message
+   * if the grammar doesn't provide an alternative way to overcome the current input position.
+   */
+  def fail(expected: String): Rule0 = `n/a`
+
+  /**
+   * Fully generic variant of [[fail]].
+   */
+  def failX[I <: HList, O <: HList](expected: String): Rule[I, O] = `n/a`
 
   @compileTimeOnly("Calls to `str2CharRangeSupport` must be inside `rule` macro")
   implicit def str2CharRangeSupport(s: String): CharRangeSupport = `n/a`

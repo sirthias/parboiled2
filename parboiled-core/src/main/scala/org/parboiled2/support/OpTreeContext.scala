@@ -99,6 +99,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     case q"$a.this.push[$b]($arg)($hl)"                    ⇒ PushAction(arg, hl)
     case q"$a.this.drop[$b]($hl)"                          ⇒ DropAction(hl)
     case q"$a.this.runSubParser[$b, $c]($f)"               ⇒ RunSubParser(f)
+    case q"$a.this.fail($m)"                               ⇒ SoftFail(m)
+    case q"$a.this.failX[$b, $c]($m)"                      ⇒ SoftFail(m)
     case q"$a.named($name)"                                ⇒ Named(OpTree(a), name)
     case x @ q"$a.this.str2CharRangeSupport($l).-($r)"     ⇒ CharRange(l, r)
     case q"$a.this.charAndValue[$t]($b.ArrowAssoc[$t1]($c).->[$t2]($v))($hl)" ⇒
@@ -660,6 +662,12 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       val q"($arg ⇒ $body)" = c.untypecheck(fTree)
       rewrite(arg.name, body)
     }
+  }
+
+  case class SoftFail(stringTree: Tree) extends DefaultTerminalOpTree {
+    def ruleTrace = q"org.parboiled2.RuleTrace.SoftFail($stringTree)"
+    def renderInner(wrapped: Boolean): Tree =
+      if (wrapped) q"__registerMismatch()" else q"false"
   }
 
   case class Named(op: OpTree, stringTree: Tree) extends DefaultNonTerminalOpTree {

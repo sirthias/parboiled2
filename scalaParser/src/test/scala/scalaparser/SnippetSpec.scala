@@ -842,6 +842,6 @@ class SnippetSpec extends Specification {
         case Failure(e) => throw new FailureException(org.specs2.execute.Failure(e.toString))
         case Success(_) => throw new FailureException(org.specs2.execute.Failure("Parsing unexpectedly succeeded"))
       }
-      error.format(parser, formatter) === expectedError
+      error.format(parser, formatter) === expectedError.stripMargin
     }
 }

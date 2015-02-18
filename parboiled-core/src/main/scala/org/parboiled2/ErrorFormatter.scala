@@ -260,6 +260,7 @@ class ErrorFormatter(showExpected: Boolean = true,
       case NotPredicate(NotPredicate.RuleCall(t), _) ⇒ "!" + t
       case NotPredicate(NotPredicate.Named(n), _)    ⇒ "!" + n
       case NotPredicate(NotPredicate.Anonymous, _)   ⇒ "!<anon>"
+      case SoftFail(expected)                        ⇒ expected
       case ANY                                       ⇒ "ANY"
       case SemanticPredicate                         ⇒ "test"
     }
