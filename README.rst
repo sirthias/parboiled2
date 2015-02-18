@@ -6,6 +6,10 @@
 Introduction
 ============
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/sirthias/parboiled2
+   :target: https://gitter.im/sirthias/parboiled2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 *parboiled2* is a Scala 2.10.3+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
 arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
 runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
