@@ -55,7 +55,9 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 The latest released version is **2.0.1**. It is available for Scala 2.10.3+ as well as Scala 2.11.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
-(currently version 2.0.0).
+(currently version 2.0.0). **Note:** Consequently, if your project also has ``"io.spray" %% "spray-routing"`` 
+as a dependency you will need to change this to ``"io.spray" %% "spray-routing-shapeless2"`` in order for 
+your project to continue to build since Spray uses Shapeless 1.x.
 
 Once on your classpath you can use this single import to bring everything you need into scope:
 
