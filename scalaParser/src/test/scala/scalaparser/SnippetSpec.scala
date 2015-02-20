@@ -778,10 +778,18 @@ class SnippetSpec extends Specification {
   }
 
   "The ScalaParser should properly parse the negative example snippets" >> {
-    success
-//    checkError("500",
-//      "packge torimatomeru"
-//    ,"")
+    checkError("500",
+      "packge torimatomeru"
+    ,
+      """Invalid input 'g', expected 'a' (line 1, column 5):
+        |packge torimatomeru
+        |    ^
+        |
+        |3 rules mismatched at error location:
+        |  /CompilationUnit/ /Body/ |:-4 /TopPackageSeq/ +:-4 /Key/ /RawKey/ "package":4 / 'a'
+        |  /CompilationUnit/ /Body/ |:-4 /TopStatSeq/ +:-4 /TopStat/ |:-4 /PkgBlock/ /Key/ /RawKey/ "package":4 / 'a'
+        |  /CompilationUnit/ /Body/ |:-4 /TopStatSeq/ +:-4 /TopStat/ |:-4 /PkgObj/ /Key/ /RawKey/ "package":4 / 'a'
+        |""".stripMargin)
 
 //    checkError("110",
 //      """object O{
