@@ -4,7 +4,7 @@ import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
 
 val commonSettings = Seq(
-  version := "2.1.0-SNAPSHOT",
+  version := "2.1.0",
   scalaVersion := "2.11.5",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),

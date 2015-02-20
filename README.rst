@@ -6,10 +6,6 @@
 Introduction
 ============
 
-.. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/sirthias/parboiled2
-   :target: https://gitter.im/sirthias/parboiled2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
-
 *parboiled2* is a Scala 2.10.3+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
 arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
 runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
@@ -50,14 +46,16 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.0.1"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.0"
 
-The latest released version is **2.0.1**. It is available for Scala 2.10.3+ as well as Scala 2.11.
+The latest released version is **2.1.0**. It is available for Scala 2.10.3+ as well as Scala 2.11.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
-(currently version 2.0.0). **Note:** Consequently, if your project also has ``"io.spray" %% "spray-routing"`` 
-as a dependency you will need to change this to ``"io.spray" %% "spray-routing-shapeless2"`` in order for 
-your project to continue to build since Spray uses Shapeless 1.x.
+(currently version 2.1.0).
+
+**Note:** If your project also uses ``"io.spray" %% "spray-routing"``
+you'll need to change this to ``"io.spray" %% "spray-routing-shapeless2"`` in order for
+your project to continue to build since the "regular" spray builds use shapeless 1.x.
 
 Once on your classpath you can use this single import to bring everything you need into scope:
 
@@ -138,7 +136,7 @@ e.g:
 .. code:: Scala
 
     val parser = new MyParser(input)
-    parser.topLevelRule.run() // by default returns a `scala.util.Try`
+    parser.topLevelRule.run() // by default returns a ``scala.util.Try``
 
 For more info on what options you have with regard to accessing the results of a parsing run check out the section
 on `Access to Parser Results`_.
@@ -238,10 +236,10 @@ one of these predefined aliases:
 .. code:: Scala
 
     type Rule0 = RuleN[HNil]
-    type Rule1[T] = RuleN[T :: HNil]
-    type Rule2[A, B] = RuleN[A :: B :: HNil]
-    type RuleN[L <: HList] = Rule[HNil, L]
-    type PopRule[L <: HList] = Rule[L, HNil]
+    type Rule1[+T] = RuleN[T :: HNil]
+    type Rule2[+A, +B] = RuleN[A :: B :: HNil]
+    type RuleN[+L <: HList] = Rule[HNil, L]
+    type PopRule[-L <: HList] = Rule[L, HNil]
 
 Here is what these type aliases denote:
 
@@ -249,17 +247,17 @@ Rule0
     A rule that neither pops off nor pushes to the value stack, i.e. has no effect on the value stack whatsoever.
     All `Basic Character Matching`_ rules are of this type.
 
-Rule1[T]
+Rule1[+T]
     Pushes exactly one value of type ``T`` onto the value stack. After ``Rule0`` this is the second-most frequently
     used rule type.
 
-Rule2[A, B]
+Rule2[+A, +B]
     Pushes exactly two values of types ``A`` and ``B`` onto the value stack.
 
-RuleN[L <: HList]
+RuleN[+L <: HList]
     Pushes a number of values onto the value stack, which correspond to the given ``L <: HList`` type parameter.
 
-PopRule[L <: HList]
+PopRule[-L <: HList]
     Pops a number of values off the value stack (corresponding to the given ``L <: HList`` type parameter) and does
     not produce any new value itself.
 
@@ -399,8 +397,8 @@ a | b
     have had on the value stack are cleared out, the resulting rule type is therefore always ``Rule0``,
     independently of the type of the underlying rule.
 
-    Note that ``&`` not causing the parser to make any progress can have surprising implications in repeating 
-    contructs, see `Stack overflow when using the  or  operator`_ for more details.
+    Note that ``&`` not itself consuming any input can have surprising implications in repeating constructs,
+    see `Stack Overflow when using the & or ! Operator`_ for more details.
 
 ----
 
@@ -410,8 +408,8 @@ a | b
     out all effects that the underlying rule might have had on the value stack. The resulting rule type is therefore
     always ``Rule0``, independently of the type of the underlying rule.
 
-    Note that ``&`` not causing the parser to make any progress can have surprising implications in repeating 
-    contructs, see `Stack overflow when using the  or  operator`_ for more details.
+    Note that ``!`` not itself consuming any input can have surprising implications in repeating constructs,
+    see `Stack Overflow when using the & or ! Operator`_ for more details.
 
 ----
 
@@ -438,6 +436,8 @@ optional(a)
     off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
     their types remain the same, even though the actual values might have changed.
 
+    As a shortcut you can also use ``a.?`` instead of ``optional(a)``.
+
 ----
 
 zeroOrMore(a)
@@ -461,6 +461,8 @@ zeroOrMore(a)
     The inner rule of ``zeroOrMore`` here has type ``Rule[Int :: HNil, Int :: HNil]``, i.e. it pops one ``Int``
     off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
     their types remain the same, even though the actual values might have changed.
+
+    As a shortcut you can also use ``a.*`` instead of ``zeroOrMore(a)``.
 
 ----
 
@@ -486,6 +488,8 @@ oneOrMore(a)
     The inner rule of ``oneOrMore`` here has type ``Rule[Int :: HNil, Int :: HNil]``, i.e. it pops one ``Int``
     off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
     their types remain the same, even though the actual values might have changed.
+
+    As a shortcut you can also use ``a.+`` instead of ``oneOrMore(a)``.
 
 ----
 
@@ -520,6 +524,17 @@ a.separatedBy(separator: Rule0)
     ``a`` is a rule produced by the ``zeroOrMore``, ``oneOrMore`` or ``xxx.times`` modifier and ``b`` is a ``Rule0``.
     The resulting rule has the same type as ``a`` but expects the individual repetition elements to be separated by
     a successful match of the ``separator`` rule.
+
+    As a shortcut you can also use ``a.*(b)`` or ``(a * b)`` instead of ``zeroOrMore(a).separatedBy(b)``.
+    The same shortcut also works for ``+`` (``oneOrMore``).
+
+----
+
+a ~!~ b
+    Same as `~` but with "cut" semantics, meaning that the parser will never backtrack across this boundary.
+    If the rule being concatenated doesn't match a parse error will be triggered immediately.
+    Usually you don't need to use this "cut" operator but in certain cases it can help in simplifying grammar
+    construction.
 
 
 Parser Actions
@@ -788,6 +803,234 @@ StringBuilding
     the ``StringBuilding`` trait but resort to ``capture`` and ordinary parser actions instead.
 
 
+Error Reporting
+===============
+
+In many applications, especially with grammars that are not too complex, *parboiled* provides good error reports right
+out of the box, without any additional requirements on your part.
+However, there are cases where you want to have more control over how parse errors are created and/or formatted.
+This section gives an overview over how parse error reporting works in *parboiled* and how you can influence it.
+
+The Error Collection Process
+----------------------------
+
+As described in the section about `How the Parser matches Input`_ above the parser consumes input by applying
+grammar rules and backtracking in the case of mismatches. As such rule mismatches are an integral part of the parsers
+operation and do not generally mean that there is something wrong with the input.
+Only when the root rule itself mismatches and the parser has no backtracking options remaining does it become clear that
+we are facing a parse error. At that point however, when the root rule mismatches, the information about where exactly
+the problematic input was and which of the many rule mismatches that the parser experienced during the run
+were the "bad" ones is already lost.
+
+*parboiled* overcomes this problem by simply re-running the failed parser, potentially many times, and "watching" it as
+it tries to consume the erroneous input. With every re-run *parboiled* learns a bit more about the position and nature
+of the error and when this analysis is complete a ``ParseError`` instance is constructed and handed to the application
+as the result of the parsing run, which can then use the error information on its level (e.g. for formatting it and
+displaying it to the user).
+Note that re-running that parser in the presence of parse errors does result in unsuccessful parsing runs being
+potentially much slower than successful ones. However, since in the vast majority of use cases failed runs constitute
+only a small minority of all parsing runs and the normal flow of application logic is disrupted anyway, this slow-down
+is normally quite acceptable, especially if it results in better error messages. See the section on
+`Limiting Error Re-Runs`_ if this is not true for your application.
+
+In principle the error reporting process looks like this:
+
+1. The grammar's root rule is run at maximum speed against the parser input.
+   If this succeeds then all is well and the parsing result is immediately dispatched to the user.
+
+2. If the root rule did not match we know that there we have a parsing error.
+   The parser is then run again to establish the "principal error location". The principal error location is the
+   first character in the input that could not be matched by any rule during the parsing run. In order words, it is
+   the maximum value that the parser's ``cursor`` member had during the parsing run.
+
+3. Once the error location is known the parser is run again. This time all rule mismatches against the input character
+   at error location are recorded. These rule mismatches are used to determine what input the grammar "expects" at the
+   error location but failed to see. For every such "error rule mismatch" the parser collects the "rule trace", i.e.
+   the stack of rules that led to it. Currently this is done by throwing a special exception that bubbles up through
+   the JVM call stack and records rule stack information on its way up. A consequence of this design is that the parser
+   needs to be re-run once per "error rule mismatch".
+
+4. When all error rule traces have been collected all the relevant information about the parse error has been extracted
+   and a ``ParseError`` instance can be constructed and dispatched to the user.
+
+Note: The real process contains a few more steps to properly deal with the ``atomic`` and ``quiet`` markers described
+below. However, knowledge of these additional steps is not important for understanding the basic approach for how
+``ParseError`` instances are constructed.
+
+Formatting Parse Errors
+-----------------------
+
+If a parsing runs fails and you receive a ``ParseError`` instance you can call the ``formatError`` method on your
+parser instance to get the error rendered into an error message string:
+
+.. code:: Scala
+
+    val errorMsg = parser.formatError(error)
+
+The ``formatError`` message can also take an explicit ``ErrorFormatter`` as a second argument, which allows you to
+influence how exactly the error is to be rendered. For example, in order to also render the rule traces you can do:
+
+.. code:: Scala
+
+    val errorMsg = parser.formatError(error, new ErrorFormatter(showTraces = true))
+
+Look at the signature of the ``ErrorFormatter`` constructor for more information on what rendering options exist.
+
+If you want even more control over the error rendering process you can extend the ``ErrorFormatter`` and override
+its methods where you see fit.
+
+
+Tweaking Error Reporting
+------------------------
+
+While the error collection process described above yields all information required for a basic "this character
+was not matched and these characters were expected instead" information you sometimes want to have more control
+over what exactly is reported as "found" and as "expected".
+
+The ``atomic`` Marker
++++++++++++++++++++++
+
+Since PEG parsers are scanner-less (i.e. without an intermediate "TOKEN-stream") they operate directly on the input
+buffer's character level. As such, by default, *parboiled* reports all errors on this character level.
+
+For example, if you run the rule ``"foo" | "fob" | "bar"`` against input "foxes" you'll get this error message::
+
+    Invalid input 'x', expected 'o' or 'b' (line 1, column 3):
+    foxes
+      ^
+
+While this error message is certainly correct, it might not be what you want to show your users, e.g. because ``foo``,
+``fob`` and ``bar`` are regarded as "atomic" keywords of your language, that should either be matched completely or not
+at all. In this case you can use the ``atomic`` marker to signal this to the parser.
+For example, running the rule ``atomic("foo") | atomic("fob") | atomic("bar")`` against input "foxes" yields this error
+message::
+
+    Invalid input "fox", expected "foo", "fob" or "bar" (line 1, column 1):
+    foxes
+    ^
+
+Of course you can use the ``atomic`` marker on any type of rule, not just string rules. Is essentially lifts the level
+at which errors are reported from the character level to a rule level of your choice.
+
+The ``quiet`` Marker
+++++++++++++++++++++
+
+Another problem that more frequently occurs with *parboiled*'s default error reporting is that the list of "expected"
+things becomes too long. Often the reason for this are rules that deal match input which can appear pretty much anywhere,
+like whitespace or comments.
+
+Consider this simple language:
+
+.. code:: Scala
+
+    def Expr    = rule { oneOrMore(Id ~ Keyword ~ Id).separatedBy(',' ~ WS) ~ EOI }
+    def Id      = rule { oneOrMore(CharPredicate.Alpha) ~ WS }
+    def Keyword = rule { atomic(("has" | "is") ~ WS) }
+    def WS      = rule { zeroOrMore(anyOf(" \t \n")) }
+
+When we run the ``Expr`` rule against input "Tim has money, Tom Is poor" we get this error::
+
+    Invalid input 'I', expected [ \t \n] or Keyword (line 1, column 20):
+    Tim has money, Tom Is poor
+                       ^
+
+Again the list of "expected" things is correct but we don't want to bother the user with the information that
+whitespace is also allowed at the error location. The ``quiet`` marker let's us suppress a certain rule from the
+expected list if there are also non-quiet alternatives:
+
+.. code:: Scala
+
+    def WS = rule { quiet(zeroOrMore(anyOf(" \t \n"))) }
+
+With that change the error message becomes::
+
+    Invalid input 'I', expected Keyword (line 1, column 20):
+    Tim has money, Tom Is poor
+                       ^
+
+which is what we want.
+
+
+Naming Rules
+++++++++++++
+
+*parboiled* uses a somewhat involved logic to determine what exactly to report as "mismatched" and "expected" for a
+given parse error. Essentially the process looks like this:
+
+1. Compare all rule trace for the error and drop a potentially existing common prefix. This is done because, if all
+   traces share a common prefix, this prefix can be regarded as the "context" of the error which doesn't need to be reported.
+
+2. For each trace (suffix), find the first frame that tried to start its match at the reported error position.
+   The string representation of this frame (which might be an assigned name) is selected for "expected" reporting.
+
+3. Duplicate "expected" strings are removed.
+
+So, apart from placing ``atomic`` and ``quiet`` markers you can also influence what gets reported as "expected" by
+explicitly naming rules. One way to do this is to pick good names for the rule methods as they automatically attach
+their name to their rules. The names of ``val`` or ``def`` members that you use to reference characters, strings or
+``CharPredicate`` instances also automatically name the respective rule.
+
+For example, if you run the rule ``foo`` from this snippet
+
+.. code:: Scala
+
+    def threeAs = "aaa"
+    def bigB = 'B'
+    def foo = rule { "aa" | atomic(threeAs) | 'b' | bigB }
+
+against input ``x`` you'll get this error message::
+
+    Invalid input 'x', expected 'a', threeAs, 'b' or bigB (line 1, column 1):
+    x
+    ^
+
+If you don't want to split out rules into their own methods you can also use the ``named`` modifier.
+With it you can attach an explicit name to any parser rule. E.g, the example above can also be written like this:
+
+.. code:: Scala
+
+    def foo = rule { "aa" | atomic("aaa".named("threeAs")) | 'b' | 'B'.named("bigB") }
+
+
+Manual Error Reporting
+++++++++++++++++++++++
+
+If you want to bypass *parboiled*'s built-in error reporting logic you can do so by exclusively relying on the ``fail``
+helper, which causes the parser to immediately and fatally terminate the parsing run with a single one-frame rule trace
+with a given "expected" message.
+
+For example, the rule ``"foo" | fail("a true FOO")`` will produce this error when run against ``x``::
+
+    Invalid input 'x', expected a true FOO (line 1, column 1):
+    x
+    ^
+
+
+Limiting Error Re-Runs
+----------------------
+
+Really large grammars, especially ones with bugs as they commonly appear during development, can exhibit a very large
+number of rule traces (potentially thousands) and thus cause the parser to take longer than convenient to terminate an
+error parsing run.
+In order to mitigate this *parboiled* has a configurable limit on the maximum number of rule traces the parser will
+collect during a single error run. The default limit is 24, you can change it by overriding the
+``errorTraceCollectionLimit`` method of the ``Parser`` class.
+
+
+Recovering from Parse Errors
+----------------------------
+
+Currently *parboiled* only ever parses up to the very first parse error in the input.
+While this is all that's required for a large number of use cases there are applications that do require the ability
+to somehow recover from parse errors and continue parsing.
+Syntax highlighting in an interactive IDE-like environment is one such example.
+
+Future versions of *parboiled* might support parse error recovery.
+If your application would benefit from this feature please let us know in `this github ticket`__
+
+__ https://github.com/sirthias/parboiled2/issues/42
+
+
 Advanced Techniques
 ===================
 
@@ -854,12 +1097,13 @@ specific alternatives first are the canonical solutions.
 If your parser is not behaving the way you expect it to watch out for this "wrong ordering" problem, which might be
 not that easy to spot in more complicated rule structures.
 
-Stack overflow when using the ``!`` or ``&`` operator
------------------------------------------------------
 
-The syntactic predicate combinators, ``!`` and ``&``, do not cause the parser to advance so combining them with a repeating
+Stack Overflow when using the & or ! Operator
+---------------------------------------------
+
+The syntactic predicate combinators, ``&`` and ``!``, do themselves consume any input, so combining them with a repeating
 repeating combinator (``zeroOrMore``, ``oneOrMore``, ``xxx.times``) will lead to a stack overflow as the parser repeatedly
-runs the syntactic predicate on the same point in the data it's trying to parse.
+runs the syntactic predicate against the same input position.
 
 For example
 
@@ -874,6 +1118,7 @@ will overflow the stack when run on anything except commas, while
    def foo = rule { capture(zeroOrMore( !',' ~ ANY )) }
 
 will capture all input until it reaches a comma.
+
 
 Unchecked Mutable State
 -----------------------
@@ -930,41 +1175,35 @@ match whitespace after a string terminal:
 In this example all usages of a plain string literals in the parser rules will implicitly match trailing space characters.
 In order to *not* apply the implicit whitespace matching in this case simply say ``str("foo")`` instead of just ``"foo"``.
 
-Parsing the whole input
+
+Parsing the whole Input
 -----------------------
 
-If you don't include ``EOI`` (the special end-of-input pseudo-character) in the root rule of your parser, it may not behave as you expected when it is given invalid input.
+If you don't explicitly match ``EOI`` (the special end-of-input pseudo-character) in your grammar's root rule
+the parser will not produce an error if, at the end of a parsing run, there is still unmatched input left.
+This means that if the root rule matches only a prefix of the whole input the parser will report a successful parsing
+run, which might not be what you want.
 
-As an example, look at this parser for simple arithmetic expressions:
+As an example, consider this very basic parser:
 
 .. code:: Scala
 
     class MyParser(val input: ParserInput) extends Parser {
-      def Expr: Rule1[Int] = rule { Sum }
-      private def Sum = rule { 
-        oneOrMore(Product).separatedBy(" + ") ~> ((products: Seq[Int]) => products.sum) 
-      }
-      private def Product = rule { 
-        oneOrMore(Value).separatedBy(" * ") ~> ((values: Seq[Int]) => values.product) 
-      }
-      private def Value = rule { 
-        Constant | ('(' ~ Sum ~ ')') 
-      }
-      private def Constant = rule { 
-        capture(oneOrMore(Digit)) ~> ((digits: String) => digits.toInt) 
-      }
+      def InputLine = rule { "foo" | "bar }
     }
     
-    new MyParser("1 + 2").Expr.run()  // Success(3)
-    new MyParser("1 + (2").Expr.run()  // Success(1)
+    new MyParser("foo").InputLine.run()  // Success
+    new MyParser("foot").InputLine.run()  // also Success!!
 
-In the second run of the parser, we give it the invalid input ``1 + (2``. But instead of failing with a ``ParseError``, as you might expect, it successfully parses the ``1`` and ignores the rest of the input.
+In the second run of the parser, instead of failing with a ``ParseError`` as you might expect, it successfully parses
+the matching input ``foo`` and ignores the rest of the input.
 
-To fix this, you need to tell the parser to parse the entire input. You can do this by appending ``EOI`` to the root rule as follows:
+If this is not what you want you need to explicitly match ``EOI``, for example as follows:
 
 .. code:: Scala
 
-    def Expr: Rule1[Int] = rule { Sum ~ EOI }
+    def InputLine = rule { ("foo" | "bar) ~ EOI }
+
 
 Grammar Debugging
 =================
@@ -1121,6 +1360,12 @@ support, feedback and general discussion.
 give you full posting privileges if your message doesn't unmask you as a spammer.
 
 __ https://groups.google.com/forum/#!forum/parboiled-user
+
+You can also use the gitter.im chat channel for parboiled2:
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/sirthias/parboiled2
+   :target: https://gitter.im/sirthias/parboiled2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 
 References
