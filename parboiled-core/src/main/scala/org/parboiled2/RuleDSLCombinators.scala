@@ -70,6 +70,15 @@ trait RuleDSLCombinators {
   def atomic[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = `n/a`
 
   /**
+   * Marks a rule as "quiet" from an error reporting perspective.
+   * Quiet rules only show up in error rule traces if no "unquiet" rules match up to the error location.
+   * This marker frequently used for low-level syntax rules (like whitespace or comments) that might be matched
+   * essentially everywhere and are therefore not helpful when appearing in the "expected" set of an error report.
+   */
+  @compileTimeOnly("Calls to `atomic` must be inside `rule` macro")
+  def quiet[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = `n/a`
+
+  /**
    * Allows creation of a sub parser and running of one of its rules as part of the current parsing process.
    * The subparser will start parsing at the current input position and the outer parser (this parser)
    * will continue where the sub-parser stopped.

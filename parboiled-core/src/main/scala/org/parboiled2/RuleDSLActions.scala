@@ -60,7 +60,6 @@ trait RuleDSLActions {
    * for every rule application anew! (Since the expression is directly transplanted
    * into the rule method by the `rule` macro.
    */
-
   @compileTimeOnly("Calls to `run` must be inside `rule` macro")
   def run[T](arg: T)(implicit rr: RunResult[T]): rr.Out = `n/a`
 

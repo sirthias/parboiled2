@@ -66,7 +66,7 @@ class JsonParserSpec extends Specification {
     val parser = new JsonParser(s)
     parser.Json.run() match {
       case Success(result)        => result
-      case Failure(e: ParseError) => sys.error(parser.formatError(e, showTraces = true))
+      case Failure(e: ParseError) => sys.error(parser.formatError(e, new ErrorFormatter(showTraces = true)))
       case Failure(e)             => throw e
     }
   }
