@@ -398,7 +398,7 @@ a | b
     independently of the type of the underlying rule.
 
     Note that ``&`` not itself consuming any input can have surprising implications in repeating constructs,
-    see `Stack Overflow when using the & or ! Operator`_ for more details.
+    see `Non-Termination when using Syntactic Predicates`_ for more details.
 
 ----
 
@@ -409,7 +409,7 @@ a | b
     always ``Rule0``, independently of the type of the underlying rule.
 
     Note that ``!`` not itself consuming any input can have surprising implications in repeating constructs,
-    see `Stack Overflow when using the & or ! Operator`_ for more details.
+    see `Non-Termination when using Syntactic Predicates`_ for more details.
 
 ----
 
@@ -818,7 +818,7 @@ As described in the section about `How the Parser matches Input`_ above the pars
 grammar rules and backtracking in the case of mismatches. As such rule mismatches are an integral part of the parsers
 operation and do not generally mean that there is something wrong with the input.
 Only when the root rule itself mismatches and the parser has no backtracking options remaining does it become clear that
-we are facing a parse error. At that point however, when the root rule mismatches, the information about where exactly
+a parse error is present. At that point however, when the root rule mismatches, the information about where exactly
 the problematic input was and which of the many rule mismatches that the parser experienced during the run
 were the "bad" ones is already lost.
 
@@ -827,7 +827,7 @@ it tries to consume the erroneous input. With every re-run *parboiled* learns a 
 of the error and when this analysis is complete a ``ParseError`` instance is constructed and handed to the application
 as the result of the parsing run, which can then use the error information on its level (e.g. for formatting it and
 displaying it to the user).
-Note that re-running that parser in the presence of parse errors does result in unsuccessful parsing runs being
+Note that re-running the parser in the presence of parse errors does result in unsuccessful parsing runs being
 potentially much slower than successful ones. However, since in the vast majority of use cases failed runs constitute
 only a small minority of all parsing runs and the normal flow of application logic is disrupted anyway, this slow-down
 is normally quite acceptable, especially if it results in better error messages. See the section on
@@ -909,8 +909,9 @@ message::
     foxes
     ^
 
-Of course you can use the ``atomic`` marker on any type of rule, not just string rules. Is essentially lifts the level
-at which errors are reported from the character level to a rule level of your choice.
+Of course you can use the ``atomic`` marker on any type of rule, not just string rules. It essentially moves the
+reported error position forward from the principal error position and lifts the level at which errors are reported
+from the character level to a rule level of your choice.
 
 The ``quiet`` Marker
 ++++++++++++++++++++
@@ -934,8 +935,8 @@ When we run the ``Expr`` rule against input "Tim has money, Tom Is poor" we get 
     Tim has money, Tom Is poor
                        ^
 
-Again the list of "expected" things is correct but we don't want to bother the user with the information that
-whitespace is also allowed at the error location. The ``quiet`` marker let's us suppress a certain rule from the
+Again the list of "expected" things is technically correct but we don't want to bother the user with the information
+that whitespace is also allowed at the error location. The ``quiet`` marker let's us suppress a certain rule from the
 expected list if there are also non-quiet alternatives:
 
 .. code:: Scala
@@ -958,7 +959,8 @@ Naming Rules
 given parse error. Essentially the process looks like this:
 
 1. Compare all rule trace for the error and drop a potentially existing common prefix. This is done because, if all
-   traces share a common prefix, this prefix can be regarded as the "context" of the error which doesn't need to be reported.
+   traces share a common prefix, this prefix can be regarded as the "context" of the error which is probably apparent
+   to the user and as such doesn't need to be reported.
 
 2. For each trace (suffix), find the first frame that tried to start its match at the reported error position.
    The string representation of this frame (which might be an assigned name) is selected for "expected" reporting.
@@ -967,16 +969,15 @@ given parse error. Essentially the process looks like this:
 
 So, apart from placing ``atomic`` and ``quiet`` markers you can also influence what gets reported as "expected" by
 explicitly naming rules. One way to do this is to pick good names for the rule methods as they automatically attach
-their name to their rules. The names of ``val`` or ``def`` members that you use to reference characters, strings or
-``CharPredicate`` instances also automatically name the respective rule.
+their name to their rules. The names of ``val`` or ``def`` members that you use to reference ``CharPredicate``
+instances also automatically name the respective rule.
 
-For example, if you run the rule ``foo`` from this snippet
+If you don't want to split out rules into their own methods you can also use the ``named`` modifier.
+With it you can attach an explicit name to any parser rule. For example, if you run the rule ``foo`` from this snippet:
 
 .. code:: Scala
 
-    def threeAs = "aaa"
-    def bigB = 'B'
-    def foo = rule { "aa" | atomic(threeAs) | 'b' | bigB }
+    def foo = rule { "aa" | atomic("aaa").named("threeAs") | 'b' | 'B'.named("bigB") }
 
 against input ``x`` you'll get this error message::
 
@@ -984,20 +985,13 @@ against input ``x`` you'll get this error message::
     x
     ^
 
-If you don't want to split out rules into their own methods you can also use the ``named`` modifier.
-With it you can attach an explicit name to any parser rule. E.g, the example above can also be written like this:
-
-.. code:: Scala
-
-    def foo = rule { "aa" | atomic("aaa".named("threeAs")) | 'b' | 'B'.named("bigB") }
-
 
 Manual Error Reporting
 ++++++++++++++++++++++
 
-If you want to bypass *parboiled*'s built-in error reporting logic you can do so by exclusively relying on the ``fail``
-helper, which causes the parser to immediately and fatally terminate the parsing run with a single one-frame rule trace
-with a given "expected" message.
+If you want to completely bypass *parboiled*'s built-in error reporting logic you can do so by exclusively relying on
+the ``fail`` helper, which causes the parser to immediately and fatally terminate the parsing run with a single
+one-frame rule trace with a given "expected" message.
 
 For example, the rule ``"foo" | fail("a true FOO")`` will produce this error when run against ``x``::
 
@@ -1026,7 +1020,7 @@ to somehow recover from parse errors and continue parsing.
 Syntax highlighting in an interactive IDE-like environment is one such example.
 
 Future versions of *parboiled* might support parse error recovery.
-If your application would benefit from this feature please let us know in `this github ticket`__
+If your application would benefit from this feature please let us know in `this github ticket`__.
 
 __ https://github.com/sirthias/parboiled2/issues/42
 
@@ -1098,20 +1092,20 @@ If your parser is not behaving the way you expect it to watch out for this "wron
 not that easy to spot in more complicated rule structures.
 
 
-Stack Overflow when using the & or ! Operator
----------------------------------------------
+Non-Termination when using Syntactic Predicates
+-----------------------------------------------
 
-The syntactic predicate combinators, ``&`` and ``!``, do themselves consume any input, so combining them with a repeating
-repeating combinator (``zeroOrMore``, ``oneOrMore``, ``xxx.times``) will lead to a stack overflow as the parser repeatedly
-runs the syntactic predicate against the same input position.
+The syntactic predicate operators, ``&`` and ``!``, don't themselves consume any input, so directly wrapping them with a
+repeating combinator (like ``zeroOrMore`` or ``oneOrMore``) will lead to an infinite loop as the parser continuously
+runs the syntactic predicate against the very same input position without making any progress.
 
-For example
+If you use syntactic predicates in a loop make sure to actually consume input as well. For example:
 
 .. code:: Scala
 
     def foo = rule { capture(zeroOrMore( !',' )) }
 
-will overflow the stack when run on anything except commas, while
+will never terminate, while
 
 .. code:: Scala
 
