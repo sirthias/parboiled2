@@ -29,7 +29,7 @@ class ErrorReportingSpec extends TestParserSpec {
       }
 
       "" must beMismatchedWithErrorMsg(
-        """Unexpected end of input, expected 'a' (line 1, column 1):
+        """Unexpected end of input, expected targetRule (line 1, column 1):
           |
           |^
           |
@@ -43,7 +43,7 @@ class ErrorReportingSpec extends TestParserSpec {
           | ^
           |
           |1 rule mismatched at error location:
-          |  /targetRule/ +,0 / 'b'
+          |  /targetRule/ + / 'b'
           |""")
 
       "abx" must beMismatchedWithErrorMsg(
@@ -52,7 +52,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |  ^
           |
           |2 rules mismatched at error location:
-          |  /targetRule/ +,-1 / 'b'
+          |  /targetRule/ +:-1 / 'b'
           |  /targetRule/ [cde]
           |""")
 
@@ -62,7 +62,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |   ^
           |
           |4 rules mismatched at error location:
-          |  /targetRule/ | / "fgh",0 / 'f'
+          |  /targetRule/ | / "fgh" / 'f'
           |  /targetRule/ | / Digit:<CharPredicate>
           |  /targetRule/ | / hex:<CharPredicate>
           |  /targetRule/ | / UpperAlpha:<CharPredicate>
@@ -79,16 +79,17 @@ class ErrorReportingSpec extends TestParserSpec {
     }
 
     "for rules with negative syntactic predicates" in new TestParser0 {
-      def targetRule = rule { !"a" ~ ANY ~ !foo ~ EOI }
+      def targetRule = rule { (!"a" ~ ANY | 'z') ~ !foo ~ EOI }
       def foo = rule { "bcd" }
 
       "a" must beMismatchedWithErrorMsg(
-        """Invalid input 'a', expected !"a" (line 1, column 1):
+        """Invalid input 'a', expected !"a" or 'z' (line 1, column 1):
           |a
           |^
           |
-          |1 rule mismatched at error location:
-          |  /targetRule/ !"a"
+          |2 rules mismatched at error location:
+          |  /targetRule/ | / !"a"
+          |  /targetRule/ | / 'z'
           |""")
 
       "xbcd" must beMismatchedWithErrorMsg(
@@ -108,7 +109,7 @@ class ErrorReportingSpec extends TestParserSpec {
       def `#hash#` = rule { '#' }
 
       "a" must beMismatchedWithErrorMsg(
-        """Invalid input 'a', expected 'x' (line 1, column 1):
+        """Invalid input 'a', expected targetRule (line 1, column 1):
           |a
           |^
           |
@@ -144,7 +145,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |  ^
           |
           |1 rule mismatched at error location:
-          |  /targetRule/ "abc",2 / 'c'
+          |  /targetRule/ "abc":-2 / 'c'
           |""")
     }
 
@@ -157,7 +158,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |  ^
           |
           |1 rule mismatched at error location:
-          |  /foo/ prefix:"abc",2 / 'c'
+          |  /foo/ prefix:"abc":-2 / 'c'
           |""")
 
       "abc-" must beMismatchedWithErrorMsg(
@@ -166,8 +167,8 @@ class ErrorReportingSpec extends TestParserSpec {
           |   ^
           |
           |2 rules mismatched at error location:
-          |  /foo/ suffix:| / "def",0 / 'd'
-          |  /foo/ suffix:| / "xyz",0 / 'x'
+          |  /foo/ suffix:| / "def" / 'd'
+          |  /foo/ suffix:| / "xyz" / 'x'
           |""")
     }
 
@@ -175,13 +176,13 @@ class ErrorReportingSpec extends TestParserSpec {
       def targetRule = rule { "foo" ~ fail("no `foo` prefix") | 3.times(ANY) ~ EOI }
 
       "foot" must beMismatchedWithErrorMsg(
-        """Invalid input 't', expected no `foo` prefix or 'EOI' (line 1, column 4):
+        """Invalid input 't', expected no `foo` prefix or EOI (line 1, column 4):
           |foot
           |   ^
           |
           |2 rules mismatched at error location:
-          |  /targetRule/ | / no `foo` prefix
-          |  /targetRule/ | / 'EOI'
+          |  /targetRule/ |:-3 / no `foo` prefix
+          |  /targetRule/ |:-3 / EOI:'EOI'
           |""")
 
       "fox" must beMatched
@@ -212,9 +213,9 @@ class ErrorReportingSpec extends TestParserSpec {
           |^
           |
           |3 rules mismatched at error location:
-          |  /targetRule/ | / "a",0 / 'a'
+          |  /targetRule/ | / "a" / 'a'
           |  /targetRule/ | / 'b'
-          |  /targetRule/ | / "c",0 / 'c'
+          |  /targetRule/ | / "c" / 'c'
           |""")
     }
 
@@ -227,10 +228,10 @@ class ErrorReportingSpec extends TestParserSpec {
           |   ^
           |
           |4 rules mismatched at error location:
-          |  /targetRule/ *,-3 / '-'
-          |  /targetRule/ | / atomic,2 / "foo",2 / 'o'
-          |  /targetRule/ | / atomic,0 / "bar",0 / 'b'
-          |  /targetRule/ | / atomic,0 / "baz",0 / 'b'
+          |  /targetRule/ *:-3 / '-'
+          |  /targetRule/ | / atomic / "foo":-2 / 'o'
+          |  /targetRule/ | / atomic / "bar" / 'b'
+          |  /targetRule/ | / atomic / "baz" / 'b'
           |""")
     }
 
@@ -243,8 +244,8 @@ class ErrorReportingSpec extends TestParserSpec {
           |^
           |
           |2 rules mismatched at error location:
-          |  /targetRule/ atomic,0 / | / 'a'
-          |  /targetRule/ atomic,0 / | / 'b'
+          |  /targetRule/ atomic / | / 'a'
+          |  /targetRule/ atomic / | / 'b'
           |""")
     }
 
@@ -258,7 +259,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |    ^
           |
           |1 rule mismatched at error location:
-          |  /targetRule/ | / "def",1 / 'e'
+          |  /targetRule/ |:-1 / "def":-1 / 'e'
           |""")
 
       // since the error location is only reached by a quiet rule we need to report it
@@ -268,7 +269,7 @@ class ErrorReportingSpec extends TestParserSpec {
           |     ^
           |
           |1 rule mismatched at error location:
-          |  /targetRule/ | / quiet,2 / "dxy",2 / 'y'
+          |  /targetRule/ |:-2 / quiet:-2 / "dxy":-2 / 'y'
           |""")
     }
 
@@ -283,10 +284,10 @@ class ErrorReportingSpec extends TestParserSpec {
           |            ^
           |
           |4 rules mismatched at error location:
-          |  /targetRule/ *,-3 / '\t'
-          |  /targetRule/ | / atomic,2 / "foo",2 / 'o'
-          |  /targetRule/ | / atomic,0 / "bar",0 / 'b'
-          |  /targetRule/ | / atomic,0 / "baz",0 / 'b'
+          |  /targetRule/ *:-3 / '\t'
+          |  /targetRule/ | / atomic / "foo":-2 / 'o'
+          |  /targetRule/ | / atomic / "bar" / 'b'
+          |  /targetRule/ | / atomic / "baz" / 'b'
           |""")
     }
   }

@@ -58,23 +58,23 @@ class CalculatorSpec extends TestParserSpec {
       "2*8/2+16/16-16/(1+3)" must beMatchedWith(5)
 
       "*1" must beMismatchedWithErrorMsg(
-        """Invalid input '*', expected Digit or '(' (line 1, column 1):
+        """Invalid input '*', expected Number or Parens (line 1, column 1):
           |*1
           |^
           |
           |2 rules mismatched at error location:
-          |  /InputLine/ /Expression/ /Term/ /Factor/ | /Number/ capture /Digits/ +,0 / Digit:<CharPredicate>
+          |  /InputLine/ /Expression/ /Term/ /Factor/ | /Number/ capture /Digits/ + / Digit:<CharPredicate>
           |  /InputLine/ /Expression/ /Term/ /Factor/ | /Parens/ '('
           |""")
 
       "()" must beMismatchedWithErrorMsg(
-        """Invalid input ')', expected Digit or '(' (line 1, column 2):
+        """Invalid input ')', expected Number or Parens (line 1, column 2):
           |()
           | ^
           |
           |2 rules mismatched at error location:
-          |  ...Expression/ /Term/ /Factor/ | /Parens/ /Expression/ /Term/ /Factor/ | /Number/ capture /Digits/ +,0 / Digit:<CharPredicate>
-          |  /InputLine/ /Expression/ /Term/ /Factor/ | /Parens/ /Expression/ /Term/ /Factor/ | /Parens/ '('
+          |  ...xpression/ /Term/ /Factor/ |:-1 /Parens/ /Expression/ /Term/ /Factor/ | /Number/ capture /Digits/ + / Digit:<CharPredicate>
+          |  /InputLine/ /Expression/ /Term/ /Factor/ |:-1 /Parens/ /Expression/ /Term/ /Factor/ | /Parens/ '('
           |""")
 
       "1+2)" must beMismatchedWithErrorMsg(
@@ -83,22 +83,22 @@ class CalculatorSpec extends TestParserSpec {
           |   ^
           |
           |6 rules mismatched at error location:
-          |  /InputLine/ /Expression/ *,-2 / | /Term/ /Factor/ | /Number/ capture /Digits/ +,-1 / Digit:<CharPredicate>
-          |  /InputLine/ /Expression/ *,-2 / | /Term/ *,0 / | / '*'
-          |  /InputLine/ /Expression/ *,-2 / | /Term/ *,0 / | / '/'
-          |  /InputLine/ /Expression/ *,-2 / | / '+'
-          |  /InputLine/ /Expression/ *,-2 / | / '-'
+          |  /InputLine/ /Expression/ *:-2 / |:-2 /Term/ /Factor/ |:-1 /Number/ capture:-1 /Digits/ +:-1 / Digit:<CharPredicate>
+          |  /InputLine/ /Expression/ *:-2 / |:-2 /Term/ * / | / '*'
+          |  /InputLine/ /Expression/ *:-2 / |:-2 /Term/ * / | / '/'
+          |  /InputLine/ /Expression/ *:-2 / | / '+'
+          |  /InputLine/ /Expression/ *:-2 / | / '-'
           |  /InputLine/ 'EOI'
           |""")
 
       "(1+)2" must beMismatchedWithErrorMsg(
-        """Invalid input ')', expected Digit or '(' (line 1, column 4):
+        """Invalid input ')', expected Number or Parens (line 1, column 4):
           |(1+)2
           |   ^
           |
           |2 rules mismatched at error location:
-          |  ...n/ /Term/ /Factor/ | /Parens/ /Expression/ *,-1 / | /Term/ /Factor/ | /Number/ capture /Digits/ +,0 / Digit:<CharPredicate>
-          |  /InputLine/ /Expression/ /Term/ /Factor/ | /Parens/ /Expression/ *,-1 / | /Term/ /Factor/ | /Parens/ '('
+          |  ...Term/ /Factor/ |:-3 /Parens/ /Expression/ *:-1 / |:-1 /Term/ /Factor/ | /Number/ capture /Digits/ + / Digit:<CharPredicate>
+          |  /InputLine/ /Expression/ /Term/ /Factor/ |:-3 /Parens/ /Expression/ *:-1 / |:-1 /Term/ /Factor/ | /Parens/ '('
           |""")
     }
   }

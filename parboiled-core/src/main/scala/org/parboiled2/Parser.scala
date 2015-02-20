@@ -134,15 +134,6 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __offset(start: Int) =
-    phase match {
-      case x: CollectingRuleTraces ⇒ start - x.minErrorIndex
-      case _                       ⇒ throw new IllegalStateException
-    }
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
   def __run[L <: HList](rule: ⇒ RuleN[L])(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = {
     def runRule(): Boolean = {
       _cursor = -1
@@ -162,14 +153,14 @@ abstract class Parser(initialValueStackSize: Int = 16,
     def phase1_establishPrincipalErrorIndex(): Int = {
       val phase1 = new EstablishingPrincipalErrorIndex()
       phase = phase1
-      if (runRule()) sys.error("Parsing unexpectedly succeeded while trying to establish the error location")
+      if (runRule()) sys.error("Parsing unexpectedly succeeded while trying to establish the principal error location")
       phase1.maxCursor
     }
 
     def phase2_establishReportedErrorIndex(principalErrorIndex: Int) = {
       val phase2 = new EstablishingReportedErrorIndex(principalErrorIndex)
       phase = phase2
-      if (runRule()) sys.error("Parsing unexpectedly succeeded while trying to establish the error location")
+      if (runRule()) sys.error("Parsing unexpectedly succeeded while trying to establish the reported error location")
       phase2
     }
 
@@ -200,7 +191,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
             runRule()
             null // we managed to complete the run w/o exception, i.e. we have collected all traces
           } catch {
-            case e: Parser.TracingBubbleException ⇒ e.trace
+            case e: TracingBubbleException ⇒ e.trace
           }
         if (trace eq null) done
         else phase4_collectRuleTraces(reportedErrorIndex, principalErrorIndex,
@@ -221,7 +212,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
     } catch {
       case e: Parser.HardFail ⇒
         val pos = Position(cursor, input)
-        scheme.parseError(ParseError(pos, pos, RuleTrace.Fail(e.expected) :: Nil))
+        scheme.parseError(ParseError(pos, pos, RuleTrace(Nil, RuleTrace.Fail(e.expected)) :: Nil))
       case NonFatal(e) ⇒
         e.printStackTrace()
         scheme.failure(e)
@@ -358,7 +349,13 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __bubbleUp(trace: RuleTrace): Nothing = throw new Parser.TracingBubbleException(trace)
+  def __bubbleUp(terminal: RuleTrace.Terminal): Nothing = __bubbleUp(Nil, terminal)
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  def __bubbleUp(prefix: List[RuleTrace.NonTerminal], terminal: RuleTrace.Terminal): Nothing =
+    throw new TracingBubbleException(RuleTrace(prefix, terminal))
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -396,7 +393,8 @@ abstract class Parser(initialValueStackSize: Int = 16,
         try __registerMismatch()
         catch {
           case Parser.StartTracingException ⇒
-            __bubbleUp(RuleTrace.StringMatch(string, ix, RuleTrace.CharMatch(string charAt ix)))
+            import RuleTrace._
+            __bubbleUp(NonTerminal(StringMatch(string), -ix) :: Nil, CharMatch(string charAt ix))
         }
       }
     else true
@@ -425,7 +423,8 @@ abstract class Parser(initialValueStackSize: Int = 16,
         try __registerMismatch()
         catch {
           case Parser.StartTracingException ⇒
-            __bubbleUp(RuleTrace.IgnoreCaseString(string, ix, RuleTrace.IgnoreCaseChar(string charAt ix)))
+            import RuleTrace._
+            __bubbleUp(NonTerminal(IgnoreCaseString(string), -ix) :: Nil, IgnoreCaseChar(string charAt ix))
         }
       }
     else true
@@ -480,8 +479,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
       }
       false
     } catch {
-      case e: Parser.TracingBubbleException ⇒
-        __bubbleUp(RuleTrace.MapMatch(m, __offset(start), e.trace.asInstanceOf[RuleTrace.StringMatch]))
+      case e: TracingBubbleException ⇒ e.bubbleUp(RuleTrace.MapMatch(m), start)
     }
   }
 
@@ -489,6 +487,22 @@ abstract class Parser(initialValueStackSize: Int = 16,
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __hardFail(expected: String) = throw new Parser.HardFail(expected)
+
+  /**
+   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+   */
+  class TracingBubbleException(private var _trace: RuleTrace) extends RuntimeException with NoStackTrace {
+    def trace = _trace
+    def bubbleUp(key: RuleTrace.NonTerminalKey, start: Int): Nothing = throw prepend(key, start)
+    def prepend(key: RuleTrace.NonTerminalKey, start: Int): this.type = {
+      val offset = phase match {
+        case x: CollectingRuleTraces ⇒ start - x.minErrorIndex
+        case _                       ⇒ throw new IllegalStateException
+      }
+      _trace = _trace.copy(prefix = RuleTrace.NonTerminal(key, offset) :: _trace.prefix)
+      this
+    }
+  }
 
   protected class __SubParserInput extends ParserInput {
     val offset = _cursor // the number of chars the input the sub-parser sees is offset from the outer input start
@@ -544,11 +558,6 @@ object Parser {
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   object StartTracingException extends RuntimeException with NoStackTrace
-
-  /**
-   * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-   */
-  class TracingBubbleException(val trace: RuleTrace) extends RuntimeException with NoStackTrace
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!

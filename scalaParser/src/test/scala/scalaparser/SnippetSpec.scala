@@ -786,9 +786,9 @@ class SnippetSpec extends Specification {
         |    ^
         |
         |3 rules mismatched at error location:
-        |  /CompilationUnit/ /Body/ |:-4 /TopPackageSeq/ +:-4 /Key/ /RawKey/ "package":4 / 'a'
-        |  /CompilationUnit/ /Body/ |:-4 /TopStatSeq/ +:-4 /TopStat/ |:-4 /PkgBlock/ /Key/ /RawKey/ "package":4 / 'a'
-        |  /CompilationUnit/ /Body/ |:-4 /TopStatSeq/ +:-4 /TopStat/ |:-4 /PkgObj/ /Key/ /RawKey/ "package":4 / 'a'
+        |  /CompilationUnit/ /Body/ |:-4 /TopPackageSeq/ +:-4 /Key/ /RawKey/ "package":-4 / 'a'
+        |  /CompilationUnit/ /Body/ |:-4 /TopStatSeq/ +:-4 /TopStat/ |:-4 /PkgBlock/ /Key/ /RawKey/ "package":-4 / 'a'
+        |  /CompilationUnit/ /Body/ |:-4 /TopStatSeq/ +:-4 /TopStat/ |:-4 /PkgObj/ /Key/ /RawKey/ "package":-4 / 'a'
         |""".stripMargin)
 
 //    checkError("110",

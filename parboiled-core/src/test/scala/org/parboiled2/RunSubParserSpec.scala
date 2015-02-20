@@ -19,14 +19,14 @@ package org.parboiled2
 class RunSubParserSpec extends TestParserSpec {
 
   class SubParser(val input: ParserInput) extends Parser {
-    def intNumber = rule {
+    def IntNumber = rule {
       capture(oneOrMore(CharPredicate.Digit)) ~> (_.toInt)
     }
   }
 
   abstract class ParserWithSubParser extends TestParser1[Int] {
     def InputLine = rule {
-      oneOrMore(runSubParser(new SubParser(_).intNumber)).separatedBy(',') ~ EOI ~> (_.sum)
+      oneOrMore(runSubParser(new SubParser(_).IntNumber)).separatedBy(',') ~ EOI ~> (_.sum)
     }
   }
 
@@ -38,12 +38,12 @@ class RunSubParserSpec extends TestParserSpec {
       "43,8" must beMatchedWith(51)
 
       "1234,a" must beMismatchedWithErrorMsg(
-        """Invalid input 'a', expected Digit (line 1, column 6):
+        """Invalid input 'a', expected IntNumber (line 1, column 6):
           |1234,a
           |     ^
           |
           |1 rule mismatched at error location:
-          |  /InputLine/ +,-5 / runSubParser,0 /intNumber/ capture / +,0 / Digit:<CharPredicate>
+          |  /InputLine/ +:-5 / runSubParser /IntNumber/ capture / + / Digit:<CharPredicate>
           |""")
     }
   }

@@ -29,6 +29,13 @@ case class ParseError(position: Position,
   def format(input: ParserInput, formatter: ErrorFormatter): String = formatter.format(this, input)
 
   override def toString = s"ParseError($position, $principalPosition, <${traces.size} traces>)"
+
+  lazy val effectiveTraces: immutable.Seq[RuleTrace] =
+    traces map {
+      val commonPrefixLen = RuleTrace.commonNonAtomicPrefixLength(traces)
+      if (commonPrefixLen > 0) t ⇒ t.copy(prefix = t.prefix.drop(commonPrefixLen)).dropUnreportedPrefix
+      else _.dropUnreportedPrefix
+    }
 }
 
 /**
@@ -50,131 +57,101 @@ object Position {
   }
 }
 
-sealed abstract class RuleTrace {
+case class RuleTrace(prefix: List[RuleTrace.NonTerminal], terminal: RuleTrace.Terminal) {
   import RuleTrace._
 
   /**
-   * The number of characters before the principal error location that the rule corresponding
-   * to this trace head started matching.
+   * Returns a RuleTrace starting with the first [[RuleTrace.Atomic]] element or the first sub-trace whose
+   * offset from the reported error index is zero (e.g. the [[RuleTrace.Terminal]]).
+   * If this is wrapped in one or more [[RuleTrace.NonTerminal.Named]] the outermost of these is returned instead.
    */
-  def offset: Int
-
-  /**
-   * Returns the [[Terminal]] trace of this trace.
-   * If this trace is already a [[Terminal]] the method returns `this`.
-   */
-  def terminal: Terminal = {
-    @tailrec def rec(current: RuleTrace): Terminal =
+  def dropUnreportedPrefix: RuleTrace = {
+    @tailrec def rec(current: List[NonTerminal], named: List[NonTerminal]): List[NonTerminal] =
       current match {
-        case x: NonTerminal ⇒ rec(x.tail)
-        case x: Terminal    ⇒ x
+        case NonTerminal(Named(_), _) :: tail ⇒ rec(tail, if (named.isEmpty) current else named)
+        case NonTerminal(RuleCall, _) :: tail ⇒ rec(tail, named) // RuleCall elements allow the name to be carried over
+        case NonTerminal(Atomic, _) :: tail   ⇒ if (named.isEmpty) tail else named
+        case x :: tail                        ⇒ if (x.offset >= 0 && named.nonEmpty) named else rec(tail, Nil)
+        case Nil                              ⇒ named
       }
-    rec(this)
-  }
-
-  /**
-   * Folds the given function across this trace.
-   */
-  def fold[T](zero: T)(f: (T, RuleTrace) ⇒ T): T = {
-    @tailrec def rec(current: RuleTrace, acc: T): T =
-      current match {
-        case x: NonTerminal ⇒ rec(x.tail, f(acc, x))
-        case x: Terminal    ⇒ f(acc, x)
-      }
-    rec(this, zero)
-  }
-
-  /**
-   * Applies the given function to all frames of the trace and returns
-   * the first non-empty result or None.
-   */
-  def findMap[T](f: RuleTrace ⇒ Option[T]): Option[T] = {
-    @tailrec def rec(current: RuleTrace): Option[T] =
-      current match {
-        case x: NonTerminal ⇒
-          val r = f(x); if (r.isDefined) r else rec(x.tail)
-        case x: Terminal ⇒ f(x)
-      }
-    rec(this)
-  }
-
-  /**
-   * Applies the given partial function to all frames of the trace and returns
-   * the first defined result or None.
-   */
-  def collect[T](pf: PartialFunction[RuleTrace, T]): Option[T] = findMap(pf.lift)
-
-  /**
-   * Returns the tail of the first [[RuleTrace.Atomic]] element or the [[RuleTrace.Terminal]].
-   * If this is wrapped in one or more [[RuleTrace.Named]] the outermost of these is returned instead.
-   */
-  def firstAtomicChildOrTerminal: RuleTrace = {
-    @tailrec def rec(current: RuleTrace, named: Option[RuleTrace]): RuleTrace =
-      current match {
-        case x: Named       ⇒ rec(x.tail, named orElse Some(x))
-        case x: RuleCall    ⇒ rec(x.tail, named) // RuleCall elements allow the name to be carried over
-        case x: Terminal    ⇒ named getOrElse x
-        case x: Atomic      ⇒ named getOrElse x.tail
-        case x: NonTerminal ⇒ rec(x.tail, None)
-      }
-    rec(this, None)
+    val newPrefix = rec(prefix, Nil)
+    if (newPrefix ne prefix) copy(prefix = newPrefix) else this
   }
 
   /**
    * Wraps this trace with a [[RuleTrace.Named]] wrapper if the given name is non-empty.
    */
-  def named(name: String): RuleTrace =
-    if (name.isEmpty) this else Named(name, this)
+  def named(name: String): RuleTrace = {
+    val newHead = NonTerminal(Named(name), if (prefix.isEmpty) 0 else prefix.head.offset)
+    if (name.isEmpty) this else copy(prefix = newHead :: prefix)
+  }
 }
 
 object RuleTrace {
 
-  sealed trait NonTerminal extends RuleTrace {
-    def tail: RuleTrace
-  }
-  case class Sequence(subs: Int, offset: Int, tail: RuleTrace) extends NonTerminal
-  case class Cut(offset: Int, tail: RuleTrace) extends NonTerminal
-  case class StringMatch(string: String, offset: Int, tail: CharMatch) extends NonTerminal
-  case class IgnoreCaseString(string: String, offset: Int, tail: IgnoreCaseChar) extends NonTerminal
-  case class MapMatch(map: Map[String, Any], offset: Int, tail: StringMatch) extends NonTerminal
-  case class ZeroOrMore(offset: Int, tail: RuleTrace) extends NonTerminal
-  case class OneOrMore(offset: Int, tail: RuleTrace) extends NonTerminal
-  case class Times(min: Int, max: Int, offset: Int, tail: RuleTrace) extends NonTerminal
-  case class Run(offset: Int, tail: RuleTrace) extends NonTerminal
-  case class Action(offset: Int, tail: RuleTrace) extends NonTerminal
-  case class RunSubParser(offset: Int, tail: RuleTrace) extends NonTerminal
+  def commonNonAtomicPrefixLength(traces: Seq[RuleTrace]): Int =
+    if (traces.size > 1) {
+      val tracesTail = traces.tail
+      def hasElem(ix: Int, elem: NonTerminal): RuleTrace ⇒ Boolean =
+        _.prefix.drop(ix) match {
+          case `elem` :: _ ⇒ true
+          case _           ⇒ false
+        }
+      @tailrec def rec(current: List[NonTerminal], namedIx: Int, ix: Int): Int =
+        current match {
+          case head :: tail if tracesTail forall hasElem(ix, head) ⇒
+            head.key match {
+              case Named(_) ⇒ rec(tail, if (namedIx >= 0) namedIx else ix, ix + 1)
+              case RuleCall ⇒ rec(tail, namedIx, ix + 1) // RuleCall elements allow the name to be carried over
+              case Atomic   ⇒ if (namedIx >= 0) namedIx else ix // Atomic elements always terminate a common prefix
+              case _        ⇒ rec(tail, -1, ix + 1) // otherwise the name chain is broken
+            }
+          case _ ⇒ if (namedIx >= 0) namedIx else ix
+        }
+      rec(traces.head.prefix, namedIx = -1, ix = 0)
+    } else 0
 
-  sealed abstract class DirectNonTerminal extends NonTerminal {
-    def offset = tail.offset
-  }
-  case class Named(name: String, tail: RuleTrace) extends DirectNonTerminal
-  case class FirstOf(subs: Int, tail: RuleTrace) extends DirectNonTerminal
-  case class Optional(tail: RuleTrace) extends DirectNonTerminal
-  case class Capture(tail: RuleTrace) extends DirectNonTerminal
-  case class AndPredicate(tail: RuleTrace) extends DirectNonTerminal
-  case class Atomic(tail: RuleTrace) extends DirectNonTerminal
-  case class Quiet(tail: RuleTrace) extends DirectNonTerminal
-  case class RuleCall(tail: RuleTrace) extends DirectNonTerminal
+  // offset: the number of characters before the reported error index that the rule corresponding
+  // to this trace head started matching.
+  final case class NonTerminal(key: NonTerminalKey, offset: Int)
+  sealed trait NonTerminalKey
+  case object Action extends NonTerminalKey
+  case object AndPredicate extends NonTerminalKey
+  case object Atomic extends NonTerminalKey
+  case object Capture extends NonTerminalKey
+  case object Cut extends NonTerminalKey
+  case object FirstOf extends NonTerminalKey
+  final case class IgnoreCaseString(string: String) extends NonTerminalKey
+  final case class MapMatch(map: Map[String, Any]) extends NonTerminalKey
+  final case class Named(name: String) extends NonTerminalKey
+  case object OneOrMore extends NonTerminalKey
+  case object Optional extends NonTerminalKey
+  case object Quiet extends NonTerminalKey
+  case object RuleCall extends NonTerminalKey
+  case object Run extends NonTerminalKey
+  case object RunSubParser extends NonTerminalKey
+  case object Sequence extends NonTerminalKey
+  final case class StringMatch(string: String) extends NonTerminalKey
+  final case class Times(min: Int, max: Int) extends NonTerminalKey
+  case object ZeroOrMore extends NonTerminalKey
 
-  sealed abstract class Terminal extends RuleTrace {
-    def offset = 0
-  }
-  case class CharMatch(char: Char) extends Terminal
-  case class IgnoreCaseChar(char: Char) extends Terminal
-  case class CharPredicateMatch(predicate: CharPredicate) extends Terminal
-  case class AnyOf(string: String) extends Terminal
-  case class NoneOf(string: String) extends Terminal
-  case class CharRange(from: Char, to: Char) extends Terminal
-  case class NotPredicate(base: NotPredicate.Base, baseMatchLength: Int) extends Terminal
-  case class Fail(expected: String) extends Terminal
+  sealed trait Terminal
   case object ANY extends Terminal
+  final case class AnyOf(string: String) extends Terminal
+  final case class CharMatch(char: Char) extends Terminal
+  final case class CharPredicateMatch(predicate: CharPredicate) extends Terminal
+  final case class CharRange(from: Char, to: Char) extends Terminal
+  final case class Fail(expected: String) extends Terminal
+  final case class IgnoreCaseChar(char: Char) extends Terminal
+  final case class NoneOf(string: String) extends Terminal
+  final case class NotPredicate(base: NotPredicate.Base, baseMatchLength: Int) extends Terminal
   case object SemanticPredicate extends Terminal
 
   object NotPredicate {
     sealed trait Base
-    case class Terminal(trace: RuleTrace) extends Base // `trace` can be a `Terminal` or `Named`
-    case class RuleCall(target: String) extends Base
-    case class Named(name: String) extends Base
     case object Anonymous extends Base
+    final case class Named(name: String) extends Base
+    final case class RuleCall(target: String) extends Base
+    final case class Terminal(terminal: RuleTrace.Terminal) extends Base
   }
 }
