@@ -210,7 +210,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
         scheme.parseError(parseError)
       }
     } catch {
-      case e: Parser.HardFail ⇒
+      case e: Parser.Fail ⇒
         val pos = Position(cursor, input)
         scheme.parseError(ParseError(pos, pos, RuleTrace(Nil, RuleTrace.Fail(e.expected)) :: Nil))
       case NonFatal(e) ⇒
@@ -486,7 +486,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __hardFail(expected: String) = throw new Parser.HardFail(expected)
+  def __hardFail(expected: String) = throw new Parser.Fail(expected)
 
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -572,7 +572,7 @@ object Parser {
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  class HardFail(val expected: String) extends RuntimeException with NoStackTrace
+  class Fail(val expected: String) extends RuntimeException with NoStackTrace
 
   // error analysis happens in 4 phases:
   // 0: initial run, no error analysis
