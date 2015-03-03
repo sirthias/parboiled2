@@ -16,30 +16,42 @@
 
 package org.parboiled2.examples
 
-import org.parboiled2.{ErrorFormatter, ParseError}
-import org.specs2.matcher.Matcher
+import org.parboiled2.Parser
 import org.specs2.mutable.Specification
-import spray.json.JsValue
 
-import scala.util.{Failure, Success}
 
 class SimpleSqlParserSpec extends Specification {
+  import Parser.DeliveryScheme.Throw
+
+  val sample =
+    """
+      |--comment comment
+      |
+      |create table tables (
+      |  id int identity not null,
+      |  label varchar(15) not null,
+      |  location int not null
+      |)
+      |
+      |create table locations(
+      |  id int identity not null,
+      |  name varchar(15) not null,
+      |  owner varchar(50) not null
+      |)
+      |
+      |-- more comments
+    """.stripMargin
+
 
   "The SimpleSqlParser" should {
     "correctly parse simple create table Sql script" in {
 
-      val testData = SimpleSqlParser.sample
+      val testData = sample
       val delimeter = "  "
-      val expected = Vector(
-        tbl("tables", Vector("id, label, location")),
-        tbl("locations", Vector("id, name, owner")))
 
-      val result = SimpleSqlParser(testData, delimeter).DDL.run() match {
-        case Success(r) => r
-        case Failure(e) => throw e
-      }
-
-      expected.toString() === result.toString() //Dirty hack to avoid comparing nested vectors
+      SimpleSqlParser(testData, delimeter).DDL.run() === Vector(
+        DbTable("tables", Vector("id", "label", "location")),
+        DbTable("locations", Vector("id", "name", "owner")))
 
     }
 
