@@ -4,14 +4,12 @@ import org.parboiled2._
 
 case class DbTable(name: String, columns: Seq[String])
 
-/**
- * Shows how easy it is to express a grammar in pseudo-BNF using Parboiled2.
- * Specifically, this highlights how easy it is to build up a targeted parser to extract specific elements from a document.
+/* Often times parsing a document correctly means discarding slices of input along the way, i.e. code comments.
  *
- * Extracts SQL tables & column names as tbl object from a create table *.sql file
- * @param input
- * @param columnStart
+ * This example illustrates how to create a parser that extracts specific slices from a document while discarding 
+ * extraneous slices.
  */
+
 case class SimpleSqlParser(input: ParserInput, columnStart: String) extends Parser {
   import SimpleSqlParser._
 
@@ -31,14 +29,6 @@ object SimpleSqlParser{
   val Comma = ","
   val Space = " "
   val CreateTable = "table"
-
-
-  /* Explain what the parser consists of:
-      Terminal symbols: NewLine, Comma, Space, & Create table, ANY, "("
-      NonTerminal Symbol: Ignore, EndName, TableFlag, Arg, Arguments, TableName, Table, statements, DDL
-
-      
-   */
 
 
 }

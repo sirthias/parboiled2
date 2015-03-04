@@ -46,10 +46,9 @@ class SimpleSqlParserSpec extends Specification {
   "The SimpleSqlParser" should {
     "correctly parse simple create table Sql script" in {
 
-      val testData = sample
       val delimeter = "  "
 
-      SimpleSqlParser(testData, delimeter).DDL.run() === Vector(
+      SimpleSqlParser(sample, delimeter).DDL.run() === Vector(
         DbTable("tables", Vector("id", "label", "location")),
         DbTable("locations", Vector("id", "name", "owner")))
 
