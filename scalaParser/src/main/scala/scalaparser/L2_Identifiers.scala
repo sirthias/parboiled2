@@ -2,27 +2,29 @@ package scalaparser
 
 import org.parboiled2._
 
-trait L2_Identifiers { self: Parser with L0_Basics with L1_KeywordsAndOperators =>
+object L2_Identifiers extends SimpleParser {
+  import L0_Basics._
+  import L1_KeywordsAndOperators._
 
-  def VarId                    = rule { WL ~ !Keyword ~ GeneralLower ~ IdRestWithDollar }
-  def RawIdNoBackticks         = rule { !Keyword ~ AlphaNum$_   ~ IdRestWithDollar | Operator }
-  def RawIdNoDollarNoBackticks = rule { !Keyword ~ AlphaNum$_   ~ IdRest           | Operator }
-  def RawId                    = rule { RawIdNoBackticks | '`' ~ (!'`' ~ ANY).+ ~ '`' } // FIXME: are newlines in backticks allowed?
-  def Id = rule( WL ~ RawId )
-  def Ids = rule( Id.+(WL ~ ',') )
+  val VarId                    = rule { WL ~ !Keyword ~ GeneralLower ~ IdRestWithDollar }
+  val RawIdNoBackticks         = rule { !Keyword ~ AlphaNum$_   ~ IdRestWithDollar | Operator }
+  val RawIdNoDollarNoBackticks = rule { !Keyword ~ AlphaNum$_   ~ IdRest           | Operator }
+  val RawId                    = rule { RawIdNoBackticks | '`' ~ (!'`' ~ ANY).+ ~ '`' } // FIXME: are newlines in backticks allowed?
+  val Id = rule( WL ~ RawId )
+  val Ids = rule( Id.+(WL ~ ',') )
 
-  def StableId: Rule0 = {
-    def ClassQualifier = rule( WL ~ '[' ~ Id ~ WL ~ ']' )
-    def `.` = rule ( WL ~ '.' )
-    def ThisOrSuper = rule( `this` | `super` ~ ClassQualifier.? )
-    def ThisOrSuperTail = rule( ThisOrSuper ~ (`.` ~ Id).* )
+  val StableId: Rule0 = {
+    val ClassQualifier = rule( WL ~ '[' ~ Id ~ WL ~ ']' )
+    val `.` = rule ( WL ~ '.' )
+    val ThisOrSuper = rule( `this` | `super` ~ ClassQualifier.? )
+    val ThisOrSuperTail = rule( ThisOrSuper ~ (`.` ~ Id).* )
     rule( Id.+(`.`) ~ (`.` ~ ThisOrSuperTail).? | ThisOrSuperTail )
   }
 
   //////////////////////////// PRIVATE ///////////////////////////////////
 
-  private def IdRest = rule { (Underscores ~ AlphaNum.+).* ~ OpSuffix }
-  private def IdRestWithDollar = rule { (Underscores ~ AlphaNum$.+).* ~ OpSuffix }
-  private def Underscores = rule ( ch('_').* )
-  private def OpSuffix = rule ( (ch('_').+ ~ OpChar.*).? )
+  private val IdRest = rule { (Underscores ~ AlphaNum.+).* ~ OpSuffix }
+  private val IdRestWithDollar = rule { (Underscores ~ AlphaNum$.+).* ~ OpSuffix }
+  private val Underscores = rule ( ch('_').* )
+  private val OpSuffix = rule ( (ch('_').+ ~ OpChar.*).? )
 }

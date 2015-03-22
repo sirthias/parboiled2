@@ -3,19 +3,16 @@ package scalaparser
 import scala.language.implicitConversions
 import org.parboiled2._
 
-trait L4_Xml { this: Parser
-  with L0_Basics
-  with L1_KeywordsAndOperators
-  with L2_Identifiers
-  with L3_Literals =>
-  
-  def Patterns: Rule0
-  def XmlExpr = rule( WL ~ XmlContent ~ (WL ~ Element).* )
-  def XmlPattern = rule( WL ~ ElemPattern )
+trait L4_Xml { this: SimpleParser with L3_Literals =>
+  import L0_Basics._
+
+  val Patterns: Rule0
+  val XmlExpr = rule( WL ~ XmlContent ~ (WL ~ Element).* )
+  val XmlPattern = rule( WL ~ ElemPattern )
 
   //////////////////////////// PRIVATE ///////////////////////////////////
   
-  private def BaseChar = rule(
+  private val BaseChar = rule(
     ("\u0041"-"\u005A") | ("\u0061"-"\u007A") | ("\u00C0"-"\u00D6") | ("\u00D8"-"\u00F6") |
       ("\u00F8"-"\u00FF") | ("\u0100"-"\u0131") | ("\u0134"-"\u013E") | ("\u0141"-"\u0148") |
       ("\u014A"-"\u017E") | ("\u0180"-"\u01C3") | ("\u01CD"-"\u01F0") | ("\u01F4"-"\u01F5") |
@@ -63,61 +60,61 @@ trait L4_Xml { this: Parser
       ("\u1FF6"-"\u1FFC") | "\u2126" | ("\u212A"-"\u212B") | "\u212E" | ("\u2180"-"\u2182") |
       ("\u3041"-"\u3094") | ("\u30A1"-"\u30FA") | ("\u3105"-"\u312C") | ("\uAC00"-"\uD7A3")
   )
-  private def Ideographic = rule( "\u4E00"-"\u9FA5" | "\u3007" | "\u3021"-"\u3029" )
-  private def Eq = rule (WL.? ~ '=' ~ WL.?)
+  private val Ideographic = rule( "\u4E00"-"\u9FA5" | "\u3007" | "\u3021"-"\u3029" )
+  private val Eq = rule (WL.? ~ '=' ~ WL.?)
 
 
-  private def Element = rule( EmptyElemTag | STag ~ Content ~ ETag )
+  private val Element = rule( EmptyElemTag | STag ~ Content ~ ETag )
 
-  private def EmptyElemTag = rule( '<' ~ Name ~ (WL ~ Attribute).* ~ WL.? ~ "/>" )
+  private val EmptyElemTag = rule( '<' ~ Name ~ (WL ~ Attribute).* ~ WL.? ~ "/>" )
 
-  private def STag = rule( '<' ~ Name ~ (WL ~ Attribute).* ~ WL.? ~ '>' )
-  private def ETag = rule( "</" ~ Name ~ WL.? ~ '>' )
-  private def Content = rule( (CharData | Content1).* )
-  private def Content1  = rule( XmlContent | Reference | ScalaExpr )
-  private def XmlContent: Rule0 = rule( Element | CDSect | PI | XmlComment )
+  private val STag = rule( '<' ~ Name ~ (WL ~ Attribute).* ~ WL.? ~ '>' )
+  private val ETag = rule( "</" ~ Name ~ WL.? ~ '>' )
+  private val Content = rule( (CharData | Content1).* )
+  private val Content1  = rule( XmlContent | Reference | ScalaExpr )
+  private val XmlContent: Rule0 = rule( Element | CDSect | PI | XmlComment )
 
-  private def CDSect = rule( CDStart ~ CData ~ CDEnd )
-  private def CDStart = rule( "<![CDATA[" )
-  private def CData = rule( (!"]]>" ~ XmlChar).* )
-  private def CDEnd = rule( "]]>" )
+  private val CDSect = rule( CDStart ~ CData ~ CDEnd )
+  private val CDStart = rule( "<![CDATA[" )
+  private val CData = rule( (!"]]>" ~ XmlChar).* )
+  private val CDEnd = rule( "]]>" )
 
-  private def Attribute = rule( Name ~ Eq ~ AttValue )
+  private val Attribute = rule( Name ~ Eq ~ AttValue )
 
-  private def AttValue = rule(
+  private val AttValue = rule(
     '"' ~ (CharQ | Reference).* ~ '"' |
       "'" ~ (CharA | Reference).* ~ "'" |
       ScalaExpr
   )
 
-  private def XmlComment = rule( "<!--" ~ ((!'-' ~ XmlChar) | ('-' ~ (!'-' ~ XmlChar))).* ~ "-->" )
+  private val XmlComment = rule( "<!--" ~ ((!'-' ~ XmlChar) | ('-' ~ (!'-' ~ XmlChar))).* ~ "-->" )
 
-  private def PI = rule( "<?" ~ PITarget ~ (WL ~ (!"?>" ~ XmlChar).*).? ~ "?>" )
-  private def PITarget = rule( !(("X" | "x") ~ ("M" | "m") ~ ("L" | "l")) ~ Name )
-  private def CharRef = rule( "&#" ~ ("0"-"9").+ ~ ';' | "&#x" ~ HexNum ~ ";" )
-  private def Reference = rule( EntityRef | CharRef )
-  private def EntityRef = rule( "&" ~ Name ~ ";" )
-  private def ScalaExpr = rule("{" ~ WS ~ Block ~ WS ~ "}")
-  private def XmlChar = rule( ANY )
-  private def CharData = rule( (!("{" | "]]>" | CharRef) ~ Char1 | "{{").+ )
+  private val PI = rule( "<?" ~ PITarget ~ (WL ~ (!"?>" ~ XmlChar).*).? ~ "?>" )
+  private val PITarget = rule( !(("X" | "x") ~ ("M" | "m") ~ ("L" | "l")) ~ Name )
+  private val CharRef = rule( "&#" ~ ("0"-"9").+ ~ ';' | "&#x" ~ HexNum ~ ";" )
+  private val Reference = rule( EntityRef | CharRef )
+  private val EntityRef = rule( "&" ~ Name ~ ";" )
+  private val ScalaExpr = rule("{" ~ WS ~ Block ~ WS ~ "}")
+  private val XmlChar = rule( ANY )
+  private val CharData = rule( (!("{" | "]]>" | CharRef) ~ Char1 | "{{").+ )
 
-  private def Char1  = rule( &(noneOf("<&")) ~ XmlChar )
-  private def CharQ = rule( !'"' ~ Char1 )
-  private def CharA = rule( !"'" ~ Char1 )
-  private def Name = rule( XNameStart ~ NameChar.* )
-  private def XNameStart  = rule( '_' | BaseChar | Ideographic )
+  private val Char1  = rule( &(noneOf("<&")) ~ XmlChar )
+  private val CharQ = rule( !'"' ~ Char1 )
+  private val CharA = rule( !"'" ~ Char1 )
+  private val Name = rule( XNameStart ~ NameChar.* )
+  private val XNameStart  = rule( '_' | BaseChar | Ideographic )
 
-  private def NameStartChar = rule(
+  private val NameStartChar = rule(
     ":" | ("A"-"Z") | "_" | ("a"-"z") | ("\u00C0"-"\u00D6") | ("\u00D8"-"\u00F6") |
       ("\u00F8"-"\u02FF") | ("\u0370"-"\u037D") | ("\u037F"-"\u1FFF") | ("\u200C"-"\u200D") |
       ("\u2070"-"\u218F") | ("\u2C00"-"\u2FEF") | ("\u3001"-"\uD7FF") | ("\uF900"-"\uFDCF") |
       ("\uFDF0"-"\uFFFD") )// | [#x10000-#xEFFFF] ???? don't chars max out at \uffff ????
 
-  private def NameChar = rule( NameStartChar | "-" | "." | ("0"-"9") | "\u00B7" | ("\u0300"-"\u036F") | ("\u203F"-"\u2040") )
-  private def ElemPattern: Rule0 = rule( EmptyElemTagP | STagP ~ ContentP ~ ETagP )
-  private def EmptyElemTagP = rule( "<" ~ Name ~ WL.? ~ "/>" )
-  private def STagP = rule( "<" ~ Name ~ WL.? ~ ">")
-  private def ETagP = rule( "</" ~ Name ~ WL.? ~ ">" )
-  private def ContentP = rule( CharData.? ~ ((ElemPattern | ScalaPatterns) ~ CharData.?).* )
-  private def ScalaPatterns = rule( "{" ~ Patterns ~ WL ~ "}" )
+  private val NameChar = rule( NameStartChar | "-" | "." | ("0"-"9") | "\u00B7" | ("\u0300"-"\u036F") | ("\u203F"-"\u2040") )
+  private val ElemPattern: Rule0 = rule( EmptyElemTagP | STagP ~ ContentP ~ ETagP )
+  private val EmptyElemTagP = rule( "<" ~ Name ~ WL.? ~ "/>" )
+  private val STagP = rule( "<" ~ Name ~ WL.? ~ ">")
+  private val ETagP = rule( "</" ~ Name ~ WL.? ~ ">" )
+  private val ContentP = rule( CharData.? ~ ((ElemPattern | ScalaPatterns) ~ CharData.?).* )
+  private val ScalaPatterns = rule( "{" ~ Patterns ~ WL ~ "}" )
 }

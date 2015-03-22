@@ -56,13 +56,13 @@ class RealSourcesSpec extends Specification {
       inputStream.read(utf8Bytes)
       inputStream.close()
       val charBuffer = utf8.decode(ByteBuffer.wrap(utf8Bytes))
-      val parser = new ScalaParser(ParserInput(charBuffer.array(), charBuffer.remaining()))
+      val input = ParserInput(charBuffer.array(), charBuffer.remaining())
       def fail(msg: String) = throw new FailureException(org.specs2.execute.Failure(msg))
-      parser.CompilationUnit.run().failed foreach {
-        case error: ParseError => fail(s"Error in file `$path`:\n" + error.format(parser, formatter))
+      ScalaParser.CompilationUnit.run(input).failed foreach {
+        case error: ParseError => fail(s"Error in file `$path`:\n" + error.format(input, formatter))
         case error => fail(s"Exception in file `$path`:\n$error")
       }
-      parser.input.length
+      input.length
     }
     def listFiles(file: File): Iterator[String] = {
       val (dirs, files) = file.listFiles().toIterator.partition(_.isDirectory)

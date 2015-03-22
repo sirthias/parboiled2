@@ -3,85 +3,87 @@ package scalaparser
 import org.parboiled2._
 
 import scala.annotation.switch
+import scalaparser.L0_Basics._
 
-trait L1_KeywordsAndOperators { this: Parser with L0_Basics =>
+object L1_KeywordsAndOperators extends SimpleParser {
   import CharacterClasses._
+  import L0_Basics._
 
-  def Operator = rule { !SymbolicKeyword ~ OpChar.+ }
+  val Operator = rule { !SymbolicKeyword ~ OpChar.+ }
 
-  def Keyword = rule( AlphaKeyword | SymbolicKeyword )
+  val Keyword = rule( AlphaKeyword | SymbolicKeyword )
 
-  def `_`         = Key("_")
-  def `abstract`  = Key("abstract")
-  def `case`      = Key("case")
-  def `catch`     = Key("catch")
-  def `class`     = Key("class")
-  def `def`       = Key("def")
-  def `do`        = Key("do")
-  def `else`      = Key("else")
-  def `extends`   = Key("extends")
-  def `final`     = Key("final")
-  def `finally`   = Key("finally")
-  def `for`       = Key("for")
-  def `forSome`   = Key("forSome")
-  def `if`        = Key("if")
-  def `implicit`  = Key("implicit")
-  def `import`    = Key("import")
-  def `lazy`      = Key("lazy")
-  def `macro`     = Key("macro")
-  def `match`     = Key("match")
-  def `new`       = Key("new")
-  def `object`    = Key("object")
-  def `override`  = Key("override")
-  def `package`   = Key("package")
-  def `private`   = Key("private")
-  def `protected` = Key("protected")
-  def `return`    = Key("return")
-  def `sealed`    = Key("sealed")
-  def `super`     = Key("super")
-  def `this`      = Key("this")
-  def `throw`     = Key("throw")
-  def `trait`     = Key("trait")
-  def `try`       = Key("try")
-  def `type`      = Key("type")
-  def `val`       = Key("val")
-  def `var`       = Key("var")
-  def `while`     = Key("while")
-  def `with`      = Key("with")
-  def `yield`     = Key("yield")
+  val underscore  = Key("_")
+  val `abstract`  = Key("abstract")
+  val `case`      = Key("case")
+  val `catch`     = Key("catch")
+  val `class`     = Key("class")
+  val `def`       = Key("def")
+  val `do`        = Key("do")
+  val `else`      = Key("else")
+  val `extends`   = Key("extends")
+  val `final`     = Key("final")
+  val `finally`   = Key("finally")
+  val `for`       = Key("for")
+  val `forSome`   = Key("forSome")
+  val `if`        = Key("if")
+  val `implicit`  = Key("implicit")
+  val `import`    = Key("import")
+  val `lazy`      = Key("lazy")
+  val `macro`     = Key("macro")
+  val `match`     = Key("match")
+  val `new`       = Key("new")
+  val `object`    = Key("object")
+  val `override`  = Key("override")
+  val `package`   = Key("package")
+  val `private`   = Key("private")
+  val `protected` = Key("protected")
+  val `return`    = Key("return")
+  val `sealed`    = Key("sealed")
+  val `super`     = Key("super")
+  val `this`      = Key("this")
+  val `throw`     = Key("throw")
+  val `trait`     = Key("trait")
+  val `try`       = Key("try")
+  val `type`      = Key("type")
+  val `val`       = Key("val")
+  val `var`       = Key("var")
+  val `while`     = Key("while")
+  val `with`      = Key("with")
+  val `yield`     = Key("yield")
 
-  def `<%` = SymbolicKey("<%")
-  def `>:` = SymbolicKey(">:")
-  def `<:` = SymbolicKey("<:")
-  def `=>` = rule( SymbolicKey("=>") | SymbolicKey('⇒') )
-  def `<-` = rule( SymbolicKey("<-") | SymbolicKey('←') )
-  def `:`  = SymbolicKey(':')
-  def `=`  = SymbolicKey('=')
-  def `@`  = SymbolicKey('@')
-  def `#`  = SymbolicKey("#")
+  val `<%` = SymbolicKey("<%")
+  val `>:` = SymbolicKey(">:")
+  val `<:` = SymbolicKey("<:")
+  val `=>` = rule( SymbolicKey("=>") | SymbolicKey('⇒') )
+  val `<-` = rule( SymbolicKey("<-") | SymbolicKey('←') )
+  val `:`  = SymbolicKey(':')
+  val `=`  = SymbolicKey('=')
+  val `@`  = SymbolicKey('@')
+  val `#`  = SymbolicKey("#")
 
-  def Null = RawKey("null")
-  def True = RawKey("true")
-  def False = RawKey("false")
+  val Null = rule(RawKey("null"))
+  val True = rule(RawKey("true"))
+  val False = rule(RawKey("false"))
 
   // keyword-like patterns (not really keywords though)
-  def `_*` = rule( `_` ~ WL ~ "*" )
-  def `}` = rule( Semis.? ~ WL ~ '}' )
-  def `{` = rule( WL ~ '{' ~ Semis.? )
+  val `_*` = rule( underscore ~ WL ~ "*" )
+  val `}` = rule( Semis.? ~ WL ~ '}' )
+  val `{` = rule( WL ~ '{' ~ Semis.? )
 
   //////////////////////////// PRIVATE ///////////////////////////////////
 
   private def Key(s: String) = rule( WL ~ RawKey(s) )
-  private def RawKey(s: String) = rule( s ~ !AlphaNum$_ )
+  private val RawKey = rule[String]() ( s => s ~ !AlphaNum$_ )
   private def SymbolicKey(c: Char) = rule( WL ~ c ~ !OpChar )
   private def SymbolicKey(s: String) = rule( WL ~ s ~ !OpChar )
 
-  private def SymbolicKeyword = rule { ("=>" | KEYCHAR | '<' ~ KEYCHAR2 | ">:") ~ !OpChar }
+  private val SymbolicKeyword = rule { ("=>" | KEYCHAR | '<' ~ KEYCHAR2 | ">:") ~ !OpChar }
 
-  private def AlphaKeyword = rule {
+  private val AlphaKeyword = rule {
     run {
       // TODO: simplify when https://github.com/sirthias/parboiled2/issues/115 is done
-      (cursorChar: @switch) match {
+      state.cursorChar match {
         case 'a' => str("abstract")
         case 'c' => "case" | "catch" | "class"
         case 'd' => "def" | "do"

@@ -2,44 +2,47 @@ package scalaparser
 
 import org.parboiled2._
 
-trait L3_Literals { self: Parser with L0_Basics with L1_KeywordsAndOperators with L2_Identifiers =>
+trait L3_Literals { this: SimpleParser =>
   import CharacterClasses._
+  import L0_Basics._
+  import L1_KeywordsAndOperators._
+  import L2_Identifiers._
 
-  def Block: Rule0
+  val Block: Rule0
 
-  def Literal = rule( ("-".? ~ (Float | Int)) | Bool | Char | String | Symbol | Null )
+  val Literal = rule( ("-".? ~ (Float | Int)) | Bool | Char | String | Symbol | Null )
 
-  def Float = {
-    def Exp = rule ( `Ee` ~ `+-`.? ~ DecNum )
-    def Decimals = rule( '.' ~ DIGIT.+ ~ Exp.? ~ `FfDd`.? )
+  val Float = {
+    val Exp = rule ( `Ee` ~ `+-`.? ~ DecNum )
+    val Decimals = rule( '.' ~ DIGIT.+ ~ Exp.? ~ `FfDd`.? )
     rule( Decimals | DIGIT.+ ~ (Decimals | Exp ~ `FfDd`.? | `FfDd`) )
   }
 
-  def Int = rule( (HexNum | DecNum) ~ `Ll`.? )
+  val Int = rule( (HexNum | DecNum) ~ `Ll`.? )
 
-  def Bool = rule( True | False )
+  val Bool = rule( True | False )
 
-  def Char = rule ( "'" ~ (UnicodeEscape | EscapedChars | !'\\' ~ test(isPrintableChar(cursorChar)) ~ ANY) ~ "'" )
+  val Char = rule ( "'" ~ (UnicodeEscape | EscapedChars | !'\\' ~ test(isPrintableChar(state.cursorChar)) ~ ANY) ~ "'" )
 
-  def Symbol = rule( ''' ~ (RawIdNoBackticks | Keyword) ) // symbols can take on the same values as keywords!
+  val Symbol = rule( ''' ~ (RawIdNoBackticks | Keyword) ) // symbols can take on the same values as keywords!
 
-  def String = {
-    def TripleTail = rule( '"' ~ '"' ~ ch('"').+ )
-    def Inter = rule ( '$' ~ (RawIdNoDollarNoBackticks | '{' ~ Block ~ WL ~ '}' | '$') )
-    def Raw = rule { '"'.? ~ '"'.? ~ !'\"' ~ ANY }
-    def Simple = rule { '\\' ~ DQBS | !DQLF ~ ANY }
+  val String = {
+    val TripleTail = rule( '"' ~ '"' ~ ch('"').+ )
+    val Inter = rule ( '$' ~ (RawIdNoDollarNoBackticks | '{' ~ Block ~ WL ~ '}' | '$') )
+    val Raw = rule { '"'.? ~ '"'.? ~ !'\"' ~ ANY }
+    val Simple = rule { '\\' ~ DQBS | !DQLF ~ ANY }
     rule(
       RawId ~ '"' ~ ('"' ~ '"' ~ (Inter | Raw).* ~ TripleTail | (Inter | Simple).* ~ '"')
     | '"' ~ ('"' ~ '"' ~ Raw.* ~ TripleTail | Simple.* ~ '"'))
   }
 
-  def WLLiteral = rule( WL ~ Literal )
+  val WLLiteral = rule( WL ~ Literal )
 
   //////////////////////////// PRIVATE ///////////////////////////////////
 
-  private def UnicodeEscape = rule { "\\u" ~ HEXDIGIT ~ HEXDIGIT ~ HEXDIGIT ~ HEXDIGIT }
+  private val UnicodeEscape = rule { "\\u" ~ HEXDIGIT ~ HEXDIGIT ~ HEXDIGIT ~ HEXDIGIT }
 
-  private def EscapedChars = rule( '\\' ~ ESCAPEE )
+  private val EscapedChars = rule( '\\' ~ ESCAPEE )
 
   private def isPrintableChar(c: Char): Boolean =
     !Character.isISOControl(c) &&

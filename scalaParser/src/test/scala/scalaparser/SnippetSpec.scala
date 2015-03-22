@@ -834,9 +834,8 @@ class SnippetSpec extends Specification {
 
   def check(nr: String, snippet: String): Fragment =
     s"example $nr" in {
-      val parser = new ScalaParser(snippet.stripMargin)
-      parser.CompilationUnit.run() match {
-        case Failure(error: ParseError) => failure(error.format(parser, formatter))
+      ScalaParser.CompilationUnit.run(snippet.stripMargin) match {
+        case Failure(error: ParseError) => failure(error.format(snippet.stripMargin, formatter))
         case Failure(error) => failure(error.toString)
         case Success(_) => success
       }
@@ -844,12 +843,11 @@ class SnippetSpec extends Specification {
 
   def checkError(nr: String, snippet: String, expectedError: String): Fragment =
     s"example $nr" in {
-      val parser = new ScalaParser(snippet.stripMargin)
-      val error = parser.CompilationUnit.run() match{
+      val error = ScalaParser.CompilationUnit.run(snippet.stripMargin) match{
         case Failure(e: ParseError) => e
         case Failure(e) => throw new FailureException(org.specs2.execute.Failure(e.toString))
         case Success(_) => throw new FailureException(org.specs2.execute.Failure("Parsing unexpectedly succeeded"))
       }
-      error.format(parser, formatter) === expectedError.stripMargin
+      error.format(snippet.stripMargin, formatter) === expectedError.stripMargin
     }
 }
