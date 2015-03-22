@@ -4,8 +4,8 @@ import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
 
 val commonSettings = Seq(
-  version := "2.1.0",
-  scalaVersion := "2.11.5",
+  version := "2.2.0-SNAPSHOT",
+  scalaVersion := "2.11.6",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -67,10 +67,10 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.5"   % "provided"
+val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.6"   % "provided"
 val shapeless        = "com.chuusai"     %% "shapeless"         % "2.1.0"    % "compile"
-val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.16"   % "test"
-val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.16"   % "test"
+val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.17"   % "test"
+val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.17"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
