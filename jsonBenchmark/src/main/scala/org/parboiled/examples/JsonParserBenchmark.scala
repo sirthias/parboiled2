@@ -17,7 +17,7 @@ class JsonParserBenchmark {
 
   @Benchmark
   def parboiled2JsonParser(state: TestState) =
-    new JsonParser(state.json).Json.run().get
+    JsonParser.Json.runWithContext(state.json, new JsonParser.Context).get
 
   @Benchmark
   def json4SNative(state: TestState) =
