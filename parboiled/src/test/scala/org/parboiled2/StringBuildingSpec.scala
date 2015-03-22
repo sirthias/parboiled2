@@ -16,27 +16,26 @@
 
 package org.parboiled2
 
-import scala.util.{ Random, Success }
+import scala.util.Success
 import org.specs2.mutable.Specification
-import org.parboiled2.util.Base64
 
-class Base64ParsingSpec extends Specification {
+class StringBuildingSpec extends Specification {
 
-  val randomChars = {
-    val random = new Random()
-    Stream.continually(random.nextPrintableChar())
-  }
-
-  "Base64Parsing" should {
-
-    "support parsing of RFC2045 encoded content" in {
-      Rfc2045Parsing.Base64String.run("cGFyYm9pbGVkIHJvY2tzIQ==").map(new String(_)) === Success("parboiled rocks!")
+  object TestParser extends Parser {
+    class Context extends StringBuilding.Context {
+      var count = 0 // some custom member
     }
 
-    "support parsing of custom-Base64 Strings" in {
-      val encoded = Base64.custom().encodeToString("parboiled rocks!".getBytes, false)
-      new Base64Parsing(Base64.custom()).Base64String.run(encoded).map(new String(_)) === Success("parboiled rocks!")
+    val foo = rule {
+      "foo" ~ run(ctx.count += 1) ~ 'X' ~ StringBuilding.appendLastChar ~ bar ~ EOI ~ push(ctx.sb.toString)
     }
+    val bar = rule { "bar" ~ StringBuilding.appendString("BAR") }
   }
 
+  "StringBuilding" should {
+
+    "work as expected " in {
+      TestParser.foo.runWithContext("fooXbar", new TestParser.Context) === Success("XBAR")
+    }
+  }
 }

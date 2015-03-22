@@ -19,61 +19,41 @@ package org.parboiled2
 import org.parboiled2.util.Base64
 
 /**
- * Rules for parsing Base-64 encoded strings.
+ * Rules for parsing of RFC2045 Base-64 encoded strings.
  */
-trait Base64Parsing { this: Parser ⇒
-  import Base64Parsing._
+object Rfc2045Parsing extends Base64Parsing(Base64.rfc2045())
 
-  /**
-   * Parses an RFC4045-encoded string and decodes it onto the value stack.
-   */
-  def rfc2045String: Rule1[Array[Byte]] = base64StringOrBlock(rfc2045Alphabet, rfc2045StringDecoder)
+/**
+ * Rules for general parsing of Base-64 encoded strings.
+ */
+class Base64Parsing(val codec: Base64) extends SimpleParser {
 
-  /**
-   * Parses an RFC4045-encoded string potentially containing newlines and decodes it onto the value stack.
-   */
-  def rfc2045Block: Rule1[Array[Byte]] = base64StringOrBlock(rfc2045Alphabet, rfc2045BlockDecoder)
+  def this(alphabet: String) = this(new Base64(alphabet))
 
-  /**
-   * Parses a org.parboiled2.util.Base64.custom()-encoded string and decodes it onto the value stack.
-   */
-  def base64CustomString: Rule1[Array[Byte]] = base64StringOrBlock(customAlphabet, customStringDecoder)
+  private val Alphabet = (CharPredicate(codec.getAlphabet) ++ codec.fillChar).asMaskBased
+  private val AlphabetPlusNewlines = (Alphabet ++ '\n').asMaskBased
 
-  /**
-   * Parses a org.parboiled2.util.Base64.custom()-encoded string potentially containing newlines
-   * and decodes it onto the value stack.
-   */
-  def base64CustomBlock: Rule1[Array[Byte]] = base64StringOrBlock(customAlphabet, customBlockDecoder)
+  private type Decoder = Array[Char] ⇒ Array[Byte]
+  private val stringDecoder: Decoder = codec.decodeFast
+  private val blockDecoder: Decoder = codec.decode
 
-  /**
-   * Parses a BASE64-encoded string with the given alphabet and decodes it onto the value
-   * stack using the given codec.
-   */
-  def base64StringOrBlock(alphabet: CharPredicate, decoder: Decoder): Rule1[Array[Byte]] = {
-    val start = cursor
-    rule {
-      oneOrMore(alphabet) ~ run {
-        decoder(input.sliceCharArray(start, cursor)) match {
-          case null  ⇒ MISMATCH
-          case bytes ⇒ push(bytes)
-        }
+  private val Base64StringOrBlock = rule[CharPredicate.MaskBased, Decoder]() { (pred, decoder) ⇒
+    val start = state.cursor
+    oneOrMore(pred) ~ run {
+      decoder(state.input.sliceCharArray(start, state.cursor)) match {
+        case null  ⇒ MISMATCH
+        case bytes ⇒ push(bytes)
       }
     }
   }
-}
 
-object Base64Parsing {
-  type Decoder = Array[Char] ⇒ Array[Byte]
+  /**
+   * Parses a Base64-encoded string and decodes it onto the value stack.
+   */
+  val Base64String: Rule1[Array[Byte]] = rule { Base64StringOrBlock(Alphabet, stringDecoder) }
 
-  val rfc2045Alphabet = CharPredicate(Base64.rfc2045().getAlphabet).asMaskBased
-  val customAlphabet = CharPredicate(Base64.custom().getAlphabet).asMaskBased
-
-  val rfc2045StringDecoder: Decoder = decodeString(Base64.rfc2045())
-  val customStringDecoder: Decoder = decodeString(Base64.custom())
-
-  val rfc2045BlockDecoder: Decoder = decodeBlock(Base64.rfc2045())
-  val customBlockDecoder: Decoder = decodeBlock(Base64.custom())
-
-  def decodeString(codec: Base64)(chars: Array[Char]): Array[Byte] = codec.decodeFast(chars)
-  def decodeBlock(codec: Base64)(chars: Array[Char]): Array[Byte] = codec.decode(chars)
+  /**
+   * Parses a Base64-encoded string potentially containing newlines and decodes it onto the value stack.
+   */
+  val Base64Block: Rule1[Array[Byte]] = rule { Base64StringOrBlock(AlphabetPlusNewlines, blockDecoder) }
 }
