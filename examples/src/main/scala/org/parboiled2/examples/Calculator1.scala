@@ -22,52 +22,47 @@ import scala.io.StdIn
 import org.parboiled2._
 
 object Calculator1 extends App {
+
+  /**
+   * This parser reads simple calculator expressions and evaluates them right during
+   * the parsing run with the help of the value stack.
+   */
+  object Parser extends SimpleParser {
+    val InputLine = rule { Expression ~ EOI }
+
+    val Expression: Rule1[Int] = rule {
+      Term ~ zeroOrMore(
+        '+' ~ Term ~> ((_: Int) + _)
+          | '-' ~ Term ~> ((_: Int) - _))
+    }
+
+    val Term = rule {
+      Factor ~ zeroOrMore(
+        '*' ~ Factor ~> ((_: Int) * _)
+          | '/' ~ Factor ~> ((_: Int) / _))
+    }
+
+    val Factor = rule { Number | Parens }
+
+    val Parens = rule { '(' ~ Expression ~ ')' }
+
+    val Number = rule { capture(Digits) ~> (_.toInt) }
+
+    val Digits = rule { oneOrMore(CharPredicate.Digit) }
+  }
+
   repl()
 
   @tailrec
-  def repl(): Unit = {
-    // TODO: Replace next three lines with `scala.Predef.readLine(text: String, args: Any*)`
-    // once BUG https://issues.scala-lang.org/browse/SI-8167 is fixed
-    print("---\nEnter calculator expression > ")
-    Console.out.flush()
-    StdIn.readLine() match {
+  def repl(): Unit =
+    StdIn.readLine("---\nEnter calculator expression > ") match {
       case "" =>
       case line =>
-        val parser = new Calculator1(line)
-        parser.InputLine.run() match {
+        Parser.InputLine.run(line) match {
           case Success(result)        => println("Result: " + result)
-          case Failure(e: ParseError) => println("Expression is not valid: " + parser.formatError(e))
+          case Failure(e: ParseError) => println("Expression is not valid: " + e.format(line))
           case Failure(e)             => println("Unexpected error during parsing run: " + e)
         }
         repl()
     }
-  }
-}
-
-/**
- * This parser reads simple calculator expressions and evaluates them right during
- * the parsing run with the help of the value stack.
- */
-class Calculator1(val input: ParserInput) extends Parser {
-  def InputLine = rule { Expression ~ EOI }
-
-  def Expression: Rule1[Int] = rule {
-    Term ~ zeroOrMore(
-      '+' ~ Term ~> ((_: Int) + _)
-    | '-' ~ Term ~> ((_: Int) - _))
-  }
-
-  def Term = rule {
-    Factor ~ zeroOrMore(
-      '*' ~ Factor ~> ((_: Int) * _)
-    | '/' ~ Factor ~> ((_: Int) / _))
-  }
-
-  def Factor = rule { Number | Parens }
-
-  def Parens = rule { '(' ~ Expression ~ ')' }
-
-  def Number = rule { capture(Digits) ~> (_.toInt) }
-
-  def Digits = rule { oneOrMore(CharPredicate.Digit) }
 }

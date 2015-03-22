@@ -62,12 +62,10 @@ class JsonParserSpec extends Specification {
       )
   }
 
-  def parse(s: String): JsValue = {
-    val parser = new JsonParser(s)
-    parser.Json.run() match {
+  def parse(s: String): JsValue =
+    JsonParser.Json.runWithContext(s, new JsonParser.Context) match {
       case Success(result)        => result
-      case Failure(e: ParseError) => sys.error(parser.formatError(e, new ErrorFormatter(showTraces = true)))
+      case Failure(e: ParseError) => sys.error(e.format(s, new ErrorFormatter(showTraces = true)))
       case Failure(e)             => throw e
     }
-  }
 }

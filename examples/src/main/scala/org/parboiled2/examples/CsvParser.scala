@@ -26,45 +26,48 @@ object CsvParser extends {
   case class Error(msg: String)
 
   /**
+   * Simple, fast CSV parser.
+   *
+   * See http://tools.ietf.org/html/rfc4180#section-2
+   */
+  object Parser extends Parser {
+    import StringBuilding._
+
+    class Context(val headerPresent: Boolean, val fieldDelimiter: Char) extends StringBuilding.Context {
+      val TEXTDATA = `TEXTDATA-BASE` -- fieldDelimiter
+    }
+
+    val `TEXTDATA-BASE` = CharPredicate.Printable -- '"'
+    val QTEXTDATA = `TEXTDATA-BASE` ++ "\r\n"
+
+    val file = rule {
+      OWS ~ optional(test(ctx.headerPresent) ~ header ~ NL) ~
+        oneOrMore(record).separatedBy(NL) ~ optional(NL) ~ EOI ~> CsvFile
+    }
+
+    val header = rule { record }
+
+    val record = rule { oneOrMore(field).separatedBy(ctx.fieldDelimiter) ~> Record }
+
+    val field = rule { `quoted-field` | `unquoted-field` }
+
+    val `quoted-field` = rule {
+      OWS ~ '"' ~ clearSB ~ zeroOrMore((QTEXTDATA | "\"\"") ~ appendLastChar) ~ '"' ~ OWS ~ push(ctx.sb.toString)
+    }
+
+    val `unquoted-field` = rule { capture(zeroOrMore(ctx.TEXTDATA)) }
+
+    val NL = rule { optional('\r') ~ '\n' }
+
+    val OWS = rule { zeroOrMore(' ') }
+  }
+
+  /**
    * Parses the given input into a [[CsvFile]] or an [[Error]] instance.
    */
   def apply(input: ParserInput, headerPresent: Boolean = true, fieldDelimiter: Char = ','): Either[Error, CsvFile] = {
-    import Parser.DeliveryScheme.Either
-    val parser = new CsvParser(input, headerPresent, fieldDelimiter)
-    parser.file.run().left.map(error => Error(parser.formatError(error)))
+    import DeliveryScheme.Either
+    val context = new Parser.Context(headerPresent, fieldDelimiter)
+    Parser.file.runWithContext(input, context).left.map(e => Error(e format input))
   }
-
-  private val `TEXTDATA-BASE` = CharPredicate.Printable -- '"'
-  private val QTEXTDATA = `TEXTDATA-BASE` ++ "\r\n"
-}
-
-/**
- * Simple, fast CSV parser.
- *
- * See http://tools.ietf.org/html/rfc4180#section-2
- */
-class CsvParser(val input: ParserInput, headerPresent: Boolean, fieldDelimiter: Char) extends Parser with StringBuilding {
-  import CsvParser._
-
-  val TEXTDATA = `TEXTDATA-BASE` -- fieldDelimiter
-
-  def file = rule {
-    OWS ~ optional(test(headerPresent) ~ header ~ NL) ~ oneOrMore(record).separatedBy(NL) ~ optional(NL) ~ EOI ~> CsvFile
-  }
-
-  def header = rule { record }
-
-  def record = rule { oneOrMore(field).separatedBy(fieldDelimiter) ~> Record }
-
-  def field = rule { `quoted-field` | `unquoted-field` }
-
-  def `quoted-field` = rule {
-    OWS ~ '"' ~ clearSB() ~ zeroOrMore((QTEXTDATA | "\"\"") ~ appendSB()) ~ '"' ~ OWS ~ push(sb.toString)
-  }
-
-  def `unquoted-field` = rule { capture(zeroOrMore(TEXTDATA)) }
-
-  def NL = rule { optional('\r') ~ '\n' }
-
-  def OWS = rule { zeroOrMore(' ') }
 }

@@ -22,36 +22,7 @@ import scala.io.StdIn
 import org.parboiled2._
 
 object Calculator2 extends App {
-  repl()
 
-  @tailrec
-  def repl(): Unit = {
-    // TODO: Replace next three lines with `scala.Predef.readLine(text: String, args: Any*)`
-    // once BUG https://issues.scala-lang.org/browse/SI-8167 is fixed
-    print("---\nEnter calculator expression > ")
-    Console.out.flush()
-    StdIn.readLine() match {
-      case "" =>
-      case line =>
-        val parser = new Calculator2(line)
-        parser.InputLine.run() match {
-          case Success(exprAst)       => println("Result: " + eval(exprAst))
-          case Failure(e: ParseError) => println("Expression is not valid: " + parser.formatError(e))
-          case Failure(e)             => println("Unexpected error during parsing run: " + e)
-        }
-        repl()
-    }
-  }
-
-  def eval(expr: Expr): Int =
-    expr match {
-      case Value(v)             => v.toInt
-      case Addition(a, b)       => eval(a) + eval(b)
-      case Subtraction(a, b)   => eval(a) - eval(b)
-      case Multiplication(a, b) => eval(a) * eval(b)
-      case Division(a, b)       => eval(a) / eval(b)
-    }
-  
   // our abstract syntax tree model
   sealed trait Expr
   case class Value(value: String) extends Expr
@@ -59,34 +30,57 @@ object Calculator2 extends App {
   case class Subtraction(lhs: Expr, rhs: Expr) extends Expr
   case class Multiplication(lhs: Expr, rhs: Expr) extends Expr
   case class Division(lhs: Expr, rhs: Expr) extends Expr
-}
 
-/**
- * This parser reads simple calculator expressions and builds an AST
- * for them, to be evaluated in a separate phase, after parsing is completed.
- */
-class Calculator2(val input: ParserInput) extends Parser {
-  import Calculator2._
-  
-  def InputLine = rule { Expression ~ EOI }
+  /**
+   * This parser reads simple calculator expressions and builds an AST
+   * for them, to be evaluated in a separate phase, after parsing is completed.
+   */
+  object Parser extends SimpleParser {
 
-  def Expression: Rule1[Expr] = rule {
-    Term ~ zeroOrMore(
-      '+' ~ Term ~> Addition
-    | '-' ~ Term ~> Subtraction)
+    val InputLine = rule { Expression ~ EOI }
+
+    val Expression: Rule1[Expr] = rule {
+      Term ~ zeroOrMore(
+        '+' ~ Term ~> Addition
+          | '-' ~ Term ~> Subtraction)
+    }
+
+    val Term = rule {
+      Factor ~ zeroOrMore(
+        '*' ~ Factor ~> Multiplication
+          | '/' ~ Factor ~> Division)
+    }
+
+    val Factor = rule { Number | Parens }
+
+    val Parens = rule { '(' ~ Expression ~ ')' }
+
+    val Number = rule { capture(Digits) ~> Value }
+
+    val Digits = rule { oneOrMore(CharPredicate.Digit) }
   }
 
-  def Term = rule {
-    Factor ~ zeroOrMore(
-      '*' ~ Factor ~> Multiplication
-    | '/' ~ Factor ~> Division)
-  }
+  repl()
 
-  def Factor = rule { Number | Parens }
+  @tailrec
+  def repl(): Unit =
+    StdIn.readLine("---\nEnter calculator expression > ") match {
+      case "" =>
+      case line =>
+        Parser.InputLine.run(line) match {
+          case Success(exprAst)       => println("Result: " + eval(exprAst))
+          case Failure(e: ParseError) => println("Expression is not valid: " + e.format(line))
+          case Failure(e)             => println("Unexpected error during parsing run: " + e)
+        }
+        repl()
+    }
 
-  def Parens = rule { '(' ~ Expression ~ ')' }
-
-  def Number = rule { capture(Digits) ~> Value }
-
-  def Digits = rule { oneOrMore(CharPredicate.Digit) }
+  def eval(expr: Expr): Int =
+    expr match {
+      case Value(v)             => v.toInt
+      case Addition(a, b)       => eval(a) + eval(b)
+      case Subtraction(a, b)    => eval(a) - eval(b)
+      case Multiplication(a, b) => eval(a) * eval(b)
+      case Division(a, b)       => eval(a) / eval(b)
+    }
 }

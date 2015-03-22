@@ -17,32 +17,38 @@
 package org.parboiled2.examples
 
 import scala.annotation.switch
-import org.parboiled2._
 import spray.json.{ParserInput => _, _}
+import org.parboiled2._
 
 /**
  * This is a feature-complete JSON parser implementation that almost directly
  * models the JSON grammar presented at http://www.json.org as a parboiled2 PEG parser.
  */
-class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
+object JsonParser extends Parser {
   import CharPredicate.{Digit, Digit19, HexDigit}
-  import JsonParser._
+  import StringBuilding._
+
+  class Context extends StringBuilding.Context
+
+  val WhiteSpaceChar = CharPredicate(" \n\r\t\f")
+  val QuoteBackslash = CharPredicate("\"\\")
+  val QuoteSlashBackSlash = QuoteBackslash ++ "/"
 
   // the root rule
-  def Json = rule { WhiteSpace ~ Value ~ EOI }
+  val Json = rule { WhiteSpace ~ Value ~ EOI }
 
-  def JsonObject: Rule1[JsObject] = rule {
+  val JsonObject: Rule1[JsObject] = rule {
     ws('{') ~ zeroOrMore(Pair).separatedBy(ws(',')) ~ ws('}') ~> ((fields: Seq[JsField]) => JsObject(fields :_*))
   }
 
-  def Pair = rule { JsonStringUnwrapped ~ ws(':') ~ Value ~> ((_, _)) }
+  val Pair = rule { JsonStringUnwrapped ~ ws(':') ~ Value ~> ((_, _)) }
 
-  def Value: Rule1[JsValue] = rule {
+  val Value: Rule1[JsValue] = rule {
     // as an optimization of the equivalent rule:
     //   JsonString | JsonNumber | JsonObject | JsonArray | JsonTrue | JsonFalse | JsonNull
-    // we make use of the fact that one-char lookahead is enough to discriminate the cases
+    // we make use of the fact that one-char look-ahead is enough to discriminate the cases
     run {
-      (cursorChar: @switch) match {
+      state.cursorChar match {
         case '"' => JsonString
         case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '-' => JsonNumber
         case '{' => JsonObject
@@ -55,51 +61,45 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
     }
   }
 
-  def JsonString = rule { JsonStringUnwrapped ~> (JsString(_)) }
+  val JsonString = rule { JsonStringUnwrapped ~> (JsString(_)) }
 
-  def JsonStringUnwrapped = rule { '"' ~ clearSB() ~ Characters ~ ws('"') ~ push(sb.toString) }
+  val JsonStringUnwrapped = rule { '"' ~ clearSB ~ Characters ~ ws('"') ~ push(ctx.sb.toString) }
 
-  def JsonNumber = rule { capture(Integer ~ optional(Frac) ~ optional(Exp)) ~> (JsNumber(_)) ~ WhiteSpace }
+  val JsonNumber = rule { capture(Integer ~ optional(Frac) ~ optional(Exp)) ~> (JsNumber(_)) ~ WhiteSpace }
 
-  def JsonArray = rule { ws('[') ~ zeroOrMore(Value).separatedBy(ws(',')) ~ ws(']') ~> (JsArray(_ :_*)) }
+  val JsonArray = rule { ws('[') ~ zeroOrMore(Value).separatedBy(ws(',')) ~ ws(']') ~> (JsArray(_ :_*)) }
 
-  def Characters = rule { zeroOrMore(NormalChar | '\\' ~ EscapedChar) }
+  val Characters = rule { zeroOrMore(NormalChar | '\\' ~ EscapedChar) }
 
-  def NormalChar = rule { !QuoteBackslash ~ ANY ~ appendSB() }
+  val NormalChar = rule { !QuoteBackslash ~ ANY ~ appendLastChar }
 
-  def EscapedChar = rule (
-    QuoteSlashBackSlash ~ appendSB()
-      | 'b' ~ appendSB('\b')
-      | 'f' ~ appendSB('\f')
-      | 'n' ~ appendSB('\n')
-      | 'r' ~ appendSB('\r')
-      | 't' ~ appendSB('\t')
-      | Unicode ~> { code => sb.append(code.asInstanceOf[Char]); () }
+  val EscapedChar = rule (
+    QuoteSlashBackSlash ~ appendLastChar
+      | 'b' ~ appendChar('\b')
+      | 'f' ~ appendChar('\f')
+      | 'n' ~ appendChar('\n')
+      | 'r' ~ appendChar('\r')
+      | 't' ~ appendChar('\t')
+      | Unicode ~> { code => ctx.sb.append(code.asInstanceOf[Char]); () }
   )
 
-  def Unicode = rule { 'u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16)) }
+  val Unicode = rule { 'u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16)) }
 
-  def Integer = rule { optional('-') ~ (Digit19 ~ Digits | Digit) }
+  val Integer = rule { optional('-') ~ (Digit19 ~ Digits | Digit) }
 
-  def Digits = rule { oneOrMore(Digit) }
+  val Digits = rule { oneOrMore(Digit) }
 
-  def Frac = rule { "." ~ Digits }
+  val Frac = rule { "." ~ Digits }
 
-  def Exp = rule { ignoreCase('e') ~ optional(anyOf("+-")) ~ Digits }
+  val Exp = rule { ignoreCase('e') ~ optional(anyOf("+-")) ~ Digits }
 
-  def JsonTrue = rule { "true" ~ WhiteSpace ~ push(JsTrue) }
+  val JsonTrue = rule { "true" ~ WhiteSpace ~ push(JsTrue) }
 
-  def JsonFalse = rule { "false" ~ WhiteSpace ~ push(JsFalse) }
+  val JsonFalse = rule { "false" ~ WhiteSpace ~ push(JsFalse) }
 
-  def JsonNull = rule { "null" ~ WhiteSpace ~ push(JsNull) }
+  val JsonNull = rule { "null" ~ WhiteSpace ~ push(JsNull) }
 
-  def WhiteSpace = rule { zeroOrMore(WhiteSpaceChar) }
+  val WhiteSpace = rule { zeroOrMore(WhiteSpaceChar) }
 
-  def ws(c: Char) = rule { c ~ WhiteSpace }
-}
-
-object JsonParser {
-  val WhiteSpaceChar = CharPredicate(" \n\r\t\f")
-  val QuoteBackslash = CharPredicate("\"\\")
-  val QuoteSlashBackSlash = QuoteBackslash ++ "/"
+  val ws = rule[Char]() { _ ~ WhiteSpace }
 }
