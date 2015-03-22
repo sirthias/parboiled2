@@ -246,7 +246,6 @@ class ErrorFormatter(showExpected: Boolean = true,
       case Quiet               ⇒ "quiet"
       case RuleCall            ⇒ "call"
       case Run                 ⇒ "<run>"
-      case RunSubParser        ⇒ "runSubParser"
       case Sequence            ⇒ "~"
       case x: StringMatch      ⇒ '"' + escape(x.string) + '"'
       case x: Times            ⇒ "times"
@@ -260,6 +259,7 @@ class ErrorFormatter(showExpected: Boolean = true,
     import CharUtils.escape
     terminal match {
       case ANY                                       ⇒ "ANY"
+      case MISMATCH                                  ⇒ "MISMATCH"
       case AnyOf(s)                                  ⇒ '[' + escape(s) + ']'
       case CharMatch(c)                              ⇒ "'" + escape(c) + '\''
       case CharPredicateMatch(_)                     ⇒ "<CharPredicate>"

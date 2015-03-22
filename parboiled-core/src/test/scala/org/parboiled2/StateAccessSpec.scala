@@ -16,19 +16,21 @@
 
 package org.parboiled2
 
-class MetaRuleSpec extends TestParserSpec {
+import scala.util.Success
+import org.specs2.mutable.Specification
 
-  "Meta rules" should {
+class StateAccessSpec extends Specification {
 
-    "work as expected" in new TestParser0 {
-      val targetRule = rule { bracketed1(ab) ~ bracketed2(cd) }
-      val ab = rule { "ab" }
-      val cd = rule { "cd" }
-      val bracketed1 = rule[Rule0]() { inner ⇒ '[' ~ inner ~ ']' }
-      def bracketed2(inner: Rule0) = rule { '[' ~ inner ~ ']' }
+  object Parser extends Parser {
+    class Context(val name: String)
 
-      "[ab][cd]" must beMatched
-      "abcd" must beMismatched
+    val Foo = rule { val x = ctx.name; push(ctx.name) ~ ctx.name ~ EOI }
+  }
+
+  "Access to the parser state and context" should {
+
+    "work as expected" in {
+      Parser.Foo.runWithContext("foo", new Parser.Context("foo")) === Success("foo")
     }
   }
 }

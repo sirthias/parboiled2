@@ -24,7 +24,7 @@ class CustomCharAndStringExpansionSpec extends TestParserSpec {
       implicit def chWithX(c: Char): Rule0 =
         if (c == EOI) rule(ch(EOI)) else rule { ch(c) ~ ch('x') }
 
-      def targetRule = rule { 'a' ~ 'b' ~ EOI }
+      val targetRule = rule { 'a' ~ 'b' ~ EOI }
 
       "axbx" must beMatched
       "ab" must beMismatched
@@ -35,7 +35,7 @@ class CustomCharAndStringExpansionSpec extends TestParserSpec {
         str(s) ~ zeroOrMore(' ')
       }
 
-      def targetRule = rule { "foo" ~ "bar" ~ EOI }
+      val targetRule = rule { "foo" ~ "bar" ~ EOI }
 
       "foobar" must beMatched
       "foo   bar" must beMatched

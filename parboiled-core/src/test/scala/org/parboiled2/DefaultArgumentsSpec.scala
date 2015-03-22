@@ -23,13 +23,13 @@ class DefaultArgumentsSpec extends Specification {
 
   case class A(a: Int = 0, b: Int = 1)
 
-  class Foo(val input: ParserInput) extends Parser {
+  object Foo extends SimpleParser {
     def Foo: Rule1[A] = rule { "foo" ~ push(A(b = 2)) }
   }
 
   "The `push` action" should {
     "properly handle default arguments" in {
-      new Foo("foo").Foo.run() === Success(A(0, 2))
+      Foo.Foo.run("foo") === Success(A(0, 2))
     }
   }
 }

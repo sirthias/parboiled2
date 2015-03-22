@@ -18,22 +18,24 @@ package org.parboiled2.nestedpackage
 
 import scala.util.Success
 import org.specs2.mutable.Specification
+import org.parboiled2.CharPredicate
 
 class AlienPackageParserSpec extends Specification {
 
-  abstract class AbstractParser(val input: org.parboiled2.ParserInput) extends org.parboiled2.Parser {
-    import org.parboiled2.{ Rule1, CharPredicate }
-
-    def foo: Rule1[String] = rule { capture("foo" ~ zeroOrMore(CharPredicate.Digit)) }
+  object AbstractParser extends org.parboiled2.Parser {
+    type Context = Unit // just for fun
+    def foo = rule { capture("foo" ~ zeroOrMore(CharPredicate.Digit)) }
   }
 
-  class FooParser(input: String) extends AbstractParser(input) {
+  object FooParser extends org.parboiled2.SimpleParser {
+    import AbstractParser.foo
+
     def Go = rule { foo ~ EOI }
   }
 
   "Parsers in files that dont explicitly import org.parboiled2._" should {
     "compile" in {
-      new FooParser("foo123").Go.run() === Success("foo123")
+      FooParser.Go.runWithContext("foo123", ()) === Success("foo123")
     }
   }
 }

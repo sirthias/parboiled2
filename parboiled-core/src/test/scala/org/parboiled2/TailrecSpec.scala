@@ -19,15 +19,13 @@ package org.parboiled2
 // test verifying the effectiveness of our workaround for https://issues.scala-lang.org/browse/SI-8657
 class TailrecSpec extends TestParserSpec {
 
-  abstract class TailrecParser extends TestParser0 {
-    def InputLine = rule {
-      oneOrMore('x') ~ EOI | zeroOrMore('x') ~ 'y' ~ EOI
-    }
+  object TailrecParser extends SimpleParser {
+    val InputLine = rule { oneOrMore('x') ~ EOI | zeroOrMore('x') ~ 'y' ~ EOI }
   }
 
   "The TailrecParser parser" should {
-    "be able to match 100,000 chars without overflowing the stack" in new TailrecParser {
-      def targetRule = InputLine
+    "be able to match 100,000 chars without overflowing the stack" in new TestParser0 {
+      val targetRule = TailrecParser.InputLine
 
       val chars = Array.fill(100000)('x')
       chars(99999) = 'y'

@@ -19,12 +19,12 @@ package org.parboiled2
 import shapeless._
 
 //// pure compile-time-only test
-class DSLTest(val input: ParserInput) extends Parser {
+object DSLTest extends SimpleParser {
 
-  def ZeroOrMoreReduction_Checked: Rule[String :: HNil, String :: HNil] = ZeroOrMoreReduction
+  def ZeroOrMoreReduction_Checked: Rule[Any, String :: HNil, String :: HNil] = ZeroOrMoreReduction
   def ZeroOrMoreReduction = rule { zeroOrMore(capture("0" - "9") ~> ((x: String, y) ⇒ x + y)) }
 
-  def OptionalReduction_Checked: Rule[String :: HNil, String :: HNil] = OptionalReduction
+  def OptionalReduction_Checked: Rule[Any, String :: HNil, String :: HNil] = OptionalReduction
   def OptionalReduction = rule { optional(capture("0" - "9") ~> ((x: String, y) ⇒ x + y)) }
 
   def OpsTest1_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: Boolean :: Array[Char] :: HNil] = OpsTest1

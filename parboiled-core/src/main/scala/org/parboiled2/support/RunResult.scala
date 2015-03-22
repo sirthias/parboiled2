@@ -20,28 +20,39 @@ import shapeless._
 import org.parboiled2._
 
 // phantom type, only used for rule DSL typing
-sealed trait RunResult[T] {
-  type Out <: RuleX
+sealed trait RunResult[Ctx, T] {
+  type Out <: Rule[_, _, _]
 }
 
 object RunResult {
-  implicit def fromAux[T, Out0 <: RuleX](implicit aux: Aux[T, Out0]): RunResult[T] { type Out = Out0 } = `n/a`
+  implicit def fromAux[Ctx, T, Out0 <: Rule[_, _, _]](implicit aux: Aux[Ctx, T, Out0]): RunResult[Ctx, T] { type Out = Out0 } = `n/a`
 
-  sealed trait Aux[T, Out]
+  sealed trait Aux[Ctx, T, Out <: Rule[_, _, _]]
+
   object Aux extends Aux1 {
-    implicit def forRule[R <: RuleX]: Aux[R, R] = `n/a`
+    implicit def forRule[Ctx, C <: Ctx, I <: HList, O <: HList]: Aux[Ctx, Rule[C, I, O], Rule[C, I, O]] = `n/a`
     //implicit def forFHList[I <: HList, R, In0 <: HList, Out0 <: HList](implicit x: JA[I, R, In0, Out0]): Aux[I ⇒ R, Rule[In0, Out0]] = `n/a`
   }
+
   abstract class Aux1 extends Aux2 {
-    implicit def forF1[Z, R, In0 <: HList, Out0 <: HList](implicit x: JA[Z :: HNil, R, In0, Out0]): Aux[Z ⇒ R, Rule[In0, Out0]] = `n/a`
-    implicit def forF2[Y, Z, R, In0 <: HList, Out0 <: HList](implicit x: JA[Y :: Z :: HNil, R, In0, Out0]): Aux[(Y, Z) ⇒ R, Rule[In0, Out0]] = `n/a`
-    implicit def forF3[X, Y, Z, R, In0 <: HList, Out0 <: HList](implicit x: JA[X :: Y :: Z :: HNil, R, In0, Out0]): Aux[(X, Y, Z) ⇒ R, Rule[In0, Out0]] = `n/a`
-    implicit def forF4[W, X, Y, Z, R, In0 <: HList, Out0 <: HList](implicit x: JA[W :: X :: Y :: Z :: HNil, R, In0, Out0]): Aux[(W, X, Y, Z) ⇒ R, Rule[In0, Out0]] = `n/a`
-    implicit def forF5[V, W, X, Y, Z, R, In0 <: HList, Out0 <: HList](implicit x: JA[V :: W :: X :: Y :: Z :: HNil, R, In0, Out0]): Aux[(V, W, X, Y, Z) ⇒ R, Rule[In0, Out0]] = `n/a`
+    implicit def forF1[C, Z, R, Out <: Rule[_, _, _]](
+      implicit x: JA[C, Z :: HNil, R, Out]): Aux[C, Z ⇒ R, Out] = `n/a`
+
+    implicit def forF2[C, Y, Z, R, Out <: Rule[_, _, _]](
+      implicit x: JA[C, Y :: Z :: HNil, R, Out]): Aux[C, (Y, Z) ⇒ R, Out] = `n/a`
+
+    implicit def forF3[C, X, Y, Z, R, Out <: Rule[_, _, _]](
+      implicit x: JA[C, X :: Y :: Z :: HNil, R, Out]): Aux[C, (X, Y, Z) ⇒ R, Out] = `n/a`
+
+    implicit def forF4[C, W, X, Y, Z, R, Out <: Rule[_, _, _]](
+      implicit x: JA[C, W :: X :: Y :: Z :: HNil, R, Out]): Aux[C, (W, X, Y, Z) ⇒ R, Out] = `n/a`
+
+    implicit def forF5[C, V, W, X, Y, Z, R, Out <: Rule[_, _, _]](
+      implicit x: JA[C, V :: W :: X :: Y :: Z :: HNil, R, Out]): Aux[C, (V, W, X, Y, Z) ⇒ R, Out] = `n/a`
   }
 
   abstract class Aux2 {
-    protected type JA[I <: HList, R, In0 <: HList, Out0 <: HList] = Join.Aux[I, HNil, HNil, R, HNil, In0, Out0]
-    implicit def forAny[T]: Aux[T, Rule0] = `n/a`
+    protected type JA[C, I <: HList, R, Out <: Rule[_, _, _]] = Join.Aux[C, I, HNil, R, HNil, Out]
+    implicit def forAny[C, T]: Aux[C, T, Rule[C, HNil, HNil]] = `n/a`
   }
 }

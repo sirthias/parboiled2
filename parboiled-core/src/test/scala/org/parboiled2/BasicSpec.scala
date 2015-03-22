@@ -24,7 +24,7 @@ class BasicSpec extends TestParserSpec {
   "The Parser should correctly recognize/reject input for" >> {
 
     "simple char literals" in new TestParser0 {
-      def targetRule = rule { 'x' }
+      val targetRule = rule { 'x' }
       "x" must beMatched
       "y" must beMismatched
       "" must beMismatched
@@ -32,7 +32,7 @@ class BasicSpec extends TestParserSpec {
 
     "a simple char `val`" in new TestParser0 {
       val c = 'x'
-      def targetRule = rule { c }
+      val targetRule = rule { c }
       "x" must beMatched
       "y" must beMismatched
       "" must beMismatched
@@ -40,14 +40,14 @@ class BasicSpec extends TestParserSpec {
 
     "a simple char `def`" in new TestParser0 {
       def c = 'x'
-      def targetRule = rule { c }
+      val targetRule = rule { c }
       "x" must beMatched
       "y" must beMismatched
       "" must beMismatched
     }
 
     "simple string literals" in new TestParser0 {
-      def targetRule = rule { "ab" ~ EOI }
+      val targetRule = rule { "ab" ~ EOI }
       "" must beMismatched
       "a" must beMismatched
       "ab" must beMatched
@@ -56,7 +56,7 @@ class BasicSpec extends TestParserSpec {
 
     "a simple string `val`" in new TestParser0 {
       val s = "ab"
-      def targetRule = rule { s ~ EOI }
+      val targetRule = rule { s ~ EOI }
       "" must beMismatched
       "a" must beMismatched
       "ab" must beMatched
@@ -65,7 +65,7 @@ class BasicSpec extends TestParserSpec {
 
     "a simple string `def`" in new TestParser0 {
       def s = "ab"
-      def targetRule = rule { s ~ EOI }
+      val targetRule = rule { s ~ EOI }
       "" must beMismatched
       "a" must beMismatched
       "ab" must beMatched
@@ -73,7 +73,7 @@ class BasicSpec extends TestParserSpec {
     }
 
     "a CharPredicate" in new TestParser0 {
-      def targetRule = rule { CharPredicate.Digit }
+      val targetRule = rule { CharPredicate.Digit }
       "0" must beMatched
       "8" must beMatched
       "x" must beMismatched
@@ -81,7 +81,7 @@ class BasicSpec extends TestParserSpec {
     }
 
     "anyOf" in new TestParser0 {
-      def targetRule = rule { anyOf("abc") ~ EOI }
+      val targetRule = rule { anyOf("abc") ~ EOI }
       "" must beMismatched
       "a" must beMatched
       "b" must beMatched
@@ -91,7 +91,7 @@ class BasicSpec extends TestParserSpec {
     }
 
     "noneOf" in new TestParser0 {
-      def targetRule = rule { noneOf("abc") ~ EOI }
+      val targetRule = rule { noneOf("abc") ~ EOI }
       "" must beMismatched
       "a" must beMismatched
       "b" must beMismatched
@@ -101,7 +101,7 @@ class BasicSpec extends TestParserSpec {
     }
 
     "ignoreCase(char)" in new TestParser0 {
-      def targetRule = rule { ignoreCase('x') ~ EOI }
+      val targetRule = rule { ignoreCase('x') ~ EOI }
       "" must beMismatched
       "x" must beMatched
       "X" must beMatched
@@ -109,7 +109,7 @@ class BasicSpec extends TestParserSpec {
     }
 
     "ignoreCase(string)" in new TestParser0 {
-      def targetRule = rule { ignoreCase("ab") ~ EOI }
+      val targetRule = rule { ignoreCase("ab") ~ EOI }
       "" must beMismatched
       "a" must beMismatched
       "ab" must beMatched
@@ -119,20 +119,20 @@ class BasicSpec extends TestParserSpec {
     }
 
     "ANY" in new TestParser0 {
-      def targetRule = rule { ANY }
+      val targetRule = rule { ANY }
       "a" must beMatched
       "Ж" must beMatched
       "" must beMismatched
     }
 
     "EOI" in new TestParser0 {
-      def targetRule = rule { EOI }
+      val targetRule = rule { EOI }
       "" must beMatched
       "x" must beMismatched
     }
 
     "character ranges" in new TestParser0 {
-      def targetRule = rule { ("1" - "5") ~ EOI }
+      val targetRule = rule { ("1" - "5") ~ EOI }
       "1" must beMatched
       "3" must beMatched
       "5" must beMatched
@@ -143,26 +143,50 @@ class BasicSpec extends TestParserSpec {
     }
 
     "MATCH" in new TestParser0 {
-      def targetRule = rule { MATCH ~ EOI }
+      val targetRule = rule { MATCH ~ EOI }
       "" must beMatched
       "x" must beMismatched
     }
 
-    "called rules" in new TestParser0 {
-      def targetRule = {
-        def free() = rule { "-free" }
-        rule { foo ~ bar(42) ~ baz("", 1337) ~ typed[String] ~ free() ~ EOI }
-      }
-      def foo = rule { "foo" }
-      def bar(i: Int) = rule { "-bar" ~ i.toString }
-      def baz(s: String, i: Int) = rule { "-baz" ~ s ~ i.toString }
-      def typed[S <: String] = rule { MATCH }
-      "foo-bar42-baz1337-free" must beMatched
+    "rule calls to `val`s" in new TestParser0 {
+      val targetRule = rule { (val0 | val1(1) | val2(2, '2') | val3(3, "s", 'x')) ~ EOI }
+      val val0 = rule { '0' }
+      val val1 = rule[Int]() { _ times '1' }
+      val val2 = rule[Int, Char]() { _ times _ }
+      val val3 = rule[Int, String, Char]() { (i, s, c) ⇒ i times (s + c) }
+      "0" must beMatched
+      "1" must beMatched
+      "22" must beMatched
+      "sxsxsx" must beMatched
+    }
+
+    "rule calls to `def`s with inner parameters" in new TestParser0 {
+      val targetRule = rule { (def0 | def1(1) | def2(2, '2') | def3(3, "s", 'x')) ~ EOI }
+      def def0 = rule { '0' }
+      def def1 = rule[Int]() { _ times '1' }
+      def def2 = rule[Int, Char]() { _ times _ }
+      def def3 = rule[Int, String, Char]() { (i, s, c) ⇒ i times (s + c) }
+      "0" must beMatched
+      "1" must beMatched
+      "22" must beMatched
+      "sxsxsx" must beMatched
+    }
+
+    "rule calls to `def`s with outer parameters" in new TestParser0 {
+      val targetRule = rule { (def0 | def1(1) | def2(2, '2') | def3(3, "s", 'x')) ~ EOI }
+      def def0 = rule { '0' }
+      def def1(i: Int) = rule { i times '1' }
+      def def2(i: Int, c: Char) = rule { i times c }
+      def def3(i: Int, s: String, c: Char) = rule { i times (s + c) }
+      "0" must beMatched
+      "1" must beMatched
+      "22" must beMatched
+      "sxsxsx" must beMatched
     }
 
     "Map[String, T]" in new TestParser1[Int] {
       val colors = Map("red" -> 1, "green" -> 2, "blue" -> 3)
-      def targetRule = rule { colors ~ EOI }
+      val targetRule = rule { colors ~ EOI }
       "red" must beMatchedWith(1)
       "green" must beMatchedWith(2)
       "blue" must beMatchedWith(3)
@@ -171,8 +195,7 @@ class BasicSpec extends TestParserSpec {
   }
 
   "The Parser" should {
-    "disallow compilation of an illegal character range" in new Parser with Scope {
-      def input = ParserInput.Empty
+    "disallow compilation of an illegal character range" in new SimpleParser with Scope {
       illTyped("""rule { "00" - "5" }""", "lower bound must be a single char string")
       illTyped("""rule { "0" - "55" }""", "upper bound must be a single char string")
       illTyped("""rule { "" - "5" }""", "lower bound must be a single char string")

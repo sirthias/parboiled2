@@ -21,14 +21,15 @@ import shapeless.ops.hlist.Prepend
 import org.parboiled2.support._
 import shapeless._
 
-trait RuleDSLActions {
+trait RuleDSLActions { this: RuleTypes ⇒
 
   /**
    * Pushes the input text matched by its inner rule onto the value stack
    * after its inner rule has been run successfully (and only then).
    */
   @compileTimeOnly("Calls to `capture` must be inside `rule` macro")
-  def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepend[O, String :: HNil]): Rule[I, p.Out] = `n/a`
+  def capture[C, I <: HList, O <: HList](r: Rule[C, I, O])(
+    implicit p: Prepend[O, String :: HNil]): Rule[C, I, p.Out] = `n/a`
 
   /**
    * Implements a semantic predicate. If the argument expression evaluates to `true` the created
@@ -61,7 +62,7 @@ trait RuleDSLActions {
    * into the rule method by the `rule` macro.
    */
   @compileTimeOnly("Calls to `run` must be inside `rule` macro")
-  def run[T](arg: T)(implicit rr: RunResult[T]): rr.Out = `n/a`
+  def run[T](arg: T)(implicit rr: RunResult[Context, T]): rr.Out = `n/a`
 
   /**
    * Pushes the given value onto the value stack.
@@ -78,10 +79,12 @@ trait RuleDSLActions {
    * which must be an ``Int`` underneath a ``String`` (the string being the top stack element).
    */
   @compileTimeOnly("Calls to `drop` must be inside `rule` macro")
-  def drop[T](implicit h: HListable[T]): PopRule[h.Out] = `n/a`
+  def drop[T](implicit h: HListable[T]): Rule[Context, h.Out, HNil] = `n/a`
 
   @compileTimeOnly("Calls to `rule2ActionOperator` must be inside `rule` macro")
-  implicit def rule2ActionOperator[I <: HList, O <: HList](r: Rule[I, O])(implicit ops: ActionOps[I, O]): ActionOperator[I, O, ops.Out] = `n/a`
+  implicit def rule2ActionOperator[C <: Context, I <: HList, O <: HList](r: Rule[C, I, O])(
+    implicit ops: ActionOps[C, I, O]): ActionOperator[I, O, ops.Out] = `n/a`
+
   sealed trait ActionOperator[I <: HList, O <: HList, Ops] {
     def ~> : Ops
   }

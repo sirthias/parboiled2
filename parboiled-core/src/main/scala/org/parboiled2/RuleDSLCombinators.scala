@@ -31,7 +31,8 @@ trait RuleDSLCombinators {
    *   Rule[I, O]        if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `optional` must be inside `rule` macro")
-  def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit l: Lifter[Option, I, O]): Rule[l.In, l.OptionalOut] = `n/a`
+  def optional[C, I <: HList, O <: HList](r: Rule[C, I, O])(
+    implicit l: Lifter[Option, I, O]): Rule[C, l.In, l.OptionalOut] = `n/a`
 
   /**
    * Runs its inner rule until it fails, always succeeds.
@@ -41,7 +42,8 @@ trait RuleDSLCombinators {
    *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `zeroOrMore` must be inside `rule` macro")
-  def zeroOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit l: Lifter[immutable.Seq, I, O]): Rule[l.In, l.OptionalOut] with Repeated = `n/a`
+  def zeroOrMore[C, I <: HList, O <: HList](r: Rule[C, I, O])(
+    implicit l: Lifter[immutable.Seq, I, O]): Rule[C, l.In, l.OptionalOut] with Repeated = `n/a`
 
   /**
    * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
@@ -51,14 +53,15 @@ trait RuleDSLCombinators {
    *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
    */
   @compileTimeOnly("Calls to `oneOrMore` must be inside `rule` macro")
-  def oneOrMore[I <: HList, O <: HList](r: Rule[I, O])(implicit l: Lifter[immutable.Seq, I, O]): Rule[l.In, l.StrictOut] with Repeated = `n/a`
+  def oneOrMore[C, I <: HList, O <: HList](r: Rule[C, I, O])(
+    implicit l: Lifter[immutable.Seq, I, O]): Rule[C, l.In, l.StrictOut] with Repeated = `n/a`
 
   /**
    * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
    * succeeds only if its inner rule succeeded.
    */
   @compileTimeOnly("Calls to `&` must be inside `rule` macro")
-  def &(r: Rule[_, _]): Rule0 = `n/a`
+  def &[C](r: Rule[C, _, _]): Rule[C, HNil, HNil] = `n/a`
 
   /**
    * Marks a rule as "undividable" from an error reporting perspective.
@@ -67,7 +70,7 @@ trait RuleDSLCombinators {
    * very beginning of the attempted rule match.
    */
   @compileTimeOnly("Calls to `atomic` must be inside `rule` macro")
-  def atomic[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = `n/a`
+  def atomic[C, I <: HList, O <: HList](r: Rule[C, I, O]): Rule[C, I, O] = `n/a`
 
   /**
    * Marks a rule as "quiet" from an error reporting perspective.
@@ -76,15 +79,7 @@ trait RuleDSLCombinators {
    * essentially everywhere and are therefore not helpful when appearing in the "expected" set of an error report.
    */
   @compileTimeOnly("Calls to `atomic` must be inside `rule` macro")
-  def quiet[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = `n/a`
-
-  /**
-   * Allows creation of a sub parser and running of one of its rules as part of the current parsing process.
-   * The subparser will start parsing at the current input position and the outer parser (this parser)
-   * will continue where the sub-parser stopped.
-   */
-  @compileTimeOnly("Calls to `runSubParser` must be inside `rule` macro")
-  def runSubParser[I <: HList, O <: HList](f: ParserInput ⇒ Rule[I, O]): Rule[I, O] = `n/a`
+  def quiet[C, I <: HList, O <: HList](r: Rule[C, I, O]): Rule[C, I, O] = `n/a`
 
   @compileTimeOnly("Calls to `int2NTimes` must be inside `rule` macro")
   implicit def int2NTimes(i: Int): NTimes = `n/a`
@@ -102,12 +97,13 @@ trait RuleDSLCombinators {
      *   Rule[I, O]     if r == Rule[I, O <: I] // so called "reduction", which leaves the value stack unchanged on a type level
      */
     @compileTimeOnly("Calls to `times` must be inside `rule` macro")
-    def times[I <: HList, O <: HList](r: Rule[I, O])(implicit s: Lifter[immutable.Seq, I, O]): Rule[s.In, s.StrictOut] with Repeated
+    def times[C, I <: HList, O <: HList](r: Rule[C, I, O])(
+      implicit s: Lifter[immutable.Seq, I, O]): Rule[C, s.In, s.StrictOut] with Repeated
   }
 
   @compileTimeOnly("Calls to `rule2WithSeparatedBy` constructor must be inside `rule` macro")
-  implicit def rule2WithSeparatedBy[I <: HList, O <: HList](r: Rule[I, O] with Repeated): WithSeparatedBy[I, O] = `n/a`
-  trait WithSeparatedBy[I <: HList, O <: HList] {
-    def separatedBy(separator: Rule0): Rule[I, O] = `n/a`
+  implicit def rule2WithSeparatedBy[C, I <: HList, O <: HList](r: Rule[C, I, O] with Repeated): WithSeparatedBy[C, I, O] = `n/a`
+  trait WithSeparatedBy[Ctx, I <: HList, O <: HList] {
+    def separatedBy[C <: Ctx](separator: Rule[C, HNil, HNil]): Rule[C, I, O] = `n/a`
   }
 }

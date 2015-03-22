@@ -25,21 +25,22 @@ class ReductionTypeSpec extends Specification {
   case object Foo1 extends Foo
   case class Foo2(lhs: Foo, rhs: Foo) extends Foo
 
-  class FooParser(val input: ParserInput) extends Parser {
-    def OneOrMoreExpr = rule { foo1 ~ oneOrMore(foo1 ~> Foo2) }
-    def ZeroOrMoreExpr = rule { foo1 ~ zeroOrMore(foo1 ~> Foo2) }
-    def OptionalExpr = rule { foo1 ~ optional(foo1 ~> Foo2) }
-    def TimesExpr = rule { foo1 ~ 2.times(foo1 ~> Foo2) }
+  object FooParser extends SimpleParser {
+    val OneOrMoreExpr = rule { foo1 ~ oneOrMore(foo1 ~> Foo2) }
+    val ZeroOrMoreExpr = rule { foo1 ~ zeroOrMore(foo1 ~> Foo2) }
+    val OptionalExpr = rule { foo1 ~ optional(foo1 ~> Foo2) }
+    val TimesExpr = rule { foo1 ~ 2.times(foo1 ~> Foo2) }
 
-    def foo1 = rule { push(Foo1) }
+    val foo1 = rule { push(Foo1) }
+
+    def ruleTypeOf[T](r: Rule1[T])(implicit tag: ClassTag[T]) = tag.runtimeClass
   }
 
   "Repeating combinators should properly compute their reduction result types" >> {
-    "OneOrMore" in { ruleTypeOf(_.OneOrMoreExpr) === classOf[Foo2] }
-    "ZeroOrMore" in { ruleTypeOf(_.ZeroOrMoreExpr) === classOf[Foo] }
-    "Optional" in { ruleTypeOf(_.OptionalExpr) === classOf[Foo] }
-    "Times" in { ruleTypeOf(_.TimesExpr) === classOf[Foo2] }
+    import FooParser._
+    "OneOrMore" in { ruleTypeOf(OneOrMoreExpr) === classOf[Foo2] }
+    "ZeroOrMore" in { ruleTypeOf(ZeroOrMoreExpr) === classOf[Foo] }
+    "Optional" in { ruleTypeOf(OptionalExpr) === classOf[Foo] }
+    "Times" in { ruleTypeOf(TimesExpr) === classOf[Foo2] }
   }
-
-  def ruleTypeOf[T](f: FooParser ⇒ Rule1[T])(implicit tag: ClassTag[T]) = tag.runtimeClass
 }

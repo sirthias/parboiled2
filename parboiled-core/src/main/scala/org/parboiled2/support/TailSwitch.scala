@@ -52,13 +52,13 @@ object TailSwitch {
     Aux[L, LI, T, TI, R, RI, R] = `n/a`
   }
 
-  private[parboiled2] abstract class Aux1 extends Aux2 {
+  abstract class Aux1 extends Aux2 {
     // if LI <: T then Out = RI.reverse ::: R
     implicit def terminate2[T <: HList, TI <: HList, L <: HList, LI <: T, R <: HList, RI <: HList, Out <: HList]
     (implicit rp: ReversePrepend.Aux[RI, R, Out]): Aux[L, LI, T, TI, R, RI, Out] = `n/a`
   }
 
-  private[parboiled2] abstract class Aux2 {
+  abstract class Aux2 {
     implicit def iter1[L <: HList, T <: HList, TH, TT <: HList, R <: HList, RI <: HList, Out <: HList]
     (implicit next: Aux[L, HNil, T, TT, R, RI, Out]): Aux[L, HNil, T, TH :: TT, R, RI, Out] = `n/a`
 

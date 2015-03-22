@@ -20,7 +20,7 @@ import scala.annotation.implicitNotFound
 import shapeless._
 
 @implicitNotFound("The `optional`, `zeroOrMore`, `oneOrMore` and `times` modifiers " +
-  "can only be used on rules of type `Rule0`, `Rule1[T]` and `Rule[I, O <: I]`!")
+  "can only be used on rules of type `Rule0`, `Rule1[T]` and `Rule[_, I, O <: I]`!")
 sealed trait Lifter[M[_], I <: HList, O <: HList] {
   type In <: HList
   type StrictOut <: HList
