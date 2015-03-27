@@ -173,6 +173,12 @@ class ActionSpec extends TestParserSpec {
       "xx" must beMatchedWith("x")
     }
 
+    "`~>` producing a Rule[T :: HNil, T :: HNil]" in new TestParser1[String] {
+      val targetRule = rule { capture("x") ~> (s ⇒ test(s == "x") ~ push(s)) ~ EOI }
+      "x" must beMatchedWith("x")
+      "xx" must beMismatched
+    }
+
     "`~>` producing an expression evaluating to a rule" in new TestParser0 {
       val targetRule = rule { capture(anyOf("ab")) ~> (s ⇒ if (s == "a") ch('b') else ch('a')) ~ EOI }
       "ab" must beMatched

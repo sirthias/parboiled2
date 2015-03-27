@@ -34,6 +34,8 @@ object StringBuilding extends Parser {
 
   val clearSB: Rule0 = rule { run(ctx.sb.setLength(0)) }
 
+  val pushSB: Rule1[String] = rule { push { val s = ctx.sb.toString; ctx.sb.setLength(0); s } }
+
   val appendLastChar: Rule0 = rule { run(ctx.sb.append(state.lastChar)) }
 
   val appendChar: Rule10[Char] = rule[Char]() { c ⇒ run(ctx.sb.append(c)) }

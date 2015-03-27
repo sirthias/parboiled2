@@ -83,7 +83,7 @@ class OpTreeContext[OpTreeCtx <: reflect.macros.blackbox.Context](val c: OpTreeC
   val opTreePF: PartialFunction[Tree, OpTree] = {
     case q"$lhs.~[..$a]($rhs)($c, $d)"                   ⇒ Sequence(OpTree(lhs), OpTree(rhs))
     case q"$lhs.~!~[..$a]($rhs)($c, $d)"                 ⇒ Cut(OpTree(lhs), OpTree(rhs))
-    case q"$lhs.|[..$a]($rhs)"                           ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
+    case q"$lhs.|[..$a]($rhs)($b)"                       ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
     case q"$a.this.ch($c)"                               ⇒ CharMatch(StateAccessTransformer(c))
     case q"$a.this.str($s)"                              ⇒ StringMatch(StateAccessTransformer(s))
     case q"$a.this.valueMap[$b]($m)($hl)"                ⇒ MapMatch(StateAccessTransformer(m))
@@ -615,10 +615,11 @@ class OpTreeContext[OpTreeCtx <: reflect.macros.blackbox.Context](val c: OpTreeC
       call match {
         case OpTreeCall(_)        ⇒ super.render(wrapped)
         case Call0(t)             ⇒ q"$t.asInstanceOf[$prefix.RuleImpl[$tpeCtx]].run(__psi)"
-        case Call1(t, a)          ⇒ q"$t.asInstanceOf[${tpe(t, Rule1XType, 1)}].run($a, __psi)"
-        case Call2(t, a0, a1)     ⇒ q"$t.asInstanceOf[${tpe(t, Rule2XType, 2)}].run($a0, $a1, __psi)"
-        case Call3(t, a0, a1, a2) ⇒ q"$t.asInstanceOf[${tpe(t, Rule3XType, 3)}].run($a0, $a1, $a2, __psi)"
+        case Call1(t, a)          ⇒ q"$t.asInstanceOf[${tpe(t, Rule1XType, 1)}].run(${sat(a)}, __psi)"
+        case Call2(t, a0, a1)     ⇒ q"$t.asInstanceOf[${tpe(t, Rule2XType, 2)}].run(${sat(a0)}, ${sat(a1)}, __psi)"
+        case Call3(t, a0, a1, a2) ⇒ q"$t.asInstanceOf[${tpe(t, Rule3XType, 3)}].run(${sat(a0)}, ${sat(a1)}, ${sat(a2)}, __psi)"
       }
+    private def sat = StateAccessTransformer
     private def tpe(t: Tree, ruleNXType: Type, typeParamCount: Int): Tree = {
       val classSymbol = ruleNXType.typeSymbol.asClass
       val typeParams = (1 to typeParamCount).toList.map {

@@ -22,20 +22,21 @@ import org.specs2.mutable.Specification
 class StringBuildingSpec extends Specification {
 
   object TestParser extends Parser {
+    import StringBuilding._
     class Context extends StringBuilding.Context {
       var count = 0 // some custom member
     }
 
     val foo = rule {
-      "foo" ~ run(ctx.count += 1) ~ 'X' ~ StringBuilding.appendLastChar ~ bar ~ EOI ~ push(ctx.sb.toString)
+      "foo" ~ run(ctx.count += 1) ~ 'X' ~ appendLastChar ~ appendChar(state.lastChar) ~ bar ~ EOI ~ pushSB
     }
-    val bar = rule { "bar" ~ StringBuilding.appendString("BAR") }
+    val bar = rule { "bar" ~ appendString("BAR") }
   }
 
   "StringBuilding" should {
 
     "work as expected " in {
-      TestParser.foo.runWithContext("fooXbar", new TestParser.Context) === Success("XBAR")
+      TestParser.foo.runWithContext("fooXbar", new TestParser.Context) === Success("XXBAR")
     }
   }
 }

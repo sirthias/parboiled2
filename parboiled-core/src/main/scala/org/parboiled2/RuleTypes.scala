@@ -68,7 +68,7 @@ sealed trait Rule[-Ctx, -I <: HList, +O <: HList] {
     o: TailSwitch[O @uncheckedVariance, I2, O2]): Rule[C, i.Out, o.Out] = `n/a`
 
   @compileTimeOnly("Calls to `|` must be inside `rule` macro")
-  def |[C <: Ctx, I2 <: I, O2 >: O <: HList](that: Rule[C, I2, O2]): Rule[C, I2, O2] = `n/a`
+  def |[C <: Ctx, I2 <: I, O2 >: O <: HList](that: Rule[C, I2, O2])(implicit ev: CanBeOred[O2]): Rule[C, I2, O2] = `n/a`
 
   @compileTimeOnly("Calls to `unary_!` must be inside `rule` macro")
   def unary_!(): Rule[Ctx, HNil, HNil] = `n/a`
@@ -165,11 +165,18 @@ trait Repeated
 @implicitNotFound("Rules requiring input from the value stack cannot be run as top-level rules!")
 sealed trait IsHNil[I <: HList] // phantom type
 object IsHNil {
-  implicit val forHNil: IsHNil[HNil] = null
+  implicit def forHNil: IsHNil[HNil] = null
 }
 
 @implicitNotFound("You cannot use `rule.run` with a custom Context. Use `rule.runWithContext` instead!")
 class DefaultValue[+T](val defaultValue: T)
 object DefaultValue {
   implicit val defaultAny = new DefaultValue[Any](())
+}
+
+@implicitNotFound("Incompatible types for `|` operator!")
+sealed trait CanBeOred[T <: HList] // phantom type
+object CanBeOred {
+  implicit def forHNil: CanBeOred[HNil] = null
+  implicit def forHCons[H, T <: HList]: CanBeOred[H :: T] = null
 }
