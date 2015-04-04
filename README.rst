@@ -1183,7 +1183,7 @@ As an example, consider this very basic parser:
 .. code:: Scala
 
     class MyParser(val input: ParserInput) extends Parser {
-      def InputLine = rule { "foo" | "bar }
+      def InputLine = rule { "foo" | "bar" }
     }
     
     new MyParser("foo").InputLine.run()  // Success
@@ -1196,7 +1196,7 @@ If this is not what you want you need to explicitly match ``EOI``, for example a
 
 .. code:: Scala
 
-    def InputLine = rule { ("foo" | "bar) ~ EOI }
+    def InputLine = rule { ("foo" | "bar") ~ EOI }
 
 
 Grammar Debugging
