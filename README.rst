@@ -475,7 +475,7 @@ oneOrMore(a)
     =================== =======================
     ``Rule0``           ``Rule0``
     ``Rule1[T]``        ``Rule1[Seq[T]]``
-    ``Rule[I, O <: I]`` ``Rule[I, O]``
+    ``Rule[I, O <: I]`` ``Rule[I, I]``
     =================== =======================
 
     The last case is a so-called "reduction rule", which leaves the value stack unchanged on a type level.
