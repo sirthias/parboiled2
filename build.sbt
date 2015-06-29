@@ -5,7 +5,7 @@ import scala.xml.{Node => XNode, NodeSeq}
 
 val commonSettings = Seq(
   version := "2.2.0-SNAPSHOT",
-  scalaVersion := "2.11.6",
+  scalaVersion := "2.11.7",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -67,8 +67,8 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.6"   % "provided"
-val shapeless        = "com.chuusai"     %% "shapeless"         % "2.1.0"    % "compile"
+val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.7"   % "provided"
+val shapeless        = "com.chuusai"     %% "shapeless"         % "2.2.3"    % "compile"
 val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.17"   % "test"
 val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.17"   % "test"
 
@@ -82,20 +82,20 @@ lazy val examples = project
   .dependsOn(parboiled)
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
-  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.1"))
+  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.2"))
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
 lazy val jsonBenchmark = project
   .dependsOn(examples)
+  .enablePlugins(JmhPlugin)
   .settings(commonSettings: _*)
-  .settings(jmhSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % "3.2.11",
       "org.json4s" %% "json4s-jackson" % "3.2.11",
-      "io.argonaut" %% "argonaut" % "6.0.4"),
+      "io.argonaut" %% "argonaut" % "6.1"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val scalaParser = project
