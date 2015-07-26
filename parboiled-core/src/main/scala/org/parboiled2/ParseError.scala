@@ -117,6 +117,7 @@ object RuleTrace {
   case object AndPredicate extends NonTerminalKey
   case object Atomic extends NonTerminalKey
   case object Capture extends NonTerminalKey
+  case object CapturePos extends NonTerminalKey
   case object Cut extends NonTerminalKey
   case object FirstOf extends NonTerminalKey
   final case class IgnoreCaseString(string: String) extends NonTerminalKey
