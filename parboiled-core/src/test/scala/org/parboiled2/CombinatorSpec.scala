@@ -219,6 +219,15 @@ class CombinatorSpec extends TestParserSpec {
       "xxxxx" must beMismatched
     }
 
+    "`(2 to max).times(Rule0)` modifier where `max` is 4" in new TestParser0 {
+      val max = 4
+      val targetRule = rule { (2 to max).times("x") ~ EOI }
+      "xx" must beMatched
+      "xxx" must beMatched
+      "xxxx" must beMatched
+      "xxxxx" must beMismatched
+    }
+
     "`(2 to 4).times(Rule0).separatedBy('|')` modifier" in new TestParser0 {
       val targetRule = rule { (2 to 4).times("x").separatedBy('|') ~ EOI }
       "xx" must beMismatched

@@ -408,16 +408,23 @@ class OpTreeContext[OpTreeCtx <: reflect.macros.blackbox.Context](val c: OpTreeC
         case _                             ⇒ c.abort(n.pos, "Invalid int base expression for `.times(...)`: " + n)
       }
       case q"$a.this.range2NTimes($r)" ⇒ r match {
-        case q"scala.this.Predef.intWrapper($mn).to($mx)" ⇒ (mn, mx) match {
-          case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) ⇒
-            if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
-            else if (max <= 0) c.abort(mx.pos, "`max` in `(min to max).times` must be positive")
-            else if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
-            else Times(rule, q"val min = $mn; val max = $mx", collector, separator)
-          case ((Ident(_) | Select(_, _)), (Ident(_) | Select(_, _))) ⇒
-            Times(rule, q"val min = $mn; val max = $mx", collector, separator)
-          case _ ⇒ c.abort(r.pos, "Invalid int range expression for `.times(...)`: " + r)
-        }
+        case q"scala.this.Predef.intWrapper($mn).to($mx)" ⇒
+          mn match {
+            case Literal(Constant(min: Int)) ⇒ if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
+            case (Ident(_) | Select(_, _))   ⇒
+            case _                           ⇒ c.abort(r.pos, "Invalid int range expression for `min` in `.times(...)`: " + r)
+          }
+          mx match {
+            case Literal(Constant(max: Int)) ⇒ if (max <= 0) c.abort(mx.pos, "`max` in `(min to max).times` must be positive")
+            case (Ident(_) | Select(_, _))   ⇒
+            case _                           ⇒ c.abort(r.pos, "Invalid int range expression for `max` in `.times(...)`: " + r)
+          }
+          (mn, mx) match {
+            case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) ⇒
+              if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
+            case _ ⇒
+          }
+          Times(rule, q"val min = $mn; val max = $mx", collector, separator)
         case x @ (Ident(_) | Select(_, _)) ⇒
           Times(rule, q"val r = $r; val min = r.start; val max = r.end", collector, separator)
         case _ ⇒ c.abort(r.pos, "Invalid range base expression for `.times(...)`: " + r)
@@ -439,6 +446,7 @@ class OpTreeContext[OpTreeCtx <: reflect.macros.blackbox.Context](val c: OpTreeC
       q"""
       ${collector.valBuilder}
       ..$inits
+      require(min <= max, "`max` in `(min to max).times` must be >= `min`")
 
       @_root_.scala.annotation.tailrec def rec(count: Int, mark: $prefix.ParserStateImpl.Mark): Boolean = {
         val matched = ${op.render(wrapped)}
