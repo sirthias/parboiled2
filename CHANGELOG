@@ -1,3 +1,12 @@
+Version 2.1.1 (2016-02-01)
+--------------------------
+- Upgraded to Scala 2.11.7 and shapeless 2.2.5
+- Fixed `StringIndexOutOfBoundsException` in `ParserInput` (#138)
+- Removed left-over `printStackTrace` (#157)
+- Enable repetition range definition via val (#153)
+- Added OSGi manifests via sbt-osgi plugin
+
+
 Version 2.1.0 (2015-02-18)
 --------------------------
 - Upgraded to Scala 2.11.5 and shapeless 2.1.0
