@@ -150,7 +150,7 @@ How the Parser matches Input
 
 PEG_ parsers are quite easy to understand as they work just like most people without a lot of background in parsing
 theory would build a parser "by hand": recursive-descent with backtracking. They have only one parsing phase (not two,
-like mosts parsers produced by traditional parser generators like ANTLR_), do not require any look-ahead and perform
+like most parsers produced by traditional parser generators like ANTLR_), do not require any look-ahead and perform
 quite well in most real-world scenarios (although they *can* exhibit exponential runtime for certain pathological
 languages and inputs).
 
