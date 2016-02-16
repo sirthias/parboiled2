@@ -30,7 +30,8 @@ class Base64Spec extends Specification {
     "foo" -> "Zm9v",
     "foob" -> "Zm9vYg==",
     "fooba" -> "Zm9vYmE=",
-    "foobar" -> "Zm9vYmFy"
+    "foobar" -> "Zm9vYmFy",
+    "@@ Hello @@ world @@!" -> "QEAgSGVsbG8gQEAgd29ybGQgQEAh"
   )
 
   "Base64 should" >> {
