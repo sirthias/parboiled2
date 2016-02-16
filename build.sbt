@@ -3,6 +3,7 @@ import scalariform.formatter.preferences._
 import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
 import com.typesafe.sbt.osgi.SbtOsgi._
+import org.scalajs.sbtplugin.cross.{CrossProject, CrossType}
 
 val commonSettings = Seq(
   version := "2.1.1",
@@ -80,11 +81,13 @@ val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.17"   % "
 /////////////////////// PROJECTS /////////////////////////
 
 lazy val root = project.in(file("."))
-  .aggregate(examples, jsonBenchmark, scalaParser, parboiled, parboiledCore)
+  .aggregate(examples, jsonBenchmark, scalaParser)
+  .aggregate(parboiledJVM, parboiledJS)
+  .aggregate(parboiledCoreJVM, parboiledCoreJS)
   .settings(noPublishingSettings: _*)
 
 lazy val examples = project
-  .dependsOn(parboiled)
+  .dependsOn(parboiledJVM)
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.2"))
@@ -104,22 +107,22 @@ lazy val jsonBenchmark = project
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val scalaParser = project
-  .dependsOn(parboiled)
+  .dependsOn(parboiledJVM)
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(libraryDependencies ++= Seq(shapeless, specs2Core))
   .settings(pbOsgiSettings: _*)
 
-lazy val parboiled = project
+lazy val parboiled = crossProject.crossType(CrossType.Pure)
   .dependsOn(parboiledCore)
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(publishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core),
-    mappings in (Compile, packageBin) ++= (mappings in (parboiledCore.project, Compile, packageBin)).value,
-    mappings in (Compile, packageSrc) ++= (mappings in (parboiledCore.project, Compile, packageSrc)).value,
-    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCore.project, Compile, packageDoc)).value,
+    mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJVM.project, Compile, packageBin)).value,
+    mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageSrc)).value,
+    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageDoc)).value,
     mappings in (Compile, packageBin) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     mappings in (Compile, packageDoc) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
@@ -129,11 +132,14 @@ lazy val parboiled = project
       new RuleTransformer(filter).transform(_).head
     }
   )
-  .settings(pbOsgiSettings: _*)  
+  .settings(pbOsgiSettings: _*)
+
+lazy val parboiledJVM = parboiled.jvm
+lazy val parboiledJS = parboiled.js
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-lazy val parboiledCore = project.in(file("parboiled-core"))
+lazy val parboiledCore = crossProject.crossType(CrossType.Pure).in(file("parboiled-core"))
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(noPublishingSettings: _*)
@@ -142,3 +148,6 @@ lazy val parboiledCore = project.in(file("parboiled-core"))
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
     (sourceGenerators in Compile) += generateActionOps.taskValue)
   .settings(pbOsgiSettings: _*)    
+
+lazy val parboiledCoreJVM = parboiledCore.jvm
+lazy val parboiledCoreJS = parboiledCore.js
