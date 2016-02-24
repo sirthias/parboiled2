@@ -6,7 +6,7 @@ import com.typesafe.sbt.osgi.SbtOsgi._
 
 val commonSettings = Seq(
   version := "2.1.1",
-  scalaVersion := "2.10.5",
+  scalaVersion := "2.10.6",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -74,7 +74,7 @@ val noPublishingSettings = Seq(
 
 val paradiseVersion = "2.1.0"
 
-val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.10.5"        % "provided"
+val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.10.6"        % "provided"
 val shapeless        = "com.chuusai"     %% "shapeless"         % "2.2.5"         % "compile"
 val quasiquotes      = "org.scalamacros" %% "quasiquotes"       % paradiseVersion % "compile"
 val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.17"   % "test"
@@ -83,7 +83,7 @@ val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.17"   % "
 /////////////////////// PROJECTS /////////////////////////
 
 lazy val root = project.in(file("."))
-  .aggregate(examples, jsonBenchmark, scalaParser, parboiled, parboiledCore)
+  .aggregate(examples, jsonBenchmark, parboiled, parboiledCore)
   .settings(noPublishingSettings: _*)
 
 lazy val examples = project
