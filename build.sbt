@@ -5,7 +5,7 @@ import scala.xml.{Node => XNode, NodeSeq}
 import com.typesafe.sbt.osgi.SbtOsgi._
 
 val commonSettings = Seq(
-  version := "2.1.1",
+  version := "2.1.2",
   scalaVersion := "2.10.6",
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
@@ -75,7 +75,7 @@ val noPublishingSettings = Seq(
 val paradiseVersion = "2.1.0"
 
 val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.10.6"        % "provided"
-val shapeless        = "com.chuusai"     %% "shapeless"         % "2.2.5"         % "compile"
+val shapeless        = "com.chuusai"     %% "shapeless"         % "2.3.0"         % "compile"
 val quasiquotes      = "org.scalamacros" %% "quasiquotes"       % paradiseVersion % "compile"
 val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.17"   % "test"
 val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.17"   % "test"

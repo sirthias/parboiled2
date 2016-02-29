@@ -1,3 +1,8 @@
+Version 2.1.2 (2016-02-29)
+--------------------------
+- Upgraded to shapeless 2.3.0
+
+
 Version 2.1.1 (2016-02-01)
 --------------------------
 - Upgraded to Scala 2.11.7 and shapeless 2.2.5
