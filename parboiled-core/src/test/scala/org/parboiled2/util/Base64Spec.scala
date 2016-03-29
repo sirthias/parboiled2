@@ -42,7 +42,7 @@ class Base64Spec extends Specification {
         val encoded = Base64.rfc2045().encodeToString(expectedDecodedBytes, false)
 
         expectedEncoded === encoded and
-        expectedDecodedBytes === Base64.rfc2045().decode(encoded.toCharArray)
+        expectedDecodedBytes === Base64.rfc2045().decode(encoded.toCharArray) and
         expectedDecodedBytes === Base64.rfc2045().decodeFast(encoded.toCharArray)
       }.reduceLeft(_ and _)
     }
