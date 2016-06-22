@@ -93,7 +93,7 @@ sealed abstract class CharPredicate extends (Char ⇒ Boolean) {
   protected def and(that: Char ⇒ Boolean): CharPredicate =
     if (this == Empty) Empty else from(c ⇒ this(c) && that(c))
   protected def andNot(that: Char ⇒ Boolean): CharPredicate =
-    from(if (this == Empty) c ⇒ !that(c) else c ⇒ this(c) && !that(c))
+    if (this == Empty) Empty else from(c ⇒ this(c) && !that(c))
 }
 
 object CharPredicate {
