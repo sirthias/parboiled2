@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import org.specs2.mutable.Specification
-import shapeless.HNil
+import org.parboiled2.support.HNil
 import scala.util.Success
 
 class DynamicRuleDispatchSpec extends Specification {

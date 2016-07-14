@@ -17,8 +17,7 @@
 package org.parboiled2.support
 
 import scala.annotation.implicitNotFound
-import shapeless._
-import shapeless.ops.hlist.ReversePrepend
+import org.parboiled2.support.HList.ReversePrepend
 
 // format: OFF
 

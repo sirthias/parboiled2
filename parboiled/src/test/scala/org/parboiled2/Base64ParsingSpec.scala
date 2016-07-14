@@ -19,7 +19,7 @@ package org.parboiled2
 import org.specs2.mutable.Specification
 import scala.util.{ Random, Success }
 import org.parboiled2.util.Base64
-import shapeless._
+import org.parboiled2.support._
 
 class Base64ParsingSpec extends Specification {
 

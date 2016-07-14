@@ -715,8 +715,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
   def Separator(op: OpTree): Separator = wrapped ⇒ op.render(wrapped)
 
-  lazy val HListConsTypeSymbol = c.mirror.staticClass("shapeless.$colon$colon")
-  lazy val HNilTypeSymbol = c.mirror.staticClass("shapeless.HNil")
+  lazy val HListConsTypeSymbol = c.mirror.staticClass("org.parboiled2.support.$colon$colon")
+  lazy val HNilTypeSymbol = c.mirror.staticClass("org.parboiled2.support.HNil")
 
   // tries to match and expand the leaves of the given Tree
   def expand(tree: Tree, wrapped: Boolean): Tree =

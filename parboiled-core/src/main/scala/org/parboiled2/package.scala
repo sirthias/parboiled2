@@ -16,7 +16,7 @@
 
 package org
 
-import shapeless._
+import org.parboiled2.support._
 import java.nio.charset.Charset
 
 package object parboiled2 {

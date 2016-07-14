@@ -20,7 +20,7 @@ import org.specs2.specification.{ NoToHtmlLinkFragments, Scope }
 import org.specs2.mutable.Specification
 import org.specs2.control.NoNumberOfTimes
 import org.parboiled2.support.Unpack
-import shapeless._
+import org.parboiled2.support._
 
 abstract class TestParserSpec extends Specification with NoToHtmlLinkFragments with NoNumberOfTimes {
   type TestParser0 = TestParser[HNil, Unit]

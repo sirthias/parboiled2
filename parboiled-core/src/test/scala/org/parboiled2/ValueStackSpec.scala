@@ -1,7 +1,7 @@
 package org.parboiled2
 
 import org.specs2.specification.Scope
-import shapeless.{ HList, HNil }
+import org.parboiled2.support.{ HList, HNil }
 
 class ValueStackSpec extends TestParserSpec {
 

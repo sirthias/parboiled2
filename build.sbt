@@ -74,7 +74,7 @@ val noPublishingSettings = Seq(
 /////////////////////// DEPENDENCIES /////////////////////////
 
 val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.8"   % "provided"
-val shapeless        = "com.chuusai"     %% "shapeless"         % "2.3.0"    % "compile"
+val shapeless        = "com.chuusai"     %% "shapeless"         % "2.3.0"    % "test"
 val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.17"   % "test"
 val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.17"   % "test"
 
@@ -110,7 +110,7 @@ lazy val scalaParser = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
-  .settings(libraryDependencies ++= Seq(shapeless, specs2Core))
+  .settings(libraryDependencies ++= Seq(specs2Core))
   .settings(pbOsgiSettings: _*)
 
 lazy val parboiled = crossProject.crossType(CrossType.Pure)

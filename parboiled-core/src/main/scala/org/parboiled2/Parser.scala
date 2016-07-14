@@ -20,7 +20,6 @@ import scala.annotation.tailrec
 import scala.collection.immutable.VectorBuilder
 import scala.util.{ Failure, Success, Try }
 import scala.util.control.{ NonFatal, NoStackTrace }
-import shapeless._
 import org.parboiled2.support._
 
 abstract class Parser(initialValueStackSize: Int = 16,

@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import shapeless._
+import org.parboiled2.support._
 
 class ActionSpec extends TestParserSpec {
 
