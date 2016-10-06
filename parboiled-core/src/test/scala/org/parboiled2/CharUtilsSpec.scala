@@ -18,15 +18,16 @@ package org.parboiled2
 
 import org.specs2.mutable.Specification
 import org.specs2.ScalaCheck
-import org.scalacheck.{ Prop, Gen }
+import org.scalacheck.{Gen, Prop}
 
 class CharUtilsSpec extends Specification with ScalaCheck {
 
   val hexChars = for (i ← Gen.choose(0, 15)) yield i -> Integer.toHexString(i).charAt(0)
 
   "CharUtils" >> {
-    "hexValue" in check {
-      Prop.forAll(hexChars) { case (i, c) ⇒ CharUtils.hexValue(c) == i }
+    "hexValue" in {
+      val p = Prop.forAll(hexChars) { case (i, c) ⇒ CharUtils.hexValue(c) == i }
+      check(p, defaultParameters, defaultFreqMapPretty)
     }
     "numberOfHexDigits" in prop {
       l: Long ⇒ CharUtils.numberOfHexDigits(l) === java.lang.Long.toHexString(l).length

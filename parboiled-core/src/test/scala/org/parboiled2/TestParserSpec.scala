@@ -16,16 +16,21 @@
 
 package org.parboiled2
 
-import org.specs2.specification.{ NoToHtmlLinkFragments, Scope }
+import org.specs2.specification.Scope
+import org.specs2.specification.dsl.NoReferenceDsl
 import org.specs2.mutable.Specification
 import org.specs2.control.NoNumberOfTimes
 import org.parboiled2.support.Unpack
 import shapeless._
 
-abstract class TestParserSpec extends Specification with NoToHtmlLinkFragments with NoNumberOfTimes {
+abstract class TestParserSpec extends Specification with NoReferenceDsl with NoNumberOfTimes {
   type TestParser0 = TestParser[HNil, Unit]
   type TestParser1[T] = TestParser[T :: HNil, T]
   type TestParserN[L <: HList] = TestParser[L, L]
+
+  // work-around for https://github.com/etorreborre/specs2/issues/514
+  override def mutableLinkFragment(alias: String): mutableLinkFragment = ???
+  override def mutableSeeFragment(alias: String): mutableSeeFragment = ???
 
   abstract class TestParser[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) extends Parser with Scope {
     var input: ParserInput = _

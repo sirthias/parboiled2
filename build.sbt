@@ -2,12 +2,12 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
-import com.typesafe.sbt.osgi.SbtOsgi._
 import org.scalajs.sbtplugin.cross.CrossType
 
 val commonSettings = Seq(
   version := "2.1.3",
   scalaVersion := "2.11.8",
+  crossScalaVersions := Seq("2.11.8", "2.12.0-RC1"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -36,10 +36,6 @@ val formattingSettings = scalariformSettings ++ Seq(
     .setPreference(AlignSingleLineCaseStatements, true)
     .setPreference(DoubleIndentClassDeclaration, true)
     .setPreference(PreserveDanglingCloseParenthesis, true))
-
-val pbOsgiSettings = osgiSettings ++ Seq(
-  packageBin in Runtime <<= OsgiKeys.bundle,
-  OsgiKeys.exportPackage := Seq("org.parboiled2;-split-package:=merge-first", "org.parboiled2.*;-split-package:=merge-first"))
 
 val publishingSettings = Seq(
   publishMavenStyle := true,
@@ -74,9 +70,9 @@ val noPublishingSettings = Seq(
 /////////////////////// DEPENDENCIES /////////////////////////
 
 val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.8"   % "provided"
-val shapeless        = "com.chuusai"     %% "shapeless"         % "2.3.0"    % "compile"
-val specs2Core       = "org.specs2"      %% "specs2-core"       % "2.4.17"   % "test"
-val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "2.4.17"   % "test"
+val shapeless        = "com.chuusai"     %% "shapeless"         % "2.3.2"    % "compile"
+val specs2Core       = "org.specs2"      %% "specs2-core"       % "3.8.5"   % "test"
+val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "3.8.5"   % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -101,8 +97,8 @@ lazy val jsonBenchmark = project
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.3.0",
-      "org.json4s" %% "json4s-jackson" % "3.3.0",
+      "org.json4s" %% "json4s-native" % "3.4.1",
+      "org.json4s" %% "json4s-jackson" % "3.4.1",
       "io.argonaut" %% "argonaut" % "6.1"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
@@ -111,7 +107,6 @@ lazy val scalaParser = project
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(libraryDependencies ++= Seq(shapeless, specs2Core))
-  .settings(pbOsgiSettings: _*)
 
 lazy val parboiled = crossProject.crossType(CrossType.Pure)
   .dependsOn(parboiledCore)
@@ -132,7 +127,6 @@ lazy val parboiled = crossProject.crossType(CrossType.Pure)
       new RuleTransformer(filter).transform(_).head
     }
   )
-  .settings(pbOsgiSettings: _*)
 
 lazy val parboiledJVM = parboiled.jvm
 lazy val parboiledJS = parboiled.js
@@ -147,7 +141,6 @@ lazy val parboiledCore = crossProject.crossType(CrossType.Pure).in(file("parboil
     libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core, specs2ScalaCheck),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
     (sourceGenerators in Compile) += generateActionOps.taskValue)
-  .settings(pbOsgiSettings: _*)    
 
 lazy val parboiledCoreJVM = parboiledCore.jvm
 lazy val parboiledCoreJS = parboiledCore.js
