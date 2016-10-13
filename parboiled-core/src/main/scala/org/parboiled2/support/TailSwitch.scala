@@ -42,7 +42,7 @@ object TailSwitch {
   //     else if (LI <: T) RI.reverse ::: R
   //     else if (LI <: HNil) rec(L, HNil, T, TI.tail, R, RI)
   //     else if (TI <: HNil) rec(L, LI.tail, T, HNil, R, LI.head :: RI)
-  //     rec(L, LI.tail, T, TI.tail, R, LI.head :: RI)
+  //     else rec(L, LI.tail, T, TI.tail, R, LI.head :: RI)
   //   rec(L, L, T, T, R, HNil)
   sealed trait Aux[L <: HList, LI <: HList, T <: HList, TI <: HList, R <: HList, RI <: HList, Out <: HList]
 
