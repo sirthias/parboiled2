@@ -7,7 +7,7 @@ import org.scalajs.sbtplugin.cross.CrossType
 val commonSettings = Seq(
   version := "2.1.3",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.11.8", "2.12.0-RC1"),
+  crossScalaVersions := Seq("2.11.8", "2.12.0-RC2"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -69,10 +69,10 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val scalaReflect     = "org.scala-lang"  %  "scala-reflect"     % "2.11.8"   % "provided"
-val shapeless        = "com.chuusai"     %% "shapeless"         % "2.3.2"    % "compile"
-val specs2Core       = "org.specs2"      %% "specs2-core"       % "3.8.5"   % "test"
-val specs2ScalaCheck = "org.specs2"      %% "specs2-scalacheck" % "3.8.5"   % "test"
+def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v         % "provided"
+val shapeless               = "com.chuusai"     %% "shapeless"         % "2.3.2"   % "compile"
+val specs2Core              = "org.specs2"      %% "specs2-core"       % "3.8.5.1" % "test"
+val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "3.8.5.1" % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -114,7 +114,7 @@ lazy val parboiled = crossProject.crossType(CrossType.Pure)
   .settings(formattingSettings: _*)
   .settings(publishingSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core),
+    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless, specs2Core),
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJVM.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageSrc)).value,
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageDoc)).value,
@@ -138,7 +138,7 @@ lazy val parboiledCore = crossProject.crossType(CrossType.Pure).in(file("parboil
   .settings(formattingSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(
-    libraryDependencies ++= Seq(scalaReflect, shapeless, specs2Core, specs2ScalaCheck),
+    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless, specs2Core, specs2ScalaCheck),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
     (sourceGenerators in Compile) += generateActionOps.taskValue)
 
