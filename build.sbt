@@ -7,7 +7,7 @@ import org.scalajs.sbtplugin.cross.CrossType
 val commonSettings = Seq(
   version := "2.1.3",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.11.8", "2.12.0-RC2"),
+  crossScalaVersions := Seq("2.11.8", "2.12.0"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -69,10 +69,10 @@ val noPublishingSettings = Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v         % "provided"
-val shapeless               = "com.chuusai"     %% "shapeless"         % "2.3.2"   % "compile"
-val specs2Core              = "org.specs2"      %% "specs2-core"       % "3.8.5.1" % "test"
-val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "3.8.5.1" % "test"
+def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v       % "provided"
+val shapeless               = "com.chuusai"     %% "shapeless"         % "2.3.2" % "compile"
+val specs2Core              = "org.specs2"      %% "specs2-core"       % "3.8.6" % "test"
+val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "3.8.6" % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
