@@ -5,7 +5,7 @@ import scala.xml.{Node => XNode, NodeSeq}
 import org.scalajs.sbtplugin.cross.CrossType
 
 val commonSettings = Seq(
-  version := "2.1.3",
+  version := "2.1.4-SNAPSHOT",
   scalaVersion := "2.11.8",
   crossScalaVersions := Seq("2.11.8", "2.12.0"),
   organization := "org.parboiled",
@@ -113,11 +113,18 @@ lazy val parboiled = crossProject.crossType(CrossType.Pure)
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(publishingSettings: _*)
-  .settings(
-    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless, specs2Core),
+  .jvmSettings(
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJVM.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageSrc)).value,
-    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageDoc)).value,
+    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageDoc)).value
+  )
+  .jsSettings(
+    mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJS.project, Compile, packageBin)).value,
+    mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJS.project, Compile, packageSrc)).value,
+    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJS.project, Compile, packageDoc)).value
+  )
+  .settings(
+    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless, specs2Core),
     mappings in (Compile, packageBin) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     mappings in (Compile, packageDoc) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
