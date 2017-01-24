@@ -5,7 +5,7 @@ import scala.xml.{Node => XNode, NodeSeq}
 import org.scalajs.sbtplugin.cross.CrossType
 
 val commonSettings = Seq(
-  version := "2.1.4",
+  version := "2.1.5-SNAPSHOT",
   scalaVersion := "2.11.8",
   crossScalaVersions := Seq("2.11.8", "2.12.1"),
   organization := "org.parboiled",
