@@ -1,4 +1,4 @@
-**parboiled2**  |--| A Macro-Based PEG Parser Generator for Scala 2.10.3+
+**parboiled2**  |--| A Macro-Based PEG Parser Generator for Scala 2.11+
 
 .. contents:: Contents of this Document
 
@@ -6,7 +6,7 @@
 Introduction
 ============
 
-*parboiled2* is a Scala 2.10.3+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
+*parboiled2* is a Scala 2.11+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
 arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
 runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
 bytecode.
@@ -46,12 +46,12 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.3"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.4"
 
-The latest released version is **2.1.3**. It is available for Scala 2.10, Scala 2.11 as well as Scala.js 0.6.
+The latest released version is **2.1.4**. It is available for Scala 2.11, Scala 2.12 as well as Scala.js 0.6.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
-(currently version 2.3.0).
+(currently version 2.3.2).
 
 **Note:** If your project also uses ``"io.spray" %% "spray-routing"``
 you'll need to change this to ``"io.spray" %% "spray-routing-shapeless2"`` in order for
@@ -67,8 +67,8 @@ There might be potentially newer snapshot builds available in the *sonatype snap
 https://oss.sonatype.org/content/repositories/snapshots/
 
 You can find the latest ones here:
-https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.10/ (Scala 2.10) and
-https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.11/ (Scala 2.11)
+https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.11/ (Scala 2.11) and
+https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.12/ (Scala 2.12)
 
 .. _Maven Central: http://search.maven.org/
 .. _shapeless: https://github.com/milessabin/shapeless
