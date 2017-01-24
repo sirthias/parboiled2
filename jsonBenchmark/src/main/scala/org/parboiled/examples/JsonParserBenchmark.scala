@@ -31,7 +31,7 @@ class JsonParserBenchmark {
   def argonaut_(state: TestState) =
     argonaut.Parse.parseOption(state.json).get
 
-  @Benchmark
-  def parserCombinators(state: TestState): Unit =
-    util.parsing.json.JSON.parseRaw(state.json).get
+  //@Benchmark
+  //def parserCombinators(state: TestState): Unit =
+  //  util.parsing.json.JSON.parseRaw(state.json).get
 }
