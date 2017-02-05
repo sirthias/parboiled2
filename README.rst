@@ -57,6 +57,9 @@ The latest released version is **2.1.0**. It is available for Scala 2.10.3+ as w
 you'll need to change this to ``"io.spray" %% "spray-routing-shapeless2"`` in order for
 your project to continue to build since the "regular" spray builds use shapeless 1.x.
 
+*parboiled2* also has a provided dependency toward scala-reflect, so make sure that the jar for 
+org.scala-lang:scala-reflect with the relevant scala version is in your classpath.
+
 Once on your classpath you can use this single import to bring everything you need into scope:
 
 .. code:: Scala
