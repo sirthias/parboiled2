@@ -24,6 +24,14 @@ import shapeless._
 trait RuleDSLActions { this: RuleTypes ⇒
 
   /**
+   * Pushes the input text cursor position matched by its inner rule onto the value stack
+   * after its inner rule has been run successfully (and only then).
+   */
+  @compileTimeOnly("Calls to `capturePos` must be inside `rule` macro")
+  def capturePos[C, I <: HList, O <: HList](r: Rule[C, I, O])(
+    implicit p: Prepend[O, CapturePos :: HNil]): Rule[C, I, p.Out] = `n/a`
+
+  /**
    * Pushes the input text matched by its inner rule onto the value stack
    * after its inner rule has been run successfully (and only then).
    */

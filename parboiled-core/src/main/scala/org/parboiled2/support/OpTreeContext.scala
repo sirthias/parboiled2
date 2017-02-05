@@ -110,6 +110,7 @@ class OpTreeContext[OpTreeCtx <: reflect.macros.blackbox.Context](val c: OpTreeC
     case q"$a.this.quiet[..$b]($arg)"                    ⇒ Quiet(OpTree(arg))
     case q"$a.this.test($arg)"                           ⇒ SemanticPredicate(StateAccessTransformer(arg))
     case q"$a.this.capture[..$b]($arg)($d)"              ⇒ Capture(OpTree(arg))
+    case q"$a.this.capturePos[..$b]($arg)($d)"           ⇒ CapturePos(OpTree(arg))
     case q"$a.this.run[$b]($arg)($e.fromAux[..$d]($rr))" ⇒ RunAction(StateAccessTransformer(arg), rr)
     case q"$a.this.push[$b]($arg)($hl)"                  ⇒ PushAction(StateAccessTransformer(arg), hl)
     case q"$a.this.drop[$b]($hl)"                        ⇒ DropAction(hl)
@@ -527,6 +528,17 @@ class OpTreeContext[OpTreeCtx <: reflect.macros.blackbox.Context](val c: OpTreeC
       val matched = ${op.render(wrapped)}
       if (matched) {
         __psi.valueStack.push(__psi.input.sliceString(start, __psi.cursor))
+        true
+      } else false"""
+  }
+
+  case class CapturePos(op: OpTree) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = reify(RuleTrace.CapturePos).tree
+    def renderInner(wrapped: Boolean): Tree = q"""
+      ${if (!wrapped) q"val start = __psi.cursor" else q"();"}
+      val matched = ${op.render(wrapped)}
+      if (matched) {
+        __psi.valueStack.push($prefix.CapturePos(start, __psi.cursor))
         true
       } else false"""
   }
