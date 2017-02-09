@@ -1280,7 +1280,8 @@ import Parser.DeliveryScheme.Either Either[ParseError, T]      Right   Left     
 import Parser.DeliveryScheme.Throw  T                          T       thrown     thrown
 =================================== ========================== ======= ========== ================
 
-.. _ErrorReportingSpec: https://github.com/sirthias/parboiled2/blob/master/parboiled/src/test/scala/org/parboiled2/ErrorReportingSpec.scala
+.. _
+ec: https://github.com/sirthias/parboiled2/blob/master/parboiled-core/src/test/scala/org/parboiled2/ErrorReportingSpec.scala
 
 
 Running the Examples
