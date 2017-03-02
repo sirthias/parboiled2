@@ -108,6 +108,11 @@ lazy val scalaParser = project
   .settings(noPublishingSettings: _*)
   .settings(libraryDependencies ++= Seq(shapeless, specs2Core))
 
+lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
+  OsgiKeys.exportPackage := Seq("org.parboiled2.*;version=${Bundle-Version}"),
+  OsgiKeys.privatePackage := Seq()
+)
+
 lazy val parboiled = crossProject.crossType(CrossType.Pure)
   .dependsOn(parboiledCore)
   .settings(commonSettings: _*)
@@ -133,7 +138,8 @@ lazy val parboiled = crossProject.crossType(CrossType.Pure)
       }
       new RuleTransformer(filter).transform(_).head
     }
-  )
+  ).
+  enablePlugins(SbtOsgi).settings(parboiledOsgiSettings:_*)
 
 lazy val parboiledJVM = parboiled.jvm
 lazy val parboiledJS = parboiled.js
