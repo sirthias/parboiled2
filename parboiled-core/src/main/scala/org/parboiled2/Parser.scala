@@ -449,7 +449,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __matchMap(m: Map[String, Any]): Boolean = {
-    val keys = m.keysIterator
+    val keys = m.keys.toSeq.sortBy(-_.length).iterator
     while (keys.hasNext) {
       val mark = __saveState
       val key = keys.next()
@@ -465,7 +465,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
   def __matchMapWrapped(m: Map[String, Any]): Boolean = {
-    val keys = m.keysIterator
+    val keys = m.keys.toSeq.sortBy(-_.length).iterator
     val start = _cursor
     try {
       while (keys.hasNext) {

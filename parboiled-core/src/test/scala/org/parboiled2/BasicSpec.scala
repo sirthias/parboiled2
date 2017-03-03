@@ -168,6 +168,17 @@ class BasicSpec extends TestParserSpec {
       "blue" must beMatchedWith(3)
       "black" must beMismatched
     }
+
+    "Map[String, T] with keys that prefix each other" in new TestParser1[Int] {
+      val colors = Map("a" -> 1, "ab" -> 2, "abc" -> 3, "abcd" -> 4, "abcde" -> 5, "abcdef" -> 6)
+      def targetRule = rule { colors ~ EOI }
+      "a" must beMatchedWith(1)
+      "ab" must beMatchedWith(2)
+      "abc" must beMatchedWith(3)
+      "abcd" must beMatchedWith(4)
+      "abcde" must beMatchedWith(5)
+      "abcdef" must beMatchedWith(6)
+    }
   }
 
   "The Parser" should {
