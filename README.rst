@@ -591,7 +591,7 @@ a ~> (...)
     It can be applied to any rule and appends action logic to it. The argument to ``~>`` is always a function, what
     functions are allowed and what the resulting rule type is depends on the type of ``a``.
 
-    The basic idea is that the input of the function is popped of the value stack and the result of the function is
+    The basic idea is that the input of the function is popped off the value stack and the result of the function is
     pushed back onto it. In its basic form the ``~>`` operator therefore transforms the top elements of the value stack
     into some other object(s).
 
@@ -1185,7 +1185,7 @@ As an example, consider this very basic parser:
     class MyParser(val input: ParserInput) extends Parser {
       def InputLine = rule { "foo" | "bar" }
     }
-    
+
     new MyParser("foo").InputLine.run()  // Success
     new MyParser("foot").InputLine.run()  // also Success!!
 
