@@ -1,0 +1,6 @@
+language: scala
+sudo: false
+jdk: oraclejdk8
+scala:
+- 2.11.8
+- 2.12.1
