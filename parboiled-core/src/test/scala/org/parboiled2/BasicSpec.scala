@@ -169,6 +169,15 @@ class BasicSpec extends TestParserSpec {
       "black" must beMismatched
     }
 
+    "Map[String, T] that ignores case" in new TestParser1[Int] {
+      val colors = Map("red" -> 1, "green" -> 2, "blue" -> 3)
+      def targetRule = rule { valueMap(colors, ignoreCase = true) ~ EOI }
+      "ReD" must beMatchedWith(1)
+      "grEen" must beMatchedWith(2)
+      "blUe" must beMatchedWith(3)
+      "black" must beMismatched
+    }
+
     "Map[String, T] with keys that prefix each other" in new TestParser1[Int] {
       val map = Map("a" -> 1, "ab" -> 2, "abc" -> 3, "abcd" -> 4, "abcde" -> 5, "abcdef" -> 6)
       def targetRule = rule { map ~ EOI }

@@ -449,13 +449,16 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __matchMap(m: Map[String, Any]): Boolean = {
+  def __matchMap(m: Map[String, Any], ignoreCase: Boolean): Boolean = {
     val prioritizedKeys = new mutable.PriorityQueue[String]()(Ordering.by(_.length))
     prioritizedKeys ++= m.keysIterator
     while (prioritizedKeys.nonEmpty) {
       val mark = __saveState
       val key = prioritizedKeys.dequeue()
-      if (__matchString(key)) {
+      val matchResult =
+        if (ignoreCase) __matchIgnoreCaseString(key)
+        else __matchString(key)
+      if (matchResult) {
         __push(m(key))
         return true
       } else __restoreState(mark)
@@ -466,7 +469,7 @@ abstract class Parser(initialValueStackSize: Int = 16,
   /**
    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
    */
-  def __matchMapWrapped(m: Map[String, Any]): Boolean = {
+  def __matchMapWrapped(m: Map[String, Any], ignoreCase: Boolean): Boolean = {
     val prioritizedKeys = new mutable.PriorityQueue[String]()(Ordering.by(_.length))
     prioritizedKeys ++= m.keysIterator
     val start = _cursor
@@ -474,7 +477,10 @@ abstract class Parser(initialValueStackSize: Int = 16,
       while (prioritizedKeys.nonEmpty) {
         val mark = __saveState
         val key = prioritizedKeys.dequeue()
-        if (__matchStringWrapped(key)) {
+        val matchResult =
+          if (ignoreCase) __matchIgnoreCaseStringWrapped(key)
+          else __matchStringWrapped(key)
+        if (matchResult) {
           __push(m(key))
           return true
         } else __restoreState(mark)

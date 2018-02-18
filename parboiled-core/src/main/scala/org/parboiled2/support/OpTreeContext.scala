@@ -85,7 +85,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     case q"$lhs.|[$a, $b]($rhs)"                           ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
     case q"$a.this.ch($c)"                                 ⇒ CharMatch(c)
     case q"$a.this.str($s)"                                ⇒ StringMatch(s)
-    case q"$a.this.valueMap[$b]($m)($hl)"                  ⇒ MapMatch(m)
+    case q"$a.this.valueMap[$b]($m, $ic)($hl)"             ⇒ MapMatch(m, ic)
     case q"$a.this.ignoreCase($t)"                         ⇒ IgnoreCase(t)
     case q"$a.this.predicate($p)"                          ⇒ CharPredicateMatch(p)
     case q"$a.this.anyOf($s)"                              ⇒ AnyOf(s)
@@ -221,8 +221,10 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     }
   }
 
-  case class MapMatch(mapTree: Tree) extends OpTree {
-    def render(wrapped: Boolean): Tree = if (wrapped) q"__matchMapWrapped($mapTree)" else q"__matchMap($mapTree)"
+  case class MapMatch(mapTree: Tree, ignoreCaseTree: Tree) extends OpTree {
+    def render(wrapped: Boolean): Tree =
+      if (wrapped) q"__matchMapWrapped($mapTree, $ignoreCaseTree)"
+      else q"__matchMap($mapTree, $ignoreCaseTree)"
   }
 
   def IgnoreCase(argTree: Tree): OpTree = {
