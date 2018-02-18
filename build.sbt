@@ -70,9 +70,9 @@ val noPublishingSettings = Seq(
 /////////////////////// DEPENDENCIES /////////////////////////
 
 def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v       % "provided"
-val shapeless               = "com.chuusai"     %% "shapeless"         % "2.3.2" % "compile"
-val specs2Core              = "org.specs2"      %% "specs2-core"       % "3.8.7" % "test"
-val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "3.8.7" % "test"
+val shapeless               = "com.chuusai"     %% "shapeless"         % "2.3.3" % "compile"
+val specs2Core              = "org.specs2"      %% "specs2-core"       % "4.0.2" % "test"
+val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "4.0.2" % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -86,7 +86,7 @@ lazy val examples = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings: _*)
   .settings(noPublishingSettings: _*)
-  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.3"))
+  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.4"))
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
@@ -97,9 +97,9 @@ lazy val jsonBenchmark = project
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.5.0",
-      "org.json4s" %% "json4s-jackson" % "3.5.0",
-      "io.argonaut" %% "argonaut" % "6.2-RC2"),
+      "org.json4s" %% "json4s-native" % "3.5.3",
+      "org.json4s" %% "json4s-jackson" % "3.5.3",
+      "io.argonaut" %% "argonaut" % "6.2.1"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val scalaParser = project
