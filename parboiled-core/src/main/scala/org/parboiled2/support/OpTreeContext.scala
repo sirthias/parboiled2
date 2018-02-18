@@ -85,6 +85,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     case q"$lhs.|[$a, $b]($rhs)"                           ⇒ FirstOf(OpTree(lhs), OpTree(rhs))
     case q"$a.this.ch($c)"                                 ⇒ CharMatch(c)
     case q"$a.this.str($s)"                                ⇒ StringMatch(s)
+    case q"$a.this.valueMap[$b]($m)($hl)"                  ⇒ MapMatch(m, q"false")
     case q"$a.this.valueMap[$b]($m, $ic)($hl)"             ⇒ MapMatch(m, ic)
     case q"$a.this.ignoreCase($t)"                         ⇒ IgnoreCase(t)
     case q"$a.this.predicate($p)"                          ⇒ CharPredicateMatch(p)

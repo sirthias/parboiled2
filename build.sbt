@@ -7,7 +7,7 @@ import org.scalajs.sbtplugin.cross.CrossType
 val commonSettings = Seq(
   version := "2.1.5-SNAPSHOT",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.11.8", "2.12.1"),
+  crossScalaVersions := Seq("2.11.8", "2.12.4"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
