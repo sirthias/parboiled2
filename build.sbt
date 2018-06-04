@@ -2,7 +2,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
-import org.scalajs.sbtplugin.cross.CrossType
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 val commonSettings = Seq(
   version := "2.1.5-SNAPSHOT",
@@ -15,8 +15,8 @@ val commonSettings = Seq(
   licenses := Seq("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   javacOptions ++= Seq(
     "-encoding", "UTF-8",
-    "-source", "1.6",
-    "-target", "1.6",
+    "-source", "1.8",
+    "-target", "1.8",
     "-Xlint:unchecked",
     "-Xlint:deprecation"),
   scalacOptions ++= List(
@@ -26,16 +26,17 @@ val commonSettings = Seq(
     "-deprecation",
     "-Xlint",
     "-language:_",
-    "-target:jvm-1.6",
+    "-target:jvm-1.8",
     "-Xlog-reflective-calls"))
 
-val formattingSettings = scalariformSettings ++ Seq(
+val formattingSettings = Seq(
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(RewriteArrowSymbols, true)
     .setPreference(AlignParameters, true)
     .setPreference(AlignSingleLineCaseStatements, true)
-    .setPreference(DoubleIndentClassDeclaration, true)
-    .setPreference(PreserveDanglingCloseParenthesis, true))
+    .setPreference(DoubleIndentConstructorArguments, true)
+    .setPreference(DanglingCloseParenthesis, Preserve)
+)
 
 val publishingSettings = Seq(
   publishMavenStyle := true,
@@ -71,12 +72,12 @@ val noPublishingSettings = Seq(
 
 def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v       % "provided"
 val shapeless               = "com.chuusai"     %% "shapeless"         % "2.3.3" % "compile"
-val specs2Core              = "org.specs2"      %% "specs2-core"       % "4.0.2" % "test"
-val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "4.0.2" % "test"
+val specs2Core              = "org.specs2"      %% "specs2-core"       % "4.2.0" % "test"
+val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "4.2.0" % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
-lazy val root = project.in(file("."))
+lazy val `parboiled-root` = project.in(file("."))
   .aggregate(examples, jsonBenchmark)
   .aggregate(parboiledJVM, parboiledJS)
   .aggregate(parboiledCoreJVM, parboiledCoreJS)
@@ -97,9 +98,9 @@ lazy val jsonBenchmark = project
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.5.3",
-      "org.json4s" %% "json4s-jackson" % "3.5.3",
-      "io.argonaut" %% "argonaut" % "6.2.1"),
+      "org.json4s" %% "json4s-native" % "3.5.4",
+      "org.json4s" %% "json4s-jackson" % "3.5.4",
+      "io.argonaut" %% "argonaut" % "6.2.2"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val scalaParser = project
@@ -113,7 +114,8 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
   OsgiKeys.privatePackage := Seq()
 )
 
-lazy val parboiled = crossProject.crossType(CrossType.Pure)
+lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
   .dependsOn(parboiledCore)
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
@@ -146,7 +148,8 @@ lazy val parboiledJS = parboiled.js
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-lazy val parboiledCore = crossProject.crossType(CrossType.Pure).in(file("parboiled-core"))
+lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure).in(file("parboiled-core"))
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(noPublishingSettings: _*)
