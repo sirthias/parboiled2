@@ -48,14 +48,13 @@ trait RuleDSLBasics {
   implicit def valueMap[T](m: Map[String, T])(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
 
   /**
-    * Matches any of the given maps keys and pushes the respective value upon
-    * a successful match.
-    *
-    * @param ignoreCase a flag that tells if map keys case should be ignored
-    */
+   * Matches any of the given maps keys and pushes the respective value upon
+   * a successful match.
+   *
+   * @param ignoreCase a flag that tells if map keys case should be ignored
+   */
   @compileTimeOnly("Calls to `valueMap` must be inside `rule` macro")
-  def valueMap[T](m: Map[String, T], ignoreCase: Boolean = false)
-                 (implicit h: HListable[T]): RuleN[h.Out] = `n/a`
+  def valueMap[T](m: Map[String, T], ignoreCase: Boolean = false)(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
 
   /**
    * Matches any single one of the given characters.

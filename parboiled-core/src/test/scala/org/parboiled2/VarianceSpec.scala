@@ -38,14 +38,14 @@ class VarianceSpec {
       }
 
       // TODO: fix https://github.com/sirthias/parboiled2/issues/172 and re-enable
-//       //invalid example 1
-//      test {
-//        abstract class Par extends Parser {
-//          def A: Rule1[Any] = ???
-//          def B: PopRule[Int :: HNil] = ???
-//        }
-//        illTyped("""class P extends Par { def C = rule { A ~ B } }""", "Illegal rule composition")
-//      }
+      //       //invalid example 1
+      //      test {
+      //        abstract class Par extends Parser {
+      //          def A: Rule1[Any] = ???
+      //          def B: PopRule[Int :: HNil] = ???
+      //        }
+      //        illTyped("""class P extends Par { def C = rule { A ~ B } }""", "Illegal rule composition")
+      //      }
 
       // invalid example 2
       test {

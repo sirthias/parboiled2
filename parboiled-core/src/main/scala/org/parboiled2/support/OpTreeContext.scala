@@ -393,7 +393,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         case _                             ⇒ c.abort(n.pos, "Invalid int base expression for `.times(...)`: " + n)
       }
       case q"$a.this.range2NTimes($r)" ⇒ r match {
-        case q"${_}.Predef.intWrapper($mn).to($mx)" ⇒
+        case q"${ _ }.Predef.intWrapper($mn).to($mx)" ⇒
           mn match {
             case Literal(Constant(min: Int)) ⇒ if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
             case (Ident(_) | Select(_, _))   ⇒
@@ -696,11 +696,11 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   /////////////////////////////////// helpers ////////////////////////////////////
 
   class Collector(
-    val valBuilder: Tree,
-    val popToBuilder: Tree,
-    val pushBuilderResult: Tree,
-    val pushSomePop: Tree,
-    val pushNone: Tree)
+      val valBuilder:        Tree,
+      val popToBuilder:      Tree,
+      val pushBuilderResult: Tree,
+      val pushSomePop:       Tree,
+      val pushNone:          Tree)
 
   lazy val rule0Collector = {
     val unit = q"()"

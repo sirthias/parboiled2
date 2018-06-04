@@ -44,7 +44,7 @@ class Base64ParsingSpec extends Specification {
     (1 to 100).map { x ⇒
       val string = randomChars.take(x).toString()
       val encoded = base64.encodeToString(string getBytes UTF8, false)
-      val parser = new TestParser(encoded) with DynamicRuleHandler[TestParser, Array[Byte]:: HNil] {
+      val parser = new TestParser(encoded) with DynamicRuleHandler[TestParser, Array[Byte] :: HNil] {
         type Result = String
         def parser: TestParser = this
         def ruleNotFound(ruleName: String): Result = "n/a"

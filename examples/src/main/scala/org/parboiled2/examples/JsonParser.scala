@@ -18,21 +18,21 @@ package org.parboiled2.examples
 
 import scala.annotation.switch
 import org.parboiled2._
-import spray.json.{ParserInput => _, _}
+import spray.json.{ ParserInput ⇒ _, _ }
 
 /**
  * This is a feature-complete JSON parser implementation that almost directly
  * models the JSON grammar presented at http://www.json.org as a parboiled2 PEG parser.
  */
 class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
-  import CharPredicate.{Digit, Digit19, HexDigit}
+  import CharPredicate.{ Digit, Digit19, HexDigit }
   import JsonParser._
 
   // the root rule
   def Json = rule { WhiteSpace ~ Value ~ EOI }
 
   def JsonObject: Rule1[JsObject] = rule {
-    ws('{') ~ zeroOrMore(Pair).separatedBy(ws(',')) ~ ws('}') ~> ((fields: Seq[JsField]) => JsObject(fields :_*))
+    ws('{') ~ zeroOrMore(Pair).separatedBy(ws(',')) ~ ws('}') ~> ((fields: Seq[JsField]) ⇒ JsObject(fields: _*))
   }
 
   def Pair = rule { JsonStringUnwrapped ~ ws(':') ~ Value ~> ((_, _)) }
@@ -43,14 +43,14 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
     // we make use of the fact that one-char lookahead is enough to discriminate the cases
     run {
       (cursorChar: @switch) match {
-        case '"' => JsonString
-        case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '-' => JsonNumber
-        case '{' => JsonObject
-        case '[' => JsonArray
-        case 't' => JsonTrue
-        case 'f' => JsonFalse
-        case 'n' => JsonNull
-        case _ => MISMATCH
+        case '"' ⇒ JsonString
+        case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '-' ⇒ JsonNumber
+        case '{' ⇒ JsonObject
+        case '[' ⇒ JsonArray
+        case 't' ⇒ JsonTrue
+        case 'f' ⇒ JsonFalse
+        case 'n' ⇒ JsonNull
+        case _ ⇒ MISMATCH
       }
     }
   }
@@ -61,20 +61,20 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
 
   def JsonNumber = rule { capture(Integer ~ optional(Frac) ~ optional(Exp)) ~> (JsNumber(_)) ~ WhiteSpace }
 
-  def JsonArray = rule { ws('[') ~ zeroOrMore(Value).separatedBy(ws(',')) ~ ws(']') ~> (JsArray(_ :_*)) }
+  def JsonArray = rule { ws('[') ~ zeroOrMore(Value).separatedBy(ws(',')) ~ ws(']') ~> (JsArray(_: _*)) }
 
   def Characters = rule { zeroOrMore(NormalChar | '\\' ~ EscapedChar) }
 
   def NormalChar = rule { !QuoteBackslash ~ ANY ~ appendSB() }
 
-  def EscapedChar = rule (
+  def EscapedChar = rule(
     QuoteSlashBackSlash ~ appendSB()
       | 'b' ~ appendSB('\b')
       | 'f' ~ appendSB('\f')
       | 'n' ~ appendSB('\n')
       | 'r' ~ appendSB('\r')
       | 't' ~ appendSB('\t')
-      | Unicode ~> { code => sb.append(code.asInstanceOf[Char]); () }
+      | Unicode ~> { code ⇒ sb.append(code.asInstanceOf[Char]); () }
   )
 
   def Unicode = rule { 'u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16)) }

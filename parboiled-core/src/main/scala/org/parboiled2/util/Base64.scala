@@ -1,73 +1,73 @@
 /**
-  * A very fast and memory efficient class to encode and decode to and from BASE64 in full accordance
-  * with RFC 2045.<br><br>
-  * On Windows XP sp1 with 1.4.2_04 and later ;), this encoder and decoder is about 10 times faster
-  * on small arrays (10 - 1000 bytes) and 2-3 times as fast on larger arrays (10000 - 1000000 bytes)
-  * compared to <code>sun.misc.Encoder()/Decoder()</code>.<br><br>
-  *
-  * On byte arrays the encoder is about 20% faster than Jakarta Commons Base64 Codec for encode and
-  * about 50% faster for decoding large arrays. This implementation is about twice as fast on very small
-  * arrays (&lt 30 bytes). If source/destination is a <code>String</code> this
-  * version is about three times as fast due to the fact that the Commons Codec result has to be recoded
-  * to a <code>String</code> from <code>byte[]</code>, which is very expensive.<br><br>
-  *
-  * This encode/decode algorithm doesn't create any temporary arrays as many other codecs do, it only
-  * allocates the resulting array. This produces less garbage and it is possible to handle arrays twice
-  * as large as algorithms that create a temporary array. (E.g. Jakarta Commons Codec). It is unknown
-  * whether Sun's <code>sun.misc.Encoder()/Decoder()</code> produce temporary arrays but since performance
-  * is quite low it probably does.<br><br>
-  *
-  * The encoder produces the same output as the Sun one except that the Sun's encoder appends
-  * a trailing line separator if the last character isn't a pad. Unclear why but it only adds to the
-  * length and is probably a side effect. Both are in conformance with RFC 2045 though.<br>
-  * Commons codec seem to always att a trailing line separator.<br><br>
-  *
-  * <b>Note!</b>
-  * The encode/decode method pairs (types) come in three versions with the <b>exact</b> same algorithm and
-  * thus a lot of code redundancy. This is to not create any temporary arrays for transcoding to/from different
-  * format types. The methods not used can simply be commented out.<br><br>
-  *
-  * There is also a "fast" version of all decode methods that works the same way as the normal ones, but
-  * har a few demands on the decoded input. Normally though, these fast verions should be used if the source if
-  * the input is known and it hasn't bee tampered with.<br><br>
-  *
-  * If you find the code useful or you find a bug, please send me a note at base64 @ miginfocom . com.
-  *
-  * Licence (BSD):
-  * ==============
-  *
-  * Copyright (c) 2004, Mikael Grev, MiG InfoCom AB. (base64 @ miginfocom . com)
-  * All rights reserved.
-  *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  * Redistributions of source code must retain the above copyright notice, this list
-  * of conditions and the following disclaimer.
-  * Redistributions in binary form must reproduce the above copyright notice, this
-  * list of conditions and the following disclaimer in the documentation and/or other
-  * materials provided with the distribution.
-  * Neither the name of the MiG InfoCom AB nor the names of its contributors may be
-  * used to endorse or promote products derived from this software without specific
-  * prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-  * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-  * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-  * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
-  * OF SUCH DAMAGE.
-  *
-  * @version 2.2
-  * @author Mikael Grev
-  *         Date: 2004-aug-02
-  *         Time: 11:31:11
-  *
-  * Adapted in 2009 by Mathias Doenitz.
-  */
+ * A very fast and memory efficient class to encode and decode to and from BASE64 in full accordance
+ * with RFC 2045.<br><br>
+ * On Windows XP sp1 with 1.4.2_04 and later ;), this encoder and decoder is about 10 times faster
+ * on small arrays (10 - 1000 bytes) and 2-3 times as fast on larger arrays (10000 - 1000000 bytes)
+ * compared to <code>sun.misc.Encoder()/Decoder()</code>.<br><br>
+ *
+ * On byte arrays the encoder is about 20% faster than Jakarta Commons Base64 Codec for encode and
+ * about 50% faster for decoding large arrays. This implementation is about twice as fast on very small
+ * arrays (&lt 30 bytes). If source/destination is a <code>String</code> this
+ * version is about three times as fast due to the fact that the Commons Codec result has to be recoded
+ * to a <code>String</code> from <code>byte[]</code>, which is very expensive.<br><br>
+ *
+ * This encode/decode algorithm doesn't create any temporary arrays as many other codecs do, it only
+ * allocates the resulting array. This produces less garbage and it is possible to handle arrays twice
+ * as large as algorithms that create a temporary array. (E.g. Jakarta Commons Codec). It is unknown
+ * whether Sun's <code>sun.misc.Encoder()/Decoder()</code> produce temporary arrays but since performance
+ * is quite low it probably does.<br><br>
+ *
+ * The encoder produces the same output as the Sun one except that the Sun's encoder appends
+ * a trailing line separator if the last character isn't a pad. Unclear why but it only adds to the
+ * length and is probably a side effect. Both are in conformance with RFC 2045 though.<br>
+ * Commons codec seem to always att a trailing line separator.<br><br>
+ *
+ * <b>Note!</b>
+ * The encode/decode method pairs (types) come in three versions with the <b>exact</b> same algorithm and
+ * thus a lot of code redundancy. This is to not create any temporary arrays for transcoding to/from different
+ * format types. The methods not used can simply be commented out.<br><br>
+ *
+ * There is also a "fast" version of all decode methods that works the same way as the normal ones, but
+ * har a few demands on the decoded input. Normally though, these fast verions should be used if the source if
+ * the input is known and it hasn't bee tampered with.<br><br>
+ *
+ * If you find the code useful or you find a bug, please send me a note at base64 @ miginfocom . com.
+ *
+ * Licence (BSD):
+ * ==============
+ *
+ * Copyright (c) 2004, Mikael Grev, MiG InfoCom AB. (base64 @ miginfocom . com)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright notice, this list
+ * of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this
+ * list of conditions and the following disclaimer in the documentation and/or other
+ * materials provided with the distribution.
+ * Neither the name of the MiG InfoCom AB nor the names of its contributors may be
+ * used to endorse or promote products derived from this software without specific
+ * prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+ * OF SUCH DAMAGE.
+ *
+ * @version 2.2
+ * @author Mikael Grev
+ *         Date: 2004-aug-02
+ *         Time: 11:31:11
+ *
+ * Adapted in 2009 by Mathias Doenitz.
+ */
 
 package org.parboiled2.util
 
@@ -99,7 +99,7 @@ class Base64(alphabet: String) {
   val fillChar = alphabet.charAt(64)
   val IA: Array[Int] = Array.fill(256)(-1)
 
-  (0 until CA.length).foreach { i =>
+  (0 until CA.length).foreach { i ⇒
     IA(CA(i)) = i
   }
 
@@ -110,19 +110,18 @@ class Base64(alphabet: String) {
   }
 
   /**
-    * Decodes a BASE64 encoded char array. All illegal characters will be ignored and can handle both arrays with
-    * and without line separators.
-    *
-    * @param sArr The source array. <code>null</code> or length 0 will return an empty array.
-    * @return The decoded array of bytes. May be of length 0. Will be <code>null</code> if the legal characters
-    *         (including '=') isn't divideable by 4.  (I.e. definitely corrupted).
-    */
+   * Decodes a BASE64 encoded char array. All illegal characters will be ignored and can handle both arrays with
+   * and without line separators.
+   *
+   * @param sArr The source array. <code>null</code> or length 0 will return an empty array.
+   * @return The decoded array of bytes. May be of length 0. Will be <code>null</code> if the legal characters
+   *         (including '=') isn't divideable by 4.  (I.e. definitely corrupted).
+   */
   def decode(sArr: Array[Char]): Array[Byte] = {
     // Check special case
-    val sLen = if(sArr != null) {
+    val sLen = if (sArr != null) {
       sArr.length
-    }
-    else {
+    } else {
       0
     }
 
@@ -134,7 +133,7 @@ class Base64(alphabet: String) {
     // so we don't have to reallocate & copy it later.
     // If input is "pure" (I.e. no line separators or illegal chars) base64 this loop can be commented out.
     var sepCnt = 0 // Number of separator characters. (Actually illegal characters, but that's a bonus...)
-    (0 until sLen).foreach { i =>
+    (0 until sLen).foreach { i ⇒
       if (IA(sArr(i)) < 0) {
         sepCnt += 1
       }
@@ -146,7 +145,7 @@ class Base64(alphabet: String) {
     }
 
     var pad = 0
-    var i = sLen-1
+    var i = sLen - 1
     while (i > 0 && IA(sArr(i)) <= 0) {
       if (sArr(i) == fillChar) {
         pad += 1
@@ -193,18 +192,17 @@ class Base64(alphabet: String) {
     dArr
   }
 
-
   /**
-    * Decodes a BASE64 encoded char array that is known to be resonably well formatted. The method is about twice as
-    * fast as {@link #decode(char[])}. The preconditions are:<br>
-    * + The array must have a line length of 76 chars OR no line separators at all (one line).<br>
-    * + Line separator must be "\r\n", as specified in RFC 2045
-    * + The array must not contain illegal characters within the encoded string<br>
-    * + The array CAN have illegal characters at the beginning and end, those will be dealt with appropriately.<br>
-    *
-    * @param sArr The source array. Length 0 will return an empty array. <code>null</code> will throw an exception.
-    * @return The decoded array of bytes. May be of length 0.
-    */
+   * Decodes a BASE64 encoded char array that is known to be resonably well formatted. The method is about twice as
+   * fast as {@link #decode(char[])}. The preconditions are:<br>
+   * + The array must have a line length of 76 chars OR no line separators at all (one line).<br>
+   * + Line separator must be "\r\n", as specified in RFC 2045
+   * + The array must not contain illegal characters within the encoded string<br>
+   * + The array CAN have illegal characters at the beginning and end, those will be dealt with appropriately.<br>
+   *
+   * @param sArr The source array. Length 0 will return an empty array. <code>null</code> will throw an exception.
+   * @return The decoded array of bytes. May be of length 0.
+   */
   def decodeFast(sArr: Array[Char]): Array[Byte] = {
     // Check special case
     val sLen = sArr.length
@@ -231,12 +229,10 @@ class Base64(alphabet: String) {
     val pad = if (sArr(eIx) == fillChar) {
       if (sArr(eIx - 1) == fillChar) {
         2
-      }
-      else {
+      } else {
         1
       }
-    }
-    else {
+    } else {
       0
     }
 
@@ -245,19 +241,17 @@ class Base64(alphabet: String) {
 
     // Count '=' at end.
     val sepCnt = if (sLen > 76) {
-        (if (sArr(76) == '\r') {
-          cCnt / 78
-        }
-        else {
-          0
-        }) << 1
-      }
-      else {
+      (if (sArr(76) == '\r') {
+        cCnt / 78
+      } else {
         0
-      }
+      }) << 1
+    } else {
+      0
+    }
 
     val len = ((cCnt - sepCnt) * 6 >> 3) - pad // The number of decoded bytes
-    val dArr = Array.ofDim[Byte](len);       // Preallocate byte() of exact length
+    val dArr = Array.ofDim[Byte](len); // Preallocate byte() of exact length
 
     // Decode all but the last 0 - 2 bytes.
     var d = 0
@@ -313,34 +307,33 @@ class Base64(alphabet: String) {
   }
 
   /**
-    * Encodes a raw byte array into a BASE64 <code>String</code> representation in accordance with RFC 2045.
-    *
-    * @param sArr    The bytes to convert. If <code>null</code> or length 0 an empty array will be returned.
-    * @param lineSep Optional "\r\n" after 76 characters, unless end of file.<br>
-    *                No line separator will be in breach of RFC 2045 which specifies max 76 per line but will be a
-    *                little faster.
-    * @return A BASE64 encoded array. Never <code>null</code>.
-    */
+   * Encodes a raw byte array into a BASE64 <code>String</code> representation in accordance with RFC 2045.
+   *
+   * @param sArr    The bytes to convert. If <code>null</code> or length 0 an empty array will be returned.
+   * @param lineSep Optional "\r\n" after 76 characters, unless end of file.<br>
+   *                No line separator will be in breach of RFC 2045 which specifies max 76 per line but will be a
+   *                little faster.
+   * @return A BASE64 encoded array. Never <code>null</code>.
+   */
   def encodeToString(sArr: Array[Byte], lineSep: Boolean): String = {
     // Reuse char[] since we can't create a String incrementally anyway and StringBuffer/Builder would be slower.
     new String(encodeToChar(sArr, lineSep))
   }
 
   /**
-    * Encodes a raw byte array into a BASE64 <code>char[]</code> representation i accordance with RFC 2045.
-    *
-    * @param sArr    The bytes to convert. If <code>null</code> or length 0 an empty array will be returned.
-    * @param lineSep Optional "\r\n" after 76 characters, unless end of file.<br>
-    *                No line separator will be in breach of RFC 2045 which specifies max 76 per line but will be a
-    *                little faster.
-    * @return A BASE64 encoded array. Never <code>null</code>.
-    */
+   * Encodes a raw byte array into a BASE64 <code>char[]</code> representation i accordance with RFC 2045.
+   *
+   * @param sArr    The bytes to convert. If <code>null</code> or length 0 an empty array will be returned.
+   * @param lineSep Optional "\r\n" after 76 characters, unless end of file.<br>
+   *                No line separator will be in breach of RFC 2045 which specifies max 76 per line but will be a
+   *                little faster.
+   * @return A BASE64 encoded array. Never <code>null</code>.
+   */
   def encodeToChar(sArr: Array[Byte], lineSep: Boolean): Array[Char] = {
     // Check special case
     val sLen = if (sArr != null) {
       sArr.length
-    }
-    else {
+    } else {
       0
     }
 
@@ -348,17 +341,15 @@ class Base64(alphabet: String) {
       return Array.empty[Char]
     }
 
-    val eLen = (sLen / 3) * 3              // Length of even 24-bits.
-    val cCnt = ((sLen - 1) / 3 + 1) << 2   // Returned character count
+    val eLen = (sLen / 3) * 3 // Length of even 24-bits.
+    val cCnt = ((sLen - 1) / 3 + 1) << 2 // Returned character count
 
     // Length of returned array
     val dLen = cCnt + (if (lineSep == true) {
       (cCnt - 1) / 76 << 1
-    }
-    else {
+    } else {
       0
     })
-
 
     val dArr = Array.ofDim[Char](dLen)
 
@@ -374,7 +365,7 @@ class Base64(alphabet: String) {
       s += 1
       i = i | (sArr(s) & 0xff)
       s += 1
-      
+
       // Encode the int into four chars
       dArr(d) = CA((i >>> 18) & 0x3f)
       d += 1
@@ -402,23 +393,21 @@ class Base64(alphabet: String) {
       // Prepare the int
       val i = ((sArr(eLen) & 0xff) << 10) | (if (left == 2) {
         (sArr(sLen - 1) & 0xff) << 2
-      }
-      else {
+      } else {
         0
       })
 
       // Set last four chars
       dArr(dLen - 4) = CA(i >> 12)
       dArr(dLen - 3) = CA((i >>> 6) & 0x3f)
-      dArr(dLen - 2) = if(left == 2) {
+      dArr(dLen - 2) = if (left == 2) {
         CA(i & 0x3f)
-      }
-      else {
+      } else {
         fillChar
       }
       dArr(dLen - 1) = fillChar
     }
-    
+
     dArr
   }
 }

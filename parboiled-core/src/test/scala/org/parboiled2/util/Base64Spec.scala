@@ -36,14 +36,15 @@ class Base64Spec extends Specification {
 
   "Base64 should" >> {
     "work as expected" in {
-      testVectors.map { case (expectedDecoded, expectedEncoded) =>
-        val expectedDecodedBytes = expectedDecoded.getBytes(StandardCharsets.UTF_8)
+      testVectors.map {
+        case (expectedDecoded, expectedEncoded) ⇒
+          val expectedDecodedBytes = expectedDecoded.getBytes(StandardCharsets.UTF_8)
 
-        val encoded = Base64.rfc2045().encodeToString(expectedDecodedBytes, false)
+          val encoded = Base64.rfc2045().encodeToString(expectedDecodedBytes, false)
 
-        expectedEncoded === encoded and
-        expectedDecodedBytes === Base64.rfc2045().decode(encoded.toCharArray) and
-        expectedDecodedBytes === Base64.rfc2045().decodeFast(encoded.toCharArray)
+          expectedEncoded === encoded and
+            expectedDecodedBytes === Base64.rfc2045().decode(encoded.toCharArray) and
+            expectedDecodedBytes === Base64.rfc2045().decodeFast(encoded.toCharArray)
       }.reduceLeft(_ and _)
     }
   }

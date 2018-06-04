@@ -16,9 +16,9 @@
 
 package org.parboiled2.examples
 
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 import org.specs2.mutable.Specification
-import spray.json.{JsonParser => _, _}
+import spray.json.{ JsonParser ⇒ _, _ }
 import org.parboiled2._
 
 class JsonParserSpec extends Specification {
@@ -54,20 +54,20 @@ class JsonParserSpec extends Specification {
     }
     "properly parse a simple JsObject" in (
       parse(""" { "key" :42, "key2": "value" }""") ===
-        JsObject("key" -> JsNumber(42), "key2" -> JsString("value"))
-      )
+      JsObject("key" -> JsNumber(42), "key2" -> JsString("value"))
+    )
     "properly parse a simple JsArray" in (
       parse("""[null, 1.23 ,{"key":true } ] """) ===
-        JsArray(JsNull, JsNumber(1.23), JsObject("key" -> JsTrue))
-      )
+      JsArray(JsNull, JsNumber(1.23), JsObject("key" -> JsTrue))
+    )
   }
 
   def parse(s: String): JsValue = {
     val parser = new JsonParser(s)
     parser.Json.run() match {
-      case Success(result)        => result
-      case Failure(e: ParseError) => sys.error(parser.formatError(e, new ErrorFormatter(showTraces = true)))
-      case Failure(e)             => throw e
+      case Success(result)        ⇒ result
+      case Failure(e: ParseError) ⇒ sys.error(parser.formatError(e, new ErrorFormatter(showTraces = true)))
+      case Failure(e)             ⇒ throw e
     }
   }
 }

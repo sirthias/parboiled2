@@ -1,6 +1,6 @@
 package org.parboiled.examples
 
-import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
+import org.openjdk.jmh.annotations.{ Benchmark, Scope, State }
 import org.parboiled2.examples.JsonParser
 
 @State(Scope.Thread)

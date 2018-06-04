@@ -4,7 +4,7 @@ import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-val commonSettings = Seq(
+lazy val commonSettings = formattingSettings ++ Seq(
   version := "2.1.5-SNAPSHOT",
   scalaVersion := "2.11.8",
   crossScalaVersions := Seq("2.11.8", "2.12.4"),
@@ -29,7 +29,7 @@ val commonSettings = Seq(
     "-target:jvm-1.8",
     "-Xlog-reflective-calls"))
 
-val formattingSettings = Seq(
+lazy val formattingSettings = Seq(
   ScalariformKeys.preferences := ScalariformKeys.preferences.value
     .setPreference(RewriteArrowSymbols, true)
     .setPreference(AlignParameters, true)
@@ -118,7 +118,6 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .dependsOn(parboiledCore)
   .settings(commonSettings: _*)
-  .settings(formattingSettings: _*)
   .settings(publishingSettings: _*)
   .jvmSettings(
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJVM.project, Compile, packageBin)).value,
@@ -151,7 +150,6 @@ lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerp
 lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure).in(file("parboiled-core"))
   .settings(commonSettings: _*)
-  .settings(formattingSettings: _*)
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless, specs2Core, specs2ScalaCheck),

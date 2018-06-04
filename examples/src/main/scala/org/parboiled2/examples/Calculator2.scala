@@ -17,7 +17,7 @@
 package org.parboiled2.examples
 
 import scala.annotation.tailrec
-import scala.util.{Failure, Success}
+import scala.util.{ Failure, Success }
 import scala.io.StdIn
 import org.parboiled2._
 
@@ -31,13 +31,13 @@ object Calculator2 extends App {
     print("---\nEnter calculator expression > ")
     Console.out.flush()
     StdIn.readLine() match {
-      case "" =>
-      case line =>
+      case "" ⇒
+      case line ⇒
         val parser = new Calculator2(line)
         parser.InputLine.run() match {
-          case Success(exprAst)       => println("Result: " + eval(exprAst))
-          case Failure(e: ParseError) => println("Expression is not valid: " + parser.formatError(e))
-          case Failure(e)             => println("Unexpected error during parsing run: " + e)
+          case Success(exprAst)       ⇒ println("Result: " + eval(exprAst))
+          case Failure(e: ParseError) ⇒ println("Expression is not valid: " + parser.formatError(e))
+          case Failure(e)             ⇒ println("Unexpected error during parsing run: " + e)
         }
         repl()
     }
@@ -45,13 +45,13 @@ object Calculator2 extends App {
 
   def eval(expr: Expr): Int =
     expr match {
-      case Value(v)             => v.toInt
-      case Addition(a, b)       => eval(a) + eval(b)
-      case Subtraction(a, b)   => eval(a) - eval(b)
-      case Multiplication(a, b) => eval(a) * eval(b)
-      case Division(a, b)       => eval(a) / eval(b)
+      case Value(v)             ⇒ v.toInt
+      case Addition(a, b)       ⇒ eval(a) + eval(b)
+      case Subtraction(a, b)    ⇒ eval(a) - eval(b)
+      case Multiplication(a, b) ⇒ eval(a) * eval(b)
+      case Division(a, b)       ⇒ eval(a) / eval(b)
     }
-  
+
   // our abstract syntax tree model
   sealed trait Expr
   case class Value(value: String) extends Expr
@@ -67,19 +67,19 @@ object Calculator2 extends App {
  */
 class Calculator2(val input: ParserInput) extends Parser {
   import Calculator2._
-  
+
   def InputLine = rule { Expression ~ EOI }
 
   def Expression: Rule1[Expr] = rule {
     Term ~ zeroOrMore(
       '+' ~ Term ~> Addition
-    | '-' ~ Term ~> Subtraction)
+        | '-' ~ Term ~> Subtraction)
   }
 
   def Term = rule {
     Factor ~ zeroOrMore(
       '*' ~ Factor ~> Multiplication
-    | '/' ~ Factor ~> Division)
+        | '/' ~ Factor ~> Division)
   }
 
   def Factor = rule { Number | Parens }

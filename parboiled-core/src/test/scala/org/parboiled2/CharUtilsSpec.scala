@@ -18,7 +18,7 @@ package org.parboiled2
 
 import org.specs2.mutable.Specification
 import org.specs2.ScalaCheck
-import org.scalacheck.{Gen, Prop}
+import org.scalacheck.{ Gen, Prop }
 
 class CharUtilsSpec extends Specification with ScalaCheck {
 

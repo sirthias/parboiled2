@@ -31,7 +31,7 @@ object CsvParser extends {
   def apply(input: ParserInput, headerPresent: Boolean = true, fieldDelimiter: Char = ','): Either[Error, CsvFile] = {
     import Parser.DeliveryScheme.Either
     val parser = new CsvParser(input, headerPresent, fieldDelimiter)
-    parser.file.run().left.map(error => Error(parser.formatError(error)))
+    parser.file.run().left.map(error ⇒ Error(parser.formatError(error)))
   }
 
   private val `TEXTDATA-BASE` = CharPredicate.Printable -- '"'
