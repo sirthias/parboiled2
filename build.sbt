@@ -7,7 +7,7 @@ import org.scalajs.sbtplugin.cross.CrossType
 val commonSettings = Seq(
   version := "2.1.5-SNAPSHOT",
   scalaVersion := "2.11.12",
-  crossScalaVersions := Seq("2.11.12", "2.12.6"),
+  crossScalaVersions := Seq("2.11.12", "2.12.6", "2.13.0-M4"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -71,8 +71,8 @@ val noPublishingSettings = Seq(
 
 def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v       % "provided"
 val shapeless               = "com.chuusai"     %% "shapeless"         % "2.3.3" % "compile"
-val specs2Core              = "org.specs2"      %% "specs2-core"       % "4.0.2" % "test"
-val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "4.0.2" % "test"
+val specs2Core              = "org.specs2"      %% "specs2-core"       % "4.3.3" % "test"
+val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "4.3.3" % "test"
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -97,9 +97,8 @@ lazy val jsonBenchmark = project
   .settings(noPublishingSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.5.3",
-      "org.json4s" %% "json4s-jackson" % "3.5.3",
-      "io.argonaut" %% "argonaut" % "6.2.1"),
+      "org.json4s" %% "json4s-native" % "3.6.0",
+      "org.json4s" %% "json4s-jackson" % "3.6.0"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val scalaParser = project
