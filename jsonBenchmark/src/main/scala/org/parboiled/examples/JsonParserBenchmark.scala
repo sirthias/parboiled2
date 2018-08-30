@@ -26,12 +26,4 @@ class JsonParserBenchmark {
   @Benchmark
   def json4SJackson(state: TestState) =
     org.json4s.jackson.JsonMethods.parse(state.json)
-
-  @Benchmark
-  def argonaut_(state: TestState) =
-    argonaut.Parse.parseOption(state.json).get
-
-  //@Benchmark
-  //def parserCombinators(state: TestState): Unit =
-  //  util.parsing.json.JSON.parseRaw(state.json).get
 }

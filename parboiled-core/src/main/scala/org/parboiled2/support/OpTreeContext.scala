@@ -602,7 +602,10 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         case Left(_)  ⇒ super.render(wrapped)
         case Right(x) ⇒ q"$x ne null"
       }
-    def renderInner(wrapped: Boolean) = call.asInstanceOf[Left[OpTree, Tree]].a.render(wrapped)
+    def renderInner(wrapped: Boolean) = {
+      val Left(value) = call.asInstanceOf[Left[OpTree, Tree]]
+      value.render(wrapped)
+    }
   }
 
   def CharRange(lowerTree: Tree, upperTree: Tree): CharacterRange = {
@@ -645,7 +648,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
           case Block(statements, res) ⇒ block(statements, actionBody(res))
 
           case x @ (Ident(_) | Select(_, _)) ⇒
-            val valNames: List[TermName] = argTypes.indices.map { i ⇒ TermName("value" + i) }(collection.breakOut)
+            val valNames = argTypes.indices.map { i ⇒ TermName("value" + i) }.toList
             val args = valNames map Ident.apply
             block(popToVals(valNames), q"__push($x(..$args))")
 

@@ -54,12 +54,12 @@ object DynamicRuleDispatch {
 
   def __create[P <: Parser, L <: HList](c: Context)(ruleNames: c.Expr[String]*)(implicit P: c.WeakTypeTag[P], L: c.WeakTypeTag[L]): c.Expr[(DynamicRuleDispatch[P, L], immutable.Seq[String])] = {
     import c.universe._
-    val names: Array[String] = ruleNames.map {
+    val names = ruleNames.map {
       _.tree match {
         case Literal(Constant(s: String)) ⇒ s
         case x                            ⇒ c.abort(x.pos, s"Invalid `String` argument `x`, only `String` literals are supported!")
       }
-    }(collection.breakOut)
+    }.toArray
     java.util.Arrays.sort(names.asInstanceOf[Array[Object]])
 
     def rec(start: Int, end: Int): Tree =

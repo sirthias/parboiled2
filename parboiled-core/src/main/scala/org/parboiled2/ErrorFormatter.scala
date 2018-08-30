@@ -19,8 +19,6 @@ package org.parboiled2
 import scala.annotation.tailrec
 import java.lang.{ StringBuilder ⇒ JStringBuilder }
 
-import scala.collection.immutable.VectorBuilder
-
 /**
  * Abstraction for error formatting logic.
  * Instantiate with a custom configuration or override with custom logic.
@@ -76,7 +74,7 @@ class ErrorFormatter(showExpected: Boolean = true,
     val ix = error.position.index
     if (ix < input.length) {
       val chars = mismatchLength(error)
-      if (chars == 1) sb.append("Invalid input '").append(CharUtils.escape(input charAt ix)).append(''')
+      if (chars == 1) sb.append("Invalid input '").append(CharUtils.escape(input charAt ix)).append('\'')
       else sb.append("Invalid input \"").append(CharUtils.escape(input.sliceString(ix, ix + chars))).append('"')
     } else sb.append("Unexpected end of input")
   }
@@ -134,7 +132,7 @@ class ErrorFormatter(showExpected: Boolean = true,
    * Formats what is expected at the error location as a [[List]] of Strings.
    */
   def formatExpectedAsList(error: ParseError): List[String] = {
-    val distinctStrings: Set[String] = error.effectiveTraces.map(formatAsExpected)(collection.breakOut)
+    val distinctStrings = error.effectiveTraces.map(formatAsExpected).distinct
     distinctStrings.toList
   }
 

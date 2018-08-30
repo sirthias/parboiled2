@@ -40,7 +40,7 @@ class ActionSpec extends TestParserSpec {
 
     "`run(nonRuleExpr)`" in new TestParser0 {
       var flag = false
-      def targetRule = rule { 'a' ~ run(flag = true) ~ EOI }
+      def targetRule = rule { 'a' ~ run { flag = true } ~ EOI }
       "a" must beMatched
       flag must beTrue
     }
