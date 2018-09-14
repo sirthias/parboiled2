@@ -2,11 +2,12 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
-import sbtcrossproject.{CrossType, crossProject}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
+import sbtcrossproject.CrossPlugin.autoImport._
 
 val commonSettings = Seq(
-  version := "2.1.5-SNAPSHOT",
-  scalaVersion := "2.11.12",
+  version := "2.1.5",
+  scalaVersion := "2.12.6",
   crossScalaVersions := Seq("2.11.12", "2.12.6", "2.13.0-M4"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
@@ -21,10 +22,8 @@ val commonSettings = Seq(
     "-Xlint:deprecation"),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, v)) if v <= 11 =>
-        Seq("-target:jvm-1.6")
-      case _ =>
-        Nil
+      case Some((2, v)) if v <= 11 => Seq("-target:jvm-1.6")
+      case _ => Nil
     }
   },
   scalacOptions ++= List(
@@ -87,12 +86,13 @@ lazy val root = project.in(file("."))
   .aggregate(examples, jsonBenchmark)
   .aggregate(parboiledJVM, parboiledJS)
   .aggregate(parboiledCoreJVM, parboiledCoreJS)
-  .settings(noPublishingSettings: _*)
+  .settings(commonSettings)
+  .settings(noPublishingSettings)
 
 lazy val examples = project
   .dependsOn(parboiledJVM)
-  .settings(commonSettings: _*)
-  .settings(noPublishingSettings: _*)
+  .settings(commonSettings)
+  .settings(noPublishingSettings)
   .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.4"))
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
@@ -100,8 +100,8 @@ lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple st
 lazy val jsonBenchmark = project
   .dependsOn(examples)
   .enablePlugins(JmhPlugin)
-  .settings(commonSettings: _*)
-  .settings(noPublishingSettings: _*)
+  .settings(commonSettings)
+  .settings(noPublishingSettings)
   .settings(
     libraryDependencies ++= Seq(
       "org.json4s" %% "json4s-native" % "3.6.0",
@@ -110,8 +110,8 @@ lazy val jsonBenchmark = project
 
 lazy val scalaParser = project
   .dependsOn(parboiledJVM)
-  .settings(commonSettings: _*)
-  .settings(noPublishingSettings: _*)
+  .settings(commonSettings)
+  .settings(noPublishingSettings)
   .settings(libraryDependencies ++= Seq(shapeless, specs2Core))
 
 lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
@@ -119,11 +119,14 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
   OsgiKeys.privatePackage := Seq()
 )
 
-lazy val parboiled = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure)
+lazy val parboiledJVM = parboiled.jvm
+lazy val parboiledJS = parboiled.js
+lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
   .dependsOn(parboiledCore)
-  .settings(commonSettings: _*)
-  .settings(formattingSettings: _*)
-  .settings(publishingSettings: _*)
+  .settings(commonSettings)
+  .settings(formattingSettings)
+  .settings(publishingSettings)
   .jvmSettings(
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJVM.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageSrc)).value,
@@ -147,15 +150,12 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.P
   ).
   enablePlugins(SbtOsgi).settings(parboiledOsgiSettings:_*)
 
-lazy val parboiledJVM = parboiled.jvm
-lazy val parboiledJS = parboiled.js
-
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
 lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure).in(file("parboiled-core"))
-  .settings(commonSettings: _*)
-  .settings(formattingSettings: _*)
-  .settings(noPublishingSettings: _*)
+  .settings(commonSettings)
+  .settings(formattingSettings)
+  .settings(noPublishingSettings)
   .settings(
     libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless, specs2Core, specs2ScalaCheck),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
