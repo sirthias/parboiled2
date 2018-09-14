@@ -19,6 +19,14 @@ val commonSettings = Seq(
     "-target", "1.6",
     "-Xlint:unchecked",
     "-Xlint:deprecation"),
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v <= 11 =>
+        Seq("-target:jvm-1.6")
+      case _ =>
+        Nil
+    }
+  },
   scalacOptions ++= List(
     "-encoding", "UTF-8",
     "-feature",
@@ -26,7 +34,6 @@ val commonSettings = Seq(
     "-deprecation",
     "-Xlint",
     "-language:_",
-    "-target:jvm-1.6",
     "-Xlog-reflective-calls"))
 
 val formattingSettings = scalariformSettings ++ Seq(
