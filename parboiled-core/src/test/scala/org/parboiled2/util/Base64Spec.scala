@@ -19,8 +19,6 @@ package org.parboiled2.util
 import java.nio.charset.StandardCharsets
 
 import org.specs2.mutable.Specification
-import org.specs2.specification._
-import scala.util._
 
 class Base64Spec extends Specification {
   private val testVectors = Map(

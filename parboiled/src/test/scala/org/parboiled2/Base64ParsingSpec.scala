@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import org.specs2.mutable.Specification
-import scala.util.{ Random, Success }
+import scala.util.Random
 import org.parboiled2.util.Base64
 import shapeless._
 
