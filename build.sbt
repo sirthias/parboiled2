@@ -2,7 +2,7 @@ import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import scalariform.formatter.preferences._
 import scala.xml.transform._
 import scala.xml.{Node => XNode, NodeSeq}
-import org.scalajs.sbtplugin.cross.CrossType
+import sbtcrossproject.{CrossType, crossProject}
 
 val commonSettings = Seq(
   version := "2.1.5-SNAPSHOT",
@@ -112,7 +112,7 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
   OsgiKeys.privatePackage := Seq()
 )
 
-lazy val parboiled = crossProject.crossType(CrossType.Pure)
+lazy val parboiled = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure)
   .dependsOn(parboiledCore)
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
@@ -145,7 +145,7 @@ lazy val parboiledJS = parboiled.js
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-lazy val parboiledCore = crossProject.crossType(CrossType.Pure).in(file("parboiled-core"))
+lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure).in(file("parboiled-core"))
   .settings(commonSettings: _*)
   .settings(formattingSettings: _*)
   .settings(noPublishingSettings: _*)

@@ -7,3 +7,5 @@ addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.24")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-osgi" % "0.9.2")
+
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
