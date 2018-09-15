@@ -1,6 +1,6 @@
 **parboiled2**  |--| A Macro-Based PEG Parser Generator for Scala 2.11+
 
-.. image:: https://travis-ci.org/sirthias/parboiled2.svg?branch=master
+.. image:: https://travis-ci.org/sirthias/parboiled2.svg?branch=release-2.1
     :target: https://travis-ci.org/sirthias/parboiled2
 
 .. contents:: Contents of this Document
