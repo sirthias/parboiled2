@@ -186,7 +186,7 @@ class ErrorFormatter(showExpected: Boolean = true,
    */
   def formatTraces(error: ParseError): String = {
     import error._
-    traces.map(formatTrace(_, position.index)).mkString(traces.size + " rule" + (if (traces.size != 1) "s" else "") +
+    traces.map(formatTrace(_, position.index)).mkString(s"${traces.size} rule${(if (traces.size != 1) "s" else "")}" +
       " mismatched at error location:\n  ", "\n  ", "\n")
   }
 
@@ -236,7 +236,7 @@ class ErrorFormatter(showExpected: Boolean = true,
       case Capture             ⇒ "capture"
       case Cut                 ⇒ "cut"
       case FirstOf             ⇒ "|"
-      case x: IgnoreCaseString ⇒ '"' + escape(x.string) + '"'
+      case x: IgnoreCaseString ⇒ s""""${escape(x.string)}""""
       case x: MapMatch         ⇒ x.map.toString()
       case x: Named            ⇒ x.name
       case OneOrMore           ⇒ "+"
@@ -246,7 +246,7 @@ class ErrorFormatter(showExpected: Boolean = true,
       case Run                 ⇒ "<run>"
       case RunSubParser        ⇒ "runSubParser"
       case Sequence            ⇒ "~"
-      case x: StringMatch      ⇒ '"' + escape(x.string) + '"'
+      case x: StringMatch      ⇒ s""""${escape(x.string)}""""
       case x: Times            ⇒ "times"
       case ZeroOrMore          ⇒ "*"
     }
@@ -258,7 +258,7 @@ class ErrorFormatter(showExpected: Boolean = true,
     import CharUtils.escape
     terminal match {
       case ANY                                       ⇒ "ANY"
-      case AnyOf(s)                                  ⇒ '[' + escape(s) + ']'
+      case AnyOf(s)                                  ⇒ s"[${escape(s)}]"
       case CharMatch(c)                              ⇒ "'" + escape(c) + '\''
       case CharPredicateMatch(_)                     ⇒ "<CharPredicate>"
       case CharRange(from, to)                       ⇒ s"'${escape(from)}'-'${escape(to)}'"
