@@ -3,7 +3,6 @@ package scalaparser
 import scala.util.{Success, Failure}
 import org.specs2.execute.FailureException
 import org.specs2.mutable.Specification
-import org.specs2.specification.Fragment
 import org.parboiled2._
 
 class SnippetSpec extends Specification {
@@ -832,7 +831,7 @@ class SnippetSpec extends Specification {
 
   val formatter = new ErrorFormatter(showTraces = true)
 
-  def check(nr: String, snippet: String): Fragment =
+  def check(nr: String, snippet: String) =
     s"example $nr" in {
       val parser = new ScalaParser(snippet.stripMargin)
       parser.CompilationUnit.run() match {
@@ -842,7 +841,7 @@ class SnippetSpec extends Specification {
       }
     }
 
-  def checkError(nr: String, snippet: String, expectedError: String): Fragment =
+  def checkError(nr: String, snippet: String, expectedError: String) =
     s"example $nr" in {
       val parser = new ScalaParser(snippet.stripMargin)
       val error = parser.CompilationUnit.run() match{

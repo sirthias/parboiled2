@@ -8,7 +8,7 @@ import sbtcrossproject.CrossPlugin.autoImport._
 val commonSettings = Seq(
   version := "2.1.5",
   scalaVersion := "2.12.7",
-  crossScalaVersions := Seq("2.11.12", "2.12.7", "2.13.0-M4"),
+  crossScalaVersions := Seq("2.11.12", "2.12.7", "2.13.0-M5"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -76,9 +76,9 @@ val noPublishingSettings = Seq(
 /////////////////////// DEPENDENCIES /////////////////////////
 
 def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v       % "provided"
-val shapeless               = "com.chuusai"     %% "shapeless"         % "2.3.3" % "compile"
-val specs2Core              = "org.specs2"      %% "specs2-core"       % "4.3.3" % "test"
-val specs2ScalaCheck        = "org.specs2"      %% "specs2-scalacheck" % "4.3.3" % "test"
+val shapeless               = Def.setting("com.chuusai"     %%% "shapeless"         % "2.3.3" % "compile")
+val specs2Core              = Def.setting("org.specs2"      %%% "specs2-core"       % "4.3.5" % "test")
+val specs2ScalaCheck        = Def.setting("org.specs2"      %%% "specs2-scalacheck" % "4.3.5" % "test")
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -93,7 +93,7 @@ lazy val examples = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
   .settings(noPublishingSettings)
-  .settings(libraryDependencies ++= Seq(specs2Core, "io.spray" %%  "spray-json" % "1.3.4"))
+  .settings(libraryDependencies ++= Seq(specs2Core.value, "io.spray" %%  "spray-json" % "1.3.4"))
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
@@ -104,15 +104,15 @@ lazy val jsonBenchmark = project
   .settings(noPublishingSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.6.0",
-      "org.json4s" %% "json4s-jackson" % "3.6.0"),
+      "org.json4s" %% "json4s-native" % "3.6.1",
+      "org.json4s" %% "json4s-jackson" % "3.6.1"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val scalaParser = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
   .settings(noPublishingSettings)
-  .settings(libraryDependencies ++= Seq(shapeless, specs2Core))
+  .settings(libraryDependencies ++= Seq(shapeless.value, specs2Core.value))
 
 lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
   OsgiKeys.exportPackage := Seq("org.parboiled2.*;version=${Bundle-Version}"),
@@ -138,7 +138,7 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJS.project, Compile, packageDoc)).value
   )
   .settings(
-    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless, specs2Core),
+    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless.value, specs2Core.value),
     mappings in (Compile, packageBin) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     mappings in (Compile, packageDoc) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
@@ -157,7 +157,7 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform).crossType(CrossTy
   .settings(formattingSettings)
   .settings(noPublishingSettings)
   .settings(
-    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless, specs2Core, specs2ScalaCheck),
+    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless.value, specs2Core.value, specs2ScalaCheck.value),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
     (sourceGenerators in Compile) += generateActionOps.taskValue)
 

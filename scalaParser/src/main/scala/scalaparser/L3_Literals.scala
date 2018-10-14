@@ -21,7 +21,7 @@ trait L3_Literals { self: Parser with L0_Basics with L1_KeywordsAndOperators wit
 
   def Char = rule ( "'" ~ (UnicodeEscape | EscapedChars | !'\\' ~ test(isPrintableChar(cursorChar)) ~ ANY) ~ "'" )
 
-  def Symbol = rule( ''' ~ (RawIdNoBackticks | Keyword) ) // symbols can take on the same values as keywords!
+  def Symbol = rule( '\'' ~ (RawIdNoBackticks | Keyword) ) // symbols can take on the same values as keywords!
 
   def String = {
     def TripleTail = rule( '"' ~ '"' ~ ch('"').+ )
