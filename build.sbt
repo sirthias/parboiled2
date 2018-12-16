@@ -93,7 +93,7 @@ lazy val examples = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
   .settings(noPublishingSettings)
-  .settings(libraryDependencies ++= Seq(specs2Core.value, "io.spray" %%  "spray-json" % "1.3.4"))
+  .settings(libraryDependencies ++= Seq(specs2Core.value, "io.spray" %%  "spray-json" % "1.3.5"))
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
@@ -104,8 +104,8 @@ lazy val jsonBenchmark = project
   .settings(noPublishingSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.6.1",
-      "org.json4s" %% "json4s-jackson" % "3.6.1"),
+      "org.json4s" %% "json4s-native" % "3.6.2",
+      "org.json4s" %% "json4s-jackson" % "3.6.2"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val scalaParser = project
