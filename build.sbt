@@ -7,8 +7,8 @@ import sbtcrossproject.CrossPlugin.autoImport._
 
 val commonSettings = Seq(
   version := "2.1.5",
-  scalaVersion := "2.12.7",
-  crossScalaVersions := Seq("2.11.12", "2.12.7", "2.13.0-M5"),
+  scalaVersion := "2.12.8",
+  crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0-M5"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
