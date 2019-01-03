@@ -4,16 +4,10 @@ jdk: oraclejdk8
 scala:
 - 2.11.12
 - 2.12.7
+- 2.13.0-M5
 script:
 - sbt "++ ${TRAVIS_SCALA_VERSION}" test "scalaParser/testOnly scalaparser.SnippetSpec"
 matrix:
   include:
   - jdk: openjdk11
     scala: 2.12.7
-  - scala: 2.13.0-M5
-    script:
-    - sbt
-      "++ ${TRAVIS_SCALA_VERSION}"
-      parboiledCoreJVM/test
-      parboiledJVM/test
-      "scalaParser/testOnly scalaparser.SnippetSpec"
