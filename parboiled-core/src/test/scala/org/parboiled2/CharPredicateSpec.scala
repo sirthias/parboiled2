@@ -64,7 +64,7 @@ class CharPredicateSpec extends Specification {
   }
 
   def show(pred: CharPredicate): String = {
-    val chars = ('\u0000' to '\u0080').flatMap(c ⇒ if (pred(c)) Some(c) else None).toArray
+    val chars = ('\u0000' to '\u0080').flatMap(c => if (pred(c)) Some(c) else None).toArray
     new String(chars)
   }
 

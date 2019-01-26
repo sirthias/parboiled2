@@ -73,7 +73,7 @@ class ActionSpec extends TestParserSpec {
 
     "`run(ruleBlockWithRuleMatch)`" in new TestParser0 {
       var flag = false
-      def targetRule = rule { 'a' ~ run { flag = true; flag match { case true ⇒ oneOrMore(b); case _ ⇒ MISMATCH } } ~ EOI }
+      def targetRule = rule { 'a' ~ run { flag = true; flag match { case true => oneOrMore(b); case _ ⇒ MISMATCH } } ~ EOI }
       def b = rule { 'b' }
       "a" must beMismatched
       flag must beTrue
@@ -81,28 +81,28 @@ class ActionSpec extends TestParserSpec {
     }
 
     "`run(F1producingUnit)`" in new TestParser1[Int] {
-      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((x: String) ⇒ require(x == "X")) ~ EOI }
+      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((x: String) => require(x == "X")) ~ EOI }
       "" must beMatchedWith(1)
     }
 
     "`run(F2producingValue)`" in new TestParser1[Char] {
-      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((i: Int, x: String) ⇒ (x.head - i).toChar) ~ EOI }
+      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((i: Int, x: String) => (x.head - i).toChar) ~ EOI }
       "" must beMatchedWith('W')
     }
 
     "`run(F2producingHList)`" in new TestParserN[String :: Int :: HNil] {
-      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((i: Int, x: String) ⇒ x :: i :: HNil) ~ EOI }
+      def targetRule = rule { push(1 :: "X" :: HNil) ~ run((i: Int, x: String) => x :: i :: HNil) ~ EOI }
       "" must beMatchedWith("X" :: 1 :: HNil)
     }
 
     "`run(F1producingRule)`" in new TestParser0 {
-      def targetRule = rule { ANY ~ push(lastChar - '0') ~ run((i: Int) ⇒ test(i % 2 == 0)) ~ EOI }
+      def targetRule = rule { ANY ~ push(lastChar - '0') ~ run((i: Int) => test(i % 2 == 0)) ~ EOI }
       "4" must beMatched
       "5" must beMismatched
     }
 
     //    "`run(F1TakingHList)`" in new TestParser1[Int] {
-    //      def targetRule = rule { push(42 :: "X" :: HNil) ~ run((l: Int :: String :: HNil) ⇒ l.head * 2) }
+    //      def targetRule = rule { push(42 :: "X" :: HNil) ~ run((l: Int :: String :: HNil) => l.head * 2) }
     //      "" must beMatchedWith(84)
     //    }
 
@@ -128,7 +128,7 @@ class ActionSpec extends TestParserSpec {
     }
 
     "`~>` producing `Unit`" in new TestParser1[Int] {
-      def testRule = rule { push(1 :: "X" :: HNil) ~> (_ ⇒ ()) }
+      def testRule = rule { push(1 :: "X" :: HNil) ~> (_ => ()) }
       def targetRule = testRule
       "" must beMatchedWith(1)
     }
@@ -160,7 +160,7 @@ class ActionSpec extends TestParserSpec {
 
     "`~>` with a statement block" in new TestParser1[Char] {
       var captured = ' '
-      def testRule = rule { capture("x") ~> { x ⇒ captured = x.head; cursorChar } }
+      def testRule = rule { capture("x") ~> { x => captured = x.head; cursorChar } }
       def targetRule = testRule
       "xy" must beMatchedWith('y')
       captured === 'x'
@@ -181,7 +181,7 @@ class ActionSpec extends TestParserSpec {
     }
 
     "`~>` producing an expression evaluating to a rule" in new TestParser0 {
-      def testRule = rule { capture(anyOf("ab")) ~> (s ⇒ if (s == "a") ch('b') else ch('a')) ~ EOI }
+      def testRule = rule { capture(anyOf("ab")) ~> (s => if (s == "a") ch('b') else ch('a')) ~ EOI }
       def targetRule = testRule
       "ab" must beMatched
       "ba" must beMatched

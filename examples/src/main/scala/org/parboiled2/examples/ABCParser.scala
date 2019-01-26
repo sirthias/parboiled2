@@ -31,13 +31,13 @@ object ABCParser extends App {
     print("---\nEnter expression for abc-parser > ")
     Console.out.flush()
     StdIn.readLine() match {
-      case "" ⇒
-      case line ⇒
+      case "" =>
+      case line =>
         val parser = new ABCParser(line)
         parser.InputLine.run() match {
-          case Success(_)             ⇒ println("Expression is valid")
-          case Failure(e: ParseError) ⇒ println("Expression is not valid: " + parser.formatError(e))
-          case Failure(e)             ⇒ println("Unexpected error during parsing run: " + e)
+          case Success(_)             => println("Expression is valid")
+          case Failure(e: ParseError) => println("Expression is not valid: " + parser.formatError(e))
+          case Failure(e)             => println("Unexpected error during parsing run: " + e)
         }
         repl()
     }

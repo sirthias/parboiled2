@@ -21,7 +21,7 @@ import org.parboiled2.util.Base64
 /**
  * Rules for parsing Base-64 encoded strings.
  */
-trait Base64Parsing { this: Parser ⇒
+trait Base64Parsing { this: Parser =>
   import Base64Parsing._
 
   /**
@@ -54,8 +54,8 @@ trait Base64Parsing { this: Parser ⇒
     rule {
       oneOrMore(alphabet) ~ run {
         decoder(input.sliceCharArray(start, cursor)) match {
-          case null  ⇒ MISMATCH
-          case bytes ⇒ push(bytes)
+          case null  => MISMATCH
+          case bytes => push(bytes)
         }
       }
     }
@@ -63,7 +63,7 @@ trait Base64Parsing { this: Parser ⇒
 }
 
 object Base64Parsing {
-  type Decoder = Array[Char] ⇒ Array[Byte]
+  type Decoder = Array[Char] => Array[Byte]
 
   val rfc2045Alphabet = CharPredicate(Base64.rfc2045().getAlphabet).asMaskBased
   val customAlphabet = CharPredicate(Base64.custom().getAlphabet).asMaskBased

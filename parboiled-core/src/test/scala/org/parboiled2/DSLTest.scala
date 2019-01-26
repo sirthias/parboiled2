@@ -22,16 +22,16 @@ import shapeless._
 class DSLTest(val input: ParserInput) extends Parser {
 
   def ZeroOrMoreReduction_Checked: Rule[String :: HNil, String :: HNil] = ZeroOrMoreReduction
-  def ZeroOrMoreReduction = rule { zeroOrMore(capture("0" - "9") ~> ((x: String, y) ⇒ x + y)) }
+  def ZeroOrMoreReduction = rule { zeroOrMore(capture("0" - "9") ~> ((x: String, y) => x + y)) }
 
   def OptionalReduction_Checked: Rule[String :: HNil, String :: HNil] = OptionalReduction
-  def OptionalReduction = rule { optional(capture("0" - "9") ~> ((x: String, y) ⇒ x + y)) }
+  def OptionalReduction = rule { optional(capture("0" - "9") ~> ((x: String, y) => x + y)) }
 
   def OpsTest1_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: Boolean :: Array[Char] :: HNil] = OpsTest1
   def OpsTest1 = rule { ComplexRule ~> (_.toCharArray) }
 
   def OpsTest2_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: HNil] = OpsTest2
-  def OpsTest2 = rule { ComplexRule ~> ((_, s) ⇒ s.length) ~> (_ + _) }
+  def OpsTest2 = rule { ComplexRule ~> ((_, s) => s.length) ~> (_ + _) }
 
   def ComplexRule_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: Boolean :: String :: HNil] = ComplexRule
   def ComplexRule = rule { capture(DigitAndBool) ~ DigitAndBool ~ capture(DigitAndBool) }

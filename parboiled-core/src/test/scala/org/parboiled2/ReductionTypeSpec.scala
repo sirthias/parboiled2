@@ -41,5 +41,5 @@ class ReductionTypeSpec extends Specification {
     "Times" in { ruleTypeOf(_.TimesExpr) === classOf[Foo2] }
   }
 
-  def ruleTypeOf[T](f: FooParser ⇒ Rule1[T])(implicit tag: ClassTag[T]) = tag.runtimeClass
+  def ruleTypeOf[T](f: FooParser => Rule1[T])(implicit tag: ClassTag[T]) = tag.runtimeClass
 }

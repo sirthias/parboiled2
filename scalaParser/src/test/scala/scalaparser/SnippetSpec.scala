@@ -551,7 +551,7 @@ class SnippetSpec extends Specification {
         |}""")
     
     check("079",
-      """import java.util.concurrent.TimeUnit.{ NANOSECONDS => NANOS, MILLISECONDS ⇒ MILLIS }
+      """import java.util.concurrent.TimeUnit.{ NANOSECONDS => NANOS, MILLISECONDS => MILLIS }
       """)
     
     check("080",
@@ -561,7 +561,7 @@ class SnippetSpec extends Specification {
     
     check("081",
       """class AkkaException{
-        |  for (i ← 0 until trace.length)
+        |  for (i <- 0 until trace.length)
         |    ()
         |}""")
     

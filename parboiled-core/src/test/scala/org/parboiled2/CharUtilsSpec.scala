@@ -22,27 +22,27 @@ import org.scalacheck.{Gen, Prop}
 
 class CharUtilsSpec extends Specification with ScalaCheck {
 
-  val hexChars = for (i ← Gen.choose(0, 15)) yield i -> Integer.toHexString(i).charAt(0)
+  val hexChars = for (i <- Gen.choose(0, 15)) yield i -> Integer.toHexString(i).charAt(0)
 
   "CharUtils" >> {
     "hexValue" in {
-      val p = Prop.forAll(hexChars) { case (i, c) ⇒ CharUtils.hexValue(c) == i }
+      val p = Prop.forAll(hexChars) { case (i, c) => CharUtils.hexValue(c) == i }
       check(p, defaultParameters, defaultFreqMapPretty)
     }
     "numberOfHexDigits" in prop {
-      l: Long ⇒ CharUtils.numberOfHexDigits(l) === java.lang.Long.toHexString(l).length
+      l: Long => CharUtils.numberOfHexDigits(l) === java.lang.Long.toHexString(l).length
     }
     "upperHexString" in prop {
-      l: Long ⇒ CharUtils.upperHexString(l) === java.lang.Long.toHexString(l).toUpperCase
+      l: Long => CharUtils.upperHexString(l) === java.lang.Long.toHexString(l).toUpperCase
     }
     "lowerHexString" in prop {
-      l: Long ⇒ CharUtils.lowerHexString(l) === java.lang.Long.toHexString(l)
+      l: Long => CharUtils.lowerHexString(l) === java.lang.Long.toHexString(l)
     }
     "numberOfDecimalDigits" in prop {
-      l: Long ⇒ CharUtils.numberOfDecimalDigits(l) === java.lang.Long.toString(l).length
+      l: Long => CharUtils.numberOfDecimalDigits(l) === java.lang.Long.toString(l).length
     }
     "signedDecimalString" in prop {
-      l: Long ⇒ CharUtils.signedDecimalString(l) === java.lang.Long.toString(l)
+      l: Long => CharUtils.signedDecimalString(l) === java.lang.Long.toString(l)
     }
   }
 }

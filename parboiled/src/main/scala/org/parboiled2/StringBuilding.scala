@@ -22,7 +22,7 @@ package org.parboiled2
  *
  * Mixing this trait into your parser gives you a simple facility to support this.
  */
-trait StringBuilding { this: Parser ⇒
+trait StringBuilding { this: Parser =>
   protected val sb = new java.lang.StringBuilder
 
   def clearSB(): Rule0 = rule { run(sb.setLength(0)) }

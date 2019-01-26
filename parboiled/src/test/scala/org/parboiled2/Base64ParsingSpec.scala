@@ -41,7 +41,7 @@ class Base64ParsingSpec extends Specification {
     "rfc2045String", "rfc2045Block", "base64CustomString", "base64CustomBlock")
 
   def test(ruleName: String, base64: Base64) =
-    (1 to 100).map { x ⇒
+    (1 to 100).map { x =>
       val string = randomChars.take(x).toString()
       val encoded = base64.encodeToString(string getBytes UTF8, false)
       val parser = new TestParser(encoded) with DynamicRuleHandler[TestParser, Array[Byte]:: HNil] {
