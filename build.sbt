@@ -104,8 +104,8 @@ lazy val jsonBenchmark = project
   .settings(noPublishingSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "org.json4s" %% "json4s-native" % "3.6.3",
-      "org.json4s" %% "json4s-jackson" % "3.6.3"),
+      "org.json4s" %% "json4s-native" % "3.6.4",
+      "org.json4s" %% "json4s-jackson" % "3.6.4"),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
 
 lazy val scalaParser = project
