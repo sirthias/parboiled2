@@ -17,9 +17,9 @@
 package org.parboiled2.nestedpackage
 
 import scala.util.Success
-import org.specs2.mutable.Specification
+import utest._
 
-class AlienPackageParserSpec extends Specification {
+object AlienPackageParserSpec extends TestSuite {
 
   abstract class AbstractParser(val input: org.parboiled2.ParserInput) extends org.parboiled2.Parser {
     import org.parboiled2.{ Rule1, CharPredicate }
@@ -31,9 +31,11 @@ class AlienPackageParserSpec extends Specification {
     def Go = rule { foo ~ EOI }
   }
 
-  "Parsers in files that dont explicitly import org.parboiled2._" should {
-    "compile" in {
-      new FooParser("foo123").Go.run() === Success("foo123")
+  val tests = Tests {
+    "Parsers in files that dont explicitly import org.parboiled2._" - {
+      "compile" - {
+        assert(new FooParser("foo123").Go.run() == Success("foo123"))
+      }
     }
   }
 }

@@ -16,26 +16,31 @@
 
 package org.parboiled2
 
-class CutSpec extends TestParserSpec {
+import utest._
 
-  "The `~!~` (cut) operator" should {
-    "work as expected" in new TestParser0 {
-      def targetRule = rule { foo ~ EOI }
-      def foo = rule { "abc" | "a" ~!~ "de" | "axy" }
+object CutSpec extends TestParserSpec {
+
+  val tests = Tests{
+
+    "The `~!~` (cut) operator" - {
+      "work as expected" - new TestParser0 {
+        def targetRule = rule { foo ~ EOI }
+        def foo = rule { "abc" | "a" ~!~ "de" | "axy" }
 
       "abc" must beMatched
       "ade" must beMatched
       "axy" must beMismatched
 
       "axy" must beMismatchedWithErrorMsg(
-        """Invalid input 'x', expected 'b' or 'd' (line 1, column 2):
-          |axy
-          | ^
-          |
-          |2 rules mismatched at error location:
-          |  /targetRule/ /foo/ |:-1 / "abc":-1 / 'b'
-          |  /targetRule/ /foo/ |:-1 / cut:-1 / "de" / 'd'
-          |""")
+          """Invalid input 'x', expected 'b' or 'd' (line 1, column 2):
+            |axy
+            | ^
+            |
+            |2 rules mismatched at error location:
+            |  /targetRule/ /foo/ |:-1 / "abc":-1 / 'b'
+            |  /targetRule/ /foo/ |:-1 / cut:-1 / "de" / 'd'
+            |""")
+      }
     }
   }
 }

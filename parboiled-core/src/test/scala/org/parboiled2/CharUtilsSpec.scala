@@ -16,33 +16,56 @@
 
 package org.parboiled2
 
-import org.specs2.mutable.Specification
-import org.specs2.ScalaCheck
-import org.scalacheck.{Gen, Prop}
+import org.scalacheck.{Gen, Test, Prop}
+import org.scalacheck.util.Pretty
+import org.scalacheck.Prop.forAll
+import utest._
 
-class CharUtilsSpec extends Specification with ScalaCheck {
+object CharUtilsSpec extends TestSuite with UTestScalaCheck{
 
   val hexChars = for (i <- Gen.choose(0, 15)) yield i -> Integer.toHexString(i).charAt(0)
 
-  "CharUtils" >> {
-    "hexValue" in {
-      val p = Prop.forAll(hexChars) { case (i, c) => CharUtils.hexValue(c) == i }
-      check(p, defaultParameters, defaultFreqMapPretty)
-    }
-    "numberOfHexDigits" in prop {
-      l: Long => CharUtils.numberOfHexDigits(l) === java.lang.Long.toHexString(l).length
-    }
-    "upperHexString" in prop {
-      l: Long => CharUtils.upperHexString(l) === java.lang.Long.toHexString(l).toUpperCase
-    }
-    "lowerHexString" in prop {
-      l: Long => CharUtils.lowerHexString(l) === java.lang.Long.toHexString(l)
-    }
-    "numberOfDecimalDigits" in prop {
-      l: Long => CharUtils.numberOfDecimalDigits(l) === java.lang.Long.toString(l).length
-    }
-    "signedDecimalString" in prop {
-      l: Long => CharUtils.signedDecimalString(l) === java.lang.Long.toString(l)
+  val tests = Tests{
+
+    "CharUtils" - {
+      "hexValue" - forAll(hexChars) {
+        case (i, c) => CharUtils.hexValue(c) == i
+      }.checkUTest()
+      "numberOfHexDigits" - forAll {
+        l: Long => CharUtils.numberOfHexDigits(l) == java.lang.Long.toHexString(l).length
+      }.checkUTest()
+      "upperHexString" - forAll {
+        l: Long => CharUtils.upperHexString(l) == java.lang.Long.toHexString(l).toUpperCase
+      }.checkUTest()
+      "lowerHexString" - forAll {
+        l: Long => CharUtils.lowerHexString(l) == java.lang.Long.toHexString(l)
+      }.checkUTest()
+      "numberOfDecimalDigits" - forAll {
+        l: Long => CharUtils.numberOfDecimalDigits(l) == java.lang.Long.toString(l).length
+      }.checkUTest()
+      "signedDecimalString" - forAll {
+        l: Long => CharUtils.signedDecimalString(l) == java.lang.Long.toString(l)
+      }.checkUTest()
     }
   }
+}
+
+// from https://github.com/lihaoyi/utest/issues/2#issuecomment-67300735
+trait UTestScalaCheck {
+
+  protected[this] object UTestReporter extends Test.TestCallback {
+    private val prettyParams = Pretty.defaultParams
+
+    override def onTestResult(name: String, res: org.scalacheck.Test.Result): Unit = {
+      val scalaCheckResult = if (res.passed) "" else Pretty.pretty(res, prettyParams)
+      assert(scalaCheckResult.isEmpty)
+    }
+  }
+
+  implicit protected[this] class PropWrapper(prop: Prop) {
+    def checkUTest(): Unit = {
+      prop.check(Test.Parameters.default.withTestCallback(UTestReporter))
+    }
+  }
+
 }

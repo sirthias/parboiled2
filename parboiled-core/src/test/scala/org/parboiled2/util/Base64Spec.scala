@@ -16,11 +16,10 @@
 
 package org.parboiled2.util
 
+import utest._
 import java.nio.charset.StandardCharsets
 
-import org.specs2.mutable.Specification
-
-class Base64Spec extends Specification {
+object Base64Spec extends TestSuite {
   private val testVectors = Map(
     "" -> "",
     "f" -> "Zg==",
@@ -32,17 +31,19 @@ class Base64Spec extends Specification {
     "@@ Hello @@ world @@!" -> "QEAgSGVsbG8gQEAgd29ybGQgQEAh"
   )
 
-  "Base64 should" >> {
-    "work as expected" in {
-      testVectors.map { case (expectedDecoded, expectedEncoded) =>
+  val tests = Tests{
+    'Base64 - {
+      testVectors.foreach { case (expectedDecoded, expectedEncoded) =>
         val expectedDecodedBytes = expectedDecoded.getBytes(StandardCharsets.UTF_8)
 
-        val encoded = Base64.rfc2045().encodeToString(expectedDecodedBytes, false)
+        val encoded = Base64.rfc2045().encodeToString(expectedDecodedBytes, lineSep = false)
 
-        expectedEncoded === encoded and
-        expectedDecodedBytes === Base64.rfc2045().decode(encoded.toCharArray) and
-        expectedDecodedBytes === Base64.rfc2045().decodeFast(encoded.toCharArray)
-      }.reduceLeft(_ and _)
+        assert(
+          expectedEncoded == encoded,
+          expectedDecodedBytes sameElements Base64.rfc2045().decode(encoded.toCharArray),
+          expectedDecodedBytes sameElements Base64.rfc2045().decodeFast(encoded.toCharArray)
+        )
+      }
     }
   }
 }

@@ -17,9 +17,9 @@
 package org.parboiled2
 
 import scala.reflect.ClassTag
-import org.specs2.mutable._
+import utest._
 
-class ReductionTypeSpec extends Specification {
+object ReductionTypeSpec extends TestSuite {
 
   sealed trait Foo
   case object Foo1 extends Foo
@@ -34,11 +34,14 @@ class ReductionTypeSpec extends Specification {
     def foo1 = rule { push(Foo1) }
   }
 
-  "Repeating combinators should properly compute their reduction result types" >> {
-    "OneOrMore" in { ruleTypeOf(_.OneOrMoreExpr) === classOf[Foo2] }
-    "ZeroOrMore" in { ruleTypeOf(_.ZeroOrMoreExpr) === classOf[Foo] }
-    "Optional" in { ruleTypeOf(_.OptionalExpr) === classOf[Foo] }
-    "Times" in { ruleTypeOf(_.TimesExpr) === classOf[Foo2] }
+  val tests = Tests {
+
+    "Repeating combinators should properly compute their reduction result types" - {
+      "OneOrMore" - { assert(ruleTypeOf(_.OneOrMoreExpr) == classOf[Foo2]) }
+      "ZeroOrMore" - { assert(ruleTypeOf(_.ZeroOrMoreExpr) == classOf[Foo]) }
+      "Optional" - { assert(ruleTypeOf(_.OptionalExpr) == classOf[Foo]) }
+      "Times" - { assert(ruleTypeOf(_.TimesExpr) == classOf[Foo2]) }
+    }
   }
 
   def ruleTypeOf[T](f: FooParser => Rule1[T])(implicit tag: ClassTag[T]) = tag.runtimeClass
