@@ -26,11 +26,11 @@ object CombinatorSpec extends TestParserSpec {
 
       "`~` combinator" - new TestParser0 {
         def targetRule = rule { 'a' ~ 'b' }
-        assertMismatched("")
-        assertMatched("ab")
-        assertMismatched("ac")
-        assertMismatched("a")
-        assertMismatched("b")
+        "" must beMismatched
+        "ab" must beMatched
+        "ac" must beMismatched
+        "a" must beMismatched
+        "b" must beMismatched
       }
 
       "`|` combinator" - new TestParser0 {
