@@ -92,8 +92,8 @@ val scalaCheckNative        = Def.setting("com.github.lolgab" %%% "scalacheck"  
 
 lazy val root = project.in(file("."))
   .aggregate(examples, jsonBenchmark)
-  .aggregate(parboiledJVM, parboiledJS, parboiledNative)
-  .aggregate(parboiledCoreJVM, parboiledCoreJS, parboiledCoreNative)
+  .aggregate(parboiledJVM, parboiledJS)
+  .aggregate(parboiledCoreJVM, parboiledCoreJS)
   .settings(commonSettings)
   .settings(noPublishingSettings)
 
