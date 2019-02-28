@@ -17,49 +17,52 @@
 package org.parboiled2.examples
 
 import scala.util.{Failure, Success}
-import org.specs2.mutable.Specification
+import utest._
 import spray.json.{JsonParser => _, _}
 import org.parboiled2._
 
-class JsonParserSpec extends Specification {
+object JsonParserSpec extends TestSuite {
 
-  "The JsonParser" should {
-    "parse 'null' to JsNull" in {
-      parse("null") === JsNull
+  val tests = Tests{
+
+    "The JsonParser" - {
+      "parse 'null' to JsNull" - {
+        assert(parse("null") == JsNull)
+      }
+      "parse 'true' to JsTrue" - {
+        assert(parse("true") == JsTrue)
+      }
+      "parse 'false' to JsFalse" - {
+        assert(parse("false") == JsFalse)
+      }
+      "parse '0' to JsNumber" - {
+        assert(parse("0") == JsNumber(0))
+      }
+      "parse '1.23' to JsNumber" - {
+        assert(parse("1.23") == JsNumber(1.23))
+      }
+      "parse '-1E10' to JsNumber" - {
+        assert(parse("-1E10") == JsNumber("-1E+10"))
+      }
+      "parse '12.34e-10' to JsNumber" - {
+        assert(parse("12.34e-10") == JsNumber("1.234E-9"))
+      }
+      "parse \"xyz\" to JsString" - {
+        assert(parse("\"xyz\"") == JsString("xyz"))
+      }
+      "parse escapes in a JsString" - {
+        assert(parse(""""\"\\/\b\f\n\r\t"""") == JsString("\"\\/\b\f\n\r\t"))
+        assert(parse("\"L\\" + "u00e4nder\"") == JsString("Länder"))
+      }
+      "properly parse a simple JsObject" - (
+        assert(parse(""" { "key" :42, "key2": "value" }""") ==
+          JsObject("key" -> JsNumber(42), "key2" -> JsString("value"))
+        ))
+      "properly parse a simple JsArray" - (
+        assert(parse("""[null, 1.23 ,{"key":true } ] """) ==
+          JsArray(JsNull, JsNumber(1.23), JsObject("key" -> JsTrue))
+        ))
     }
-    "parse 'true' to JsTrue" in {
-      parse("true") === JsTrue
-    }
-    "parse 'false' to JsFalse" in {
-      parse("false") === JsFalse
-    }
-    "parse '0' to JsNumber" in {
-      parse("0") === JsNumber(0)
-    }
-    "parse '1.23' to JsNumber" in {
-      parse("1.23") === JsNumber(1.23)
-    }
-    "parse '-1E10' to JsNumber" in {
-      parse("-1E10") === JsNumber("-1E+10")
-    }
-    "parse '12.34e-10' to JsNumber" in {
-      parse("12.34e-10") === JsNumber("1.234E-9")
-    }
-    "parse \"xyz\" to JsString" in {
-      parse("\"xyz\"") === JsString("xyz")
-    }
-    "parse escapes in a JsString" in {
-      parse(""""\"\\/\b\f\n\r\t"""") === JsString("\"\\/\b\f\n\r\t")
-      parse("\"L\\" + "u00e4nder\"") === JsString("Länder")
-    }
-    "properly parse a simple JsObject" in (
-      parse(""" { "key" :42, "key2": "value" }""") ===
-        JsObject("key" -> JsNumber(42), "key2" -> JsString("value"))
-      )
-    "properly parse a simple JsArray" in (
-      parse("""[null, 1.23 ,{"key":true } ] """) ===
-        JsArray(JsNull, JsNumber(1.23), JsObject("key" -> JsTrue))
-      )
   }
 
   def parse(s: String): JsValue = {

@@ -16,10 +16,10 @@
 
 package org.parboiled2
 
-import org.specs2.mutable.Specification
 import shapeless.HNil
+import utest._
 
-class DynamicRuleDispatchSpec extends Specification {
+object DynamicRuleDispatchSpec extends TestSuite {
 
   class TestParser(val input: ParserInput) extends Parser with DynamicRuleHandler[TestParser, HNil] {
     def A = rule('a' ~ EOI)
@@ -36,51 +36,54 @@ class DynamicRuleDispatchSpec extends Specification {
     def failure(error: Throwable): Result = "throw"
   }
 
-  "DynamicRuleDispatch" should {
-    "work as expected when selecting from 0 rules" in {
-      val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]()
-      dispatch(new TestParser("a"), "A") === "n/a"
-      ruleNames === Seq()
-    }
-    "work as expected when selecting from 1 rule" in {
-      val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A")
-      dispatch(new TestParser("a"), "A") === "ok"
-      dispatch(new TestParser("b"), "B") === "n/a"
-      ruleNames === Seq("A")
-    }
-    "work as expected when selecting from 2 rules" in {
-      val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A", "B")
-      dispatch(new TestParser("a"), "A") === "ok"
-      dispatch(new TestParser("b"), "B") === "ok"
-      dispatch(new TestParser("c"), "C") === "n/a"
-      ruleNames === Seq("A", "B")
-    }
-    "work as expected when selecting from 3 rules" in {
-      val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C")
-      dispatch(new TestParser("a"), "A") === "ok"
-      dispatch(new TestParser("b"), "B") === "ok"
-      dispatch(new TestParser("c"), "C") === "ok"
-      dispatch(new TestParser("d"), "D") === "n/a"
-      ruleNames === Seq("A", "B", "C")
-    }
-    "work as expected when selecting from 4 rules" in {
-      val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C", "D")
-      dispatch(new TestParser("a"), "A") === "ok"
-      dispatch(new TestParser("b"), "B") === "ok"
-      dispatch(new TestParser("c"), "C") === "ok"
-      dispatch(new TestParser("d"), "D") === "ok"
-      dispatch(new TestParser("e"), "E") === "n/a"
-      ruleNames === Seq("A", "B", "C", "D")
-    }
-    "work as expected when selecting from 5 rules" in {
-      val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C", "D", "E")
-      dispatch(new TestParser("a"), "A") === "ok"
-      dispatch(new TestParser("b"), "B") === "ok"
-      dispatch(new TestParser("c"), "C") === "ok"
-      dispatch(new TestParser("d"), "D") === "ok"
-      dispatch(new TestParser("e"), "E") === "ok"
-      dispatch(new TestParser("f"), "F") === "n/a"
-      ruleNames === Seq("A", "B", "C", "D", "E")
+  val tests = Tests{
+
+    "DynamicRuleDispatch" - {
+      "work as expected when selecting from 0 rules" - {
+        val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]()
+        assert(dispatch(new TestParser("a"), "A") == "n/a")
+        assert(ruleNames == Seq())
+      }
+      "work as expected when selecting from 1 rule" - {
+        val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A")
+        assert(dispatch(new TestParser("a"), "A") == "ok")
+        assert(dispatch(new TestParser("b"), "B") == "n/a")
+        assert(ruleNames == Seq("A"))
+      }
+      "work as expected when selecting from 2 rules" - {
+        val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A", "B")
+        assert(dispatch(new TestParser("a"), "A") == "ok")
+        assert(dispatch(new TestParser("b"), "B") == "ok")
+        assert(dispatch(new TestParser("c"), "C") == "n/a")
+        assert(ruleNames == Seq("A", "B"))
+      }
+      "work as expected when selecting from 3 rules" - {
+        val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C")
+        assert(dispatch(new TestParser("a"), "A") == "ok")
+        assert(dispatch(new TestParser("b"), "B") == "ok")
+        assert(dispatch(new TestParser("c"), "C") == "ok")
+        assert(dispatch(new TestParser("d"), "D") == "n/a")
+        assert(ruleNames == Seq("A", "B", "C"))
+      }
+      "work as expected when selecting from 4 rules" - {
+        val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C", "D")
+        assert(dispatch(new TestParser("a"), "A") == "ok")
+        assert(dispatch(new TestParser("b"), "B") == "ok")
+        assert(dispatch(new TestParser("c"), "C") == "ok")
+        assert(dispatch(new TestParser("d"), "D") == "ok")
+        assert(dispatch(new TestParser("e"), "E") == "n/a")
+        assert(ruleNames == Seq("A", "B", "C", "D"))
+      }
+      "work as expected when selecting from 5 rules" - {
+        val (dispatch, ruleNames) = DynamicRuleDispatch[TestParser, HNil]("A", "B", "C", "D", "E")
+        assert(dispatch(new TestParser("a"), "A") == "ok")
+        assert(dispatch(new TestParser("b"), "B") == "ok")
+        assert(dispatch(new TestParser("c"), "C") == "ok")
+        assert(dispatch(new TestParser("d"), "D") == "ok")
+        assert(dispatch(new TestParser("e"), "E") == "ok")
+        assert(dispatch(new TestParser("f"), "F") == "n/a")
+        assert(ruleNames == Seq("A", "B", "C", "D", "E"))
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
-import sbt.Keys.libraryDependencies
+
 import scalariform.formatter.preferences._
 
 import scala.xml.transform._
@@ -75,6 +75,9 @@ val noPublishingSettings = Seq(
   publishArtifact := false,
   publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))))
 
+val utestSettings = Seq(
+  testFrameworks := Seq(new TestFramework("utest.runner.Framework")))
+
 /////////////////////// DEPENDENCIES /////////////////////////
 
 def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v       % "provided"
@@ -84,8 +87,6 @@ val scalaCheck              = Def.setting("org.scalacheck"    %%% "scalacheck"  
 // since ScalaCheck native is not available from the original authors @lolgab made a release
 // see https://github.com/rickynils/scalacheck/issues/396#issuecomment-467782592
 val scalaCheckNative        = Def.setting("com.github.lolgab" %%% "scalacheck"        % "1.14.1" % Test)
-val specs2Core              = Def.setting("org.specs2"        %%% "specs2-core"       % "4.4.1" % Test)
-val specs2ScalaCheck        = Def.setting("org.specs2"        %%% "specs2-scalacheck" % "4.4.1" % Test)
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -100,7 +101,8 @@ lazy val examples = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
   .settings(noPublishingSettings)
-  .settings(libraryDependencies ++= Seq(specs2Core.value, "io.spray" %%  "spray-json" % "1.3.5"))
+  .settings(libraryDependencies ++= Seq(utest.value, "io.spray" %%  "spray-json" % "1.3.5"))
+  .settings(utestSettings)
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
@@ -119,7 +121,8 @@ lazy val scalaParser = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
   .settings(noPublishingSettings)
-  .settings(libraryDependencies ++= Seq(shapeless.value, specs2Core.value))
+  .settings(libraryDependencies ++= Seq(shapeless.value, utest.value))
+  .settings(utestSettings)
 
 lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
   OsgiKeys.exportPackage := Seq("org.parboiled2.*;version=${Bundle-Version}"),
@@ -136,13 +139,11 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(formattingSettings)
   .settings(publishingSettings)
   .jvmSettings(
-    libraryDependencies ++= Seq(specs2Core.value),
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJVM.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageSrc)).value,
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageDoc)).value
   )
   .jsSettings(
-    libraryDependencies ++= Seq(specs2Core.value),
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJS.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJS.project, Compile, packageSrc)).value,
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJS.project, Compile, packageDoc)).value
@@ -152,6 +153,7 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreNative.project, Compile, packageSrc)).value,
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreNative.project, Compile, packageDoc)).value,
     nativeLinkStubs := true,
+    scalaVersion := "2.11.12",
     crossScalaVersions := Seq("2.11.12")
   )
   .settings(
@@ -163,10 +165,10 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
         override def transform(n: XNode) = if ((n \ "artifactId").text.startsWith("parboiledcore")) NodeSeq.Empty else n
       }
       new RuleTransformer(filter).transform(_).head
-    },
-    testFrameworks := Seq(new TestFramework("utest.runner.Framework"))
-  ).
-  enablePlugins(SbtOsgi).settings(parboiledOsgiSettings:_*)
+    }
+  )
+  .settings(utestSettings)
+  .enablePlugins(SbtOsgi).settings(parboiledOsgiSettings:_*)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
@@ -174,11 +176,11 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform).c
   .settings(commonSettings)
   .settings(formattingSettings)
   .settings(noPublishingSettings)
+  .settings(utestSettings)
   .settings(
     libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless.value, utest.value),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
-    (sourceGenerators in Compile) += generateActionOps.taskValue,
-    testFrameworks := Seq(new TestFramework("utest.runner.Framework"))
+    (sourceGenerators in Compile) += generateActionOps.taskValue
   )
   .jvmSettings(
     libraryDependencies ++= Seq(scalaCheck.value)
