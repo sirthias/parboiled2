@@ -9,7 +9,8 @@ script:
 - sbt "++ ${TRAVIS_SCALA_VERSION}" test "scalaParser/testOnly scalaparser.SnippetSpec"
 matrix:
   include:
-  - jdk: openjdk11
-    scala: 2.12.8
+  - scala: 2.11.12
     before_script:
       - curl https://raw.githubusercontent.com/scala-native/scala-native/master/scripts/travis_setup.sh | bash -x
+  - scala: 2.12.8
+    jdk: openjdk11
