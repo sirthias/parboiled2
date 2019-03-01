@@ -166,7 +166,7 @@ object ActionSpec extends TestParserSpec {
         def testRule = rule { capture("x") ~> { x => captured = x.head; cursorChar } }
         def targetRule = testRule
         "xy" must beMatchedWith('y')
-        assert(captured == 'x')
+        captured ==> 'x'
       }
 
       "`~>` producing a Rule0" - new TestParser0 {

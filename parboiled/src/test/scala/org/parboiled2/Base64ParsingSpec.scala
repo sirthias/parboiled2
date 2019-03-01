@@ -56,6 +56,6 @@ object Base64ParsingSpec extends TestSuite {
         def parseError(error: ParseError): Result = sys.error("unexpected parse error")
         def failure(error: Throwable): Result = sys.error("unexpected parser exception")
       }
-      assert(dispatch(parser, ruleName) == string)
+      dispatch(parser, ruleName) ==> string
     }
 }

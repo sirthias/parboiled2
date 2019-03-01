@@ -34,7 +34,7 @@ object AlienPackageParserSpec extends TestSuite {
   val tests = Tests {
     "Parsers in files that dont explicitly import org.parboiled2._" - {
       "compile" - {
-        assert(new FooParser("foo123").Go.run() == Success("foo123"))
+        new FooParser("foo123").Go.run() ==> Success("foo123")
       }
     }
   }

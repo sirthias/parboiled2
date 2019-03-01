@@ -37,10 +37,10 @@ object ReductionTypeSpec extends TestSuite {
   val tests = Tests {
 
     "Repeating combinators should properly compute their reduction result types" - {
-      "OneOrMore" - { assert(ruleTypeOf(_.OneOrMoreExpr) == classOf[Foo2]) }
-      "ZeroOrMore" - { assert(ruleTypeOf(_.ZeroOrMoreExpr) == classOf[Foo]) }
-      "Optional" - { assert(ruleTypeOf(_.OptionalExpr) == classOf[Foo]) }
-      "Times" - { assert(ruleTypeOf(_.TimesExpr) == classOf[Foo2]) }
+      "OneOrMore" - { ruleTypeOf(_.OneOrMoreExpr) ==> classOf[Foo2] }
+      "ZeroOrMore" - { ruleTypeOf(_.ZeroOrMoreExpr) ==> classOf[Foo] }
+      "Optional" - { ruleTypeOf(_.OptionalExpr) ==> classOf[Foo] }
+      "Times" - { ruleTypeOf(_.TimesExpr) ==> classOf[Foo2] }
     }
   }
 

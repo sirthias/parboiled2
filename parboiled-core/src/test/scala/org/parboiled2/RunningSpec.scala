@@ -34,23 +34,23 @@ object RunningSpec extends TestSuite {
 
       "parser.rule.run()" - {
         val p = new TestParser("abb")
-        assert(p.A.run() == Success(()))
+        p.A.run() ==> Success(())
       }
 
       "new Parser(...).rule.run()" - {
-        assert(new TestParser("abb").A.run() == Success(()))
+        new TestParser("abb").A.run() ==> Success(())
       }
 
       "parser.rule(args).run()" - {
         val p = new TestParser("ccc")
-        assert(p.C(3).run() == Success(()))
+        p.C(3).run() ==> Success(())
       }
 
       "rule(B ~ EOI).run()" - {
         val p = new TestParser("bb") {
           override def go() = rule(B ~ EOI).run()
         }
-        assert(p.go() == Success(()))
+        p.go() ==> Success(())
       }
     }
 

@@ -31,7 +31,7 @@ object DefaultArgumentsSpec extends TestSuite {
   val tests = Tests {
     "The `push` action" - {
       "properly handle default arguments" - {
-        assert(new Foo("foo").Foo.run() == Success(A(0, 2)))
+        new Foo("foo").Foo.run() ==> Success(A(0, 2))
       }
     }
   }

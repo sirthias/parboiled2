@@ -10,14 +10,14 @@ object ValueStackSpec extends TestSuite {
     "The ValueStack should properly support" - {
 
       "push, size, toList" - new TestStack(stackSize = 3) {
-        assert(size == 0)
+        size ==> 0
         push(42)
-        assert(size == 1)
-        assert(toList == List(42))
+        size ==> 1
+        toList ==> List(42)
         push("yes")
         push(3.0)
-        assert(size == 3)
-        assert(toList == List(42, "yes", 3.0))
+        size ==> 3
+        toList ==> List(42, "yes", 3.0)
         intercept[ValueStackOverflowException] {
           push("overflow")
         }
@@ -25,8 +25,8 @@ object ValueStackSpec extends TestSuite {
 
       "pushAll, toHList" - new TestStack(stackSize = 3) {
         pushAll(42 :: "yes" :: 4.5 :: HNil)
-        assert(size == 3)
-        assert(toHList[HList]() == 42 :: "yes" :: 4.5 :: HNil)
+        size ==> 3
+        toHList[HList]() ==> 42 :: "yes" :: 4.5 :: HNil
         intercept[ValueStackOverflowException] {
           pushAll("overflow" :: HNil)
         }
@@ -41,7 +41,7 @@ object ValueStackSpec extends TestSuite {
       "insert" - new TestStack(stackSize = 4) {
         pushAll(1 :: 2 :: 3 :: HNil)
         insert(2, 1.5)
-        assert(toList == List(1, 1.5, 2, 3))
+        toList ==> List(1, 1.5, 2, 3)
         intercept[IllegalArgumentException] {
           insert(-1, 0)
         }
@@ -55,11 +55,11 @@ object ValueStackSpec extends TestSuite {
 
       "pop" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: HNil)
-        assert(pop() == 3)
-        assert(toList == List(1, 2))
-        assert(pop() == 2)
-        assert(toList == List(1))
-        assert(pop() == 1)
+        pop() ==> 3
+        toList ==> List(1, 2)
+        pop() ==> 2
+        toList ==> List(1)
+        pop() ==> 1
         assert(isEmpty)
         intercept[ValueStackUnderflowException] {
           pop()
@@ -68,10 +68,10 @@ object ValueStackSpec extends TestSuite {
 
       "pullOut" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: 4 :: HNil)
-        assert(pullOut(1) == 3)
-        assert(toList == List(1, 2, 4))
-        assert(pullOut(2) == 1)
-        assert(toList == List(2, 4))
+        pullOut(1) ==> 3
+        toList ==> List(1, 2, 4)
+        pullOut(2) ==> 1
+        toList ==> List(2, 4)
         intercept[ValueStackUnderflowException] {
           pullOut(2)
         }
@@ -82,9 +82,9 @@ object ValueStackSpec extends TestSuite {
 
       "peek" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: HNil)
-        assert(peek == 3)
-        assert(peek(1) == 2)
-        assert(peek(2) == 1)
+        peek ==> 3
+        peek(1) ==> 2
+        peek(2) ==> 1
         intercept[ValueStackUnderflowException] {
           peek(3)
         }
@@ -96,11 +96,11 @@ object ValueStackSpec extends TestSuite {
       "poke" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: HNil)
         poke(0, "3")
-        assert(toList == List(1, 2, "3"))
+        toList ==> List(1, 2, "3")
         poke(1, "2")
-        assert(toList == List(1, "2", "3"))
+        toList ==> List(1, "2", "3")
         poke(2, "1")
-        assert(toList == List("1", "2", "3"))
+        toList ==> List("1", "2", "3")
         intercept[ValueStackUnderflowException] {
           poke(3, 0)
         }
@@ -112,7 +112,7 @@ object ValueStackSpec extends TestSuite {
       "swap" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: HNil)
         swap()
-        assert(toList == List(1, 3, 2))
+        toList ==> List(1, 3, 2)
         pop()
         pop()
         intercept[ValueStackUnderflowException] {
@@ -123,7 +123,7 @@ object ValueStackSpec extends TestSuite {
       "swap3" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: HNil)
         swap3()
-        assert(toList == List(3, 2, 1))
+        toList ==> List(3, 2, 1)
         pop()
         intercept[ValueStackUnderflowException] {
           swap3()
@@ -133,7 +133,7 @@ object ValueStackSpec extends TestSuite {
       "swap4" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: 4 :: HNil)
         swap4()
-        assert(toList == List(4, 3, 2, 1))
+        toList ==> List(4, 3, 2, 1)
         pop()
         intercept[ValueStackUnderflowException] {
           swap4()
@@ -143,7 +143,7 @@ object ValueStackSpec extends TestSuite {
       "swap5" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: 4 :: 5 :: HNil)
         swap5()
-        assert(toList == List(5, 4, 3, 2, 1))
+        toList ==> List(5, 4, 3, 2, 1)
         pop()
         intercept[ValueStackUnderflowException] {
           swap5()

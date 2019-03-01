@@ -24,13 +24,10 @@ object CharPredicateSpec extends TestSuite {
     "CharPredicates" - {
 
       "correctly mask characters" - {
-
-        assert(
-          inspectMask(CharPredicate("4")) == "0010000000000000|0000000000000000",
-          inspectMask(CharPredicate("a")) == "0000000000000000|0000000200000000",
-          CharPredicate("&048z{~").toString == "CharPredicate.MaskBased(&048z{~)",
-          show(CharPredicate("&048z{~")) == "&048z{~"
-        )
+        inspectMask(CharPredicate("4")) ==> "0010000000000000|0000000000000000"
+        inspectMask(CharPredicate("a")) ==> "0000000000000000|0000000200000000"
+        CharPredicate("&048z{~").toString ==> "CharPredicate.MaskBased(&048z{~)"
+        show(CharPredicate("&048z{~")) ==> "&048z{~"
       }
 
       "support `testAny`" - {
@@ -41,10 +38,8 @@ object CharPredicateSpec extends TestSuite {
       }
 
       "support `indexOfFirstMatch`" - {
-        assert(
-          CharPredicate("abc").indexOfFirstMatch("0125!") == -1,
-          CharPredicate("abc").indexOfFirstMatch("012c5!") == 3
-        )
+        CharPredicate("abc").indexOfFirstMatch("0125!") ==> -1
+        CharPredicate("abc").indexOfFirstMatch("012c5!") ==> 3
       }
 
       "correctly support non-masked content" - {
@@ -58,18 +53,18 @@ object CharPredicateSpec extends TestSuite {
       }
 
       "be backed by a mask where possible" - {
-        assert(CharPredicate('1' to '9').toString == "CharPredicate.MaskBased(123456789)")
-        assert((CharPredicate('1' to '3') ++ CharPredicate('5' to '8')).toString == "CharPredicate.MaskBased(1235678)")
-        assert((CharPredicate('1' to '3') ++ "5678").toString == "CharPredicate.MaskBased(1235678)")
-        assert((CharPredicate('1' to '6') -- CharPredicate('2' to '4')).toString == "CharPredicate.MaskBased(156)")
-        assert((CharPredicate('1' to '6') -- "234").toString == "CharPredicate.MaskBased(156)")
+        CharPredicate('1' to '9').toString ==> "CharPredicate.MaskBased(123456789)"
+        (CharPredicate('1' to '3') ++ CharPredicate('5' to '8')).toString ==> "CharPredicate.MaskBased(1235678)"
+        (CharPredicate('1' to '3') ++ "5678").toString ==> "CharPredicate.MaskBased(1235678)"
+        (CharPredicate('1' to '6') -- CharPredicate('2' to '4')).toString ==> "CharPredicate.MaskBased(156)"
+        (CharPredicate('1' to '6') -- "234").toString ==> "CharPredicate.MaskBased(156)"
       }
       "be backed by an array where possible" - {
-        assert(CharPredicate("abcäüö").toString == "CharPredicate.ArrayBased(abcäöü)")
-        assert((CharPredicate("abcäüö") -- "äö").toString == "CharPredicate.ArrayBased(abcü)")
+        CharPredicate("abcäüö").toString ==> "CharPredicate.ArrayBased(abcäöü)"
+        (CharPredicate("abcäüö") -- "äö").toString ==> "CharPredicate.ArrayBased(abcü)"
       }
       "be backed by a range where possible" - {
-        assert(CharPredicate('1' to 'Ä').toString == "CharPredicate.RangeBased(start = 1, end = Ä, step = 1, inclusive = true)")
+        CharPredicate('1' to 'Ä').toString ==> "CharPredicate.RangeBased(start = 1, end = Ä, step = 1, inclusive = true)"
       }
     }
 

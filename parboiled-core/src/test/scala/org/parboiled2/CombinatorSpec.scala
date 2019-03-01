@@ -172,7 +172,7 @@ object CombinatorSpec extends TestParserSpec {
       "`&` modifier" - new TestParser0 {
         def targetRule = rule { &("a") }
         "a" must beMatched
-        assert(cursor == 0)
+        cursor ==> 0
         "b" must beMismatched
         "" must beMismatched
       }
