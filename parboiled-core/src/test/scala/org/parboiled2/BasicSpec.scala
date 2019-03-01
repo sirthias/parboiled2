@@ -22,27 +22,6 @@ import utest.{TestableString => _, _}
 
 object BasicSpec extends TestParserSpec {
 
-  // TODO do we have a cleaner way to avoid the utest/parboiled '-' conflict?
-  def rangeSpec = new TestParser0 {
-    def targetRule = rule { ("1" - "5") ~ EOI }
-    "1" must beMatched
-    "3" must beMatched
-    "5" must beMatched
-    "" must beMismatched
-    "0" must beMismatched
-    "a" must beMismatched
-    "8" must beMismatched
-  }
-
-  def compSpec = new Parser {
-    def input = ParserInput.Empty
-    illTyped("""rule { "00" - "5" }""", "lower bound must be a single char string")
-    illTyped("""rule { "0" - "55" }""", "upper bound must be a single char string")
-    illTyped("""rule { "" - "5" }""", "lower bound must be a single char string")
-    illTyped("""rule { "0" - "" }""", "upper bound must be a single char string")
-    illTyped("""rule { "5" - "1" }""", "lower bound must not be > upper bound")
-  }
-
   val tests = Tests {
 
     import utest.TestableString
@@ -157,7 +136,20 @@ object BasicSpec extends TestParserSpec {
         "x" must beMismatched
       }
 
-      "character ranges" - rangeSpec
+      "character ranges" - new TestParser0 {
+        // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
+        val TestableString = null
+
+        def targetRule = rule { ("1" - "5") ~ EOI }
+
+        "1" must beMatched
+        "3" must beMatched
+        "5" must beMatched
+        "" must beMismatched
+        "0" must beMismatched
+        "a" must beMismatched
+        "8" must beMismatched
+      }
 
       "MATCH" - new TestParser0 {
         def targetRule = rule { MATCH ~ EOI }
@@ -208,7 +200,18 @@ object BasicSpec extends TestParserSpec {
     }
 
     "The Parser" - {
-      "disallow compilation of an illegal character range" - compSpec
+      "disallow compilation of an illegal character range" - new Parser {
+        def input = ParserInput.Empty
+
+        // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
+        val TestableString = null
+
+        illTyped("""rule { "00" - "5" }""", "lower bound must be a single char string")
+        illTyped("""rule { "0" - "55" }""", "upper bound must be a single char string")
+        illTyped("""rule { "" - "5" }""", "lower bound must be a single char string")
+        illTyped("""rule { "0" - "" }""", "upper bound must be a single char string")
+        illTyped("""rule { "5" - "1" }""", "lower bound must not be > upper bound")
+      }
     }
   }
 }
