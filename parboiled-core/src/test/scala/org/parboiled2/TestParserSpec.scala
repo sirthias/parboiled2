@@ -31,6 +31,9 @@ abstract class TestParserSpec extends TestSuite {
 
     def targetRule: RuleN[L]
 
+    // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
+    def TestableString: Any = null
+
 
     sealed trait MustAssert{
       def assert(str: String): Unit

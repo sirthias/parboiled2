@@ -138,9 +138,8 @@ object BasicSpec extends TestParserSpec {
 
       "character ranges" - new TestParser0 {
         // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
-        val TestableString = null
-
-        def targetRule = rule { ("1" - "5") ~ EOI }
+        override def TestableString = rule { ("1" - "5") ~ EOI }
+        def targetRule = TestableString
 
         "1" must beMatched
         "3" must beMatched
@@ -201,10 +200,9 @@ object BasicSpec extends TestParserSpec {
 
     "The Parser" - {
       "disallow compilation of an illegal character range" - new Parser {
-        def input = ParserInput.Empty
-
         // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
-        val TestableString = null
+        def TestableString = ParserInput.Empty
+        def input = TestableString
 
         illTyped("""rule { "00" - "5" }""", "lower bound must be a single char string")
         illTyped("""rule { "0" - "55" }""", "upper bound must be a single char string")
