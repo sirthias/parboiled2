@@ -16,22 +16,27 @@
 
 package org.parboiled2
 
+import utest._
+
 // test verifying the effectiveness of our workaround for https://issues.scala-lang.org/browse/SI-8657
-class TailrecSpec extends TestParserSpec {
+object TailrecSpec extends TestParserSpec {
 
-  abstract class TailrecParser extends TestParser0 {
-    def InputLine = rule {
-      oneOrMore('x') ~ EOI | zeroOrMore('x') ~ 'y' ~ EOI
+    abstract class TailrecParser extends TestParser0 {
+      def InputLine = rule {
+        oneOrMore('x') ~ EOI | zeroOrMore('x') ~ 'y' ~ EOI
+      }
     }
-  }
 
-  "The TailrecParser parser" should {
-    "be able to match 100,000 chars without overflowing the stack" in new TailrecParser {
-      def targetRule = InputLine
+  val tests = Tests{
 
-      val chars = Array.fill(100000)('x')
-      chars(99999) = 'y'
-      new String(chars) must beMatched
+    "The TailrecParser parser" - {
+      "be able to match 100,000 chars without overflowing the stack" - new TailrecParser {
+        def targetRule = InputLine
+
+        val chars = Array.fill(100000)('x')
+        chars(99999) = 'y'
+        new String(chars) must beMatched
+      }
     }
   }
 }

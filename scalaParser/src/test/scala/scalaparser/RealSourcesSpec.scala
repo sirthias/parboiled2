@@ -3,47 +3,48 @@ package scalaparser
 import java.io.{File, FileInputStream}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
-import org.specs2.execute.FailureException
-import org.specs2.mutable.Specification
+import utest._
 import org.parboiled2._
 
-class RealSourcesSpec extends Specification {
-  sequential
+object RealSourcesSpec extends TestSuite {
 
-  "The ScalaParser should successfully parse the following project sources" >> {
+  val tests = Tests{
 
-    "parboiled2" in checkDir(".")
+    "The ScalaParser should successfully parse the following project sources" - {
 
-    "akka" in checkDir("~/Documents/projects/Akka")
+      "parboiled2" - checkDir(".")
 
-    "shapeless" in checkDir("~/Documents/forks/shapeless")
+      "akka" - checkDir("~/Documents/projects/Akka")
 
-    "spray" in checkDir("~/Documents/projects/spray")
+      "shapeless" - checkDir("~/Documents/forks/shapeless")
 
-    "scalaz" in checkDir("~/Documents/forks/scalaz")
+      "spray" - checkDir("~/Documents/projects/spray")
 
-    "spire" in checkDir("~/Documents/forks/spire")
+      "scalaz" - checkDir("~/Documents/forks/scalaz")
 
-    "sbt" in checkDir("~/Documents/forks/xsbt",
-      "sbt/std/InputWrapper.scala", // unicode escapes
-      "sbt/src/sbt-test",
-      "util/cross/src/main/input_sources")
+      "spire" - checkDir("~/Documents/forks/spire")
 
-    "scala" in checkDir("~/Documents/forks/scala",
-      // Not real Scala files
-      "dbuild-meta-json-gen.scala",
-      "genprod.scala",
-      "disabled", // don't bother parsing disabled tests
-      "neg", // or neg tests
-      "deprecate-early-type-defs.scala", // or deprecated tests
-      // or unicode escapes
-      "test/files/run/literals.scala",
-      "test/files/run/t3835.scala",
-      "test/files/run/richs.scala",
-      // Lots of guys in these folders seem to be borked, skip all of them
-      "test/files/positions",
-      "test/files/presentation",
-      "test/pending")
+      "sbt" - checkDir("~/Documents/forks/xsbt",
+        "sbt/std/InputWrapper.scala", // unicode escapes
+        "sbt/src/sbt-test",
+        "util/cross/src/main/input_sources")
+
+      "scala" - checkDir("~/Documents/forks/scala",
+        // Not real Scala files
+        "dbuild-meta-json-gen.scala",
+        "genprod.scala",
+        "disabled", // don't bother parsing disabled tests
+        "neg", // or neg tests
+        "deprecate-early-type-defs.scala", // or deprecated tests
+        // or unicode escapes
+        "test/files/run/literals.scala",
+        "test/files/run/t3835.scala",
+        "test/files/run/richs.scala",
+        // Lots of guys in these folders seem to be borked, skip all of them
+        "test/files/positions",
+        "test/files/presentation",
+        "test/pending")
+    }
   }
 
   val utf8 = Charset.forName("UTF-8")
@@ -57,7 +58,7 @@ class RealSourcesSpec extends Specification {
       inputStream.close()
       val charBuffer = utf8.decode(ByteBuffer.wrap(utf8Bytes))
       val parser = new ScalaParser(ParserInput(charBuffer.array(), charBuffer.remaining()))
-      def fail(msg: String) = throw new FailureException(org.specs2.execute.Failure(msg))
+      def fail(msg: String) = Predef.assert(false, msg)
       parser.CompilationUnit.run().failed foreach {
         case error: ParseError => fail(s"Error in file `$path`:\n" + error.format(parser, formatter))
         case error => fail(s"Exception in file `$path`:\n$error")

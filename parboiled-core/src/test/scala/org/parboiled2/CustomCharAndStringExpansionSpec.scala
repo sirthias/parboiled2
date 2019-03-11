@@ -16,30 +16,35 @@
 
 package org.parboiled2
 
-class CustomCharAndStringExpansionSpec extends TestParserSpec {
+import utest._
 
-  "The parser" should {
+object CustomCharAndStringExpansionSpec extends TestParserSpec {
 
-    "allow for custom char expansion" in new TestParser0 {
-      implicit def chWithX(c: Char): Rule0 =
-        if (c == EOI) rule(ch(EOI)) else rule { ch(c) ~ ch('x') }
+  val tests = Tests{
 
-      def targetRule = rule { 'a' ~ 'b' ~ EOI }
+    "The parser" - {
 
-      "axbx" must beMatched
-      "ab" must beMismatched
-    }
+      "allow for custom char expansion" - new TestParser0 {
+        implicit def chWithX(c: Char): Rule0 =
+          if (c == EOI) rule(ch(EOI)) else rule { ch(c) ~ ch('x') }
 
-    "allow for custom string expansion" in new TestParser0 {
-      implicit def wspStr(s: String): Rule0 = rule {
-        str(s) ~ zeroOrMore(' ')
+        def targetRule = rule { 'a' ~ 'b' ~ EOI }
+
+        "axbx" must beMatched
+        "ab" must beMismatched
       }
 
-      def targetRule = rule { "foo" ~ "bar" ~ EOI }
+      "allow for custom string expansion" - new TestParser0 {
+        implicit def wspStr(s: String): Rule0 = rule {
+          str(s) ~ zeroOrMore(' ')
+        }
 
-      "foobar" must beMatched
-      "foo   bar" must beMatched
-      "foo" must beMismatched
+        def targetRule = rule { "foo" ~ "bar" ~ EOI }
+
+        "foobar" must beMatched
+        "foo   bar" must beMatched
+        "foo" must beMismatched
+      }
     }
   }
 }

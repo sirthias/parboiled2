@@ -16,34 +16,46 @@
 
 package org.parboiled2
 
-import org.specs2.specification.Scope
-import org.specs2.specification.dsl.NoReferenceDsl
-import org.specs2.mutable.Specification
-import org.specs2.control.NoNumberOfTimes
 import org.parboiled2.support.Unpack
 import shapeless._
+import utest._
 
-abstract class TestParserSpec extends Specification with NoReferenceDsl with NoNumberOfTimes {
+abstract class TestParserSpec extends TestSuite {
   type TestParser0 = TestParser[HNil, Unit]
   type TestParser1[T] = TestParser[T :: HNil, T]
   type TestParserN[L <: HList] = TestParser[L, L]
 
-  // work-around for https://github.com/etorreborre/specs2/issues/514
-  override def mutableLinkFragment(alias: String): mutableLinkFragment = ???
-  override def mutableSeeFragment(alias: String): mutableSeeFragment = ???
-
-  abstract class TestParser[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) extends Parser with Scope {
+  abstract class TestParser[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) extends Parser {
     var input: ParserInput = _
     def errorFormatter: ErrorFormatter = new ErrorFormatter(showTraces = true)
 
     def targetRule: RuleN[L]
 
-    def beMatched = beTrue ^^ (parse(_: String).isRight)
-    def beMatchedWith(r: Out) = parse(_: String) === Right(r)
-    def beMismatched = beTrue ^^ (parse(_: String).isLeft)
-    def beMismatchedWithError(pe: ParseError) = parse(_: String).left.toOption.get === pe
-    def beMismatchedWithErrorMsg(msg: String) =
-      parse(_: String).left.toOption.map(formatError(_, errorFormatter)).get === msg.stripMargin
+    // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
+    def TestableString: Any = null
+
+
+    sealed trait MustAssert{
+      def assert(str: String): Unit
+    }
+    private case class BeMatchedWith(underlying:String => Unit) extends MustAssert{
+      override def assert(str: String): Unit = underlying(str)
+    }
+    def beMatched: MustAssert = BeMatchedWith(assertMatched)
+    def beMatchedWith(r: Out): MustAssert = BeMatchedWith(assertMatchedWith(r))
+    def beMismatched: MustAssert = BeMatchedWith(assertMismatched)
+    def beMismatchedWithErrorMsg(msg: String): MustAssert = BeMatchedWith(assertMismatchedWithErrorMsg(msg))
+
+    implicit class StringExt(str: String){
+      def must(mustAssert: MustAssert): Unit = mustAssert.assert(str)
+    }
+
+    def assertMatched(str: String): Unit = assert(parse(str).isRight)
+    def assertMatchedWith(r: Out)(str: String): Unit = assert(parse(str) == Right(r))
+    def assertMismatched(str: String): Unit = assert(parse(str).isLeft)
+    //def beMismatchedWithError(pe: ParseError) = parse(_: String).left.toOption.get === pe
+    def assertMismatchedWithErrorMsg(msg: String)(str: String): Unit =
+        assert(parse(str).left.toOption.map(formatError(_, errorFormatter)).get == msg.stripMargin)
 
     def parse(input: String): Either[ParseError, Out] = {
       this.input = input

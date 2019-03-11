@@ -16,11 +16,10 @@
 
 package org.parboiled2
 
-import scala.util.{ Try, Success }
-import org.specs2.mutable.Specification
-import org.specs2.control.NoNumberOfTimes
+import scala.util.{Success, Try}
+import utest._
 
-class RunningSpec extends Specification with NoNumberOfTimes {
+object RunningSpec extends TestSuite {
 
   class TestParser(val input: ParserInput) extends Parser {
     def A = rule { 'a' ~ B ~ EOI }
@@ -29,27 +28,31 @@ class RunningSpec extends Specification with NoNumberOfTimes {
     def go(): Try[Unit] = null
   }
 
-  "Running a rule should support several notations" >> {
+  val tests = Tests {
 
-    "parser.rule.run()" in {
-      val p = new TestParser("abb")
-      p.A.run() === Success(())
-    }
+    "Running a rule should support several notations" - {
 
-    "new Parser(...).rule.run()" in {
-      new TestParser("abb").A.run() === Success(())
-    }
-
-    "parser.rule(args).run()" in {
-      val p = new TestParser("ccc")
-      p.C(3).run() === Success(())
-    }
-
-    "rule(B ~ EOI).run()" in {
-      val p = new TestParser("bb") {
-        override def go() = rule(B ~ EOI).run()
+      "parser.rule.run()" - {
+        val p = new TestParser("abb")
+        p.A.run() ==> Success(())
       }
-      p.go() === Success(())
+
+      "new Parser(...).rule.run()" - {
+        new TestParser("abb").A.run() ==> Success(())
+      }
+
+      "parser.rule(args).run()" - {
+        val p = new TestParser("ccc")
+        p.C(3).run() ==> Success(())
+      }
+
+      "rule(B ~ EOI).run()" - {
+        val p = new TestParser("bb") {
+          override def go() = rule(B ~ EOI).run()
+        }
+        p.go() ==> Success(())
+      }
     }
+
   }
 }

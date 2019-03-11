@@ -1,7 +1,9 @@
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
+
 import scalariform.formatter.preferences._
+
 import scala.xml.transform._
-import scala.xml.{Node => XNode, NodeSeq}
+import scala.xml.{NodeSeq, Node => XNode}
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 import sbtcrossproject.CrossPlugin.autoImport._
 
@@ -73,12 +75,18 @@ val noPublishingSettings = Seq(
   publishArtifact := false,
   publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo"))))
 
+val utestSettings = Seq(
+  testFrameworks := Seq(new TestFramework("utest.runner.Framework")))
+
 /////////////////////// DEPENDENCIES /////////////////////////
 
 def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v       % "provided"
-val shapeless               = Def.setting("com.chuusai"     %%% "shapeless"         % "2.3.3" % "compile")
-val specs2Core              = Def.setting("org.specs2"      %%% "specs2-core"       % "4.4.1" % "test")
-val specs2ScalaCheck        = Def.setting("org.specs2"      %%% "specs2-scalacheck" % "4.4.1" % "test")
+val shapeless               = Def.setting("com.chuusai"       %%% "shapeless"         % "2.3.3" % "compile")
+val utest                   = Def.setting("com.lihaoyi"       %%% "utest"             % "0.6.6" % Test)
+val scalaCheck              = Def.setting("org.scalacheck"    %%% "scalacheck"        % "1.14.0" % Test)
+// since ScalaCheck native is not available from the original authors @lolgab made a release
+// see https://github.com/rickynils/scalacheck/issues/396#issuecomment-467782592
+val scalaCheckNative        = Def.setting("com.github.lolgab" %%% "scalacheck"        % "1.14.1" % Test)
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -93,7 +101,8 @@ lazy val examples = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
   .settings(noPublishingSettings)
-  .settings(libraryDependencies ++= Seq(specs2Core.value, "io.spray" %%  "spray-json" % "1.3.5"))
+  .settings(libraryDependencies ++= Seq(utest.value, "io.spray" %%  "spray-json" % "1.3.5"))
+  .settings(utestSettings)
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
@@ -112,7 +121,8 @@ lazy val scalaParser = project
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
   .settings(noPublishingSettings)
-  .settings(libraryDependencies ++= Seq(shapeless.value, specs2Core.value))
+  .settings(libraryDependencies ++= Seq(shapeless.value, utest.value))
+  .settings(utestSettings)
 
 lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
   OsgiKeys.exportPackage := Seq("org.parboiled2.*;version=${Bundle-Version}"),
@@ -121,7 +131,8 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 lazy val parboiledJVM = parboiled.jvm
 lazy val parboiledJS = parboiled.js
-lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
+lazy val parboiledNative = parboiled.native
+lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Pure)
   .dependsOn(parboiledCore)
   .settings(commonSettings)
@@ -137,8 +148,16 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJS.project, Compile, packageSrc)).value,
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJS.project, Compile, packageDoc)).value
   )
+  .nativeSettings(
+    mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreNative.project, Compile, packageBin)).value,
+    mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreNative.project, Compile, packageSrc)).value,
+    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreNative.project, Compile, packageDoc)).value,
+    nativeLinkStubs := true,
+    scalaVersion := "2.11.12",
+    crossScalaVersions := Seq("2.11.12")
+  )
   .settings(
-    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless.value, specs2Core.value),
+    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless.value, utest.value),
     mappings in (Compile, packageBin) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     mappings in (Compile, packageDoc) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
@@ -147,19 +166,35 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
       }
       new RuleTransformer(filter).transform(_).head
     }
-  ).
-  enablePlugins(SbtOsgi).settings(parboiledOsgiSettings:_*)
+  )
+  .settings(utestSettings)
+  .enablePlugins(SbtOsgi).settings(parboiledOsgiSettings:_*)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform).crossType(CrossType.Pure).in(file("parboiled-core"))
+lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform).crossType(CrossType.Pure).in(file("parboiled-core"))
   .settings(commonSettings)
   .settings(formattingSettings)
   .settings(noPublishingSettings)
+  .settings(utestSettings)
   .settings(
-    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless.value, specs2Core.value, specs2ScalaCheck.value),
+    libraryDependencies ++= Seq(scalaReflect(scalaVersion.value), shapeless.value, utest.value),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
-    (sourceGenerators in Compile) += generateActionOps.taskValue)
+    (sourceGenerators in Compile) += generateActionOps.taskValue
+  )
+  .jvmSettings(
+    libraryDependencies ++= Seq(scalaCheck.value)
+  )
+  .jsSettings(
+    libraryDependencies ++= Seq(scalaCheck.value)
+  )
+  .nativeSettings(
+    nativeLinkStubs := true,
+    scalaVersion := "2.11.12",
+    crossScalaVersions := Seq("2.11.12"),
+    libraryDependencies ++= Seq(scalaCheckNative.value)
+  )
 
 lazy val parboiledCoreJVM = parboiledCore.jvm
 lazy val parboiledCoreJS = parboiledCore.js
+lazy val parboiledCoreNative = parboiledCore.native

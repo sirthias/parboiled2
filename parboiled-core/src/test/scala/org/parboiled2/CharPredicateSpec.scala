@@ -16,60 +16,66 @@
 
 package org.parboiled2
 
-import org.specs2.mutable.Specification
+import utest._
 
-class CharPredicateSpec extends Specification {
+object CharPredicateSpec extends TestSuite {
 
-  "CharPredicates" should {
+  val tests = Tests {
+    "CharPredicates" - {
 
-    "correctly mask characters" in {
-      inspectMask(CharPredicate("4")) === "0010000000000000|0000000000000000"
-      inspectMask(CharPredicate("a")) === "0000000000000000|0000000200000000"
-      CharPredicate("&048z{~").toString === "CharPredicate.MaskBased(&048z{~)"
-      show(CharPredicate("&048z{~")) === "&048z{~"
+      "correctly mask characters" - {
+        inspectMask(CharPredicate("4")) ==> "0010000000000000|0000000000000000"
+        inspectMask(CharPredicate("a")) ==> "0000000000000000|0000000200000000"
+        CharPredicate("&048z{~").toString ==> "CharPredicate.MaskBased(&048z{~)"
+        show(CharPredicate("&048z{~")) ==> "&048z{~"
+      }
+
+      "support `testAny`" - {
+        assert(
+          CharPredicate("abc").matchesAny("0125!") == false,
+          CharPredicate("abc").matchesAny("012c5!")
+        )
+      }
+
+      "support `indexOfFirstMatch`" - {
+        CharPredicate("abc").indexOfFirstMatch("0125!") ==> -1
+        CharPredicate("abc").indexOfFirstMatch("012c5!") ==> 3
+      }
+
+      "correctly support non-masked content" - {
+        val colonSlashEOI = CharPredicate(':', '/', EOI)
+        assert(
+          colonSlashEOI(':'),
+          colonSlashEOI('/'),
+          colonSlashEOI(EOI),
+          colonSlashEOI('x') == false
+        )
+      }
+
+      "be backed by a mask where possible" - {
+        CharPredicate('1' to '9').toString ==> "CharPredicate.MaskBased(123456789)"
+        (CharPredicate('1' to '3') ++ CharPredicate('5' to '8')).toString ==> "CharPredicate.MaskBased(1235678)"
+        (CharPredicate('1' to '3') ++ "5678").toString ==> "CharPredicate.MaskBased(1235678)"
+        (CharPredicate('1' to '6') -- CharPredicate('2' to '4')).toString ==> "CharPredicate.MaskBased(156)"
+        (CharPredicate('1' to '6') -- "234").toString ==> "CharPredicate.MaskBased(156)"
+      }
+      "be backed by an array where possible" - {
+        CharPredicate("abcäüö").toString ==> "CharPredicate.ArrayBased(abcäöü)"
+        (CharPredicate("abcäüö") -- "äö").toString ==> "CharPredicate.ArrayBased(abcü)"
+      }
+      "be backed by a range where possible" - {
+        CharPredicate('1' to 'Ä').toString ==> "CharPredicate.RangeBased(start = 1, end = Ä, step = 1, inclusive = true)"
+      }
     }
 
-    "support `testAny`" in {
-      CharPredicate("abc").matchesAny("0125!") must beFalse
-      CharPredicate("abc").matchesAny("012c5!") must beTrue
+    def show(pred: CharPredicate): String = {
+      val chars = ('\u0000' to '\u0080').flatMap(c => if (pred(c)) Some(c) else None).toArray
+      new String(chars)
     }
 
-    "support `indexOfFirstMatch`" in {
-      CharPredicate("abc").indexOfFirstMatch("0125!") === -1
-      CharPredicate("abc").indexOfFirstMatch("012c5!") === 3
+    def inspectMask(pred: CharPredicate) = {
+      val CharPredicate.MaskBased(lowMask, highMask) = pred
+      "%016x|%016x" format(lowMask, highMask)
     }
-
-    "correctly support non-masked content" in {
-      val colonSlashEOI = CharPredicate(':', '/', EOI)
-      colonSlashEOI(':') must beTrue
-      colonSlashEOI('/') must beTrue
-      colonSlashEOI(EOI) must beTrue
-      colonSlashEOI('x') must beFalse
-    }
-
-    "be backed by a mask where possible" in {
-      CharPredicate('1' to '9').toString === "CharPredicate.MaskBased(123456789)"
-      (CharPredicate('1' to '3') ++ CharPredicate('5' to '8')).toString === "CharPredicate.MaskBased(1235678)"
-      (CharPredicate('1' to '3') ++ "5678").toString === "CharPredicate.MaskBased(1235678)"
-      (CharPredicate('1' to '6') -- CharPredicate('2' to '4')).toString === "CharPredicate.MaskBased(156)"
-      (CharPredicate('1' to '6') -- "234").toString === "CharPredicate.MaskBased(156)"
-    }
-    "be backed by an array where possible" in {
-      CharPredicate("abcäüö").toString === "CharPredicate.ArrayBased(abcäöü)"
-      (CharPredicate("abcäüö") -- "äö").toString === "CharPredicate.ArrayBased(abcü)"
-    }
-    "be backed by a range where possible" in {
-      CharPredicate('1' to 'Ä').toString === "CharPredicate.RangeBased(start = 1, end = Ä, step = 1, inclusive = true)"
-    }
-  }
-
-  def show(pred: CharPredicate): String = {
-    val chars = ('\u0000' to '\u0080').flatMap(c => if (pred(c)) Some(c) else None).toArray
-    new String(chars)
-  }
-
-  def inspectMask(pred: CharPredicate) = {
-    val CharPredicate.MaskBased(lowMask, highMask) = pred
-    "%016x|%016x" format (lowMask, highMask)
   }
 }

@@ -16,7 +16,9 @@
 
 package org.parboiled2
 
-class RunSubParserSpec extends TestParserSpec {
+import utest._
+
+object RunSubParserSpec extends TestParserSpec {
 
   class SubParser(val input: ParserInput) extends Parser {
     def IntNumber = rule {
@@ -30,21 +32,24 @@ class RunSubParserSpec extends TestParserSpec {
     }
   }
 
-  "`runSubParser`" should {
-    "work as expected" in new ParserWithSubParser {
-      def targetRule = InputLine
+  val tests = Tests{
 
-      "12" must beMatchedWith(12)
-      "43,8" must beMatchedWith(51)
+    "`runSubParser` should" - {
+      "work as expected" - new ParserWithSubParser {
+        def targetRule = InputLine
 
-      "1234,a" must beMismatchedWithErrorMsg(
-        """Invalid input 'a', expected IntNumber (line 1, column 6):
-          |1234,a
-          |     ^
-          |
-          |1 rule mismatched at error location:
-          |  /InputLine/ +:-5 / runSubParser /IntNumber/ capture / + / Digit:<CharPredicate>
-          |""")
+        "12" must beMatchedWith(12)
+        "43,8" must beMatchedWith(51)
+
+        "1234,a" must beMismatchedWithErrorMsg(
+          """Invalid input 'a', expected IntNumber (line 1, column 6):
+            |1234,a
+            |     ^
+            |
+            |1 rule mismatched at error location:
+            |  /InputLine/ +:-5 / runSubParser /IntNumber/ capture / + / Digit:<CharPredicate>
+            |""")
+      }
     }
   }
 }

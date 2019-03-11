@@ -16,10 +16,11 @@
 
 package org.parboiled2
 
-import org.specs2.mutable._
+import utest._
+
 import scala.util.Success
 
-class DefaultArgumentsSpec extends Specification {
+object DefaultArgumentsSpec extends TestSuite {
 
   case class A(a: Int = 0, b: Int = 1)
 
@@ -27,9 +28,11 @@ class DefaultArgumentsSpec extends Specification {
     def Foo: Rule1[A] = rule { "foo" ~ push(A(b = 2)) }
   }
 
-  "The `push` action" should {
-    "properly handle default arguments" in {
-      new Foo("foo").Foo.run() === Success(A(0, 2))
+  val tests = Tests {
+    "The `push` action" - {
+      "properly handle default arguments" - {
+        new Foo("foo").Foo.run() ==> Success(A(0, 2))
+      }
     }
   }
 }
