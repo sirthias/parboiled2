@@ -10,7 +10,7 @@ import sbtcrossproject.CrossPlugin.autoImport._
 val commonSettings = Seq(
   version := "2.1.5",
   scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0-M5"),
+  crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0-RC1"),
   organization := "org.parboiled",
   homepage := Some(new URL("http://parboiled.org")),
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
@@ -82,7 +82,7 @@ val utestSettings = Seq(
 
 def scalaReflect(v: String) = "org.scala-lang"  %  "scala-reflect"     % v       % "provided"
 val shapeless               = Def.setting("com.chuusai"       %%% "shapeless"         % "2.3.3" % "compile")
-val utest                   = Def.setting("com.lihaoyi"       %%% "utest"             % "0.6.6" % Test)
+val utest                   = Def.setting("com.lihaoyi"       %%% "utest"             % "0.6.7" % Test)
 val scalaCheck              = Def.setting("org.scalacheck"    %%% "scalacheck"        % "1.14.0" % Test)
 // since ScalaCheck native is not available from the original authors @lolgab made a release
 // see https://github.com/rickynils/scalacheck/issues/396#issuecomment-467782592
