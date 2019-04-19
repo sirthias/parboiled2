@@ -197,7 +197,7 @@ class ErrorFormatter(showExpected: Boolean = true,
     import RuleTrace._
     val sb = new JStringBuilder
     val doSep: String => JStringBuilder = sb.append
-    val dontSep: String => JStringBuilder = _ ⇒ sb
+    val dontSep: String => JStringBuilder = _ => sb
     def render(names: List[String], sep: String = "") = if (names.nonEmpty) names.reverse.mkString("", ":", sep) else ""
     @tailrec def rec(remainingPrefix: List[RuleTrace.NonTerminal], names: List[String],
                      sep: String => JStringBuilder): JStringBuilder =

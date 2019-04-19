@@ -49,7 +49,7 @@ sealed abstract class CharPredicate extends (Char => Boolean) {
   def negated: CharPredicate = this match {
     case Empty => All
     case All   => Empty
-    case x     => from(c ⇒ !x(c))
+    case x     => from(c => !x(c))
   }
 
   def matchesAny(string: String): Boolean = {
@@ -278,8 +278,8 @@ object CharPredicate {
 
     def ++(that: CharPredicate): CharPredicate = that match {
       case Empty                  => this
-      case General(thatPredicate) => from(c ⇒ predicate(c) || thatPredicate(c))
-      case _                      => from(c ⇒ predicate(c) || that(c))
+      case General(thatPredicate) => from(c => predicate(c) || thatPredicate(c))
+      case _                      => from(c => predicate(c) || that(c))
     }
 
     def ++(chars: Seq[Char]): CharPredicate =
@@ -290,8 +290,8 @@ object CharPredicate {
 
     def --(that: CharPredicate): CharPredicate = that match {
       case Empty                  => this
-      case General(thatPredicate) => from(c ⇒ predicate(c) && !thatPredicate(c))
-      case _                      => from(c ⇒ predicate(c) && !that(c))
+      case General(thatPredicate) => from(c => predicate(c) && !thatPredicate(c))
+      case _                      => from(c => predicate(c) && !that(c))
     }
 
     def --(chars: Seq[Char]): CharPredicate =
@@ -302,7 +302,7 @@ object CharPredicate {
 
     def intersect(that: CharPredicate) = that match {
       case Empty                  => Empty
-      case General(thatPredicate) => from(c ⇒ predicate(c) && that(c))
+      case General(thatPredicate) => from(c => predicate(c) && that(c))
       case _                      => this and that
     }
 

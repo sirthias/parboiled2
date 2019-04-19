@@ -82,16 +82,16 @@ object ActionOpsBoilerplate {
 
     // implicit def ops0[II <: HList, OO <: HNil]: ActionOps[II, OO] { type Out = Ops0[II] } = `n/a`
     // sealed trait Ops0[II <: HList] {
-    //   def apply[RR](f: () => RR)(implicit j: SJoin[II, HNil, RR], c: FCapture[() ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[Z, RR](f: Z => RR)(implicit j: SJoin[Z :: II, HNil, RR], c: FCapture[Z ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[Y, Z, RR](f: (Y, Z) => RR)(implicit j: SJoin[Y :: Z :: II, HNil, RR], c: FCapture[(Y, Z) ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[X, Y, Z, RR](f: (X, Y, Z) => RR)(implicit j: SJoin[X :: Y :: Z :: II, HNil, RR], c: FCapture[(X, Y, Z) ⇒ RR]): Rule[j.In, j.Out]
+    //   def apply[RR](f: () => RR)(implicit j: SJoin[II, HNil, RR], c: FCapture[() => RR]): Rule[j.In, j.Out]
+    //   def apply[Z, RR](f: Z => RR)(implicit j: SJoin[Z :: II, HNil, RR], c: FCapture[Z => RR]): Rule[j.In, j.Out]
+    //   def apply[Y, Z, RR](f: (Y, Z) => RR)(implicit j: SJoin[Y :: Z :: II, HNil, RR], c: FCapture[(Y, Z) => RR]): Rule[j.In, j.Out]
+    //   def apply[X, Y, Z, RR](f: (X, Y, Z) => RR)(implicit j: SJoin[X :: Y :: Z :: II, HNil, RR], c: FCapture[(X, Y, Z) => RR]): Rule[j.In, j.Out]
     //   ...
     // }
 
     s"""  implicit def ops0[II <: HList, OO <: HNil]: ActionOps[II, OO] { type Out = Ops0[II] } = `n/a`
        |  sealed trait Ops0[II <: HList] {
-       |    def apply[RR](f: () => RR)(implicit j: SJoin[II, HNil, RR], c: FCapture[() ⇒ RR]): Rule[j.In, j.Out]
+       |    def apply[RR](f: () => RR)(implicit j: SJoin[II, HNil, RR], c: FCapture[() => RR]): Rule[j.In, j.Out]
        |
        |${(1 to MaxArity) map consumeStack mkString "\n"}
        |  }
@@ -116,23 +116,23 @@ object ActionOpsBoilerplate {
     // e.g.
     // implicit def ops3[II <: HList, A, B, C]: ActionOps[II, A :: B :: C :: HNil] { type Out = Ops3[II, A, B, C] } = `n/a`
     // sealed trait Ops3[II <: HList, A, B, C] {
-    //   def apply[RR](f: () => RR)(implicit j: SJoin[II, A :: B :: C :: HNil, RR], c: FCapture[() ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[RR](f: C => RR)(implicit j: SJoin[II, A :: B :: HNil, RR], c: FCapture[C ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[RR](f: (B, C) => RR)(implicit j: SJoin[II, A :: HNil, RR], c: FCapture[(B, C) ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[RR](f: (A, B, C) => RR)(implicit j: SJoin[II, HNil, RR], c: FCapture[(A, B, C) ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[Z, RR](f: (Z, A, B, C) => RR)(implicit j: SJoin[Z :: II, HNil, RR], c: FCapture[(Z, A, B, C) ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[Y, Z, RR](f: (Y, Z, A, B, C) => RR)(implicit j: SJoin[Y :: Z :: II, HNil, RR], c: FCapture[(Y, Z, A, B, C) ⇒ RR]): Rule[j.In, j.Out]
-    //   def apply[X, Y, Z, RR](f: (X, Y, Z, A, B, C) => RR)(implicit j: SJoin[X :: Y :: Z :: II, HNil, RR], c: FCapture[(X, Y, Z, A, B, C) ⇒ RR]): Rule[j.In, j.Out]
+    //   def apply[RR](f: () => RR)(implicit j: SJoin[II, A :: B :: C :: HNil, RR], c: FCapture[() => RR]): Rule[j.In, j.Out]
+    //   def apply[RR](f: C => RR)(implicit j: SJoin[II, A :: B :: HNil, RR], c: FCapture[C => RR]): Rule[j.In, j.Out]
+    //   def apply[RR](f: (B, C) => RR)(implicit j: SJoin[II, A :: HNil, RR], c: FCapture[(B, C) => RR]): Rule[j.In, j.Out]
+    //   def apply[RR](f: (A, B, C) => RR)(implicit j: SJoin[II, HNil, RR], c: FCapture[(A, B, C) => RR]): Rule[j.In, j.Out]
+    //   def apply[Z, RR](f: (Z, A, B, C) => RR)(implicit j: SJoin[Z :: II, HNil, RR], c: FCapture[(Z, A, B, C) => RR]): Rule[j.In, j.Out]
+    //   def apply[Y, Z, RR](f: (Y, Z, A, B, C) => RR)(implicit j: SJoin[Y :: Z :: II, HNil, RR], c: FCapture[(Y, Z, A, B, C) => RR]): Rule[j.In, j.Out]
+    //   def apply[X, Y, Z, RR](f: (X, Y, Z, A, B, C) => RR)(implicit j: SJoin[X :: Y :: Z :: II, HNil, RR], c: FCapture[(X, Y, Z, A, B, C) => RR]): Rule[j.In, j.Out]
     //   ...
     // }
 
     s"""
        |  implicit def ops$i[II <: HList, ${`A, ...`(i)}]: ActionOps[II, ${`A ::...`(i)} :: HNil] { type Out = Ops$i[II, ${`A, ...`(i)}] } = `n/a`
        |  sealed trait Ops$i[II <: HList, ${`A, ...`(i)}] {
-       |    def apply[RR](f: () => RR)(implicit j: SJoin[II, ${`A ::...`(i)} :: HNil, RR], c: FCapture[() ⇒ RR]): Rule[j.In, j.Out]
+       |    def apply[RR](f: () => RR)(implicit j: SJoin[II, ${`A ::...`(i)} :: HNil, RR], c: FCapture[() => RR]): Rule[j.In, j.Out]
        |
        |${(1 to i-1) map consumeOut mkString "\n"}
-       |    def apply[RR](f: (${`A, ...`(i)}) => RR)(implicit j: SJoin[II, HNil, RR], c: FCapture[(${`A, ...`(i)}) ⇒ RR]): Rule[j.In, j.Out]
+       |    def apply[RR](f: (${`A, ...`(i)}) => RR)(implicit j: SJoin[II, HNil, RR], c: FCapture[(${`A, ...`(i)}) => RR]): Rule[j.In, j.Out]
        |
        |${(1 to 22-i) map consumeStack mkString "\n"}
        |  }

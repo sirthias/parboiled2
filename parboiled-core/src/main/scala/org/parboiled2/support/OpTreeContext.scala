@@ -532,7 +532,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
           tree match {
             case Block(statements, res) => block(statements, actionBody(res))
 
-            case q"(..$args => $body)" ⇒
+            case q"(..$args => $body)" =>
               def rewrite(tree: Tree): Tree =
                 tree match {
                   case Block(statements, res) => block(statements, rewrite(res))
@@ -652,7 +652,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
             val args = valNames map Ident.apply
             block(popToVals(valNames), q"__push($x(..$args))")
 
-          case q"(..$args => $body)" ⇒
+          case q"(..$args => $body)" =>
             def rewrite(tree: Tree): Tree =
               tree match {
                 case Block(statements, res) => block(statements, rewrite(res))
@@ -731,7 +731,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       case If(cond, thenExp, elseExp) => If(cond, expand(thenExp, wrapped), expand(elseExp, wrapped))
       case Match(selector, cases)     => Match(selector, cases.map(expand(_, wrapped).asInstanceOf[CaseDef]))
       case CaseDef(pat, guard, body)  => CaseDef(pat, guard, expand(body, wrapped))
-      case x                          => opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) ⇒ q"$t ne null")
+      case x                          => opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) => q"$t ne null")
     }
 
   @tailrec

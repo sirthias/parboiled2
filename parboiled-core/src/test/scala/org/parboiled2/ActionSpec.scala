@@ -76,7 +76,7 @@ object ActionSpec extends TestParserSpec {
 
       "`run(ruleBlockWithRuleMatch)`" - new TestParser0 {
         var flag = false
-        def targetRule = rule { 'a' ~ run { flag = true; flag match { case true => oneOrMore(b); case _ ⇒ MISMATCH } } ~ EOI }
+        def targetRule = rule { 'a' ~ run { flag = true; flag match { case true => oneOrMore(b); case _ => MISMATCH } } ~ EOI }
         def b = rule { 'b' }
         "a" must beMismatched
         assert(flag)
