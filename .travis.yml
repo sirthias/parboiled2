@@ -17,3 +17,4 @@ matrix:
       - sbt "++ ${TRAVIS_SCALA_VERSION}" parboiledCoreNative/test parboiledNative/test "scalaParser/testOnly scalaparser.SnippetSpec"
   - scala: 2.12.8
     jdk: openjdk11
+    dist: xenial
