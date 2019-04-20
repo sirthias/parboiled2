@@ -32,7 +32,7 @@ object Base64Spec extends TestSuite {
   )
 
   val tests = Tests{
-    'Base64 - {
+    "Base64" - {
       testVectors.foreach { case (expectedDecoded, expectedEncoded) =>
         val expectedDecodedBytes = expectedDecoded.getBytes(StandardCharsets.UTF_8)
 
