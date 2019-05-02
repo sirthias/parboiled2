@@ -172,7 +172,7 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-// TODO fix tests and remove this file
+// TODO fix tests and remove this workaround setting
 lazy val workaroundScala213 = Def.settings(
   sources in Test := {
     val pendingTests = Set(
