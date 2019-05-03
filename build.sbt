@@ -112,8 +112,8 @@ lazy val releaseSettings = {
       publishArtifacts,
       setNextVersion,
       commitNextVersion,
-      //releaseStepCommand("sonatypeReleaseAll"),
-      //pushChanges
+      releaseStepCommand("sonatypeReleaseAll"),
+      pushChanges
     )
   )
 }
