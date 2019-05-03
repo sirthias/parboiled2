@@ -1,3 +1,10 @@
+Version 2.1.6 (2018-09-14)
+--------------------------
+- Upgraded to scala.js 0.6.27
+- Build for scala-native 0.3.9
+- Build for Scala 2.13.0-RC1
+
+
 Version 2.1.5 (2018-09-14)
 --------------------------
 - Fixed `valueMap` not matching longest key first (#136)

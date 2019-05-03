@@ -226,22 +226,6 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-// TODO fix tests and remove this workaround setting
-lazy val workaroundScala213 = Def.settings(
-  sources in Test := {
-    val pendingTests = Set(
-      "DSLTest.scala"
-    )
-    val files = (sources in Test).value
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, v)) if v >= 13 =>
-        files.filterNot(f => pendingTests.contains(f.getName))
-      case _ =>
-        files
-    }
-  }
-)
-
 lazy val parboiledCoreJVM = parboiledCore.jvm
 lazy val parboiledCoreJS = parboiledCore.js
 lazy val parboiledCoreNative = parboiledCore.native
@@ -253,7 +237,6 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(publishArtifact := false)
   .settings(utestSettings)
   .settings(
-    //workaroundScala213,
     libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
     (sourceGenerators in Compile) += generateActionOps.taskValue
