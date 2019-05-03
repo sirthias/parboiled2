@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,11 +17,11 @@
 package org.parboiled2
 
 /**
- * For certain high-performance use-cases it is better to construct Strings
- * that the parser is to produce/extract from the input in a char-by-char fashion.
- *
- * Mixing this trait into your parser gives you a simple facility to support this.
- */
+  * For certain high-performance use-cases it is better to construct Strings
+  * that the parser is to produce/extract from the input in a char-by-char fashion.
+  *
+  * Mixing this trait into your parser gives you a simple facility to support this.
+  */
 trait StringBuilding { this: Parser =>
   protected val sb = new java.lang.StringBuilder
 

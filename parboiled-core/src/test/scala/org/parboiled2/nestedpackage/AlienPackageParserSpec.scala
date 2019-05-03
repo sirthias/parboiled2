@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,7 @@ import utest._
 object AlienPackageParserSpec extends TestSuite {
 
   abstract class AbstractParser(val input: org.parboiled2.ParserInput) extends org.parboiled2.Parser {
-    import org.parboiled2.{ Rule1, CharPredicate }
+    import org.parboiled2.{CharPredicate, Rule1}
 
     def foo: Rule1[String] = rule { capture("foo" ~ zeroOrMore(CharPredicate.Digit)) }
   }

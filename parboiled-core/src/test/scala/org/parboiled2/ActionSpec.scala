@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,7 @@ import utest._
 
 object ActionSpec extends TestParserSpec {
 
-  val tests = Tests{
+  val tests = Tests {
 
     "The Parser should correctly handle" - {
 
@@ -34,7 +34,7 @@ object ActionSpec extends TestParserSpec {
       }
 
       "`test`" - new TestParser0 {
-        var flag = true
+        var flag       = true
         def targetRule = rule { test(flag) }
         "x" must beMatched
         flag = false
@@ -42,23 +42,23 @@ object ActionSpec extends TestParserSpec {
       }
 
       "`run(nonRuleExpr)`" - new TestParser0 {
-        var flag = false
+        var flag       = false
         def targetRule = rule { 'a' ~ run { flag = true } ~ EOI }
         "a" must beMatched
         assert(flag)
       }
 
       "`run(ruleBlockWithRuleCall)`" - new TestParser0 {
-        var flag = false
+        var flag       = false
         def targetRule = rule { 'a' ~ run { flag = true; b } ~ EOI }
-        def b = rule { 'b' }
+        def b          = rule { 'b' }
         "a" must beMismatched
         assert(flag)
         "ab" must beMatched
       }
 
       "`run(ruleBlockWithNestedRuleDef)`" - new TestParser0 {
-        var flag = false
+        var flag       = false
         def targetRule = rule { 'a' ~ run { flag = true; ch('b') } ~ EOI }
         "a" must beMismatched
         assert(flag)
@@ -66,9 +66,9 @@ object ActionSpec extends TestParserSpec {
       }
 
       "`run(ruleBlockWithRuleIf)`" - new TestParser0 {
-        var flag = false
+        var flag       = false
         def targetRule = rule { 'a' ~ run { flag = true; if (flag) oneOrMore(b) else MISMATCH } ~ EOI }
-        def b = rule { 'b' }
+        def b          = rule { 'b' }
         "a" must beMismatched
         assert(flag)
         "abbb" must beMatched
@@ -76,7 +76,9 @@ object ActionSpec extends TestParserSpec {
 
       "`run(ruleBlockWithRuleMatch)`" - new TestParser0 {
         var flag = false
-        def targetRule = rule { 'a' ~ run { flag = true; flag match { case true => oneOrMore(b); case _ => MISMATCH } } ~ EOI }
+        def targetRule = rule {
+          'a' ~ run { flag = true; flag match { case true => oneOrMore(b); case _ => MISMATCH } } ~ EOI
+        }
         def b = rule { 'b' }
         "a" must beMismatched
         assert(flag)
@@ -131,7 +133,7 @@ object ActionSpec extends TestParserSpec {
       }
 
       "`~>` producing `Unit`" - new TestParser1[Int] {
-        def testRule = rule { push(1 :: "X" :: HNil) ~> (_ => ()) }
+        def testRule   = rule { push(1 :: "X" :: HNil) ~> (_ => ()) }
         def targetRule = testRule
         "" must beMatchedWith(1)
       }
@@ -144,47 +146,51 @@ object ActionSpec extends TestParserSpec {
       }
 
       "`~>` full take" - new TestParser1[Foo] {
-        def testRule = rule { push(1 :: "X" :: HNil) ~> (Foo(_, _)) }
+        def testRule   = rule { push(1 :: "X" :: HNil) ~> (Foo(_, _)) }
         def targetRule = testRule
         "" must beMatchedWith(Foo(1, "X"))
       }
 
       "`~>` partial take" - new TestParser1[Foo] {
-        def testRule = rule { push(1) ~> (Foo(_, "X")) }
+        def testRule   = rule { push(1) ~> (Foo(_, "X")) }
         def targetRule = testRule
         "" must beMatchedWith(Foo(1, "X"))
       }
 
       "`~>` producing HList" - new TestParserN[String :: Int :: Double :: HNil] {
-        def testRule = rule { capture("x") ~> (_ :: 1 :: 3.0 :: HNil) }
+        def testRule   = rule { capture("x") ~> (_ :: 1 :: 3.0 :: HNil) }
         def targetRule = testRule
         "x" must beMatchedWith("x" :: 1 :: 3.0 :: HNil)
       }
 
       "`~>` with a statement block" - new TestParser1[Char] {
         var captured = ' '
-        def testRule = rule { capture("x") ~> { x => captured = x.head; cursorChar } }
+        def testRule = rule {
+          capture("x") ~> { x =>
+            captured = x.head; cursorChar
+          }
+        }
         def targetRule = testRule
         "xy" must beMatchedWith('y')
         captured ==> 'x'
       }
 
       "`~>` producing a Rule0" - new TestParser0 {
-        def testRule = rule { capture("x") ~> (str(_)) ~ EOI }
+        def testRule   = rule { capture("x") ~> (str(_)) ~ EOI }
         def targetRule = testRule
         "x" must beMismatched
         "xx" must beMatched
       }
 
       "`~>` producing a Rule1" - new TestParser1[String] {
-        def testRule = rule { capture("x") ~> (capture(_)) ~ EOI }
+        def testRule   = rule { capture("x") ~> (capture(_)) ~ EOI }
         def targetRule = testRule
         "x" must beMismatched
         "xx" must beMatchedWith("x")
       }
 
       "`~>` producing an expression evaluating to a rule" - new TestParser0 {
-        def testRule = rule { capture(anyOf("ab")) ~> (s => if (s == "a") ch('b') else ch('a')) ~ EOI }
+        def testRule   = rule { capture(anyOf("ab")) ~> (s => if (s == "a") ch('b') else ch('a')) ~ EOI }
         def targetRule = testRule
         "ab" must beMatched
         "ba" must beMatched

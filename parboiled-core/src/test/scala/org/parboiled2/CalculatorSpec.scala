@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,7 +46,7 @@ object CalculatorSpec extends TestParserSpec {
   }
   // format: ON
 
-  val tests = Tests{
+  val tests = Tests {
 
     "The Calculator parser" - {
       "successfully evaluate simple calculator expression" - new Calculator {
@@ -69,7 +69,8 @@ object CalculatorSpec extends TestParserSpec {
             |2 rules mismatched at error location:
             |  /InputLine/ /Expression/ /Term/ /Factor/ | /Number/ capture /Digits/ + / Digit:<CharPredicate>
             |  /InputLine/ /Expression/ /Term/ /Factor/ | /Parens/ '('
-            |""")
+            |"""
+        )
 
         "()" must beMismatchedWithErrorMsg(
           """Invalid input ')', expected Number or Parens (line 1, column 2):
@@ -79,7 +80,8 @@ object CalculatorSpec extends TestParserSpec {
             |2 rules mismatched at error location:
             |  ...xpression/ /Term/ /Factor/ |:-1 /Parens/ /Expression/ /Term/ /Factor/ | /Number/ capture /Digits/ + / Digit:<CharPredicate>
             |  /InputLine/ /Expression/ /Term/ /Factor/ |:-1 /Parens/ /Expression/ /Term/ /Factor/ | /Parens/ '('
-            |""")
+            |"""
+        )
 
         "1+2)" must beMismatchedWithErrorMsg(
           """Invalid input ')', expected Digit, '*', '/', '+', '-' or 'EOI' (line 1, column 4):
@@ -93,7 +95,8 @@ object CalculatorSpec extends TestParserSpec {
             |  /InputLine/ /Expression/ *:-2 / | / '+'
             |  /InputLine/ /Expression/ *:-2 / | / '-'
             |  /InputLine/ 'EOI'
-            |""")
+            |"""
+        )
 
         "(1+)2" must beMismatchedWithErrorMsg(
           """Invalid input ')', expected Number or Parens (line 1, column 4):
@@ -103,7 +106,8 @@ object CalculatorSpec extends TestParserSpec {
             |2 rules mismatched at error location:
             |  ...Term/ /Factor/ |:-3 /Parens/ /Expression/ *:-1 / |:-1 /Term/ /Factor/ | /Number/ capture /Digits/ + / Digit:<CharPredicate>
             |  /InputLine/ /Expression/ /Term/ /Factor/ |:-3 /Parens/ /Expression/ *:-1 / |:-1 /Term/ /Factor/ | /Parens/ '('
-            |""")
+            |"""
+        )
       }
     }
   }

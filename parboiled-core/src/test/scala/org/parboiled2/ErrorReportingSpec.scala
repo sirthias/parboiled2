@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ import utest._
 
 object ErrorReportingSpec extends TestParserSpec {
 
-  val tests = Tests{
+  val tests = Tests {
 
     "The Parser should properly report errors" - {
 
@@ -32,8 +32,7 @@ object ErrorReportingSpec extends TestParserSpec {
           'a' ~ oneOrMore('b') ~ anyOf("cde") ~ ("fgh" | CharPredicate.Digit | hex | UpperAlpha) ~ noneOf("def") ~ EOI
         }
 
-        "" must beMismatchedWithErrorMsg(
-          """Unexpected end of input, expected targetRule (line 1, column 1):
+        "" must beMismatchedWithErrorMsg("""Unexpected end of input, expected targetRule (line 1, column 1):
             |
             |^
             |
@@ -41,8 +40,7 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /targetRule/ 'a'
             |""")
 
-        "ax" must beMismatchedWithErrorMsg(
-          """Invalid input 'x', expected 'b' (line 1, column 2):
+        "ax" must beMismatchedWithErrorMsg("""Invalid input 'x', expected 'b' (line 1, column 2):
             |ax
             | ^
             |
@@ -50,8 +48,7 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /targetRule/ + / 'b'
             |""")
 
-        "abx" must beMismatchedWithErrorMsg(
-          """Invalid input 'x', expected 'b' or [cde] (line 1, column 3):
+        "abx" must beMismatchedWithErrorMsg("""Invalid input 'x', expected 'b' or [cde] (line 1, column 3):
             |abx
             |  ^
             |
@@ -70,10 +67,10 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /targetRule/ | / Digit:<CharPredicate>
             |  /targetRule/ | / hex:<CharPredicate>
             |  /targetRule/ | / UpperAlpha:<CharPredicate>
-            |""")
+            |"""
+        )
 
-        "abcfghe" must beMismatchedWithErrorMsg(
-          """Invalid input 'e', expected [^def] (line 1, column 7):
+        "abcfghe" must beMismatchedWithErrorMsg("""Invalid input 'e', expected [^def] (line 1, column 7):
             |abcfghe
             |      ^
             |
@@ -84,10 +81,9 @@ object ErrorReportingSpec extends TestParserSpec {
 
       "for rules with negative syntactic predicates" - new TestParser0 {
         def targetRule = rule { (!"a" ~ ANY | 'z') ~ !foo ~ EOI }
-        def foo = rule { "bcd" }
+        def foo        = rule { "bcd" }
 
-        "a" must beMismatchedWithErrorMsg(
-          """Invalid input 'a', expected !"a" or 'z' (line 1, column 1):
+        "a" must beMismatchedWithErrorMsg("""Invalid input 'a', expected !"a" or 'z' (line 1, column 1):
             |a
             |^
             |
@@ -96,8 +92,7 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /targetRule/ | / 'z'
             |""")
 
-        "xbcd" must beMismatchedWithErrorMsg(
-          """Invalid input "bcd", expected !foo (line 1, column 2):
+        "xbcd" must beMismatchedWithErrorMsg("""Invalid input "bcd", expected !foo (line 1, column 2):
             |xbcd
             | ^
             |
@@ -108,12 +103,11 @@ object ErrorReportingSpec extends TestParserSpec {
 
       "for rules with backtick identifiers" - new TestParser0 {
         val `this*that` = CharPredicate.Alpha
-        def targetRule = rule { `foo-bar` ~ `this*that` ~ `#hash#` ~ EOI }
-        def `foo-bar` = 'x'
-        def `#hash#` = rule { '#' }
+        def targetRule  = rule { `foo-bar` ~ `this*that` ~ `#hash#` ~ EOI }
+        def `foo-bar`   = 'x'
+        def `#hash#`    = rule { '#' }
 
-        "a" must beMismatchedWithErrorMsg(
-          """Invalid input 'a', expected targetRule (line 1, column 1):
+        "a" must beMismatchedWithErrorMsg("""Invalid input 'a', expected targetRule (line 1, column 1):
             |a
             |^
             |
@@ -121,8 +115,7 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /targetRule/ 'x'
             |""")
 
-        "x" must beMismatchedWithErrorMsg(
-          """Unexpected end of input, expected this*that (line 1, column 2):
+        "x" must beMismatchedWithErrorMsg("""Unexpected end of input, expected this*that (line 1, column 2):
             |x
             | ^
             |
@@ -130,8 +123,7 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /targetRule/ this*that:<CharPredicate>
             |""")
 
-        "xyz" must beMismatchedWithErrorMsg(
-          """Invalid input 'z', expected #hash# (line 1, column 3):
+        "xyz" must beMismatchedWithErrorMsg("""Invalid input 'z', expected #hash# (line 1, column 3):
             |xyz
             |  ^
             |
@@ -143,8 +135,7 @@ object ErrorReportingSpec extends TestParserSpec {
       "if the error location is the newline at line-end" - new TestParser0 {
         def targetRule = rule { "abc" ~ EOI }
 
-        "ab\nc" must beMismatchedWithErrorMsg(
-          """Invalid input '\n', expected 'c' (line 1, column 3):
+        "ab\nc" must beMismatchedWithErrorMsg("""Invalid input '\n', expected 'c' (line 1, column 3):
             |ab
             |  ^
             |
@@ -156,8 +147,7 @@ object ErrorReportingSpec extends TestParserSpec {
       "for rules with an explicitly attached name" - new TestParser0 {
         def targetRule = namedRule("foo") { "abc".named("prefix") ~ ("def" | "xyz").named("suffix") ~ EOI }
 
-        "abx" must beMismatchedWithErrorMsg(
-          """Invalid input 'x', expected 'c' (line 1, column 3):
+        "abx" must beMismatchedWithErrorMsg("""Invalid input 'x', expected 'c' (line 1, column 3):
             |abx
             |  ^
             |
@@ -165,8 +155,7 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /foo/ prefix:"abc":-2 / 'c'
             |""")
 
-        "abc-" must beMismatchedWithErrorMsg(
-          """Invalid input '-', expected 'd' or 'x' (line 1, column 4):
+        "abc-" must beMismatchedWithErrorMsg("""Invalid input '-', expected 'd' or 'x' (line 1, column 4):
             |abc-
             |   ^
             |
@@ -179,8 +168,7 @@ object ErrorReportingSpec extends TestParserSpec {
       "for rules containing `fail`" - new TestParser0 {
         def targetRule = rule { "foo" | fail("something cool") }
 
-        "x" must beMismatchedWithErrorMsg(
-          """Invalid input 'x', expected something cool (line 1, column 1):
+        "x" must beMismatchedWithErrorMsg("""Invalid input 'x', expected something cool (line 1, column 1):
             |x
             |^
             |
@@ -192,11 +180,10 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "respecting the `errorTraceCollectionLimit`" - new TestParser0 {
-        def targetRule = rule { "a" | 'b' | "c" | "d" | "e" | "f" }
+        def targetRule                         = rule { "a" | 'b' | "c" | "d" | "e" | "f" }
         override def errorTraceCollectionLimit = 3
 
-        "x" must beMismatchedWithErrorMsg(
-          """Invalid input 'x', expected 'a', 'b' or 'c' (line 1, column 1):
+        "x" must beMismatchedWithErrorMsg("""Invalid input 'x', expected 'a', 'b' or 'c' (line 1, column 1):
             |x
             |^
             |
@@ -220,14 +207,14 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /targetRule/ | / atomic / "foo":-2 / 'o'
             |  /targetRule/ | / atomic / "bar" / 'b'
             |  /targetRule/ | / atomic / "baz" / 'b'
-            |""")
+            |"""
+        )
       }
 
       "respecting `atomic` markers (example 2)" - new TestParser0 {
         def targetRule = rule { atomic(ch('a') | 'b') }
 
-        "c" must beMismatchedWithErrorMsg(
-          """Invalid input 'c', expected targetRule (line 1, column 1):
+        "c" must beMismatchedWithErrorMsg("""Invalid input 'c', expected targetRule (line 1, column 1):
             |c
             |^
             |
@@ -241,8 +228,7 @@ object ErrorReportingSpec extends TestParserSpec {
         def targetRule = rule { "abc" ~ (quiet("dxy") | "def") }
 
         // quiet rule mismatch must be suppressed
-        "abcd-" must beMismatchedWithErrorMsg(
-          """Invalid input '-', expected 'e' (line 1, column 5):
+        "abcd-" must beMismatchedWithErrorMsg("""Invalid input '-', expected 'e' (line 1, column 5):
             |abcd-
             |    ^
             |
@@ -251,8 +237,7 @@ object ErrorReportingSpec extends TestParserSpec {
             |""")
 
         // since the error location is only reached by a quiet rule we need to report it
-        "abcdx" must beMismatchedWithErrorMsg(
-          """Unexpected end of input, expected 'y' (line 1, column 6):
+        "abcdx" must beMismatchedWithErrorMsg("""Unexpected end of input, expected 'y' (line 1, column 6):
             |abcdx
             |     ^
             |
@@ -276,7 +261,8 @@ object ErrorReportingSpec extends TestParserSpec {
             |  /targetRule/ | / atomic / "foo":-2 / 'o'
             |  /targetRule/ | / atomic / "bar" / 'b'
             |  /targetRule/ | / atomic / "baz" / 'b'
-            |""")
+            |"""
+        )
       }
     }
   }

@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,7 +20,7 @@ import utest._
 
 object CombinatorSpec extends TestParserSpec {
 
-  val tests = Tests{
+  val tests = Tests {
 
     "The Parser should correctly recognize/reject input for the" - {
 
@@ -192,7 +192,7 @@ object CombinatorSpec extends TestParserSpec {
       }
 
       "`n.times(Rule0)` modifier (example 2)" - new TestParser0 {
-        val n = 2
+        val n          = 2
         def targetRule = rule { n.times("x") ~ EOI }
         "x" must beMismatched
         "xx" must beMatched
@@ -225,7 +225,7 @@ object CombinatorSpec extends TestParserSpec {
       }
 
       "`(2 to max).times(Rule0)` modifier where `max` is 4" - new TestParser0 {
-        val max = 4
+        val max        = 4
         def targetRule = rule { (2 to max).times("x") ~ EOI }
         "xx" must beMatched
         "xxx" must beMatched

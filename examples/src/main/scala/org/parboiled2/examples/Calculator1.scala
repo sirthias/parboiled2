@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,22 +45,24 @@ object Calculator1 extends App {
 }
 
 /**
- * This parser reads simple calculator expressions and evaluates them right during
- * the parsing run with the help of the value stack.
- */
+  * This parser reads simple calculator expressions and evaluates them right during
+  * the parsing run with the help of the value stack.
+  */
 class Calculator1(val input: ParserInput) extends Parser {
   def InputLine = rule { Expression ~ EOI }
 
   def Expression: Rule1[Int] = rule {
     Term ~ zeroOrMore(
       '+' ~ Term ~> ((_: Int) + _)
-    | '-' ~ Term ~> ((_: Int) - _))
+        | '-' ~ Term ~> ((_: Int) - _)
+    )
   }
 
   def Term = rule {
     Factor ~ zeroOrMore(
       '*' ~ Factor ~> ((_: Int) * _)
-    | '/' ~ Factor ~> ((_: Int) / _))
+        | '/' ~ Factor ~> ((_: Int) / _)
+    )
   }
 
   def Factor = rule { Number | Parens }

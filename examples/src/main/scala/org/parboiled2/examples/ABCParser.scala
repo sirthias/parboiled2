@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
 package org.parboiled2.examples
 
 import scala.annotation.tailrec
-import scala.util.{ Success, Failure }
+import scala.util.{Failure, Success}
 import scala.io.StdIn
 import org.parboiled2._
 
@@ -45,12 +45,12 @@ object ABCParser extends App {
 }
 
 /**
- * This parser reads the classic non-context-free language:
- *
- *     a^n b^n c^n (for n > 1)
- *
- * See also: http://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples
- */
+  * This parser reads the classic non-context-free language:
+  *
+  *     a^n b^n c^n (for n > 1)
+  *
+  * See also: http://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples
+  */
 class ABCParser(val input: ParserInput) extends Parser {
 
   def InputLine = rule {

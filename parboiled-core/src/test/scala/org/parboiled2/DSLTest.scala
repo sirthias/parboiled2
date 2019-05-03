@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,41 +22,43 @@ import shapeless._
 class DSLTest(val input: ParserInput) extends Parser {
 
   def ZeroOrMoreReduction_Checked: Rule[String :: HNil, String :: HNil] = ZeroOrMoreReduction
-  def ZeroOrMoreReduction = rule { zeroOrMore(capture("0" - "9") ~> ((x: String, y) => x + y)) }
+  def ZeroOrMoreReduction                                               = rule { zeroOrMore(capture("0" - "9") ~> ((x: String, y) => x + y)) }
 
   def OptionalReduction_Checked: Rule[String :: HNil, String :: HNil] = OptionalReduction
-  def OptionalReduction = rule { optional(capture("0" - "9") ~> ((x: String, y) => x + y)) }
+  def OptionalReduction                                               = rule { optional(capture("0" - "9") ~> ((x: String, y) => x + y)) }
 
-  def OpsTest1_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: Boolean :: Array[Char] :: HNil] = OpsTest1
+  def OpsTest1_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: Boolean :: Array[Char] :: HNil] =
+    OpsTest1
   def OpsTest1 = rule { ComplexRule ~> (_.toCharArray) }
 
   def OpsTest2_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: HNil] = OpsTest2
-  def OpsTest2 = rule { ComplexRule ~> ((_, s) => s.length) ~> (_ + _) }
+  def OpsTest2                                                                           = rule { ComplexRule ~> ((_, s) => s.length) ~> (_ + _) }
 
-  def ComplexRule_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: Boolean :: String :: HNil] = ComplexRule
+  def ComplexRule_Checked: RuleN[Int :: Boolean :: String :: Int :: Boolean :: Int :: Boolean :: String :: HNil] =
+    ComplexRule
   def ComplexRule = rule { capture(DigitAndBool) ~ DigitAndBool ~ capture(DigitAndBool) }
 
   def DigitAndBool_Checked: Rule2[Int, Boolean] = DigitAndBool
-  def DigitAndBool = rule { Digit ~ Bool }
+  def DigitAndBool                              = rule { Digit ~ Bool }
 
   def Bool_Checked: Rule1[Boolean] = Bool
-  def Bool = rule { BoolTrue | BoolFalse }
+  def Bool                         = rule { BoolTrue | BoolFalse }
 
   def BoolTrue_Checked: Rule1[Boolean] = BoolTrue
-  def BoolTrue = rule { str("true") ~ push(true) }
+  def BoolTrue                         = rule { str("true") ~ push(true) }
 
   def BoolFalse_Checked: Rule1[Boolean] = BoolFalse
-  def BoolFalse = rule { str("false") ~ push(false) }
+  def BoolFalse                         = rule { str("false") ~ push(false) }
 
   def Digits_Checked: Rule1[Seq[Int]] = Digits
-  def Digits = rule { oneOrMore(Digit) }
+  def Digits                          = rule { oneOrMore(Digit) }
 
   def DigitsOrEmpty_Checked: Rule1[Seq[Int]] = DigitsOrEmpty
-  def DigitsOrEmpty = rule { zeroOrMore(Digit) }
+  def DigitsOrEmpty                          = rule { zeroOrMore(Digit) }
 
   def Digit_Checked: Rule1[Int] = Digit
-  def Digit = rule { capture("0" - "9") ~> (_.toInt) }
+  def Digit                     = rule { capture("0" - "9") ~> (_.toInt) }
 
   def DigitOptional_Checked: Rule1[Option[Int]] = DigitOptional
-  def DigitOptional = rule { optional(Digit) }
+  def DigitOptional                             = rule { optional(Digit) }
 }

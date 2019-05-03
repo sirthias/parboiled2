@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,18 +21,20 @@ import utest._
 object RunSubParserSpec extends TestParserSpec {
 
   class SubParser(val input: ParserInput) extends Parser {
+
     def IntNumber = rule {
       capture(oneOrMore(CharPredicate.Digit)) ~> (_.toInt)
     }
   }
 
   abstract class ParserWithSubParser extends TestParser1[Int] {
+
     def InputLine = rule {
       oneOrMore(runSubParser(new SubParser(_).IntNumber)).separatedBy(',') ~ EOI ~> (_.sum)
     }
   }
 
-  val tests = Tests{
+  val tests = Tests {
 
     "`runSubParser` should" - {
       "work as expected" - new ParserWithSubParser {
@@ -48,7 +50,8 @@ object RunSubParserSpec extends TestParserSpec {
             |
             |1 rule mismatched at error location:
             |  /InputLine/ +:-5 / runSubParser /IntNumber/ capture / + / Digit:<CharPredicate>
-            |""")
+            |"""
+        )
       }
     }
   }

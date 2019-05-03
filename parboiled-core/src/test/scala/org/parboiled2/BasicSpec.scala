@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.parboiled2
 
 import shapeless.test.illTyped
 import utest.{TestableString => _, _}
-
 
 object BasicSpec extends TestParserSpec {
 
@@ -36,7 +35,7 @@ object BasicSpec extends TestParserSpec {
       }
 
       "a simple char `val`" - new TestParser0 {
-        val c = 'x'
+        val c          = 'x'
         def targetRule = rule { c }
         "x" must beMatched
         "y" must beMismatched
@@ -44,7 +43,7 @@ object BasicSpec extends TestParserSpec {
       }
 
       "a simple char `def`" - new TestParser0 {
-        def c = 'x'
+        def c          = 'x'
         def targetRule = rule { c }
         "x" must beMatched
         "y" must beMismatched
@@ -60,7 +59,7 @@ object BasicSpec extends TestParserSpec {
       }
 
       "a simple string `val`" - new TestParser0 {
-        val s = "ab"
+        val s          = "ab"
         def targetRule = rule { s ~ EOI }
         "" must beMismatched
         "a" must beMismatched
@@ -69,7 +68,7 @@ object BasicSpec extends TestParserSpec {
       }
 
       "a simple string `def`" - new TestParser0 {
-        def s = "ab"
+        def s          = "ab"
         def targetRule = rule { s ~ EOI }
         "" must beMismatched
         "a" must beMismatched
@@ -139,7 +138,7 @@ object BasicSpec extends TestParserSpec {
       "character ranges" - new TestParser0 {
         // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
         override def TestableString = rule { ("1" - "5") ~ EOI }
-        def targetRule = TestableString
+        def targetRule              = TestableString
 
         "1" must beMatched
         "3" must beMatched
@@ -161,15 +160,15 @@ object BasicSpec extends TestParserSpec {
           def free() = rule { "-free" }
           rule { foo ~ bar(42) ~ baz("", 1337) ~ typed[String] ~ free() ~ EOI }
         }
-        def foo = rule { "foo" }
-        def bar(i: Int) = rule { "-bar" ~ i.toString }
+        def foo                    = rule { "foo" }
+        def bar(i: Int)            = rule { "-bar" ~ i.toString }
         def baz(s: String, i: Int) = rule { "-baz" ~ s ~ i.toString }
-        def typed[S <: String] = rule { MATCH }
+        def typed[S <: String]     = rule { MATCH }
         "foo-bar42-baz1337-free" must beMatched
       }
 
       "Map[String, T]" - new TestParser1[Int] {
-        val colors = Map("red" -> 1, "green" -> 2, "blue" -> 3)
+        val colors     = Map("red" -> 1, "green" -> 2, "blue" -> 3)
         def targetRule = rule { colors ~ EOI }
         "red" must beMatchedWith(1)
         "green" must beMatchedWith(2)
@@ -178,7 +177,7 @@ object BasicSpec extends TestParserSpec {
       }
 
       "Map[String, T] that ignores case" - new TestParser1[Int] {
-        val colors = Map("red" -> 1, "green" -> 2, "blue" -> 3)
+        val colors     = Map("red" -> 1, "green" -> 2, "blue" -> 3)
         def targetRule = rule { valueMap(colors, ignoreCase = true) ~ EOI }
         "ReD" must beMatchedWith(1)
         "grEen" must beMatchedWith(2)
@@ -187,7 +186,7 @@ object BasicSpec extends TestParserSpec {
       }
 
       "Map[String, T] with keys that prefix each other" - new TestParser1[Int] {
-        val map = Map("a" -> 1, "ab" -> 2, "abc" -> 3, "abcd" -> 4, "abcde" -> 5, "abcdef" -> 6)
+        val map        = Map("a" -> 1, "ab" -> 2, "abc" -> 3, "abcd" -> 4, "abcde" -> 5, "abcdef" -> 6)
         def targetRule = rule { map ~ EOI }
         "a" must beMatchedWith(1)
         "ab" must beMatchedWith(2)
@@ -202,7 +201,7 @@ object BasicSpec extends TestParserSpec {
       "disallow compilation of an illegal character range" - new Parser {
         // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
         def TestableString = ParserInput.Empty
-        def input = TestableString
+        def input          = TestableString
 
         illTyped("""rule { "00" - "5" }""", "lower bound must be a single char string")
         illTyped("""rule { "0" - "55" }""", "upper bound must be a single char string")

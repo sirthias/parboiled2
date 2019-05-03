@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,35 +16,35 @@
 
 package org.parboiled2
 
-import org.scalacheck.{Gen, Test, Prop}
+import org.scalacheck.{Gen, Prop, Test}
 import org.scalacheck.util.Pretty
 import org.scalacheck.Prop.forAll
 import utest._
 
-object CharUtilsSpec extends TestSuite with UTestScalaCheck{
+object CharUtilsSpec extends TestSuite with UTestScalaCheck {
 
   val hexChars = for (i <- Gen.choose(0, 15)) yield i -> Integer.toHexString(i).charAt(0)
 
-  val tests = Tests{
+  val tests = Tests {
 
     "CharUtils" - {
       "hexValue" - forAll(hexChars) {
         case (i, c) => CharUtils.hexValue(c) == i
       }.checkUTest()
-      "numberOfHexDigits" - forAll {
-        l: Long => CharUtils.numberOfHexDigits(l) == java.lang.Long.toHexString(l).length
+      "numberOfHexDigits" - forAll { l: Long =>
+        CharUtils.numberOfHexDigits(l) == java.lang.Long.toHexString(l).length
       }.checkUTest()
-      "upperHexString" - forAll {
-        l: Long => CharUtils.upperHexString(l) == java.lang.Long.toHexString(l).toUpperCase
+      "upperHexString" - forAll { l: Long =>
+        CharUtils.upperHexString(l) == java.lang.Long.toHexString(l).toUpperCase
       }.checkUTest()
-      "lowerHexString" - forAll {
-        l: Long => CharUtils.lowerHexString(l) == java.lang.Long.toHexString(l)
+      "lowerHexString" - forAll { l: Long =>
+        CharUtils.lowerHexString(l) == java.lang.Long.toHexString(l)
       }.checkUTest()
-      "numberOfDecimalDigits" - forAll {
-        l: Long => CharUtils.numberOfDecimalDigits(l) == java.lang.Long.toString(l).length
+      "numberOfDecimalDigits" - forAll { l: Long =>
+        CharUtils.numberOfDecimalDigits(l) == java.lang.Long.toString(l).length
       }.checkUTest()
-      "signedDecimalString" - forAll {
-        l: Long => CharUtils.signedDecimalString(l) == java.lang.Long.toString(l)
+      "signedDecimalString" - forAll { l: Long =>
+        CharUtils.signedDecimalString(l) == java.lang.Long.toString(l)
       }.checkUTest()
     }
   }
@@ -63,9 +63,9 @@ trait UTestScalaCheck {
   }
 
   implicit protected[this] class PropWrapper(prop: Prop) {
-    def checkUTest(): Unit = {
+
+    def checkUTest(): Unit =
       prop.check(Test.Parameters.default.withTestCallback(UTestReporter))
-    }
   }
 
 }

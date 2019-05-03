@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2009-2013 Mathias Doenitz, Alexander Myltsev
+ * Copyright 2009-2019 Mathias Doenitz
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,7 +23,7 @@ import org.parboiled2._
 
 object JsonParserSpec extends TestSuite {
 
-  val tests = Tests{
+  val tests = Tests {
 
     "The JsonParser" - {
       "parse 'null' to JsNull" - {
@@ -56,12 +56,12 @@ object JsonParserSpec extends TestSuite {
       }
       "properly parse a simple JsObject" - (
         parse(""" { "key" :42, "key2": "value" }""") ==>
-          JsObject("key" -> JsNumber(42), "key2" -> JsString("value"))
-        )
+        JsObject("key" -> JsNumber(42), "key2" -> JsString("value"))
+      )
       "properly parse a simple JsArray" - (
         parse("""[null, 1.23 ,{"key":true } ] """) ==>
-          JsArray(JsNull, JsNumber(1.23), JsObject("key" -> JsTrue))
-        )
+        JsArray(JsNull, JsNumber(1.23), JsObject("key" -> JsTrue))
+      )
     }
   }
 
