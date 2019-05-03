@@ -1,15 +1,12 @@
-addSbtPlugin("com.typesafe.sbt" % "sbt-scalariform" % "1.3.0")
-
-addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.1")
-
-addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.6")
-
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.27")
-
-addSbtPlugin("com.typesafe.sbt" % "sbt-osgi" % "0.9.3")
-
-addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0")
-
-addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.3.9")
-
+addSbtPlugin("org.scalameta"      % "sbt-scalafmt"                  % "2.0.0")
+addSbtPlugin("io.crashbox"        % "sbt-gpg"                       % "0.2.0")
+addSbtPlugin("com.github.gseitz"  % "sbt-release"                   % "1.0.11")
+addSbtPlugin("org.xerial.sbt"     % "sbt-sonatype"                  % "2.4")
+addSbtPlugin("de.heikoseeberger"  % "sbt-header"                    % "5.2.0")
+addSbtPlugin("io.spray"           % "sbt-boilerplate"               % "0.6.1")
+addSbtPlugin("org.scala-js"       % "sbt-scalajs"                   % "0.6.27")
+addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject"      % "0.6.0")
+addSbtPlugin("org.scala-native"   % "sbt-scala-native"              % "0.3.9")
 addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "0.6.0")
+addSbtPlugin("pl.project13.scala" % "sbt-jmh"                       % "0.3.4")
+addSbtPlugin("com.typesafe.sbt"   % "sbt-osgi"                      % "0.9.3")
