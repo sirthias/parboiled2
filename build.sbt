@@ -112,8 +112,8 @@ lazy val releaseSettings = {
       publishArtifacts,
       setNextVersion,
       commitNextVersion,
-      releaseStepCommand("sonatypeReleaseAll"),
-      pushChanges
+      //releaseStepCommand("sonatypeReleaseAll"),
+      //pushChanges
     )
   )
 }
@@ -148,6 +148,8 @@ lazy val root = project.in(file("."))
   .aggregate(parboiledJVM, parboiledJS)
   .aggregate(parboiledCoreJVM, parboiledCoreJS)
   .settings(commonSettings)
+  .settings(publishingSettings)
+  .settings(releaseSettings)
   .settings(
     publishArtifact := false,
   )

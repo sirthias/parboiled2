@@ -1,6 +1,7 @@
-Version 2.1.6 (2018-09-14)
+Version 2.1.6 (2019-05-03)
 --------------------------
 - Upgraded to scala.js 0.6.27
+- Upgraded to SBT 1.2.8
 - Build for scala-native 0.3.9
 - Build for Scala 2.13.0-RC1
 
