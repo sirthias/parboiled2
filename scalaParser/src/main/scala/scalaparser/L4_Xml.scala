@@ -1,6 +1,5 @@
 package scalaparser
 
-import scala.language.implicitConversions
 import org.parboiled2._
 
 trait L4_Xml { this: Parser
