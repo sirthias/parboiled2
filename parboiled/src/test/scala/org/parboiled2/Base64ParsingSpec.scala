@@ -50,7 +50,7 @@ object Base64ParsingSpec extends TestSuite {
 
   def test(ruleName: String, base64: Base64): Unit =
     (1 to 100).foreach { x =>
-      val string  = randomChars.take(x).toString()
+      val string  = randomChars.take(x).mkString("")
       val encoded = base64.encodeToString(string getBytes UTF8, lineSep = false)
       val parser = new TestParser(encoded) with DynamicRuleHandler[TestParser, Array[Byte] :: HNil] {
         type Result = String
