@@ -27,28 +27,32 @@ trait Base64Parsing { this: Parser =>
   /**
     * Parses an RFC4045-encoded string and decodes it onto the value stack.
     */
-  def rfc2045String: Rule1[Array[Byte]] = base64StringOrBlock(rfc2045Alphabet, rfc2045StringDecoder)
+  def rfc2045String: Rule1[Array[Byte]] = base64(rfc2045Alphabet, Base64.rfc2045().fillChar, rfc2045StringDecoder)
 
   /**
     * Parses an RFC4045-encoded string potentially containing newlines and decodes it onto the value stack.
     */
-  def rfc2045Block: Rule1[Array[Byte]] = base64StringOrBlock(rfc2045Alphabet, rfc2045BlockDecoder)
+  def rfc2045Block: Rule1[Array[Byte]] = base64(rfc2045Alphabet, Base64.rfc2045().fillChar, rfc2045BlockDecoder)
 
   /**
     * Parses a org.parboiled2.util.Base64.custom()-encoded string and decodes it onto the value stack.
     */
-  def base64CustomString: Rule1[Array[Byte]] = base64StringOrBlock(customAlphabet, customStringDecoder)
+  def base64CustomString: Rule1[Array[Byte]] = base64(customAlphabet, Base64.custom().fillChar, customStringDecoder)
 
   /**
     * Parses a org.parboiled2.util.Base64.custom()-encoded string potentially containing newlines
     * and decodes it onto the value stack.
     */
-  def base64CustomBlock: Rule1[Array[Byte]] = base64StringOrBlock(customAlphabet, customBlockDecoder)
+  def base64CustomBlock: Rule1[Array[Byte]] = base64(customAlphabet, Base64.custom().fillChar, customBlockDecoder)
 
   /**
     * Parses a BASE64-encoded string with the given alphabet and decodes it onto the value
     * stack using the given codec.
     */
+  @deprecated(
+    "Does not work on padded blocks. Does not work on strings with trailing garbage. Use rfc2045String, rfc2045Block, base64CustomString, or base64CustomBlock instead.",
+    "2.1.7"
+  )
   def base64StringOrBlock(alphabet: CharPredicate, decoder: Decoder): Rule1[Array[Byte]] = {
     val start = cursor
     rule {
@@ -58,6 +62,18 @@ trait Base64Parsing { this: Parser =>
           case bytes => push(bytes)
         }
       }
+    }
+  }
+
+  private def base64(alphabet: CharPredicate, fillChar: Char, decoder: Decoder): Rule1[Array[Byte]] = {
+    val start = cursor
+    rule {
+      oneOrMore(alphabet) ~ zeroOrMore(ch(fillChar)) ~ run {
+        decoder(input.sliceCharArray(start, cursor)) match {
+          case null  => MISMATCH
+          case bytes => push(bytes)
+        }
+      } ~ EOI
     }
   }
 }
