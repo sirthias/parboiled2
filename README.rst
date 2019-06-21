@@ -49,16 +49,13 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.6"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.7"
 
-The latest released version is **2.1.6**. It is available for Scala 2.11, 2.12, 2.13.0-RC1 as well as Scala.js 0.6.
+The latest released version is **2.1.7**. It is available for Scala 2.11, 2.12, 2.13 as well as scala.js 0.6 and
+scala native.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
 (currently version 2.3.3).
-
-**Note:** If your project also uses ``"io.spray" %% "spray-routing"``
-you'll need to change this to ``"io.spray" %% "spray-routing-shapeless2"`` in order for
-your project to continue to build since the "regular" spray builds use shapeless 1.x.
 
 Once on your classpath you can use this single import to bring everything you need into scope:
 

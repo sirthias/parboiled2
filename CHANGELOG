@@ -1,3 +1,10 @@
+Version 2.1.7 (2019-06-21)
+--------------------------
+- Fixed Base64Parsing for blocks and extra characters (thank you, @rossabaker!)
+- Upgraded to scala.js 0.6.28
+- Build for Scala 2.13.0 and scala-native 0.3.9
+
+
 Version 2.1.6 (2019-05-03)
 --------------------------
 - Upgraded to scala.js 0.6.27
