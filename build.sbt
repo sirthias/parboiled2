@@ -146,8 +146,8 @@ val `scala-reflect`  = Def.setting("org.scala-lang" %   "scala-reflect" % scalaV
 val scalaCheckNative = Def.setting("com.github.lolgab" %%% "scalacheck" % "1.14.1" % Test)
 
 // benchmarks and examples only
-val `json4s-native`  = "org.json4s" %% "json4s-native"  % "3.6.6"
-val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "3.6.6"
+val `json4s-native`  = "org.json4s" %% "json4s-native"  % "3.6.7"
+val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "3.6.7"
 val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.5"
 
 /////////////////////// PROJECTS /////////////////////////
