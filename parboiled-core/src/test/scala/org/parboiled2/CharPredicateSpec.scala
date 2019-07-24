@@ -69,12 +69,15 @@ object CharPredicateSpec extends TestSuite {
     }
 
     def show(pred: CharPredicate): String = {
-      val chars = ('\u0000' to '\u0080').flatMap(c => if (pred(c)) Some(c) else None).toArray
+      val chars = ('\u0000' to '\u0080').flatMap(c => Some(c) filter pred).toArray
       new String(chars)
     }
 
     def inspectMask(pred: CharPredicate) = {
-      val CharPredicate.MaskBased(lowMask, highMask) = pred
+      val (lowMask, highMask) = pred match {
+        case CharPredicate.MaskBased(a, b) => a -> b
+        case _                             => throw new IllegalStateException()
+      }
       "%016x|%016x" format (lowMask, highMask)
     }
   }

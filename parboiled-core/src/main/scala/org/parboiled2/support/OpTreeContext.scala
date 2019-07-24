@@ -491,8 +491,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         val base = op match {
           case x: TerminalOpTree   => q"org.parboiled2.RuleTrace.NotPredicate.Terminal(${x.ruleTraceTerminal})"
           case x: RuleCall         => q"org.parboiled2.RuleTrace.NotPredicate.RuleCall(${x.calleeNameTree})"
-          case x: StringMatch      => q"""org.parboiled2.RuleTrace.NotPredicate.Named('"' + ${x.stringTree} + '"')"""
-          case x: IgnoreCaseString => q"""org.parboiled2.RuleTrace.NotPredicate.Named('"' + ${x.stringTree} + '"')"""
+          case x: StringMatch      => q"""org.parboiled2.RuleTrace.NotPredicate.Named("\"" + ${x.stringTree} + '"')"""
+          case x: IgnoreCaseString => q"""org.parboiled2.RuleTrace.NotPredicate.Named("\"" + ${x.stringTree} + '"')"""
           case x: Named            => q"org.parboiled2.RuleTrace.NotPredicate.Named(${x.stringTree})"
           case _                   => q"org.parboiled2.RuleTrace.NotPredicate.Anonymous"
         }
