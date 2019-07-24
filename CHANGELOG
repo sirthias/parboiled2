@@ -1,3 +1,8 @@
+Version 2.1.8 (2019-07-24)
+--------------------------
+- Fixed compiler warnings on Scala 2.13
+
+
 Version 2.1.7 (2019-06-21)
 --------------------------
 - Fixed Base64Parsing for blocks and extra characters (thank you, @rossabaker!)
