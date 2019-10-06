@@ -12,8 +12,8 @@ val commonSettings = Seq(
   unmanagedResources in Compile += baseDirectory.value.getParentFile.getParentFile / "LICENSE",
   scmInfo := Some(ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")),
 
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0"),
+  scalaVersion := "2.12.10",
+  crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
 
   scalacOptions ++= Seq(
     "-deprecation",
