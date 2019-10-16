@@ -1,6 +1,6 @@
 addSbtPlugin("org.scalameta"      % "sbt-scalafmt"                  % "2.0.7")
 addSbtPlugin("io.crashbox"        % "sbt-gpg"                       % "0.2.0")
-addSbtPlugin("com.github.gseitz"  % "sbt-release"                   % "1.0.11")
+addSbtPlugin("com.github.gseitz"  % "sbt-release"                   % "1.0.12")
 addSbtPlugin("org.xerial.sbt"     % "sbt-sonatype"                  % "3.8")
 addSbtPlugin("de.heikoseeberger"  % "sbt-header"                    % "5.2.0")
 addSbtPlugin("io.spray"           % "sbt-boilerplate"               % "0.6.1")
