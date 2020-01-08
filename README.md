@@ -1,40 +1,38 @@
 # PARBOILED2 DOCUMENTATION
 
-**parboiled2**  |--| A Macro-Based PEG Parser Generator for Scala 2.11+
+# A Macro-Based PEG Parser Generator for Scala 2.12+
 
-.. image:: https://travis-ci.org/sirthias/parboiled2.svg?branch=release-2.1
-    :target: https://travis-ci.org/sirthias/parboiled2
+[image](https://travis-ci.org/sirthias/parboiled2.svg?branch=release-2.1)<br>
+[target](https://travis-ci.org/sirthias/parboiled2)
 
-.. contents:: Contents of this Document
+## Contents of this Document
 
+## Introduction
 
-Introduction
-============
 
 *parboiled2* is a Scala 2.11+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
 arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
 runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
 bytecode.
 
-PEGs are an alternative to `Context-Free Grammars`_ (CFGs) for formally specifying syntax, they make a good replacement
+PEGs are an alternative to `Context-Free Grammars` (CFGs) for formally specifying syntax, they make a good replacement
 for regular expressions and have some advantages over the "traditional" way of building parsers via CFGs (like not
 needing a separate lexer/scanner phase).
 
-*parboiled2* is the successor of `parboiled 1.x`_ , which provides a similar capability (for Scala as well as Java) but
-does not actually *generate* a parser. Rather `parboiled 1.x`_ interprets a rule tree structure (which is also created
+*parboiled2* is the successor of `parboiled 1.x`, which provides a similar capability (for Scala as well as Java) but
+does not actually *generate* a parser. Rather `parboiled 1.x` interprets a rule tree structure (which is also created
 via an internal DSL) against the input, which results in a much lower parsing performance.
-For more info on how `parboiled 1.x`_ and *parboiled2* compare see `parboiled2 vs. parboiled 1.x`_.
-You might also be interested in reading about `parboiled2 vs. Scala Parser Combinators`_ and
-`parboiled2 vs. Regular Expressions`_.
+For more info on how `parboiled 1.x` and *parboiled2* compare see `parboiled2 vs. parboiled 1.x`.
+You might also be interested in reading about `parboiled2 vs. Scala Parser Combinators` and
+`parboiled2 vs. Regular Expressions`.
 
-.. _PEG:
-.. _Parsing Expression Grammars: http://en.wikipedia.org/wiki/Parsing_expression_grammar
-.. _Context-Free Grammars: http://en.wikipedia.org/wiki/Context-free_grammar
-.. _parboiled 1.x: http://parboiled.org
+## PEG
+[Parsing Expression Grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)<br>
+[Context-Free Grammars](http://en.wikipedia.org/wiki/Context-free_grammar)<br>
+[parboiled 1.x](http://parboiled.org)
 
 
-Features
-========
+## Features
 
 * Concise, flexible and type-safe DSL for expressing parsing logic
 * Full expressive power of `Parsing Expression Grammars`_, for effectively dealing with most real-world parsing needs
@@ -44,21 +42,17 @@ Features
 * Light-weight enough to serve as a replacement for regular expressions (also strictly more powerful than regexes)
 
 
-Installation
-============
+## Installation
 
 The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into your SBT-based Scala project like this:
 
-```scala
-
+```bash
     libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.8"
  ```
 
-The latest released version is **2.1.8**. It is available for Scala 2.11, 2.12, 2.13 as well as scala.js 0.6 and
-scala native.
+The latest released version is **2.1.8**. It is available for Scala 2.11, 2.12, 2.13 as well as scala.js 0.6 and scala native.
 
-*parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
-(currently version 2.3.3).
+*parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless (currently version 2.3.3).
 
 Once on your classpath you can use this single import to bring everything you need into scope:
 
@@ -70,20 +64,16 @@ There might be potentially newer snapshot builds available in the *sonatype snap
 https://oss.sonatype.org/content/repositories/snapshots/
 
 You can find the latest ones here:
-https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.11/ (Scala 2.11) and
 https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.12/ (Scala 2.12)
 
-.. _Maven Central: http://search.maven.org/
-.. _shapeless: https://github.com/milessabin/shapeless
+[shapeless](https://github.com/milessabin/shapeless)
 
 
-Example
-=======
+## Example
 
 This is what a simple *parboiled2* parser looks like:
 
 ```scala
-
     import org.parboiled2._
 
     class Calculator(val input: ParserInput) extends Parser {
@@ -117,8 +107,7 @@ This implements a parser for simple integer expressions like ``1+(2-3*4)/5` and 
 with the parser. If you'd like to see it run and try it out yourself check out `Running the Examples`_.
 
 
-Quick Start
-===========
+## Quick Start
 
 A *parboiled2* parser is a class deriving from ``org.parboiled2.Parser``, which defines one abstract member:
 
@@ -149,8 +138,7 @@ on `Access to Parser Results`_.
 .. _actions: `Parser Actions`_
 
 
-How the Parser matches Input
-============================
+## How the Parser matches Input
 
 PEG_ parsers are quite easy to understand as they work just like most people without a lot of background in parsing
 theory would build a parser "by hand": recursive-descent with backtracking. They have only one parsing phase (not two,
@@ -192,11 +180,10 @@ When this rule is confronted with the input ``abd` the parser matches the input 
 13. Rule ``foo` completes execution successfully, as its last sub-rule has succeeded.
     The whole input "abd" was matched and the cursor is left at position 3 (after the last-matched character).
 
-.. _ANTLR: http://www.antlr.org/
+[ANTLR](http://www.antlr.org)
 
 
-The Rule DSL
-============
+## The Rule DSL
 
 In order to work with *parboiled2* effectively you should understand the core concepts behind its rule DSL, mainly
 the "Value Stack" and how *parboiled2* encodes value stack operations in the Scala type system.
@@ -531,8 +518,7 @@ Rules can be freely combined/modified with these operations:
     construction.
 
 
-Parser Actions
---------------
+## Parser Actions
 
 The `Basic Character Matching`_  rules and the `Rule Combinators and Modifiers`_ allow you to build *recognizers* for
 potentially complex languages, but usually your parser is supposed to do more than simply determine whether a given
@@ -578,7 +564,7 @@ objects (like an AST_), you will have to add some "actions" to your rules.
 
 ----
 
-a ~> (...)
+`a ~> (...)`<br>
     The ``~>` operator is the "action operator" and as such the most frequently used way to add custom logic to a rule.
     It can be applied to any rule and appends action logic to it. The argument to ``~>` is always a function, what
     functions are allowed and what the resulting rule type is depends on the type of ``a``.
@@ -589,31 +575,31 @@ a ~> (...)
 
     Let's look at some examples:
 
-    .. code:: Scala
-
-        (foo: Rule1[Int]) ~> (i => i * 2)
+```scala
+    (foo: Rule1[Int]) ~> (i => i * 2)
+```
 
     This results in a ``Rule1[Int]` which multiplies the "output" of rule ``foo` by 2.
 
-    .. code:: Scala
-
-        (foo: Rule2[Int, String]) ~> ((i, s) => s + i.toString)
+```scala
+    (foo: Rule2[Int, String]) ~> ((i, s) => s + i.toString)
+```
 
     This results in a ``Rule1[String]` which combines the two "outputs" of rule ``foo` (an ``Int` and a ``String``)
     into one single ``String``.
 
-    .. code:: Scala
-
-        (foo: Rule2[Int, String]) ~> (_.toDouble)
+```scala
+    (foo: Rule2[Int, String]) ~> (_.toDouble)
+```
 
     This results in a ``Rule2[Int, Double]``. As you can see the function argument to ``~>` doesn't always have to
     "take" the complete output of the rule its applied to. It can also take fewer or even more elements. Its parameters
     are simply matched left to right against the top of the value stack (the right-most parameter matching the top-level
     element).
 
-    .. code:: Scala
-
-        (foo: Rule1[String]) ~> ((i :Int, s) => s + i.toString)
+```scala
+    (foo: Rule1[String]) ~> ((i :Int, s) => s + i.toString)
+```
 
     This results in a ``Rule[Int :: HNil, String :: HNil]``, i.e. a rule that pops one ``Int` value off the stack and
     replaces it with a ``String``. Note that, while the parameter types to the action function can be inferred if they
@@ -623,70 +609,67 @@ a ~> (...)
 
     If an action function returns ``Unit` it doesn't push anything on the stack. So this rule
 
-    .. code:: Scala
-
-        (foo: Rule1[String]) ~> (println(_))
-
+```scala
+    (foo: Rule1[String]) ~> (println(_))
+```
     has type ``Rule0``.
 
     Also, an action function can also be a ``Function0``, i.e. a function without any parameters:
 
-    .. code:: Scala
-
-        (foo: Rule1[String]) ~> (() => 42)
+```scala
+    (foo: Rule1[String]) ~> (() => 42)
+```
 
     This rule has type ``Rule2[String, Int]` and is equivalent to this:
 
-    .. code:: Scala
-
-        (foo: Rule1[String]) ~ push(42)
-
+```scala
+    (foo: Rule1[String]) ~ push(42)
+```
     An action function can also produce more than one output by returning an ``HList` instance:
 
-    .. code:: Scala
-
-        (foo: Rule1[String]) ~> (s => s.toInt :: 3.14 :: HNil)
+```scala
+    (foo: Rule1[String]) ~> (s => s.toInt :: 3.14 :: HNil)
+```
 
     This has type ``Rule2[Int, Double]``.
 
     One more very useful feature is special support for case class instance creation:
 
-    .. code:: Scala
-
-        case class Person(name: String, age: Int)
-
+```scala
+    case class Person(name: String, age: Int)
         (foo: Rule2[String, Int]) ~> Person
+```
 
     This has type ``Rule1[Person]``. The top elements of the value stack are popped off and replaced by an instance
     of the case class if they match in number, order and types to the case class members. This is great for building
     AST_-like structures! Check out the Calculator2__ example to see this form in action.
 
     Note that there is one quirk: For some reason this notation stops working if you explicitly define a companion
-    object for your case class. You'll have to write ``~> (Person(_, _))` instead.
+    object for your case class. You'll have to write `~> (Person(_, _))` instead.
 
-    __ https://github.com/sirthias/parboiled2/blob/master/examples/src/main/scala/org/parboiled2/examples/Calculator2.scala
+    https://github.com/sirthias/parboiled2/blob/master/examples/src/main/scala/org/parboiled2/examples/Calculator2.scala
 
     And finally, there is one more very powerful action type: the action function can itself return a rule!
     If an action returns a rule this rule is immediately executed after the action application just as if it
     had been concatenated to the underlying rule with the ``~` operator. You can therefore do things like
 
-    .. code:: Scala
+```scala
+    (foo: Rule1[Int]) ~> (i => test(i % 2 == 0) ~ push(i))
+```
 
-        (foo: Rule1[Int]) ~> (i => test(i % 2 == 0) ~ push(i))
-
-    which is a ``Rule1[Int]` that only produces even integers and fails for all others. Or, somewhat unusual
+    which is a `Rule1[Int]` that only produces even integers and fails for all others. Or, somewhat unusual
     but still perfectly legal:
 
-    .. code:: Scala
+```scala
+    capture("x") ~> (str(_))
+```
 
-        capture("x") ~> (str(_))
-
-    which is a ``Rule0` that is identical to ``'x' ~ 'x'``.
+    which is a ``Rule0` that is identical to `'x' ~ 'x'`.
 
 ----
 
-run(expression)
-    ``run` is the most versatile parser action. It can have several shapes, depending on the type of its argument
+run(expression)<br>
+    `run` is the most versatile parser action. It can have several shapes, depending on the type of its argument
     expression. If the argument expression evaluates to
 
     - a rule (i.e. has type ``R <: Rule[_, _]``) the result type of ``run` is this rule's type (i.e. ``R``) and the
@@ -717,7 +700,7 @@ run(expression)
 
 ----
 
-runSubParser(f: ParserInput ⇒ Rule[I, O]): Rule[I, O]
+`runSubParser(f: ParserInput => Rule[I, O]): Rule[I, O]`<br>
     This action allows creation of a sub parser and running of one of its rules as part of the current parsing process.
     The subparser will start parsing at the current input position and the outer parser (the one calling
     ``runSubParser``) will continue where the sub-parser stopped.
@@ -726,41 +709,39 @@ runSubParser(f: ParserInput ⇒ Rule[I, O]): Rule[I, O]
 
 There are a few more members of the ``Parser` class that are useful for writing efficient action logic:
 
-def cursor: Int
+`def cursor: Int`<br>
     The index of the next (yet unmatched) input character.
     Note: Might be equal to ``input.length` if the cursor is currently behind the last input character!
 
-def cursorChar: Char
+`def cursorChar: Char`<br>
     The next (yet unmatched) input character, i.e. the one at the ``cursor` index.
     Identical to ``if (cursor < input.length) input.charAt(cursor) else EOI` but more efficient.
 
-def lastChar: Char
+`def lastChar: Char`<br>
     Returns the last character that was matched, i.e. the one at index ``cursor - 1` and as such is equivalent
     to ``charAt(-1)``. Note that for performance optimization this method does *not* do a range check, i.e. depending on
     the ``ParserInput` implementation you might get an exception when calling this method before any character was
     matched by the parser.
 
-def charAt(offset: Int): Char
+`def charAt(offset: Int): Char`<br>
     Returns the character at the input index with the given delta to the cursor and as such is equivalent to
     ``input.charAt(cursor + offset)``. Note that for performance optimization this method does *not* do a range check,
     i.e. depending on the ``ParserInput` implementation you might get an exception if the computed index is out of
     bounds.
 
-def charAtRC(offset: Int): Char
+`def charAtRC(offset: Int): Char`<br>
     Same as ``charAt` but range-checked. Returns the input character at the index with the given offset from the
     cursor. If this index is out of range the method returns ``EOI``.
 
 You can use these to write efficient character-level logic like this:
 
-.. code:: Scala
-
+```scala
     def hexDigit: Rule1[Int] = rule {
       CharPredicate.HexAlpha ~ push(CharUtils.hexValue(lastChar))
     }
+```
 
-
-Additional Helpers
-------------------
+## Additional Helpers
 
 Base64Parsing
     For parsing RFC2045_ (Base64) encoded strings *parboiled* provides the ``Base64Parsing` trait which you can
@@ -768,8 +749,8 @@ Base64Parsing
     *parboiled* also comes with the ``org.parboiled2.util.Base64` class which provides an efficient Base64
     encoder/decoder for the standard as well as custom alphabets.
 
-.. _RFC2045: http://tools.ietf.org/html/rfc2045#section-6.8
-.. _its source: https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/main/scala/org/parboiled2/Base64Parsing.scala
+[RFC2045]( http://tools.ietf.org/html/rfc2045#section-6.8)<br>
+[its source](https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/main/scala/org/parboiled2/Base64Parsing.scala)
 
 ----
 
@@ -795,16 +776,14 @@ StringBuilding
     the ``StringBuilding` trait but resort to ``capture` and ordinary parser actions instead.
 
 
-Error Reporting
-===============
+## Error Reporting
 
 In many applications, especially with grammars that are not too complex, *parboiled* provides good error reports right
 out of the box, without any additional requirements on your part.
 However, there are cases where you want to have more control over how parse errors are created and/or formatted.
 This section gives an overview over how parse error reporting works in *parboiled* and how you can influence it.
 
-The Error Collection Process
-----------------------------
+## The Error Collection Process
 
 As described in the section about `How the Parser matches Input`_ above the parser consumes input by applying
 grammar rules and backtracking in the case of mismatches. As such rule mismatches are an integral part of the parsers
@@ -849,50 +828,47 @@ Note: The real process contains a few more steps to properly deal with the ``ato
 below. However, knowledge of these additional steps is not important for understanding the basic approach for how
 ``ParseError` instances are constructed.
 
-Formatting Parse Errors
------------------------
+### Formatting Parse Errors
 
 If a parsing runs fails and you receive a ``ParseError` instance you can call the ``formatError` method on your
 parser instance to get the error rendered into an error message string:
 
-.. code:: Scala
-
+```scala
     val errorMsg = parser.formatError(error)
+```
 
 The ``formatError` message can also take an explicit ``ErrorFormatter` as a second argument, which allows you to
 influence how exactly the error is to be rendered. For example, in order to also render the rule traces you can do:
 
-.. code:: Scala
-
-    val errorMsg = parser.formatError(error, new ErrorFormatter(showTraces = true))
-
+```scala
+   val errorMsg = parser.formatError(error, new ErrorFormatter(showTraces = true))
+```
 Look at the signature of the ``ErrorFormatter` constructor for more information on what rendering options exist.
 
 If you want even more control over the error rendering process you can extend the ``ErrorFormatter` and override
 its methods where you see fit.
 
 
-Tweaking Error Reporting
-------------------------
+### Tweaking Error Reporting
 
 While the error collection process described above yields all information required for a basic "this character
 was not matched and these characters were expected instead" information you sometimes want to have more control
 over what exactly is reported as "found" and as "expected".
 
-The ``atomic` Marker
+The `atomic` Marker
 +++++++++++++++++++++
 
 Since PEG parsers are scanner-less (i.e. without an intermediate "TOKEN-stream") they operate directly on the input
 buffer's character level. As such, by default, *parboiled* reports all errors on this character level.
 
-For example, if you run the rule ``"foo" | "fob" | "bar"` against input "foxes" you'll get this error message::
+For example, if you run the rule `"foo" | "fob" | "bar"` against input "foxes" you'll get this error message::
 
     Invalid input 'x', expected 'o' or 'b' (line 1, column 3):
     foxes
       ^
 
 While this error message is certainly correct, it might not be what you want to show your users, e.g. because ``foo``,
-``fob` and ``bar` are regarded as "atomic" keywords of your language, that should either be matched completely or not
+`fob` and ``bar` are regarded as "atomic" keywords of your language, that should either be matched completely or not
 at all. In this case you can use the ``atomic` marker to signal this to the parser.
 For example, running the rule ``atomic("foo") | atomic("fob") | atomic("bar")` against input "foxes" yields this error
 message::
@@ -914,12 +890,12 @@ like whitespace or comments.
 
 Consider this simple language:
 
-.. code:: Scala
-
+```scala
     def Expr    = rule { oneOrMore(Id ~ Keyword ~ Id).separatedBy(',' ~ WS) ~ EOI }
     def Id      = rule { oneOrMore(CharPredicate.Alpha) ~ WS }
     def Keyword = rule { atomic(("has" | "is") ~ WS) }
     def WS      = rule { zeroOrMore(anyOf(" \t \n")) }
+```
 
 When we run the ``Expr` rule against input "Tim has money, Tom Is poor" we get this error::
 
@@ -931,9 +907,9 @@ Again the list of "expected" things is technically correct but we don't want to 
 that whitespace is also allowed at the error location. The ``quiet` marker let's us suppress a certain rule from the
 expected list if there are also non-quiet alternatives:
 
-.. code:: Scala
-
+```scala
     def WS = rule { quiet(zeroOrMore(anyOf(" \t \n"))) }
+```
 
 With that change the error message becomes::
 
@@ -967,18 +943,16 @@ instances also automatically name the respective rule.
 If you don't want to split out rules into their own methods you can also use the ``named` modifier.
 With it you can attach an explicit name to any parser rule. For example, if you run the rule ``foo` from this snippet:
 
-.. code:: Scala
-
+```scala
     def foo = rule { "aa" | atomic("aaa").named("threeAs") | 'b' | 'B'.named("bigB") }
+```
 
 against input ``x` you'll get this error message::
 
     Invalid input 'x', expected 'a', threeAs, 'b' or bigB (line 1, column 1):
     x
     ^
-
-
-Manual Error Reporting
+## Manual Error Reporting
 ++++++++++++++++++++++
 
 If you want to completely bypass *parboiled*'s built-in error reporting logic you can do so by exclusively relying on
@@ -1027,12 +1001,12 @@ Sometimes you might find yourself in a situation where you'd like to DRY up your
 common constructs from several rule definitions in a "meta-rule" that modifies/decorates other rules.
 Essentially you'd like to write something like this (*illegal* code!):
 
-.. code:: Scala
-
+```scala
     def expression = rule { bracketed(ab) ~ bracketed(cd) }
     def ab = rule { "ab" }
     def cd = rule { "cd" }
     def bracketed(inner: Rule0) = rule { '[' ~ inner ~ ']' }
+```
 
 In this hypothetical example ``bracketed` is a meta-rule which takes another rule as parameter and calls it from within
 its own rule definition.
@@ -1046,12 +1020,12 @@ And since you cannot simply pass a method name as argument to another method the
 
 However, there is a work-around which might be good enough for your meta-rule needs:
 
-.. code:: Scala
-
+```scala
     def expression = rule { bracketed(ab) ~ bracketed(cd) }
-    val ab = () ⇒ rule { "ab" }
-    val cd = () ⇒ rule { "cd" }
+    val ab = () => rule { "ab" }
+    val cd = () => rule { "cd" }
     def bracketed(inner: () ⇒ Rule0) = rule { '[' ~ inner() ~ ']' }
+```
 
 If you model the rules that you want to pass as arguments to other rules as ``Function0` instances you *can* pass
 them around. Assigning those function instances to ``val` members avoids re-allocation during *every* execution of
@@ -1073,9 +1047,9 @@ later ones will never be able to match!
 
 For example in this simple rule
 
-.. code:: Scala
-
+```scala
     def foo = rule { "foo" | "foobar" }
+```
 
 "foobar" will never match. Reordering the alternatives to either "factor out" all common prefixes or putting the more
 specific alternatives first are the canonical solutions.
@@ -1093,18 +1067,17 @@ runs the syntactic predicate against the very same input position without making
 
 If you use syntactic predicates in a loop make sure to actually consume input as well. For example:
 
-.. code:: Scala
-
+```scala
     def foo = rule { capture(zeroOrMore( !',' )) }
+```
 
 will never terminate, while
 
-.. code:: Scala
-
+```scala
    def foo = rule { capture(zeroOrMore( !',' ~ ANY )) }
+```
 
 will capture all input until it reaches a comma.
-
 
 Unchecked Mutable State
 -----------------------
@@ -1147,8 +1120,7 @@ In order to reduce boilerplate in your grammar definition parboiled allows for c
 logic into a dedicated rule. By defining a custom implicit conversion from ``String` to ``Rule0` you can implicitly
 match whitespace after a string terminal:
 
-.. code:: Scala
-
+```scala
     class FooParser(val input: ParserInput) extends Parser {
       implicit def wspStr(s: String): Rule0 = rule {
         str(s) ~ zeroOrMore(' ')
@@ -1157,6 +1129,7 @@ match whitespace after a string terminal:
       def foo = rule { "foobar" | "foo" } // implicitly matches trailing blanks
       def fooNoWSP = rule { str("foobar") | str("foo") } // doesn't match trailing blanks
     }
+```
 
 In this example all usages of a plain string literals in the parser rules will implicitly match trailing space characters.
 In order to *not* apply the implicit whitespace matching in this case simply say ``str("foo")` instead of just ``"foo"``.
@@ -1172,23 +1145,23 @@ run, which might not be what you want.
 
 As an example, consider this very basic parser:
 
-.. code:: Scala
-
+```scala
     class MyParser(val input: ParserInput) extends Parser {
       def InputLine = rule { "foo" | "bar" }
     }
 
     new MyParser("foo").InputLine.run()  // Success
     new MyParser("foot").InputLine.run()  // also Success!!
+```
 
 In the second run of the parser, instead of failing with a ``ParseError` as you might expect, it successfully parses
 the matching input ``foo` and ignores the rest of the input.
 
 If this is not what you want you need to explicitly match ``EOI``, for example as follows:
 
-.. code:: Scala
-
+```scala
     def InputLine = rule { ("foo" | "bar") ~ EOI }
+```
 
 
 Grammar Debugging
@@ -1205,10 +1178,10 @@ Access to Parser Results
 In order to run the top-level parser rule against a given input you create a new instance of your parser class and
 call ``run()` on it, e.g:
 
-.. code:: Scala
-
+```scala
     val parser = new MyParser(input)
     val result = parser.rootRule.run()
+```
 
 By default the type of ``result` in this snippet will be a ``Try[T]` whereby ``T` depends on the type
 of ``rootRule``:
@@ -1227,9 +1200,9 @@ Note that ``run()` is not available on rules that are not of type ``RuleN[L <: H
 If the parser is not able to match the input successfully it creates an instance of class ``ParseError` , which is
 defined like this
 
-.. code:: Scala
-
+```scala
     case class ParseError(position: Position, charCount: Int, traces: Seq[RuleTrace]) extends RuntimeException
+```
 
 In such cases the ``Try` is completed with a ``scala.util.Failure` holding the ``ParseError``.
 If other exceptions occur during the parsing run (e.g. because some parser action failed) these will also end up as
