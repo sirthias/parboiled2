@@ -1,16 +1,12 @@
 # PARBOILED2 DOCUMENTATION
-
-# A Macro-Based PEG Parser Generator for Scala 2.12+
+ A Macro-Based PEG Parser Generator for Scala 2.12+
 
 [image](https://travis-ci.org/sirthias/parboiled2.svg?branch=release-2.1)<br>
 [target](https://travis-ci.org/sirthias/parboiled2)
 
-## Contents of this Document
-
 ## Introduction
 
-
-*parboiled2* is a Scala 2.11+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
+*parboiled2* is a Scala 2.12+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
 arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
 runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
 bytecode.
@@ -27,7 +23,8 @@ You might also be interested in reading about `parboiled2 vs. Scala Parser Combi
 `parboiled2 vs. Regular Expressions`.
 
 ## PEG
-[Parsing Expression Grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar)<br>
+
+[Parsing Expression Grammars](http://en.wikipedia.org/wiki/Parsing_expression_grammar) <br>
 [Context-Free Grammars](http://en.wikipedia.org/wiki/Context-free_grammar)<br>
 [parboiled 1.x](http://parboiled.org)
 
@@ -35,7 +32,7 @@ You might also be interested in reading about `parboiled2 vs. Scala Parser Combi
 ## Features
 
 * Concise, flexible and type-safe DSL for expressing parsing logic
-* Full expressive power of `Parsing Expression Grammars`_, for effectively dealing with most real-world parsing needs
+* Full expressive power of `Parsing Expression Grammars`, for effectively dealing with most real-world parsing needs
 * Excellent reporting of parse errors
 * Parsing performance comparable to hand-written parsers
 * Easy to learn and use (just one parsing phase (no lexer code required), rather small API)
@@ -44,7 +41,7 @@ You might also be interested in reading about `parboiled2 vs. Scala Parser Combi
 
 ## Installation
 
-The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into your SBT-based Scala project like this:
+The artifacts for *parboiled2* live on `Maven Central` and can be tied into your SBT-based Scala project like this:
 
 ```bash
     libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.8"
@@ -65,8 +62,6 @@ https://oss.sonatype.org/content/repositories/snapshots/
 
 You can find the latest ones here:
 https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.12/ (Scala 2.12)
-
-[shapeless](https://github.com/milessabin/shapeless)
 
 
 ## Example
@@ -104,8 +99,7 @@ This is what a simple *parboiled2* parser looks like:
 ```
 
 This implements a parser for simple integer expressions like `1+(2-3*4)/5` and runs the actual calculation in-phase
-with the parser. If you'd like to see it run and try it out yourself check out `Running the Examples`_.
-
+with the parser. If you'd like to see it run and try it out yourself check out `Running the Examples`.
 
 ## Quick Start
 
@@ -132,21 +126,20 @@ e.g:
 ```
 
 For more info on what options you have with regard to accessing the results of a parsing run check out the section
-on `Access to Parser Results`_.
+on `Access to Parser Results`.
 
-.. _DSL expression: `The Rule DSL`_
-.. _actions: `Parser Actions`_
-
+`The Rule DSL`<br>
+`Parser Actions`<br>
 
 ## How the Parser matches Input
 
-PEG_ parsers are quite easy to understand as they work just like most people without a lot of background in parsing
+PEG parsers are quite easy to understand as they work just like most people without a lot of background in parsing
 theory would build a parser "by hand": recursive-descent with backtracking. They have only one parsing phase (not two,
 like most parsers produced by traditional parser generators like ANTLR_), do not require any look-ahead and perform
 quite well in most real-world scenarios (although they *can* exhibit exponential runtime for certain pathological
 languages and inputs).
 
-A PEG_ parser consists of a number of rules that logically form a "tree", with one "root" rule at the top calling zero
+A PEG parser consists of a number of rules that logically form a "tree", with one "root" rule at the top calling zero
 or more lower-level rules, which can each call other rules and so on. Since rules can also call themselves or any of
 their parents the rule "tree" is not really a tree but rather a potentially cyclic directed graph, but in most cases the
 tree structure dominates, which is why its useful to think of it as a tree with potential cycles.
@@ -202,8 +195,8 @@ When a rule of a *parboiled2* parser executes it performs any combination of the
 - operate on the value stack, i.e. pop values off and/or push values to the value stack
 - perform side-effects
 
-Matching input is done by calling `Basic Character Matching`_ rules, which do nothing but match input and advance
-the cursor. Value stack operations (and other potential side-effects) are performed by `Parser Actions`_.
+Matching input is done by calling `Basic Character Matching` rules, which do nothing but match input and advance
+the cursor. Value stack operations (and other potential side-effects) are performed by `Parser Actions`.
 
 It is important to understand that rules in *parboiled2* (i.e. the rule methods in your parser class) do not directly
 return some custom value as a method result. Instead, all their consuming and producing values happens as side-effects
@@ -234,17 +227,21 @@ one of these predefined aliases:
 Here is what these type aliases denote:
 
 `Rule0`
+
     A rule that neither pops off nor pushes to the value stack, i.e. has no effect on the value stack whatsoever.
     All `Basic Character Matching` rules are of this type.
 
 `Rule1[+T]`
+
     Pushes exactly one value of type `T` onto the value stack. After `Rule0` this is the second-most frequently
     used rule type.
 
 `Rule2[+A, +B]`
+
     Pushes exactly two values of types `A` and `B` onto the value stack.
 
 `RuleN[+L <: HList]`
+
     Pushes a number of values onto the value stack, which correspond to the given `L <: HList` type parameter.
 
 `PopRule[-L <: HList]`
@@ -274,17 +271,17 @@ The following basic character matching rules are the only way to cause the parse
     So rather than saying `'a' | 'b'` you will have to say `ch('a') | 'b'`.
 
 
-`implicit def str(s: String): Rule0` <br>
+`implicit def str(s: String): Rule0` 
 
-String values can be directly used in the rule DSL and match themselves.
+    String values can be directly used in the rule DSL and match themselves.
 
-`implicit def predicate(p: CharPredicate): Rule0`<br>
+`implicit def predicate(p: CharPredicate): Rule0`
 
     You can use `org.parboiled2.CharPredicate` values directly in the rule DSL. `CharPredicate` is an efficient
     implementation of character sets and already comes with a number pre-defined character classes like
     `CharPredicate.Digit` or `CharPredicate.LowerHexLetter`.
 
-`implicit def valueMap[T](m: Map[String, T]): R`<br>
+`implicit def valueMap[T](m: Map[String, T]): R`
 
     Values of type `Map[String, T]` can be directly used in the rule DSL and match any of the given map's keys and
     push the respective value upon a successful match. The resulting rule type depends on `T`:
@@ -297,41 +294,41 @@ String values can be directly used in the rule DSL and match themselves.
     `T` (otherwise)   `Rule1[T]` (pushes only one value)
     =================== =========================================
 
-`def anyOf(chars: String): Rule0`<br>
+`def anyOf(chars: String): Rule0`
 
     This constructs a `Rule0` which matches any of the given strings characters.
 
 
-`def noneOf(chars: String): Rule0`<br>
+`def noneOf(chars: String): Rule0`
 
     This constructs a `Rule0` which matches any single character except the ones in the given string and except EOI.
 
-`def ignoreCase(c: Char): Rule0`<br>
+`def ignoreCase(c: Char): Rule0`
 
     Matches the given single character case insensitively.
     Note: **The given character must be specified in lower-case!** This requirement is currently NOT enforced!
 
 
-`def ignoreCase(s: String): Rule0`<br>
+`def ignoreCase(s: String): Rule0`
 
     Matches the given string of characters case insensitively.
     Note: **The given string must be specified in all lower-case!** This requirement is currently NOT enforced!
 
-`def ANY: Rule0`<br>
+`def ANY: Rule0`
 
     Matches any character except *EOI* (end-of-input).
 
-`def EOI: Char`<br>
+`def EOI: Char`
 
     The *EOI* (end-of-input) character, which is a virtual character that the parser "appends" after the last
     character of the actual input.
 
-`def MATCH: Rule0`<br>
+`def MATCH: Rule0`
 
     Matches no character (i.e. doesn't cause the parser to make any progress) but succeeds always. It's the "empty"
     rule that is mostly used as a neutral element in rule composition.
 
-`def MISMATCH[I <: HList, O <: HList]: Rule[I, O]`<br>
+`def MISMATCH[I <: HList, O <: HList]: Rule[I, O]`
 
     A rule that always fails. Fits any rule signature.
 
@@ -345,7 +342,7 @@ String values can be directly used in the rule DSL and match themselves.
 
 Rules can be freely combined/modified with these operations:
 
-`a ~ b`<br>
+`a ~ b`
 
     Two rules `a` and `b` can be combined with the `~` operator resulting in a rule that only matches if first
     `a` matches and then `b` matches. The computation of the resulting rule type is somewhat involved.
@@ -360,14 +357,14 @@ Rules can be freely combined/modified with these operations:
     `Rule[A, B:C]`       `Rule[D:C, E:F]`   Illegal if `D` != `B`
     ====================== ==================== =========================
 
-`a | b`<br>
-    Two rules `a` and `b` can be combined with the `|` operator to form an "ordered choice" in PEG_ speak.
+`a | b`
+
+    Two rules `a` and `b` can be combined with the `|` operator to form an "ordered choice" in PEG speak.
     The resulting rule tries to match `a` and succeeds if this succeeds. Otherwise the parser is reset and `b`
     is tried. This operator can only be used on compatible rules.
 
-----
+`&(a)`
 
-`&(a)`<br>
     Creates a "positive syntactic predicate", i.e. a rule that tests if the underlying rule matches but doesn't cause
     the parser to make any progress (i.e. match any input) itself. Also, all effects that the underlying rule might
     have had on the value stack are cleared out, the resulting rule type is therefore always `Rule0`,
@@ -376,9 +373,8 @@ Rules can be freely combined/modified with these operations:
     Note that `&` not itself consuming any input can have surprising implications in repeating constructs,
     see `Non-Termination when using Syntactic Predicates`_ for more details.
 
-----
 
-`!a`<br>
+`!a`
     Creates a "negative syntactic predicate", i.e. a rule that matches only if the underlying one mismatches and vice
     versa. A syntactic predicate doesn't cause the parser to make any progress (i.e. match any input) and also clears
     out all effects that the underlying rule might have had on the value stack. The resulting rule type is therefore
@@ -387,9 +383,8 @@ Rules can be freely combined/modified with these operations:
     Note that `!` not itself consuming any input can have surprising implications in repeating constructs,
     see `Non-Termination when using Syntactic Predicates`_ for more details.
 
-----
+`optional(a)`
 
-`optional(a)`<br>
     Runs its inner rule and succeeds even if the inner rule doesn't. The resulting rule type depends on the type
     of the inner rule:
 
@@ -405,7 +400,7 @@ Rules can be freely combined/modified with these operations:
     This is an example of a reduction rule wrapped with `optional`:
 
 ```scala
-        capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
+capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
 ```
     The inner rule of `optional` here has type `Rule[String :: HNil, String :: HNil]`, i.e. it pops one `String`
     off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
@@ -413,9 +408,8 @@ Rules can be freely combined/modified with these operations:
 
     As a shortcut you can also use `a.?` instead of `optional(a)`.
 
-----
+`zeroOrMore(a)`
 
-`zeroOrMore(a)`<br>
     Runs its inner rule until it fails, always succeeds. The resulting rule type depends on the type of the inner rule:
 
     =================== =======================
@@ -430,7 +424,7 @@ Rules can be freely combined/modified with these operations:
     This is an example of a reduction rule wrapped with `zeroOrMore`:
 
 ```scala
-        (factor :Rule1[Int]) ~ zeroOrMore('*' ~ factor ~> ((a: Int, b) => a * b))
+(factor :Rule1[Int]) ~ zeroOrMore('*' ~ factor ~> ((a: Int, b) => a * b))
 ```
 
     The inner rule of `zeroOrMore` here has type `Rule[Int :: HNil, Int :: HNil]`, i.e. it pops one `Int`
@@ -439,9 +433,8 @@ Rules can be freely combined/modified with these operations:
 
     As a shortcut you can also use `a.*` instead of `zeroOrMore(a)`.
 
-----
+`oneOrMore(a)`
 
-`oneOrMore(a)`<br>
     Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
     The resulting rule type depends on the type of the inner rule:
 
@@ -466,9 +459,8 @@ Rules can be freely combined/modified with these operations:
 
     As a shortcut you can also use `a.+` instead of `oneOrMore(a)`.
 
-----
+`xxx.times(a)`
 
-`xxx.times(a)`<br>
     Repeats a rule a given number of times. `xxx` can be either a positive `Int` value or a range `(<x> to <y>)`
     whereby both `<x>` and `<y>` are positive `Int` values.
     The resulting rule type depends on the type of the inner rule:
@@ -492,9 +484,8 @@ Rules can be freely combined/modified with these operations:
     another one onto it, which means that the number of elements on the value stack as well as their types remain the
     same, even though the actual values might have changed.
 
-----
+`a.separatedBy(separator: Rule0)`
 
-`a.separatedBy(separator: Rule0)`<br>
     You can use `a.separatedBy(b)` to create a rule with efficient and automatic support for element separators if
     `a` is a rule produced by the `zeroOrMore`, `oneOrMore` or `xxx.times` modifier and `b` is a `Rule0`.
     The resulting rule has the same type as `a` but expects the individual repetition elements to be separated by
@@ -503,14 +494,12 @@ Rules can be freely combined/modified with these operations:
     As a shortcut you can also use `a.*(b)` or `(a * b)` instead of `zeroOrMore(a).separatedBy(b)`.
     The same shortcut also works for `+` (`oneOrMore`).
 
-----
+`a ~!~ b`
 
-`a ~!~ b`<br>
     Same as `~` but with "cut" semantics, meaning that the parser will never backtrack across this boundary.
     If the rule being concatenated doesn't match a parse error will be triggered immediately.
     Usually you don't need to use this "cut" operator but in certain cases it can help in simplifying grammar
     construction.
-
 
 ## Parser Actions
 
@@ -519,9 +508,8 @@ potentially complex languages, but usually your parser is supposed to do more th
 input conforms to the defined grammar. In order to run custom logic during parser execution, e.g. for creating custom
 objects (like an AST_), you will have to add some "actions" to your rules.
 
-----
+`push(value)`
 
-`push(value)`<br>
     `push(value)` creates a rule that matches no input (but always succeeds, as a rule) and pushes the given value
     onto the value stack. Its rule type depends on the given value:
 
@@ -537,9 +525,8 @@ objects (like an AST_), you will have to add some "actions" to your rules.
     like a call-by-name parameter even though it is not marked as one! This means that the argument expression to
     `push` is (re-)evaluated for every rule execution.
 
-----
+`capture(a)`
 
-`capture(a)`<br>
     Wrapping a rule `a` with `capture` turns that rule into one that pushes an additional `String` instance onto
     the value stack (in addition to all values that `a` already pushes itself): the input text matched by `a`.
 
@@ -548,17 +535,17 @@ objects (like an AST_), you will have to add some "actions" to your rules.
 
     Another example: `capture("foo" ~ push(42))` has type `Rule2[Int, String]` and will match input "foo". After
     successful execution the value stack will have the String `"foo"` as its top element and `42` underneath.
-----
+
 `test(condition: Boolean): Rule0`
+
     `test` implements "semantic predicates". It creates a rule that matches no input and succeeds only if the given
     condition expression evaluates to true. Note that, due to the macro expansion the *parboiled2* rule DSL is based on,
     the given argument behaves like a call-by-name parameter even though it is not marked as one!
     This means that the argument expression to `test` is (re-)evaluated for every rule execution, just as if `test`
     would have been defined as `def test(condition: => Boolean): Rule0`.
 
-----
+`a ~> (...)`
 
-`a ~> (...)`<br>
     The `~>` operator is the "action operator" and as such the most frequently used way to add custom logic to a rule.
     It can be applied to any rule and appends action logic to it. The argument to `~>` is always a function, what
     functions are allowed and what the resulting rule type is depends on the type of `a`.
@@ -650,7 +637,6 @@ objects (like an AST_), you will have to add some "actions" to your rules.
 ```scala
     (foo: Rule1[Int]) ~> (i => test(i % 2 == 0) ~ push(i))
 ```
-
     which is a `Rule1[Int]` that only produces even integers and fails for all others. Or, somewhat unusual
     but still perfectly legal:
 
@@ -660,9 +646,8 @@ objects (like an AST_), you will have to add some "actions" to your rules.
 
     which is a `Rule0` that is identical to `'x' ~ 'x'`.
 
-----
+`run(expression)`
 
-run(expression)<br>
     `run` is the most versatile parser action. It can have several shapes, depending on the type of its argument
     expression. If the argument expression evaluates to
 
@@ -692,38 +677,40 @@ run(expression)<br>
     call-by-name parameter even though it is not marked as one! This means that the argument expression to `run` is
     (re-)evaluated for every rule execution.
 
-----
+`runSubParser(f: ParserInput => Rule[I, O]): Rule[I, O]`
 
-`runSubParser(f: ParserInput => Rule[I, O]): Rule[I, O]`<br>
     This action allows creation of a sub parser and running of one of its rules as part of the current parsing process.
     The subparser will start parsing at the current input position and the outer parser (the one calling
     `runSubParser`) will continue where the sub-parser stopped.
 
-----
-
 There are a few more members of the `Parser` class that are useful for writing efficient action logic:
 
-`def cursor: Int`<br>
+`def cursor: Int`
+
     The index of the next (yet unmatched) input character.
     Note: Might be equal to `input.length` if the cursor is currently behind the last input character!
 
-`def cursorChar: Char`<br>
+`def cursorChar: Char`
+
     The next (yet unmatched) input character, i.e. the one at the `cursor` index.
     Identical to `if (cursor < input.length) input.charAt(cursor) else EOI` but more efficient.
 
-`def lastChar: Char`<br>
+`def lastChar: Char`
+
     Returns the last character that was matched, i.e. the one at index `cursor - 1` and as such is equivalent
     to `charAt(-1)`. Note that for performance optimization this method does *not* do a range check, i.e. depending on
     the `ParserInput` implementation you might get an exception when calling this method before any character was
     matched by the parser.
 
-`def charAt(offset: Int): Char`<br>
+`def charAt(offset: Int): Char`
+
     Returns the character at the input index with the given delta to the cursor and as such is equivalent to
     `input.charAt(cursor + offset)`. Note that for performance optimization this method does *not* do a range check,
     i.e. depending on the `ParserInput` implementation you might get an exception if the computed index is out of
     bounds.
 
-`def charAtRC(offset: Int): Char`<br>
+`def charAtRC(offset: Int): Char`
+
     Same as `charAt` but range-checked. Returns the input character at the index with the given offset from the
     cursor. If this index is out of range the method returns `EOI`.
 
@@ -738,17 +725,18 @@ You can use these to write efficient character-level logic like this:
 ## Additional Helpers
 
 Base64Parsing
+
     For parsing RFC2045_ (Base64) encoded strings *parboiled* provides the `Base64Parsing` trait which you can
     mix into your `Parser` class. See `its source`_ for more info on what exactly it provides.
     *parboiled* also comes with the `org.parboiled2.util.Base64` class which provides an efficient Base64
     encoder/decoder for the standard as well as custom alphabets.
 
-[RFC2045]( http://tools.ietf.org/html/rfc2045#section-6.8)<br>
+[RFC2045]( http://tools.ietf.org/html/rfc2045#section-6.8)
 [its source](https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/main/scala/org/parboiled2/Base64Parsing.scala)
 
-----
 
-DynamicRuleDispatch
+### DynamicRuleDispatch
+
     Sometimes an application cannot fully specify at compile-time which of a given set of rules is to be called at
     runtime. For example, a parser for parsing HTTP header values might need to select the right parser rule for a
     header name that is only known once the HTTP request has actually been read from the network.
@@ -756,11 +744,10 @@ DynamicRuleDispatch
     separating out all the possible cases *parboiled* provides the `DynamicRuleDispatch` facility.
     Check out `its test`_ for more info on how to use it.
 
-.. _its test: https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/test/scala/org/parboiled2/DynamicRuleDispatchSpec.scala
+[its test](https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/test/scala/org/parboiled2/DynamicRuleDispatchSpec.scala)
 
-----
+### StringBuilding
 
-StringBuilding
     For certain high-performance use-cases it is sometimes better to construct Strings that the parser is to
     produce/extract from the input in a char-by-char fashion. To support you in doing this *parboiled* provides
     the `StringBuilding` trait which you can mix into your `Parser` class.
@@ -769,7 +756,6 @@ StringBuilding
     DSL otherwise gives you. If you don't understand what this means you probably shouldn't be using
     the `StringBuilding` trait but resort to `capture` and ordinary parser actions instead.
 
-
 ## Error Reporting
 
 In many applications, especially with grammars that are not too complex, *parboiled* provides good error reports right
@@ -777,7 +763,7 @@ out of the box, without any additional requirements on your part.
 However, there are cases where you want to have more control over how parse errors are created and/or formatted.
 This section gives an overview over how parse error reporting works in *parboiled* and how you can influence it.
 
-## The Error Collection Process
+### The Error Collection Process
 
 As described in the section about `How the Parser matches Input`_ above the parser consumes input by applying
 grammar rules and backtracking in the case of mismatches. As such rule mismatches are an integral part of the parsers
@@ -849,8 +835,7 @@ While the error collection process described above yields all information requir
 was not matched and these characters were expected instead" information you sometimes want to have more control
 over what exactly is reported as "found" and as "expected".
 
-The `atomic` Marker
-+++++++++++++++++++++
+### The `atomic` Marker
 
 Since PEG parsers are scanner-less (i.e. without an intermediate "TOKEN-stream") they operate directly on the input
 buffer's character level. As such, by default, *parboiled* reports all errors on this character level.
@@ -875,8 +860,7 @@ Of course you can use the `atomic` marker on any type of rule, not just string r
 reported error position forward from the principal error position and lifts the level at which errors are reported
 from the character level to a rule level of your choice.
 
-The `quiet` Marker
-++++++++++++++++++++
+### The `quiet` Marker
 
 Another problem that more frequently occurs with *parboiled*'s default error reporting is that the list of "expected"
 things becomes too long. Often the reason for this are rules that deal match input which can appear pretty much anywhere,
@@ -941,11 +925,10 @@ With it you can attach an explicit name to any parser rule. For example, if you 
 
 against input `x` you'll get this error message::
 
-```bash
     Invalid input 'x', expected 'a', threeAs, 'b' or bigB (line 1, column 1):
     x
     ^
-```
+
 ### Manual Error Reporting
 
 If you want to completely bypass *parboiled*'s built-in error reporting logic you can do so by exclusively relying on
@@ -1019,13 +1002,11 @@ them around. Assigning those function instances to `val` members avoids re-alloc
 the `expression` rule which would come with a potentially significant performance cost.
 
 
-Common Mistakes
-===============
+## Common Mistakes
 
-Disregarding Order Choice
--------------------------
+### Disregarding Order Choice
 
-There is one mistake that new users frequently make when starting out with writing PEG_ grammars: disregarding the
+There is one mistake that new users frequently make when starting out with writing PEG grammars: disregarding the
 "ordered choice" logic of the `|` operator. This operator always tries all alternatives *in the order that they were
 defined* and picks the first match.
 
@@ -1045,8 +1026,7 @@ If your parser is not behaving the way you expect it to watch out for this "wron
 not that easy to spot in more complicated rule structures.
 
 
-Non-Termination when using Syntactic Predicates
------------------------------------------------
+### Non-Termination when using Syntactic Predicates
 
 The syntactic predicate operators, `&` and `!`, don't themselves consume any input, so directly wrapping them with a
 repeating combinator (like `zeroOrMore` or `oneOrMore`) will lead to an infinite loop as the parser continuously
@@ -1066,8 +1046,7 @@ will never terminate, while
 
 will capture all input until it reaches a comma.
 
-Unchecked Mutable State
------------------------
+### Unchecked Mutable State
 
 *parboiled2* parsers work with mutable state as a design choice for achieving good parsing performance. Matching input
 and operating on the value stack happen as side-effects to rule execution and mutate the parser state.
@@ -1085,8 +1064,7 @@ The rule DSL is powerful enough to support even very complex parsing logic witho
 state, we consider the addition of mutable members as an optimization that should be well justified.
 
 
-Handling Whitespace
--------------------
+### Handling Whitespace
 
 One disadvantage of PEGs over lexer-based parser can be the handling of white space. In a "traditional" parser with a
 separate lexer (scanner) phase this lexer can simply skip all white space and only generate tokens for the actual
@@ -1101,7 +1079,6 @@ The common and highly recommended pattern is to
 This helps with keeping your grammar rules properly structured and white space "taken care of" without it getting in the
 way.
 
-----
 
 In order to reduce boilerplate in your grammar definition parboiled allows for cleanly factoring out whitespace matching
 logic into a dedicated rule. By defining a custom implicit conversion from `String` to `Rule0` you can implicitly
@@ -1122,8 +1099,7 @@ In this example all usages of a plain string literals in the parser rules will i
 In order to *not* apply the implicit whitespace matching in this case simply say `str("foo")` instead of just `"foo"`.
 
 
-Parsing the whole Input
------------------------
+### Parsing the whole Input
 
 If you don't explicitly match `EOI` (the special end-of-input pseudo-character) in your grammar's root rule
 the parser will not produce an error if, at the end of a parsing run, there is still unmatched input left.
@@ -1151,16 +1127,14 @@ If this is not what you want you need to explicitly match `EOI`, for example as 
 ```
 
 
-Grammar Debugging
-=================
+### Grammar Debugging
 
 TODO
 
 (e.g., use `parse.formatError(error, showTraces = true)`)
 
 
-Access to Parser Results
-========================
+### Access to Parser Results
 
 In order to run the top-level parser rule against a given input you create a new instance of your parser class and
 call `run()` on it, e.g:
@@ -1283,14 +1257,11 @@ but Scala 2.10.3+ only, 2 added dependencies (parboiled2 + shapeless))
 TODO
 
 
-Contributing
-============
+## Contributing
 
 TODO
 
-
-Support
-=======
+## Support
 
 In most cases the `parboiled2 mailing list`__ is probably the best place for your needs with regard to
 support, feedback and general discussion.
@@ -1307,14 +1278,12 @@ You can also use the gitter.im chat channel for parboiled2:
    :target: https://gitter.im/sirthias/parboiled2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 
-References
-==========
+## References
 
 TODO
 
 
-Credits
-=======
+## Credits
 
 Much of *parboiled2* was developed by `Alexander Myltsev`__ during `GSoc 2013`__, a big thank you for his great work!
 
@@ -1328,11 +1297,8 @@ and its codebase would look a lot more messy.
 * https://github.com/xeno-by
 
 
-License
-=======
+## License
 
 *parboiled2* is released under the `Apache License 2.0`__
 
 __ http://en.wikipedia.org/wiki/Apache_license
-
-.. |--| unicode:: U+2013
