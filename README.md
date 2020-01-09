@@ -6,9 +6,7 @@
 
 ## Introduction
 
-*parboiled2* is a Scala 2.12+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
-arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
-runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
+*parboiled2* is a Scala 2.12+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars` (PEGs), which runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
 bytecode.
 
 PEGs are an alternative to `Context-Free Grammars` (CFGs) for formally specifying syntax, they make a good replacement
@@ -47,7 +45,7 @@ The artifacts for *parboiled2* live on `Maven Central` and can be tied into your
     libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.8"
  ```
 
-The latest released version is **2.1.8**. It is available for Scala 2.11, 2.12, 2.13 as well as scala.js 0.6 and scala native.
+The latest released version is **2.1.8**. It is available for Scala 2.12, 2.13 as well as scala.js 0.6 and scala native.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless (currently version 2.3.3).
 
@@ -57,11 +55,9 @@ Once on your classpath you can use this single import to bring everything you ne
     import org.parboiled2._
 ```
 
-There might be potentially newer snapshot builds available in the *sonatype snapshots* repository located at:
-https://oss.sonatype.org/content/repositories/snapshots/
+There might be potentially newer snapshot builds available in the *sonatype snapshots* repository [here](https://oss.sonatype.org/content/repositories/snapshots)
 
-You can find the latest ones here:
-https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.12/ (Scala 2.12)
+You can find the latest one [here](https://oss.sonatype.org/content/repositories/snapshots/org/parboiled/parboiled_2.12/)
 
 
 ## Example
@@ -114,7 +110,7 @@ holding the input for the parsing run. Usually it is best implemented as a `val`
 every parsing run (parser instances are very lightweight).
 
 The "productions" (or "rules") of your grammar are then defined as simple methods, which in most cases consist of a
-single call to the `rule` macro whose argument is a `DSL expression`_ defining what input the rule is to match and
+single call to the `rule` macro whose argument is a `DSL expression` defining what input the rule is to match and
 what actions_ to perform.
 
 In order to run your parser against a given input you create a new instance and call `run()` on the top-level rule,
@@ -185,7 +181,7 @@ the "Value Stack" and how *parboiled2* encodes value stack operations in the Sca
 ### Rule Types and the Value Stack
 
 Apart from the input buffer and the cursor the parser manages another important structure: the "Value Stack".
-The value stack is a simple stack construct that serves as temporary storage for your `Parser Actions`_. In many cases
+The value stack is a simple stack construct that serves as temporary storage for your `Parser Actions`. In many cases
 it is used for constructing an AST_ during the parsing run but it can also be used for "in-phase" computations
 (like in the Example_ above) or for any other purpose.
 
@@ -245,13 +241,12 @@ Here is what these type aliases denote:
     Pushes a number of values onto the value stack, which correspond to the given `L <: HList` type parameter.
 
 `PopRule[-L <: HList]`
+
     Pops a number of values off the value stack (corresponding to the given `L <: HList` type parameter) and does
     not produce any new value itself.
 
 The rule DSL makes sure that the rule types are properly assembled and carried through your rule structure as you
-combine `Basic Character Matching`_  with `Rule Combinators and Modifiers`_ and `Parser Actions`_, so
-as long as you don't write any logic that circumvents the value stack your parser will be completely type-safe and
-the compiler will be able to catch you if you make mistakes by combining rules in an unsound way.
+combine `Basic Character Matching` with `Rule Combinators and Modifiers` and `Parser Actions`, so as long as you don't write any logic that circumvents the value stack your parser will be completely type-safe and the compiler will be able to catch you if you make mistakes by combining rules in an unsound way.
 
 [AST Link](http://en.wikipedia.org/wiki/Abstract_syntax_tree)
 
@@ -265,10 +260,7 @@ The following basic character matching rules are the only way to cause the parse
 
 `implicit def ch(c: Char): Rule0`
 
-    Char values can be directly used in the rule DSL and match themselves. There is one notable case where you will
-    have to use the explicit `ch` wrapper: You cannot use the `|` operator directly on chars as it denotes the
-    built-in Scala binary "or" operator defined on numeric types (`Char` is an unsigned 16-bit integer).
-    So rather than saying `'a' | 'b'` you will have to say `ch('a') | 'b'`.
+    Char values can be directly used in the rule DSL and match themselves. There is one notable case where you will have to use the explicit `ch` wrapper: You cannot use the `|` operator directly on chars as it denotes the built-in Scala binary "or" operator defined on numeric types (`Char` is an unsigned 16-bit integer). So rather than saying `'a' | 'b'` you will have to say `ch('a') | 'b'`.
 
 
 `implicit def str(s: String): Rule0` 
@@ -277,14 +269,11 @@ The following basic character matching rules are the only way to cause the parse
 
 `implicit def predicate(p: CharPredicate): Rule0`
 
-    You can use `org.parboiled2.CharPredicate` values directly in the rule DSL. `CharPredicate` is an efficient
-    implementation of character sets and already comes with a number pre-defined character classes like
-    `CharPredicate.Digit` or `CharPredicate.LowerHexLetter`.
+    You can use `org.parboiled2.CharPredicate` values directly in the rule DSL. `CharPredicate` is an efficient implementation of character sets and already comes with a number pre-defined character classes like `CharPredicate.Digit` or `CharPredicate.LowerHexLetter`.
 
 `implicit def valueMap[T](m: Map[String, T]): R`
 
-    Values of type `Map[String, T]` can be directly used in the rule DSL and match any of the given map's keys and
-    push the respective value upon a successful match. The resulting rule type depends on `T`:
+    Values of type `Map[String, T]` can be directly used in the rule DSL and match any of the given map's keys and push the respective value upon a successful match. The resulting rule type depends on `T`:
 
     =================== =========================================
     `T`               `R`
@@ -334,8 +323,7 @@ The following basic character matching rules are the only way to cause the parse
 
 `def MISMATCH0: Rule0`
 
-    Same as `MISMATCH` but with a clearly defined type. Use it (rather then `MISMATCH`) if the call site doesn't
-    clearly "dictate" a certain rule type and using `MISMATCH` therefore gives you a compiler error.
+    Same as `MISMATCH` but with a clearly defined type. Use it (rather then `MISMATCH`) if the call site doesn't clearly "dictate" a certain rule type and using `MISMATCH` therefore gives you a compiler error.
 
 
 ### Rule Combinators and Modifiers
@@ -371,17 +359,14 @@ Rules can be freely combined/modified with these operations:
     independently of the type of the underlying rule.
 
     Note that `&` not itself consuming any input can have surprising implications in repeating constructs,
-    see `Non-Termination when using Syntactic Predicates`_ for more details.
-
+    see `Non-Termination when using Syntactic Predicates` for more details.
 
 `!a`
-    Creates a "negative syntactic predicate", i.e. a rule that matches only if the underlying one mismatches and vice
-    versa. A syntactic predicate doesn't cause the parser to make any progress (i.e. match any input) and also clears
-    out all effects that the underlying rule might have had on the value stack. The resulting rule type is therefore
-    always `Rule0`, independently of the type of the underlying rule.
+
+    Creates a "negative syntactic predicate", i.e. a rule that matches only if the underlying one mismatches and vice versa. A syntactic predicate doesn't cause the parser to make any progress (i.e. match any input) and also clears out all effects that the underlying rule might have had on the value stack. The resulting rule type is therefore always `Rule0`, independently of the type of the underlying rule.
 
     Note that `!` not itself consuming any input can have surprising implications in repeating constructs,
-    see `Non-Termination when using Syntactic Predicates`_ for more details.
+    see `Non-Termination when using Syntactic Predicates` for more details.
 
 `optional(a)`
 
@@ -400,11 +385,9 @@ Rules can be freely combined/modified with these operations:
     This is an example of a reduction rule wrapped with `optional`:
 
 ```scala
-capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
+    capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
 ```
-    The inner rule of `optional` here has type `Rule[String :: HNil, String :: HNil]`, i.e. it pops one `String`
-    off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
-    their types remain the same, even though the actual values might have changed.
+    The inner rule of `optional` here has type `Rule[String :: HNil, String :: HNil]`, i.e. it pops one `String` off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as their types remain the same, even though the actual values might have changed.
 
     As a shortcut you can also use `a.?` instead of `optional(a)`.
 
@@ -424,12 +407,11 @@ capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
     This is an example of a reduction rule wrapped with `zeroOrMore`:
 
 ```scala
-(factor :Rule1[Int]) ~ zeroOrMore('*' ~ factor ~> ((a: Int, b) => a * b))
+    (factor :Rule1[Int]) ~ zeroOrMore('*' ~ factor ~> ((a: Int, b) => a * b))
 ```
 
     The inner rule of `zeroOrMore` here has type `Rule[Int :: HNil, Int :: HNil]`, i.e. it pops one `Int`
-    off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
-    their types remain the same, even though the actual values might have changed.
+    off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as their types remain the same, even though the actual values might have changed.
 
     As a shortcut you can also use `a.*` instead of `zeroOrMore(a)`.
 
@@ -454,16 +436,13 @@ capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
 ```
 
     The inner rule of `oneOrMore` here has type `Rule[Int :: HNil, Int :: HNil]`, i.e. it pops one `Int`
-    off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as
-    their types remain the same, even though the actual values might have changed.
+    off the stack and pushes another one onto it, which means that the number of elements on the value stack as well as their types remain the same, even though the actual values might have changed.
 
     As a shortcut you can also use `a.+` instead of `oneOrMore(a)`.
 
 `xxx.times(a)`
 
-    Repeats a rule a given number of times. `xxx` can be either a positive `Int` value or a range `(<x> to <y>)`
-    whereby both `<x>` and `<y>` are positive `Int` values.
-    The resulting rule type depends on the type of the inner rule:
+    Repeats a rule a given number of times. `xxx` can be either a positive `Int` value or a range `(<x> to <y>)` whereby both `<x>` and `<y>` are positive `Int` values. The resulting rule type depends on the type of the inner rule:
 
     =================== =======================
     Type of `a`       Type of `xxx.times(a)`
@@ -473,11 +452,10 @@ capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
     `Rule[I, O <: I]` `Rule[I, O]`
     =================== =======================
 
-    The last case is a so-called "reduction rule", which leaves the value stack unchanged on a type level.
-    This is an example of a reduction rule wrapped with `oneOrMore`:
+    The last case is a so-called "reduction rule", which leaves the value stack unchanged on a type level. This is an example of a reduction rule wrapped with `oneOrMore`:
 
 ```scala
-(factor :Rule1[Int]) ~ (1 to 5).times('*' ~ factor ~> ((a: Int, b) => a * b))
+    (factor :Rule1[Int]) ~ (1 to 5).times('*' ~ factor ~> ((a: Int, b) => a * b))
 ```
 
     The inner rule here has type `Rule[Int :: HNil, Int :: HNil]`, i.e. it pops one `Int` off the stack and pushes
@@ -503,7 +481,7 @@ capture(CharPredicate.Digit) ~ optional(ch('h') ~> ((s: String) => s + "hex"))
 
 ## Parser Actions
 
-The `Basic Character Matching`_  rules and the `Rule Combinators and Modifiers`_ allow you to build *recognizers* for
+The `Basic Character Matching`  rules and the `Rule Combinators and Modifiers` allow you to build *recognizers* for
 potentially complex languages, but usually your parser is supposed to do more than simply determine whether a given
 input conforms to the defined grammar. In order to run custom logic during parser execution, e.g. for creating custom
 objects (like an AST_), you will have to add some "actions" to your rules.
@@ -623,7 +601,7 @@ objects (like an AST_), you will have to add some "actions" to your rules.
 
     This has type `Rule1[Person]`. The top elements of the value stack are popped off and replaced by an instance
     of the case class if they match in number, order and types to the case class members. This is great for building
-    AST_-like structures! Check out the Calculator2__ example to see this form in action.
+    AST-like structures! Check out the Calculator2 example to see this form in action.
 
     Note that there is one quirk: For some reason this notation stops working if you explicitly define a companion
     object for your case class. You'll have to write `~> (Person(_, _))` instead.
@@ -727,7 +705,7 @@ You can use these to write efficient character-level logic like this:
 Base64Parsing
 
     For parsing RFC2045_ (Base64) encoded strings *parboiled* provides the `Base64Parsing` trait which you can
-    mix into your `Parser` class. See `its source`_ for more info on what exactly it provides.
+    mix into your `Parser` class. See `its source` for more info on what exactly it provides.
     *parboiled* also comes with the `org.parboiled2.util.Base64` class which provides an efficient Base64
     encoder/decoder for the standard as well as custom alphabets.
 
@@ -742,9 +720,9 @@ Base64Parsing
     header name that is only known once the HTTP request has actually been read from the network.
     To prevent you from having to write a large (and not really efficient) `match` against the header name for
     separating out all the possible cases *parboiled* provides the `DynamicRuleDispatch` facility.
-    Check out `its test`_ for more info on how to use it.
+    Check out `its test` for more info on how to use it.
 
-[its test](https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/test/scala/org/parboiled2/DynamicRuleDispatchSpec.scala)
+[test](https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/test/scala/org/parboiled2/DynamicRuleDispatchSpec.scala)
 
 ### StringBuilding
 
@@ -765,7 +743,7 @@ This section gives an overview over how parse error reporting works in *parboile
 
 ### The Error Collection Process
 
-As described in the section about `How the Parser matches Input`_ above the parser consumes input by applying
+As described in the section about `How the Parser matches Input` above the parser consumes input by applying
 grammar rules and backtracking in the case of mismatches. As such rule mismatches are an integral part of the parsers
 operation and do not generally mean that there is something wrong with the input.
 Only when the root rule itself mismatches and the parser has no backtracking options remaining does it become clear that
@@ -782,7 +760,7 @@ Note that re-running the parser in the presence of parse errors does result in u
 potentially much slower than successful ones. However, since in the vast majority of use cases failed runs constitute
 only a small minority of all parsing runs and the normal flow of application logic is disrupted anyway, this slow-down
 is normally quite acceptable, especially if it results in better error messages. See the section on
-`Limiting Error Re-Runs`_ if this is not true for your application.
+`Limiting Error Re-Runs` if this is not true for your application.
 
 In principle the error reporting process looks like this:
 
@@ -1269,25 +1247,22 @@ support, feedback and general discussion.
 **Note:** Your first post after signup is going to be moderated (for spam protection), but we'll immediately
 give you full posting privileges if your message doesn't unmask you as a spammer.
 
-__ https://groups.google.com/forum/#!forum/parboiled-user
+https://groups.google.com/forum/#!forum/parboiled-user
 
 You can also use the gitter.im chat channel for parboiled2:
 
-.. image:: https://badges.gitter.im/Join%20Chat.svg
-   :alt: Join the chat at https://gitter.im/sirthias/parboiled2
-   :target: https://gitter.im/sirthias/parboiled2?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+[gitter](gitter.im/parboiled2)
 
 
 ## References
 
 TODO
 
-
 ## Credits
 
-Much of *parboiled2* was developed by `Alexander Myltsev`__ during `GSoc 2013`__, a big thank you for his great work!
+Much of *parboiled2* was developed by `Alexander Myltsev during `GSoc 2013`, a big thank you for his great work!
 
-Also, without the `Macro Paradise`__ made available by `Eugene Burmako`__ *parboiled2* would probably still not be ready
+Also, without the `Macro Paradise` made available by `Eugene Burmako` *parboiled2* would probably still not be ready
 and its codebase would look a lot more messy.
 
 
@@ -1299,6 +1274,4 @@ and its codebase would look a lot more messy.
 
 ## License
 
-*parboiled2* is released under the `Apache License 2.0`__
-
-__ http://en.wikipedia.org/wiki/Apache_license
+*parboiled2* is released under the [Apache License 2.0](http://en.wikipedia.org/wiki/Apache_license)
