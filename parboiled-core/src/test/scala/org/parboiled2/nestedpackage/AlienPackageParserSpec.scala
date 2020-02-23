@@ -24,11 +24,11 @@ object AlienPackageParserSpec extends TestSuite {
   abstract class AbstractParser(val input: org.parboiled2.ParserInput) extends org.parboiled2.Parser {
     import org.parboiled2.{CharPredicate, Rule1}
 
-    def foo: Rule1[String] = rule { capture("foo" ~ zeroOrMore(CharPredicate.Digit)) }
+    def foo: Rule1[String] = rule(capture("foo" ~ zeroOrMore(CharPredicate.Digit)))
   }
 
   class FooParser(input: String) extends AbstractParser(input) {
-    def Go = rule { foo ~ EOI }
+    def Go = rule(foo ~ EOI)
   }
 
   val tests = Tests {

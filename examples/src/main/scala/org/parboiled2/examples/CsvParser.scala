@@ -54,19 +54,19 @@ class CsvParser(val input: ParserInput, headerPresent: Boolean, fieldDelimiter: 
       .separatedBy(NL) ~ optional(NL) ~ EOI ~> CsvFile
   }
 
-  def header = rule { record }
+  def header = rule(record)
 
-  def record = rule { oneOrMore(field).separatedBy(fieldDelimiter) ~> Record }
+  def record = rule(oneOrMore(field).separatedBy(fieldDelimiter) ~> Record)
 
-  def field = rule { `quoted-field` | `unquoted-field` }
+  def field = rule(`quoted-field` | `unquoted-field`)
 
   def `quoted-field` = rule {
     OWS ~ '"' ~ clearSB() ~ zeroOrMore((QTEXTDATA | "\"\"") ~ appendSB()) ~ '"' ~ OWS ~ push(sb.toString)
   }
 
-  def `unquoted-field` = rule { capture(zeroOrMore(TEXTDATA)) }
+  def `unquoted-field` = rule(capture(zeroOrMore(TEXTDATA)))
 
-  def NL = rule { optional('\r') ~ '\n' }
+  def NL = rule(optional('\r') ~ '\n')
 
-  def OWS = rule { zeroOrMore(' ') }
+  def OWS = rule(zeroOrMore(' '))
 }

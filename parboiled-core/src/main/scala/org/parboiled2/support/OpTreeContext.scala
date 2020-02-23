@@ -64,6 +64,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   sealed abstract class PotentiallyNamedTerminalOpTree(arg: Tree) extends TerminalOpTree {
+
     override def bubbleUp = callName(arg) match {
       case Some(name) =>
         q"__bubbleUp(org.parboiled2.RuleTrace.NonTerminal(org.parboiled2.RuleTrace.Named($name), 0) :: Nil, $ruleTraceTerminal)"
@@ -177,9 +178,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def renderInner(wrapped: Boolean): Tree =
       q"""val mark = __saveState; ${ops
         .map(_.render(wrapped))
-        .reduceLeft(
-          (l, r) =>
-            q"val l = $l; if (!l) { __restoreState(mark); $r } else true // work-around for https://issues.scala-lang.org/browse/SI-8657"
+        .reduceLeft((l, r) =>
+          q"val l = $l; if (!l) { __restoreState(mark); $r } else true // work-around for https://issues.scala-lang.org/browse/SI-8657"
         )}"""
   }
 
@@ -631,6 +631,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def bubbleUp = q"""
       import org.parboiled2.RuleTrace._
       e.prepend(RuleCall, start).bubbleUp(Named($calleeNameTree), start)"""
+
     override def render(wrapped: Boolean) =
       call match {
         case Left(_)  => super.render(wrapped)
@@ -686,10 +687,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
           case Block(statements, res) => block(statements, actionBody(res))
 
           case x @ (Ident(_) | Select(_, _)) =>
-            val valNames = argTypes.indices.map { i =>
-              TermName("value" + i)
-            }.toList
-            val args = valNames map Ident.apply
+            val valNames = argTypes.indices.map(i => TermName("value" + i)).toList
+            val args     = valNames map Ident.apply
             block(popToVals(valNames), q"__push($x(..$args))")
 
           case q"(..$args => $body)" =>

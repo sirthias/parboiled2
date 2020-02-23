@@ -74,6 +74,6 @@ object Base64ParsingSpec extends TestSuite {
       val string  = randomChars.take(x).mkString("")
       val encoded = base64.encodeToString(string getBytes UTF8, lineSep = false) + "!"
       val parser  = testParser(encoded)
-      intercept[ParseError] { dispatch(parser, ruleName) }
+      intercept[ParseError](dispatch(parser, ruleName))
     }
 }

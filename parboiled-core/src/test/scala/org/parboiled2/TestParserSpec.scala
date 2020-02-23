@@ -37,6 +37,7 @@ abstract class TestParserSpec extends TestSuite {
     sealed trait MustAssert {
       def assert(str: String): Unit
     }
+
     private case class BeMatchedWith(underlying: String => Unit) extends MustAssert {
       override def assert(str: String): Unit = underlying(str)
     }

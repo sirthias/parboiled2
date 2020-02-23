@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-14 Miles Sabin, Mathias Doenitz, Alexander Myltsev 
+ * Copyright (c) 2011-14 Miles Sabin, Mathias Doenitz, Alexander Myltsev
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 import sbt._
 
 /**
- * Generate action ops boilerplate for consuming/producing up to 22 values from/to the value stack.
- *
- * @author Mathias Doenitz
- * @author Alexander Myltsev
- */
+  * Generate action ops boilerplate for consuming/producing up to 22 values from/to the value stack.
+  *
+  * @author Mathias Doenitz
+  * @author Alexander Myltsev
+  */
 object ActionOpsBoilerplate {
 
   private val MaxArity = 22
@@ -66,10 +66,10 @@ object ActionOpsBoilerplate {
       |
       |""".stripMargin
 
-  val AtoZ = 'A' to 'Z'
-  val `A, ...` = Array.tabulate(MaxArity + 1)(AtoZ take _ mkString ", ")
-  val `A ::...` = Array.tabulate(MaxArity + 1)(AtoZ take _ mkString " :: ")
-  val `..., Z` = Array.tabulate(MaxArity + 1)(AtoZ takeRight _ mkString ", ")
+  val AtoZ       = 'A' to 'Z'
+  val `A, ...`   = Array.tabulate(MaxArity + 1)(AtoZ take _ mkString ", ")
+  val `A ::...`  = Array.tabulate(MaxArity + 1)(AtoZ take _ mkString " :: ")
+  val `..., Z`   = Array.tabulate(MaxArity + 1)(AtoZ takeRight _ mkString ", ")
   val `... :: Z` = Array.tabulate(MaxArity + 1)(AtoZ takeRight _ mkString " :: ")
 
   def generate0 = {
@@ -126,14 +126,16 @@ object ActionOpsBoilerplate {
     // }
 
     s"""
-       |  implicit def ops$i[II <: HList, ${`A, ...`(i)}]: ActionOps[II, ${`A ::...`(i)} :: HNil] { type Out = Ops$i[II, ${`A, ...`(i)}] } = `n/a`
+       |  implicit def ops$i[II <: HList, ${`A, ...`(i)}]: ActionOps[II, ${`A ::...`(i)} :: HNil] { type Out = Ops$i[II, ${`A, ...`(
+         i
+       )}] } = `n/a`
        |  sealed trait Ops$i[II <: HList, ${`A, ...`(i)}] {
        |    def apply[RR](f: () => RR)(implicit j: Join[II, ${`A ::...`(i)} :: HNil, RR], c: FCapture[() => RR]): Rule[j.In, j.Out]
        |
-       |${(1 to i-1) map consumeOut mkString "\n"}
+       |${(1 to i - 1) map consumeOut mkString "\n"}
        |    def apply[RR](f: (${`A, ...`(i)}) => RR)(implicit j: Join[II, HNil, RR], c: FCapture[(${`A, ...`(i)}) => RR]): Rule[j.In, j.Out]
        |
-       |${(1 to 22-i) map consumeStack mkString "\n"}
+       |${(1 to 22 - i) map consumeStack mkString "\n"}
        |  }
      """.stripMargin
   }

@@ -80,8 +80,8 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "for rules with negative syntactic predicates" - new TestParser0 {
-        def targetRule = rule { (!"a" ~ ANY | 'z') ~ !foo ~ EOI }
-        def foo        = rule { "bcd" }
+        def targetRule = rule((!"a" ~ ANY | 'z') ~ !foo ~ EOI)
+        def foo        = rule("bcd")
 
         "a" must beMismatchedWithErrorMsg("""Invalid input 'a', expected !"a" or 'z' (line 1, column 1):
             |a
@@ -103,9 +103,9 @@ object ErrorReportingSpec extends TestParserSpec {
 
       "for rules with backtick identifiers" - new TestParser0 {
         val `this*that` = CharPredicate.Alpha
-        def targetRule  = rule { `foo-bar` ~ `this*that` ~ `#hash#` ~ EOI }
+        def targetRule  = rule(`foo-bar` ~ `this*that` ~ `#hash#` ~ EOI)
         def `foo-bar`   = 'x'
-        def `#hash#`    = rule { '#' }
+        def `#hash#`    = rule('#')
 
         "a" must beMismatchedWithErrorMsg("""Invalid input 'a', expected targetRule (line 1, column 1):
             |a
@@ -133,7 +133,7 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "if the error location is the newline at line-end" - new TestParser0 {
-        def targetRule = rule { "abc" ~ EOI }
+        def targetRule = rule("abc" ~ EOI)
 
         "ab\nc" must beMismatchedWithErrorMsg("""Invalid input '\n', expected 'c' (line 1, column 3):
             |ab
@@ -145,7 +145,7 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "for rules with an explicitly attached name" - new TestParser0 {
-        def targetRule = namedRule("foo") { "abc".named("prefix") ~ ("def" | "xyz").named("suffix") ~ EOI }
+        def targetRule = namedRule("foo")("abc".named("prefix") ~ ("def" | "xyz").named("suffix") ~ EOI)
 
         "abx" must beMismatchedWithErrorMsg("""Invalid input 'x', expected 'c' (line 1, column 3):
             |abx
@@ -166,7 +166,7 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "for rules containing `fail`" - new TestParser0 {
-        def targetRule = rule { "foo" | fail("something cool") }
+        def targetRule = rule("foo" | fail("something cool"))
 
         "x" must beMismatchedWithErrorMsg("""Invalid input 'x', expected something cool (line 1, column 1):
             |x
@@ -180,7 +180,7 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "respecting the `errorTraceCollectionLimit`" - new TestParser0 {
-        def targetRule                         = rule { "a" | 'b' | "c" | "d" | "e" | "f" }
+        def targetRule                         = rule("a" | 'b' | "c" | "d" | "e" | "f")
         override def errorTraceCollectionLimit = 3
 
         "x" must beMismatchedWithErrorMsg("""Invalid input 'x', expected 'a', 'b' or 'c' (line 1, column 1):
@@ -195,7 +195,7 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "respecting `atomic` markers (example 1)" - new TestParser0 {
-        def targetRule = rule { ch('-').* ~ (atomic("foo") | atomic("bar") | atomic("baz")) }
+        def targetRule = rule(ch('-').* ~ (atomic("foo") | atomic("bar") | atomic("baz")))
 
         "---fox" must beMismatchedWithErrorMsg(
           """Invalid input "fox", expected '-', "foo", "bar" or "baz" (line 1, column 4):
@@ -212,7 +212,7 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "respecting `atomic` markers (example 2)" - new TestParser0 {
-        def targetRule = rule { atomic(ch('a') | 'b') }
+        def targetRule = rule(atomic(ch('a') | 'b'))
 
         "c" must beMismatchedWithErrorMsg("""Invalid input 'c', expected targetRule (line 1, column 1):
             |c
@@ -225,7 +225,7 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "respecting `quiet` markers" - new TestParser0 {
-        def targetRule = rule { "abc" ~ (quiet("dxy") | "def") }
+        def targetRule = rule("abc" ~ (quiet("dxy") | "def"))
 
         // quiet rule mismatch must be suppressed
         "abcd-" must beMismatchedWithErrorMsg("""Invalid input '-', expected 'e' (line 1, column 5):
@@ -247,7 +247,7 @@ object ErrorReportingSpec extends TestParserSpec {
       }
 
       "expanding tabs as configured" - new TestParser0 {
-        def targetRule = rule { ch('\t').* ~ (atomic("foo") | atomic("bar") | atomic("baz")) }
+        def targetRule = rule(ch('\t').* ~ (atomic("foo") | atomic("bar") | atomic("baz")))
 
         override def errorFormatter = new ErrorFormatter(expandTabs = 4, showTraces = true)
 

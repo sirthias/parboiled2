@@ -401,7 +401,8 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
             import RuleTrace._
             __bubbleUp(NonTerminal(StringMatch(string), -ix) :: Nil, CharMatch(string charAt ix))
         }
-      } else true
+      }
+    else true
 
   /**
     * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -430,7 +431,8 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
             import RuleTrace._
             __bubbleUp(NonTerminal(IgnoreCaseString(string), -ix) :: Nil, IgnoreCaseChar(string charAt ix))
         }
-      } else true
+      }
+    else true
 
   /**
     * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -536,6 +538,7 @@ object Parser {
   }
 
   object DeliveryScheme extends AlternativeDeliverySchemes {
+
     implicit def Try[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
       new DeliveryScheme[L] {
         type Result = Try[Out]
@@ -544,7 +547,9 @@ object Parser {
         def failure(error: Throwable)     = Failure(error)
       }
   }
+
   sealed abstract class AlternativeDeliverySchemes {
+
     implicit def Either[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
       new DeliveryScheme[L] {
         type Result = Either[ParseError, Out]
@@ -552,6 +557,7 @@ object Parser {
         def parseError(error: ParseError) = Left(error)
         def failure(error: Throwable)     = throw error
       }
+
     implicit def Throw[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
       new DeliveryScheme[L] {
         type Result = Out
@@ -690,6 +696,6 @@ object ParserMacros {
         else ${opTree.render(wrapped = false)}
       if (matched) org.parboiled2.Rule else null""" // we encode the "matched" boolean as 'ruleResult ne null'
 
-    reify { ctx.Expr[RuleX](ruleTree).splice.asInstanceOf[Rule[I, O]] }
+    reify(ctx.Expr[RuleX](ruleTree).splice.asInstanceOf[Rule[I, O]])
   }
 }

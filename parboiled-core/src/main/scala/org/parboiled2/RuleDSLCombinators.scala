@@ -96,6 +96,7 @@ trait RuleDSLCombinators {
 
   @compileTimeOnly("Calls to `range2NTimes` must be inside `rule` macro")
   implicit def range2NTimes(range: Range): NTimes = `n/a`
+
   sealed trait NTimes {
 
     /**

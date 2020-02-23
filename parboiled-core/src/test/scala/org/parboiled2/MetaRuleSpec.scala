@@ -25,10 +25,10 @@ object MetaRuleSpec extends TestParserSpec {
     "Rule transformation should be possible" - {
 
       "using vals and `run`" - new TestParser0 {
-        val ab                            = () => rule { "ab" }
-        val cd                            = () => rule { "cd" }
-        def targetRule                    = rule { bracketed(ab) ~ bracketed(cd) }
-        def bracketed(inner: () => Rule0) = rule { '[' ~ inner() ~ ']' }
+        val ab                            = () => rule("ab")
+        val cd                            = () => rule("cd")
+        def targetRule                    = rule(bracketed(ab) ~ bracketed(cd))
+        def bracketed(inner: () => Rule0) = rule('[' ~ inner() ~ ']')
 
         "[ab][cd]" must beMatched
         "abcd" must beMismatched

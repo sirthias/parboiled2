@@ -22,7 +22,7 @@ object CalculatorSpec extends TestParserSpec {
 
   // format: OFF
   abstract class Calculator extends TestParser1[Int] {
-    def InputLine = rule { Expression ~ EOI }
+    def InputLine = rule (Expression ~ EOI)
 
     def Expression: Rule1[Int] = rule {
       Term ~ zeroOrMore(
@@ -36,13 +36,13 @@ object CalculatorSpec extends TestParserSpec {
       | '/' ~ Factor ~> ((_: Int) / _))
     }
 
-    def Factor = rule { Number | Parens }
+    def Factor = rule (Number | Parens)
 
-    def Parens = rule { '(' ~ Expression ~ ')' }
+    def Parens = rule ('(' ~ Expression ~ ')')
 
-    def Number = rule { capture(Digits) ~> (_.toInt) }
+    def Number = rule (capture(Digits) ~> (_.toInt))
 
-    def Digits = rule { oneOrMore(CharPredicate.Digit) }
+    def Digits = rule (oneOrMore(CharPredicate.Digit))
   }
   // format: ON
 

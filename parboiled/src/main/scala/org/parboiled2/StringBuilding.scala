@@ -25,25 +25,25 @@ package org.parboiled2
 trait StringBuilding { this: Parser =>
   protected val sb = new java.lang.StringBuilder
 
-  def clearSB(): Rule0 = rule { run(sb.setLength(0)) }
+  def clearSB(): Rule0 = rule(run(sb.setLength(0)))
 
-  def appendSB(): Rule0 = rule { run(sb.append(lastChar)) }
+  def appendSB(): Rule0 = rule(run(sb.append(lastChar)))
 
-  def appendSB(offset: Int): Rule0 = rule { run(sb.append(charAt(offset))) }
+  def appendSB(offset: Int): Rule0 = rule(run(sb.append(charAt(offset))))
 
-  def appendSB(c: Char): Rule0 = rule { run(sb.append(c)) }
+  def appendSB(c: Char): Rule0 = rule(run(sb.append(c)))
 
-  def appendSB(s: String): Rule0 = rule { run(sb.append(s)) }
+  def appendSB(s: String): Rule0 = rule(run(sb.append(s)))
 
-  def prependSB(): Rule0 = rule { run(doPrepend(lastChar)) }
+  def prependSB(): Rule0 = rule(run(doPrepend(lastChar)))
 
-  def prependSB(offset: Int): Rule0 = rule { run(doPrepend(charAt(offset))) }
+  def prependSB(offset: Int): Rule0 = rule(run(doPrepend(charAt(offset))))
 
-  def prependSB(c: Char): Rule0 = rule { run(doPrepend(c)) }
+  def prependSB(c: Char): Rule0 = rule(run(doPrepend(c)))
 
-  def prependSB(s: String): Rule0 = rule { run(doPrepend(s)) }
+  def prependSB(s: String): Rule0 = rule(run(doPrepend(s)))
 
-  def setSB(s: String): Rule0 = rule { run(doSet(s)) }
+  def setSB(s: String): Rule0 = rule(run(doSet(s)))
 
   private def doPrepend(c: Char): Unit = {
     val saved = sb.toString

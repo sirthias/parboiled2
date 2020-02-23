@@ -49,7 +49,7 @@ object Calculator1 extends App {
   * the parsing run with the help of the value stack.
   */
 class Calculator1(val input: ParserInput) extends Parser {
-  def InputLine = rule { Expression ~ EOI }
+  def InputLine = rule(Expression ~ EOI)
 
   def Expression: Rule1[Int] = rule {
     Term ~ zeroOrMore(
@@ -65,11 +65,11 @@ class Calculator1(val input: ParserInput) extends Parser {
     )
   }
 
-  def Factor = rule { Number | Parens }
+  def Factor = rule(Number | Parens)
 
-  def Parens = rule { '(' ~ Expression ~ ')' }
+  def Parens = rule('(' ~ Expression ~ ')')
 
-  def Number = rule { capture(Digits) ~> (_.toInt) }
+  def Number = rule(capture(Digits) ~> (_.toInt))
 
-  def Digits = rule { oneOrMore(CharPredicate.Digit) }
+  def Digits = rule(oneOrMore(CharPredicate.Digit))
 }

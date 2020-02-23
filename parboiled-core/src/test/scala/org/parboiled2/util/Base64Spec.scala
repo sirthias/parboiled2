@@ -20,6 +20,7 @@ import utest._
 import java.nio.charset.StandardCharsets
 
 object Base64Spec extends TestSuite {
+
   private val testVectors = Map(
     ""                      -> "",
     "f"                     -> "Zg==",

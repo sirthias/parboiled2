@@ -29,6 +29,7 @@ sealed trait Lifter[M[_], I <: HList, O <: HList] {
 }
 
 object Lifter extends LowerPriorityLifter {
+
   implicit def forRule0[M[_]]: Lifter[M, HNil, HNil] {
     type In          = HNil
     type StrictOut   = HNil
@@ -43,6 +44,7 @@ object Lifter extends LowerPriorityLifter {
 }
 
 sealed abstract class LowerPriorityLifter {
+
   implicit def forReduction[M[_], L <: HList, R <: L]: Lifter[M, L, R] {
     type In          = L
     type StrictOut   = R

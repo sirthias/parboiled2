@@ -90,8 +90,10 @@ sealed abstract class CharPredicate extends (Char => Boolean) {
 
   protected def or(that: Char => Boolean): CharPredicate =
     from(if (this == Empty) that else c => this(c) || that(c))
+
   protected def and(that: Char => Boolean): CharPredicate =
     if (this == Empty) Empty else from(c => this(c) && that(c))
+
   protected def andNot(that: Char => Boolean): CharPredicate =
     if (this == Empty) Empty else from(c => this(c) && !that(c))
 }
@@ -118,9 +120,7 @@ object CharPredicate {
       case x                => General(x)
     }
 
-  def apply(magnets: ApplyMagnet*): CharPredicate = magnets.foldLeft(Empty) { (a, m) =>
-    a ++ m.predicate
-  }
+  def apply(magnets: ApplyMagnet*): CharPredicate = magnets.foldLeft(Empty)((a, m) => a ++ m.predicate)
 
   class ApplyMagnet(val predicate: CharPredicate)
 
@@ -129,6 +129,7 @@ object CharPredicate {
     implicit def fromChar(c: Char): ApplyMagnet                         = fromChars(c :: Nil)
     implicit def fromCharArray(array: Array[Char]): ApplyMagnet         = fromChars(array.toIndexedSeq)
     implicit def fromString(chars: String): ApplyMagnet                 = fromChars(chars)
+
     implicit def fromChars(chars: Seq[Char]): ApplyMagnet =
       chars match {
         case _ if chars.size < 128 & !chars.exists(unmaskable) =>

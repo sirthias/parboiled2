@@ -84,6 +84,7 @@ trait RuleDSLActions {
   implicit def rule2ActionOperator[I <: HList, O <: HList](r: Rule[I, O])(
       implicit ops: ActionOps[I, O]
   ): ActionOperator[I, O, ops.Out] = `n/a`
+
   sealed trait ActionOperator[I <: HList, O <: HList, Ops] {
     def ~> : Ops
   }

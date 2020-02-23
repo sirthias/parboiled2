@@ -44,9 +44,7 @@ class Base64(alphabet: String) {
   val fillChar       = alphabet.charAt(64)
   val IA: Array[Int] = Array.fill(256)(-1)
 
-  (0 until CA.length).foreach { i =>
-    IA(CA(i)) = i
-  }
+  (0 until CA.length).foreach(i => IA(CA(i)) = i)
 
   IA(fillChar) = 0
 

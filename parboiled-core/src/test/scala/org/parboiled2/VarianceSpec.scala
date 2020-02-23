@@ -32,7 +32,7 @@ class VarianceSpec {
         abstract class Par extends Parser {
           def A: Rule2[String, Int]   = ???
           def B: PopRule[Any :: HNil] = ???
-          def C: Rule1[String]        = rule { A ~ B }
+          def C: Rule1[String]        = rule(A ~ B)
         }
         ()
       }
@@ -73,7 +73,7 @@ class VarianceSpec {
         abstract class Par extends Parser {
           def A: Rule0      = ???
           def B: Rule1[Int] = ???
-          def C: Rule1[Any] = rule { A ~ B }
+          def C: Rule1[Any] = rule(A ~ B)
         }
       }
 

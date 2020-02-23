@@ -1,6 +1,6 @@
 import ReleaseTransformations._
 
-import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import sbtcrossproject.CrossPlugin.autoImport._
 
 val commonSettings = Seq(
@@ -10,63 +10,66 @@ val commonSettings = Seq(
   startYear := Some(2009),
   licenses := Seq("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   unmanagedResources in Compile += baseDirectory.value.getParentFile.getParentFile / "LICENSE",
-  scmInfo := Some(ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")),
-
+  scmInfo := Some(
+    ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
+  ),
   scalaVersion := "2.12.10",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
-
   scalacOptions ++= Seq(
     "-deprecation",
-    "-encoding", "UTF-8",
+    "-encoding",
+    "UTF-8",
     "-feature",
     "-language:_",
     "-unchecked",
     "-Xlint:_,-missing-interpolator",
-    "-Ywarn-dead-code",
+    "-Ywarn-dead-code"
     //"-Ywarn-numeric-widen",
   ),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 11)) => Seq(
-        "-Yno-adapted-args",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Xfuture",
-      )
-      case Some((2, 12)) => Seq(
-        "-Yno-adapted-args",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-unused:imports,-patvars,-privates,-locals,-implicits,-explicits",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Ybackend-parallelism", "8",
-        "-Xfatal-warnings",
-        "-Xfuture",
-        "-Xsource:2.13", // new warning: deprecate assignments in argument position
-      )
-      case Some((2, 13)) => Seq(
-        "-Ywarn-unused:imports,-patvars,-privates,-locals,-implicits,-explicits",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Ybackend-parallelism", "8",
-      )
+      case Some((2, 11)) =>
+        Seq(
+          "-Yno-adapted-args",
+          "-Ywarn-inaccessible",
+          "-Ywarn-infer-any",
+          "-Ywarn-nullary-override",
+          "-Ywarn-nullary-unit",
+          "-Xfuture"
+        )
+      case Some((2, 12)) =>
+        Seq(
+          "-Yno-adapted-args",
+          "-Ywarn-inaccessible",
+          "-Ywarn-infer-any",
+          "-Ywarn-nullary-override",
+          "-Ywarn-nullary-unit",
+          "-Ywarn-unused:imports,-patvars,-privates,-locals,-implicits,-explicits",
+          "-Ycache-macro-class-loader:last-modified",
+          "-Ybackend-parallelism",
+          "8",
+          "-Xfatal-warnings",
+          "-Xfuture",
+          "-Xsource:2.13" // new warning: deprecate assignments in argument position
+        )
+      case Some((2, 13)) =>
+        Seq(
+          "-Ywarn-unused:imports,-patvars,-privates,-locals,-implicits,-explicits",
+          "-Ycache-macro-class-loader:last-modified",
+          "-Ybackend-parallelism",
+          "8"
+        )
       case x => sys.error(s"unsupported scala version: $x")
     }
   },
-
   scalacOptions in (Compile, console) ~= (_ filterNot (o ⇒ o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
   scalacOptions in (Test, console) ~= (_ filterNot (o ⇒ o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
   scalacOptions in (Compile, doc) += "-no-link-warnings",
   sourcesInBase := false,
-
   // file headers
   headerLicense := Some(HeaderLicense.ALv2("2009-2019", "Mathias Doenitz")),
-
   // reformat main and test sources on compile
-  scalafmtOnCompile := true,
+  scalafmtOnCompile := true
 )
 
 lazy val crossSettings = Seq(
@@ -136,10 +139,10 @@ val utestVersion = Def.setting(
   }
 )
 
-val shapeless        = Def.setting("com.chuusai"    %%% "shapeless"     % "2.3.3"            % "compile")
-val utest            = Def.setting("com.lihaoyi"    %%% "utest"         % utestVersion.value % Test)
-val scalaCheck       = Def.setting("org.scalacheck" %%% "scalacheck"    % "1.14.3"           % Test)
-val `scala-reflect`  = Def.setting("org.scala-lang" %   "scala-reflect" % scalaVersion.value % "provided")
+val shapeless       = Def.setting("com.chuusai"    %%% "shapeless"   % "2.3.3"            % "compile")
+val utest           = Def.setting("com.lihaoyi"    %%% "utest"       % utestVersion.value % Test)
+val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck"  % "1.14.3"           % Test)
+val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
 
 // since ScalaCheck native is not available from the original authors @lolgab made a release
 // see https://github.com/rickynils/scalacheck/issues/396#issuecomment-467782592
@@ -152,7 +155,8 @@ val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.5"
 
 /////////////////////// PROJECTS /////////////////////////
 
-lazy val root = project.in(file("."))
+lazy val root = project
+  .in(file("."))
   .aggregate(examples, jsonBenchmark)
   .aggregate(parboiledJVM, parboiledJS)
   .aggregate(parboiledCoreJVM, parboiledCoreJS)
@@ -160,7 +164,7 @@ lazy val root = project.in(file("."))
   .settings(publishingSettings)
   .settings(releaseSettings)
   .settings(
-    publishArtifact := false,
+    publishArtifact := false
   )
 
 lazy val examples = project
@@ -181,7 +185,8 @@ lazy val jsonBenchmark = project
   .settings(publishArtifact := false)
   .settings(
     libraryDependencies ++= Seq(`json4s-native`, `json4s-jackson`),
-    bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated)
+    bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated
+  )
 
 lazy val scalaParser = project
   .enablePlugins(AutomateHeaderPlugin)
@@ -191,9 +196,10 @@ lazy val scalaParser = project
   .settings(libraryDependencies ++= Seq(shapeless.value, utest.value))
   .settings(utestSettings)
 
-lazy val parboiledJVM = parboiled.jvm
-lazy val parboiledJS = parboiled.js
+lazy val parboiledJVM    = parboiled.jvm
+lazy val parboiledJS     = parboiled.js
 lazy val parboiledNative = parboiled.native
+
 lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Pure)
   .enablePlugins(AutomateHeaderPlugin, SbtOsgi)
@@ -224,7 +230,7 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
     mappings in (Compile, packageBin) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     mappings in (Compile, packageDoc) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
-    pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
+    pomPostProcess := {                                                          // we need to remove the dependency onto the parboiledCore module from the POM
       import scala.xml.transform._
       import scala.xml.{NodeSeq, Node => XNode}
 
@@ -237,9 +243,10 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-lazy val parboiledCoreJVM = parboiledCore.jvm
-lazy val parboiledCoreJS = parboiledCore.js
+lazy val parboiledCoreJVM    = parboiledCore.jvm
+lazy val parboiledCoreJS     = parboiledCore.js
 lazy val parboiledCoreNative = parboiledCore.native
+
 lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Pure)
   .in(file("parboiled-core"))

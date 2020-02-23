@@ -22,9 +22,9 @@ import utest._
 object RunningSpec extends TestSuite {
 
   class TestParser(val input: ParserInput) extends Parser {
-    def A               = rule { 'a' ~ B ~ EOI }
-    def B               = rule { oneOrMore('b') }
-    def C(n: Int)       = rule { n.times('c') }
+    def A               = rule('a' ~ B ~ EOI)
+    def B               = rule(oneOrMore('b'))
+    def C(n: Int)       = rule(n.times('c'))
     def go(): Try[Unit] = null
   }
 

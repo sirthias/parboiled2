@@ -68,7 +68,7 @@ object Calculator2 extends App {
 class Calculator2(val input: ParserInput) extends Parser {
   import Calculator2._
 
-  def InputLine = rule { Expression ~ EOI }
+  def InputLine = rule(Expression ~ EOI)
 
   def Expression: Rule1[Expr] = rule {
     Term ~ zeroOrMore(
@@ -84,11 +84,11 @@ class Calculator2(val input: ParserInput) extends Parser {
     )
   }
 
-  def Factor = rule { Number | Parens }
+  def Factor = rule(Number | Parens)
 
-  def Parens = rule { '(' ~ Expression ~ ')' }
+  def Parens = rule('(' ~ Expression ~ ')')
 
-  def Number = rule { capture(Digits) ~> Value }
+  def Number = rule(capture(Digits) ~> Value)
 
-  def Digits = rule { oneOrMore(CharPredicate.Digit) }
+  def Digits = rule(oneOrMore(CharPredicate.Digit))
 }

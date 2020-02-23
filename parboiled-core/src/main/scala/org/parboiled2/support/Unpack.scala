@@ -44,11 +44,13 @@ object Unpack extends AlternativeUnpacks {
   }
 
   implicit def hnil[L <: HNil]: Aux[L, Unit] = HNilUnpack.asInstanceOf[Aux[L, Unit]]
+
   implicit object HNilUnpack extends Aux[HNil, Unit] {
     def apply(hlist: HNil): Unit = ()
   }
 
   implicit def single[T]: Aux[T :: HNil, T] = SingleUnpack.asInstanceOf[Aux[T :: HNil, T]]
+
   private object SingleUnpack extends Aux[Any :: HList, Any] {
     def apply(hlist: Any :: HList): Any = hlist.head
   }
@@ -61,6 +63,7 @@ sealed abstract class AlternativeUnpacks {
     * at the end of the parsing run, even if it has only zero or one element(s).
     */
   implicit def dontUnpack[L <: HList]: Unpack.Aux[L, L] = DontUnpack.asInstanceOf[Unpack.Aux[L, L]]
+
   private object DontUnpack extends Unpack.Aux[HList, HList] {
     def apply(hlist: HList): HList = hlist
   }

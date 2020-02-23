@@ -24,8 +24,8 @@ object CutSpec extends TestParserSpec {
 
     "The `~!~` (cut) operator" - {
       "work as expected" - new TestParser0 {
-        def targetRule = rule { foo ~ EOI }
-        def foo        = rule { "abc" | "a" ~!~ "de" | "axy" }
+        def targetRule = rule(foo ~ EOI)
+        def foo        = rule("abc" | "a" ~!~ "de" | "axy")
 
         "abc" must beMatched
         "ade" must beMatched
