@@ -1,7 +1,7 @@
 **parboiled2**  |--| A Macro-Based PEG Parser Generator for Scala 2.12+
 
 .. image:: https://travis-ci.org/sirthias/parboiled2.svg?branch=release-2.1
-    :target: https://travis-ci.org/sirthias/parboiled2
+    :target:
 
 .. contents:: Contents of this Document
 
@@ -49,10 +49,9 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.1.8"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.2.0"
 
-The latest released version is **2.1.8**. It is available for Scala 2.11, 2.12, 2.13 as well as scala.js 0.6 and
-scala native.
+The latest released version is **2.2.0**. It is available for Scala 2.12, 2.13 as well as scala.js 1.0.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
 (currently version 2.3.3).

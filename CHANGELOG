@@ -1,3 +1,10 @@
+Version 2.2.0 (2020-03-02)
+--------------------------
+- Upgraded ti ScalaJS 1.0.0
+- Dropped support for Scala 2.11
+- Dropped support for scala-native (for now)
+
+
 Version 2.1.8 (2019-07-24)
 --------------------------
 - Fixed compiler warnings on Scala 2.13

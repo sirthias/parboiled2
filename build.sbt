@@ -77,6 +77,8 @@ lazy val publishingSettings = Seq(
   publishArtifact in Test := false,
   pomIncludeRepository := (_ ⇒ false),
   publishTo := sonatypePublishTo.value,
+  publishConfiguration := publishConfiguration.value.withOverwrite(true),
+  publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
   developers := List(
     Developer("sirthias", "Mathias Doenitz", "devnull@bullet.io", url("https://github.com/sirthias")),
     Developer("alexander-myltsev", "Alexander Myltsev", "", url("http://www.linkedin.com/in/alexandermyltsev"))
@@ -102,9 +104,9 @@ lazy val releaseSettings = {
       commitReleaseVersion,
       tagRelease,
       publishArtifacts,
+      releaseStepCommand("sonatypeReleaseAll"),
       setNextVersion,
       commitNextVersion,
-      releaseStepCommand("sonatypeReleaseAll"),
       pushChanges
     )
   )
@@ -137,19 +139,18 @@ lazy val root = project
   .aggregate(parboiledJVM, parboiledJS)
   .aggregate(parboiledCoreJVM, parboiledCoreJS)
   .settings(commonSettings)
-  .settings(publishingSettings)
   .settings(releaseSettings)
-  .settings(
-    publishArtifact := false
-  )
+  .settings(publish / skip := true)
 
 lazy val examples = project
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
-  .settings(libraryDependencies ++= Seq(utest.value, `spray-json`))
   .settings(utestSettings)
-  .settings(publishArtifact := false)
+  .settings(
+    publish / skip := true,
+    libraryDependencies ++= Seq(utest.value, `spray-json`)
+  )
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
@@ -158,8 +159,8 @@ lazy val jsonBenchmark = project
   .dependsOn(examples)
   .enablePlugins(JmhPlugin)
   .settings(commonSettings)
-  .settings(publishArtifact := false)
   .settings(
+    publish / skip := true,
     libraryDependencies ++= Seq(`json4s-native`, `json4s-jackson`),
     bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated
   )
@@ -168,9 +169,11 @@ lazy val scalaParser = project
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(parboiledJVM)
   .settings(commonSettings)
-  .settings(publishArtifact := false)
-  .settings(libraryDependencies ++= Seq(shapeless.value, utest.value))
   .settings(utestSettings)
+  .settings(
+    publish / skip := true,
+    libraryDependencies ++= Seq(shapeless.value, utest.value)
+  )
 
 lazy val parboiledJVM    = parboiled.jvm
 lazy val parboiledJS     = parboiled.js
@@ -218,12 +221,12 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform)
   .in(file("parboiled-core"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
-  .settings(publishArtifact := false)
   .settings(utestSettings)
+  .jvmSettings(libraryDependencies += scalaCheck.value)
+  .jsSettings(libraryDependencies += scalaCheck.value)
   .settings(
+    publish / skip := true,
     libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
     generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
     (sourceGenerators in Compile) += generateActionOps.taskValue
   )
-  .jvmSettings(libraryDependencies += scalaCheck.value)
-  .jsSettings(libraryDependencies += scalaCheck.value)
