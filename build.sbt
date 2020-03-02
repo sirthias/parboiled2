@@ -124,10 +124,6 @@ val utest           = Def.setting("com.lihaoyi"    %%% "utest"       % "0.7.4"  
 val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck"  % "1.14.3" % Test)
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
 
-// since ScalaCheck native is not available from the original authors @lolgab made a release
-// see https://github.com/rickynils/scalacheck/issues/396#issuecomment-467782592
-val scalaCheckNative = Def.setting("com.github.lolgab" %%% "scalacheck" % "1.14.1" % Test)
-
 // benchmarks and examples only
 val `json4s-native`  = "org.json4s" %% "json4s-native"  % "3.6.7"
 val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "3.6.7"
@@ -178,9 +174,8 @@ lazy val scalaParser = project
 
 lazy val parboiledJVM    = parboiled.jvm
 lazy val parboiledJS     = parboiled.js
-lazy val parboiledNative = parboiled.native
 
-lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .enablePlugins(AutomateHeaderPlugin, SbtOsgi)
   .dependsOn(parboiledCore)
@@ -197,14 +192,6 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJS.project, Compile, packageBin)).value,
     mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJS.project, Compile, packageSrc)).value,
     mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJS.project, Compile, packageDoc)).value
-  )
-  .nativeSettings(
-    mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreNative.project, Compile, packageBin)).value,
-    mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreNative.project, Compile, packageSrc)).value,
-    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreNative.project, Compile, packageDoc)).value,
-    nativeLinkStubs := true,
-    scalaVersion := "2.11.12",
-    crossScalaVersions := Seq("2.11.12")
   )
   .settings(
     libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
@@ -225,9 +212,8 @@ lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerp
 
 lazy val parboiledCoreJVM    = parboiledCore.jvm
 lazy val parboiledCoreJS     = parboiledCore.js
-lazy val parboiledCoreNative = parboiledCore.native
 
-lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
   .in(file("parboiled-core"))
   .enablePlugins(AutomateHeaderPlugin)
@@ -241,9 +227,3 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .jvmSettings(libraryDependencies += scalaCheck.value)
   .jsSettings(libraryDependencies += scalaCheck.value)
-  .nativeSettings(
-    nativeLinkStubs := true,
-    scalaVersion := "2.11.12",
-    crossScalaVersions := Seq("2.11.12"),
-    libraryDependencies += scalaCheckNative.value
-  )

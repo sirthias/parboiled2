@@ -2,19 +2,12 @@ language: scala
 sudo: false
 jdk: openjdk8
 scala:
-- 2.11.12
 - 2.12.10
 - 2.13.1
 script:
 - sbt "++ ${TRAVIS_SCALA_VERSION}" test "scalaParser/testOnly scalaparser.SnippetSpec"
 matrix:
   include:
-  - name: "2.11.12 native"
-    scala: 2.11.12
-    before_script:
-      - curl https://raw.githubusercontent.com/scala-native/scala-native/master/scripts/travis_setup.sh | bash -x
-    script:
-      - sbt "++ ${TRAVIS_SCALA_VERSION}" parboiledCoreNative/test parboiledNative/test "scalaParser/testOnly scalaparser.SnippetSpec"
   - scala: 2.12.10
     jdk: openjdk11
     dist: xenial
