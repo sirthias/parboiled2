@@ -1,6 +1,4 @@
 import ReleaseTransformations._
-
-import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import sbtcrossproject.CrossPlugin.autoImport._
 
 val commonSettings = Seq(
@@ -14,7 +12,7 @@ val commonSettings = Seq(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
   ),
   scalaVersion := "2.12.10",
-  crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.1"),
+  crossScalaVersions := Seq("2.12.10", "2.13.1"),
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
@@ -28,15 +26,6 @@ val commonSettings = Seq(
   ),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 11)) =>
-        Seq(
-          "-Yno-adapted-args",
-          "-Ywarn-inaccessible",
-          "-Ywarn-infer-any",
-          "-Ywarn-nullary-override",
-          "-Ywarn-nullary-unit",
-          "-Xfuture"
-        )
       case Some((2, 12)) =>
         Seq(
           "-Yno-adapted-args",
@@ -80,7 +69,7 @@ lazy val crossSettings = Seq(
 lazy val scalajsSettings = Seq(
   scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule).withSourceMap(false)),
   scalaJSStage in Global := FastOptStage,
-  scalacOptions ~= { _.filterNot(_ == "-Ywarn-dead-code") :+ "-P:scalajs:sjsDefinedByDefault" }
+  scalacOptions ~= { _.filterNot(_ == "-Ywarn-dead-code") }
 )
 
 lazy val publishingSettings = Seq(
@@ -130,19 +119,10 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val utestVersion = Def.setting(
-  CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, v)) if v <= 11 =>
-      "0.6.8"
-    case _ =>
-      "0.6.9"
-  }
-)
-
-val shapeless       = Def.setting("com.chuusai"    %%% "shapeless"   % "2.3.3"            % "compile")
-val utest           = Def.setting("com.lihaoyi"    %%% "utest"       % utestVersion.value % Test)
-val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck"  % "1.14.3"           % Test)
-val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
+val shapeless       = Def.setting("com.chuusai"    %%% "shapeless"   % "2.3.3"  % Compile)
+val utest           = Def.setting("com.lihaoyi"    %%% "utest"       % "0.7.4"  % Test)
+val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck"  % "1.14.3" % Test)
+val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
 
 // since ScalaCheck native is not available from the original authors @lolgab made a release
 // see https://github.com/rickynils/scalacheck/issues/396#issuecomment-467782592
