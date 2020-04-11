@@ -1,4 +1,4 @@
-addSbtPlugin("org.scalameta"      % "sbt-scalafmt"                  % "2.3.3")
+addSbtPlugin("org.scalameta"      % "sbt-scalafmt"                  % "2.3.4")
 addSbtPlugin("io.crashbox"        % "sbt-gpg"                       % "0.2.1")
 addSbtPlugin("com.github.gseitz"  % "sbt-release"                   % "1.0.13")
 addSbtPlugin("org.xerial.sbt"     % "sbt-sonatype"                  % "3.9.2")
