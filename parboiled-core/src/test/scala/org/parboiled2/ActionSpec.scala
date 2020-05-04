@@ -76,9 +76,10 @@ object ActionSpec extends TestParserSpec {
 
       "`run(ruleBlockWithRuleMatch)`" - new TestParser0 {
         var flag = false
-        def targetRule = rule {
-          'a' ~ run { flag = true; flag match { case true => oneOrMore(b); case _ => MISMATCH } } ~ EOI
-        }
+        def targetRule =
+          rule {
+            'a' ~ run { flag = true; flag match { case true => oneOrMore(b); case _ => MISMATCH } } ~ EOI
+          }
         def b = rule('b')
         "a" must beMismatched
         assert(flag)
@@ -165,9 +166,10 @@ object ActionSpec extends TestParserSpec {
 
       "`~>` with a statement block" - new TestParser1[Char] {
         var captured = ' '
-        def testRule = rule {
-          capture("x") ~> { x => captured = x.head; cursorChar }
-        }
+        def testRule =
+          rule {
+            capture("x") ~> { x => captured = x.head; cursorChar }
+          }
         def targetRule = testRule
         "xy" must beMatchedWith('y')
         captured ==> 'x'

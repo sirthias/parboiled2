@@ -126,9 +126,11 @@ object ActionOpsBoilerplate {
     // }
 
     s"""
-       |  implicit def ops$i[II <: HList, ${`A, ...`(i)}]: ActionOps[II, ${`A ::...`(i)} :: HNil] { type Out = Ops$i[II, ${`A, ...`(
-         i
-       )}] } = `n/a`
+       |  implicit def ops$i[II <: HList, ${`A, ...`(i)}]: ActionOps[II, ${`A ::...`(
+      i
+    )} :: HNil] { type Out = Ops$i[II, ${`A, ...`(
+      i
+    )}] } = `n/a`
        |  sealed trait Ops$i[II <: HList, ${`A, ...`(i)}] {
        |    def apply[RR](f: () => RR)(implicit j: Join[II, ${`A ::...`(i)} :: HNil, RR], c: FCapture[() => RR]): Rule[j.In, j.Out]
        |

@@ -65,11 +65,12 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
   sealed abstract class PotentiallyNamedTerminalOpTree(arg: Tree) extends TerminalOpTree {
 
-    override def bubbleUp = callName(arg) match {
-      case Some(name) =>
-        q"__bubbleUp(org.parboiled2.RuleTrace.NonTerminal(org.parboiled2.RuleTrace.Named($name), 0) :: Nil, $ruleTraceTerminal)"
-      case None => super.bubbleUp
-    }
+    override def bubbleUp =
+      callName(arg) match {
+        case Some(name) =>
+          q"__bubbleUp(org.parboiled2.RuleTrace.NonTerminal(org.parboiled2.RuleTrace.Named($name), 0) :: Nil, $ruleTraceTerminal)"
+        case None => super.bubbleUp
+      }
     def ruleTraceTerminal: Tree
   }
 
@@ -150,7 +151,9 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     def renderInner(wrapped: Boolean): Tree =
       ops
         .map(_.render(wrapped))
-        .reduceLeft((l, r) => q"val l = $l; if (l) $r else false") // work-around for https://issues.scala-lang.org/browse/SI-8657"
+        .reduceLeft((l, r) =>
+          q"val l = $l; if (l) $r else false"
+        ) // work-around for https://issues.scala-lang.org/browse/SI-8657"
   }
 
   case class Cut(lhs: OpTree, rhs: OpTree) extends DefaultNonTerminalOpTree {
@@ -601,12 +604,15 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   case class PushAction(argTree: Tree, hlTree: Tree) extends OpTree {
 
     def render(wrapped: Boolean): Tree =
-      block(hlTree match {
-        case q"support.this.HListable.fromUnit"       => argTree
-        case q"support.this.HListable.fromHList[$t]"  => q"valueStack.pushAll(${c.untypecheck(argTree)})"
-        case q"support.this.HListable.fromAnyRef[$t]" => q"valueStack.push(${c.untypecheck(argTree)})"
-        case x                                        => c.abort(hlTree.pos, "Unexpected HListable: " + show(x))
-      }, q"true")
+      block(
+        hlTree match {
+          case q"support.this.HListable.fromUnit"       => argTree
+          case q"support.this.HListable.fromHList[$t]"  => q"valueStack.pushAll(${c.untypecheck(argTree)})"
+          case q"support.this.HListable.fromAnyRef[$t]" => q"valueStack.push(${c.untypecheck(argTree)})"
+          case x                                        => c.abort(hlTree.pos, "Unexpected HListable: " + show(x))
+        },
+        q"true"
+      )
   }
 
   case class DropAction(hlTree: Tree) extends OpTree {

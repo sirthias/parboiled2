@@ -28,9 +28,10 @@ object ErrorReportingSpec extends TestParserSpec {
         import CharPredicate.UpperAlpha
         val hex = CharPredicate.UpperHexLetter
 
-        def targetRule = rule {
-          'a' ~ oneOrMore('b') ~ anyOf("cde") ~ ("fgh" | CharPredicate.Digit | hex | UpperAlpha) ~ noneOf("def") ~ EOI
-        }
+        def targetRule =
+          rule {
+            'a' ~ oneOrMore('b') ~ anyOf("cde") ~ ("fgh" | CharPredicate.Digit | hex | UpperAlpha) ~ noneOf("def") ~ EOI
+          }
 
         "" must beMismatchedWithErrorMsg("""Unexpected end of input, expected targetRule (line 1, column 1):
             |

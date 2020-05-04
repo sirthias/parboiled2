@@ -81,8 +81,8 @@ trait RuleDSLActions {
   def drop[T](implicit h: HListable[T]): PopRule[h.Out] = `n/a`
 
   @compileTimeOnly("Calls to `rule2ActionOperator` must be inside `rule` macro")
-  implicit def rule2ActionOperator[I <: HList, O <: HList](r: Rule[I, O])(
-      implicit ops: ActionOps[I, O]
+  implicit def rule2ActionOperator[I <: HList, O <: HList](r: Rule[I, O])(implicit
+      ops: ActionOps[I, O]
   ): ActionOperator[I, O, ops.Out] = `n/a`
 
   sealed trait ActionOperator[I <: HList, O <: HList, Ops] {

@@ -21,24 +21,21 @@ object Base64 {
   private var CUSTOM: Base64  = _
 
   def custom(): Base64 = {
-    if (CUSTOM == null) {
+    if (CUSTOM == null)
       CUSTOM = new Base64("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-_")
-    }
     CUSTOM
   }
 
   def rfc2045(): Base64 = {
-    if (RFC2045 == null) {
+    if (RFC2045 == null)
       RFC2045 = new Base64("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")
-    }
     RFC2045
   }
 }
 
 class Base64(alphabet: String) {
-  if (alphabet == null || alphabet.length() != 65) {
+  if (alphabet == null || alphabet.length() != 65)
     throw new IllegalArgumentException()
-  }
 
   val CA             = alphabet.substring(0, 64).toCharArray
   val fillChar       = alphabet.charAt(64)
@@ -61,37 +58,33 @@ class Base64(alphabet: String) {
     */
   def decode(sArr: Array[Char]): Array[Byte] = {
     // Check special case
-    val sLen = if (sArr != null) {
-      sArr.length
-    } else {
-      0
-    }
+    val sLen =
+      if (sArr != null)
+        sArr.length
+      else
+        0
 
-    if (sLen == 0) {
+    if (sLen == 0)
       return Array.empty[Byte]
-    }
 
     // Count illegal characters (including '\r', '\n') to know what size the returned array will be,
     // so we don't have to reallocate & copy it later.
     // If input is "pure" (I.e. no line separators or illegal chars) base64 this loop can be commented out.
     var sepCnt = 0 // Number of separator characters. (Actually illegal characters, but that's a bonus...)
     (0 until sLen).foreach { i =>
-      if (IA(sArr(i)) < 0) {
+      if (IA(sArr(i)) < 0)
         sepCnt += 1
-      }
     }
 
     // Check so that legal chars (including '=') are evenly divideable by 4 as specified in RFC 2045.
-    if ((sLen - sepCnt) % 4 != 0) {
+    if ((sLen - sepCnt) % 4 != 0)
       return null
-    }
 
     var pad = 0
     var i   = sLen - 1
     while (i > 0 && IA(sArr(i)) <= 0) {
-      if (sArr(i) == fillChar) {
+      if (sArr(i) == fillChar)
         pad += 1
-      }
       i -= 1
     }
 
@@ -109,11 +102,10 @@ class Base64(alphabet: String) {
       while (j < 4) {
         val c = IA(sArr(s))
         s += 1
-        if (c >= 0) {
+        if (c >= 0)
           i |= c << (18 - j * 6)
-        } else {
+        else
           j -= 1
-        }
 
         j += 1
       }
@@ -148,49 +140,44 @@ class Base64(alphabet: String) {
   def decodeFast(sArr: Array[Char]): Array[Byte] = {
     // Check special case
     val sLen = sArr.length
-    if (sLen == 0) {
+    if (sLen == 0)
       return Array.empty[Byte]
-    }
 
     // Start and end index after trimming.
     var sIx = 0
     var eIx = sLen - 1
 
     // Trim illegal chars from start
-    while (sIx < eIx && IA(sArr(sIx)) < 0) {
+    while (sIx < eIx && IA(sArr(sIx)) < 0)
       sIx += 1
-    }
 
     // Trim illegal chars from end
-    while (eIx > 0 && IA(sArr(eIx)) < 0) {
+    while (eIx > 0 && IA(sArr(eIx)) < 0)
       eIx -= 1
-    }
 
     // get the padding count (=) (0, 1 or 2)
     // Count '=' at end.
-    val pad = if (sArr(eIx) == fillChar) {
-      if (sArr(eIx - 1) == fillChar) {
-        2
-      } else {
-        1
-      }
-    } else {
-      0
-    }
+    val pad =
+      if (sArr(eIx) == fillChar)
+        if (sArr(eIx - 1) == fillChar)
+          2
+        else
+          1
+      else
+        0
 
     // Content count including possible separators
     val cCnt = eIx - sIx + 1
 
     // Count '=' at end.
-    val sepCnt = if (sLen > 76) {
-      (if (sArr(76) == '\r') {
-         cCnt / 78
-       } else {
-         0
-       }) << 1
-    } else {
-      0
-    }
+    val sepCnt =
+      if (sLen > 76)
+        (if (sArr(76) == '\r')
+           cCnt / 78
+         else
+           0) << 1
+      else
+        0
 
     val len  = ((cCnt - sepCnt) * 6 >> 3) - pad // The number of decoded bytes
     val dArr = Array.ofDim[Byte](len);          // Preallocate byte() of exact length
@@ -272,25 +259,23 @@ class Base64(alphabet: String) {
     */
   def encodeToChar(sArr: Array[Byte], lineSep: Boolean): Array[Char] = {
     // Check special case
-    val sLen = if (sArr != null) {
-      sArr.length
-    } else {
-      0
-    }
+    val sLen =
+      if (sArr != null)
+        sArr.length
+      else
+        0
 
-    if (sLen == 0) {
+    if (sLen == 0)
       return Array.empty[Char]
-    }
 
     val eLen = (sLen / 3) * 3            // Length of even 24-bits.
     val cCnt = ((sLen - 1) / 3 + 1) << 2 // Returned character count
 
     // Length of returned array
-    val dLen = cCnt + (if (lineSep == true) {
+    val dLen = cCnt + (if (lineSep == true)
                          (cCnt - 1) / 76 << 1
-                       } else {
-                         0
-                       })
+                       else
+                         0)
 
     val dArr = Array.ofDim[Char](dLen)
 
@@ -332,20 +317,19 @@ class Base64(alphabet: String) {
     val left = sLen - eLen; // 0 - 2.
     if (left > 0) {
       // Prepare the int
-      val i = ((sArr(eLen) & 0xff) << 10) | (if (left == 2) {
+      val i = ((sArr(eLen) & 0xff) << 10) | (if (left == 2)
                                                (sArr(sLen - 1) & 0xff) << 2
-                                             } else {
-                                               0
-                                             })
+                                             else
+                                               0)
 
       // Set last four chars
       dArr(dLen - 4) = CA(i >> 12)
       dArr(dLen - 3) = CA((i >>> 6) & 0x3f)
-      dArr(dLen - 2) = if (left == 2) {
-        CA(i & 0x3f)
-      } else {
-        fillChar
-      }
+      dArr(dLen - 2) =
+        if (left == 2)
+          CA(i & 0x3f)
+        else
+          fillChar
       dArr(dLen - 1) = fillChar
     }
 

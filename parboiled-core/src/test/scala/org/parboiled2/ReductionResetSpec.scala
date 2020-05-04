@@ -23,29 +23,35 @@ object ReductionResetSpec extends TestParserSpec {
 
   abstract class ReductionResetParser extends TestParser1[Int] {
 
-    def Alternative: Rule1[Int] = rule {
-      Digits ~ (String2Int ~ "." | String2Int)
-    }
+    def Alternative: Rule1[Int] =
+      rule {
+        Digits ~ (String2Int ~ "." | String2Int)
+      }
 
-    def ZeroOrMore: Rule1[Int] = rule {
-      Digits ~ zeroOrMore(String2Int ~ "." ~ Int2String) ~ String2Int
-    }
+    def ZeroOrMore: Rule1[Int] =
+      rule {
+        Digits ~ zeroOrMore(String2Int ~ "." ~ Int2String) ~ String2Int
+      }
 
-    def OneOrMore: Rule1[Int] = rule {
-      Digits ~ oneOrMore(String2Int ~ "." ~ Int2String) ~ String2Int
-    }
+    def OneOrMore: Rule1[Int] =
+      rule {
+        Digits ~ oneOrMore(String2Int ~ "." ~ Int2String) ~ String2Int
+      }
 
-    def String2Int: Rule[String :: HNil, Int :: HNil] = rule {
-      run((_: String).toInt)
-    }
+    def String2Int: Rule[String :: HNil, Int :: HNil] =
+      rule {
+        run((_: String).toInt)
+      }
 
-    def Int2String: Rule[Int :: HNil, String :: HNil] = rule {
-      run((_: Int).toString)
-    }
+    def Int2String: Rule[Int :: HNil, String :: HNil] =
+      rule {
+        run((_: Int).toString)
+      }
 
-    def Digits: Rule1[String] = rule {
-      capture(oneOrMore(CharPredicate.Digit))
-    }
+    def Digits: Rule1[String] =
+      rule {
+        capture(oneOrMore(CharPredicate.Digit))
+      }
   }
 
   val tests = Tests {

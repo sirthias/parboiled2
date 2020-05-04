@@ -53,15 +53,18 @@ object ABCParser extends App {
   */
 class ABCParser(val input: ParserInput) extends Parser {
 
-  def InputLine = rule {
-    &(A ~ 'c') ~ oneOrMore('a') ~ B ~ !(ch('a') | 'b' | 'c') ~ EOI
-  }
+  def InputLine =
+    rule {
+      &(A ~ 'c') ~ oneOrMore('a') ~ B ~ !(ch('a') | 'b' | 'c') ~ EOI
+    }
 
-  def A: Rule0 = rule {
-    'a' ~ optional(A) ~ 'b'
-  }
+  def A: Rule0 =
+    rule {
+      'a' ~ optional(A) ~ 'b'
+    }
 
-  def B: Rule0 = rule {
-    'b' ~ optional(B) ~ 'c'
-  }
+  def B: Rule0 =
+    rule {
+      'b' ~ optional(B) ~ 'c'
+    }
 }

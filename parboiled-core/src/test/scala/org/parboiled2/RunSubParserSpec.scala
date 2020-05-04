@@ -22,16 +22,18 @@ object RunSubParserSpec extends TestParserSpec {
 
   class SubParser(val input: ParserInput) extends Parser {
 
-    def IntNumber = rule {
-      capture(oneOrMore(CharPredicate.Digit)) ~> (_.toInt)
-    }
+    def IntNumber =
+      rule {
+        capture(oneOrMore(CharPredicate.Digit)) ~> (_.toInt)
+      }
   }
 
   abstract class ParserWithSubParser extends TestParser1[Int] {
 
-    def InputLine = rule {
-      oneOrMore(runSubParser(new SubParser(_).IntNumber)).separatedBy(',') ~ EOI ~> (_.sum)
-    }
+    def InputLine =
+      rule {
+        oneOrMore(runSubParser(new SubParser(_).IntNumber)).separatedBy(',') ~ EOI ~> (_.sum)
+      }
   }
 
   val tests = Tests {

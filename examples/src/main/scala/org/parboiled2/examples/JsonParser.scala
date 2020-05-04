@@ -31,29 +31,31 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
   // the root rule
   def Json = rule(WhiteSpace ~ Value ~ EOI)
 
-  def JsonObject: Rule1[JsObject] = rule {
-    ws('{') ~ zeroOrMore(Pair).separatedBy(ws(',')) ~ ws('}') ~> ((fields: Seq[JsField]) => JsObject(fields: _*))
-  }
+  def JsonObject: Rule1[JsObject] =
+    rule {
+      ws('{') ~ zeroOrMore(Pair).separatedBy(ws(',')) ~ ws('}') ~> ((fields: Seq[JsField]) => JsObject(fields: _*))
+    }
 
   def Pair = rule(JsonStringUnwrapped ~ ws(':') ~ Value ~> ((_, _)))
 
-  def Value: Rule1[JsValue] = rule {
-    // as an optimization of the equivalent rule:
-    //   JsonString | JsonNumber | JsonObject | JsonArray | JsonTrue | JsonFalse | JsonNull
-    // we make use of the fact that one-char lookahead is enough to discriminate the cases
-    run {
-      (cursorChar: @switch) match {
-        case '"'                                                             => JsonString
-        case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '-' => JsonNumber
-        case '{'                                                             => JsonObject
-        case '['                                                             => JsonArray
-        case 't'                                                             => JsonTrue
-        case 'f'                                                             => JsonFalse
-        case 'n'                                                             => JsonNull
-        case _                                                               => MISMATCH
+  def Value: Rule1[JsValue] =
+    rule {
+      // as an optimization of the equivalent rule:
+      //   JsonString | JsonNumber | JsonObject | JsonArray | JsonTrue | JsonFalse | JsonNull
+      // we make use of the fact that one-char lookahead is enough to discriminate the cases
+      run {
+        (cursorChar: @switch) match {
+          case '"'                                                             => JsonString
+          case '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '-' => JsonNumber
+          case '{'                                                             => JsonObject
+          case '['                                                             => JsonArray
+          case 't'                                                             => JsonTrue
+          case 'f'                                                             => JsonFalse
+          case 'n'                                                             => JsonNull
+          case _                                                               => MISMATCH
+        }
       }
     }
-  }
 
   def JsonString = rule(JsonStringUnwrapped ~> (JsString(_)))
 
@@ -67,15 +69,16 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
 
   def NormalChar = rule(!QuoteBackslash ~ ANY ~ appendSB())
 
-  def EscapedChar = rule(
-    QuoteSlashBackSlash ~ appendSB()
-      | 'b' ~ appendSB('\b')
-      | 'f' ~ appendSB('\f')
-      | 'n' ~ appendSB('\n')
-      | 'r' ~ appendSB('\r')
-      | 't' ~ appendSB('\t')
-      | Unicode ~> { code => sb.append(code.asInstanceOf[Char]); () }
-  )
+  def EscapedChar =
+    rule(
+      QuoteSlashBackSlash ~ appendSB()
+        | 'b' ~ appendSB('\b')
+        | 'f' ~ appendSB('\f')
+        | 'n' ~ appendSB('\n')
+        | 'r' ~ appendSB('\r')
+        | 't' ~ appendSB('\t')
+        | Unicode ~> { code => sb.append(code.asInstanceOf[Char]); () }
+    )
 
   def Unicode = rule('u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16)))
 

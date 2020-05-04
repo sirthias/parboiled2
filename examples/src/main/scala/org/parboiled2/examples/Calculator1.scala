@@ -51,19 +51,21 @@ object Calculator1 extends App {
 class Calculator1(val input: ParserInput) extends Parser {
   def InputLine = rule(Expression ~ EOI)
 
-  def Expression: Rule1[Int] = rule {
-    Term ~ zeroOrMore(
-      '+' ~ Term ~> ((_: Int) + _)
-        | '-' ~ Term ~> ((_: Int) - _)
-    )
-  }
+  def Expression: Rule1[Int] =
+    rule {
+      Term ~ zeroOrMore(
+        '+' ~ Term ~> ((_: Int) + _)
+          | '-' ~ Term ~> ((_: Int) - _)
+      )
+    }
 
-  def Term = rule {
-    Factor ~ zeroOrMore(
-      '*' ~ Factor ~> ((_: Int) * _)
-        | '/' ~ Factor ~> ((_: Int) / _)
-    )
-  }
+  def Term =
+    rule {
+      Factor ~ zeroOrMore(
+        '*' ~ Factor ~> ((_: Int) * _)
+          | '/' ~ Factor ~> ((_: Int) / _)
+      )
+    }
 
   def Factor = rule(Number | Parens)
 

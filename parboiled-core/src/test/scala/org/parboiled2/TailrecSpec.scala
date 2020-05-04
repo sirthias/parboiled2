@@ -23,9 +23,10 @@ object TailrecSpec extends TestParserSpec {
 
   abstract class TailrecParser extends TestParser0 {
 
-    def InputLine = rule {
-      oneOrMore('x') ~ EOI | zeroOrMore('x') ~ 'y' ~ EOI
-    }
+    def InputLine =
+      rule {
+        oneOrMore('x') ~ EOI | zeroOrMore('x') ~ 'y' ~ EOI
+      }
   }
 
   val tests = Tests {

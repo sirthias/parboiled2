@@ -64,7 +64,9 @@ object CharPredicateSpec extends TestSuite {
         (CharPredicate("abcäüö") -- "äö").toString ==> "CharPredicate.ArrayBased(abcü)"
       }
       "be backed by a range where possible" - {
-        CharPredicate('1' to 'Ä').toString ==> "CharPredicate.RangeBased(start = 1, end = Ä, step = 1, inclusive = true)"
+        CharPredicate(
+          '1' to 'Ä'
+        ).toString ==> "CharPredicate.RangeBased(start = 1, end = Ä, step = 1, inclusive = true)"
       }
     }
 

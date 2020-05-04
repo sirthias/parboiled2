@@ -70,19 +70,21 @@ class Calculator2(val input: ParserInput) extends Parser {
 
   def InputLine = rule(Expression ~ EOI)
 
-  def Expression: Rule1[Expr] = rule {
-    Term ~ zeroOrMore(
-      '+' ~ Term ~> Addition
-        | '-' ~ Term ~> Subtraction
-    )
-  }
+  def Expression: Rule1[Expr] =
+    rule {
+      Term ~ zeroOrMore(
+        '+' ~ Term ~> Addition
+          | '-' ~ Term ~> Subtraction
+      )
+    }
 
-  def Term = rule {
-    Factor ~ zeroOrMore(
-      '*' ~ Factor ~> Multiplication
-        | '/' ~ Factor ~> Division
-    )
-  }
+  def Term =
+    rule {
+      Factor ~ zeroOrMore(
+        '*' ~ Factor ~> Multiplication
+          | '/' ~ Factor ~> Division
+      )
+    }
 
   def Factor = rule(Number | Parens)
 

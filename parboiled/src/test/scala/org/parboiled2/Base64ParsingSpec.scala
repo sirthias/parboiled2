@@ -52,14 +52,15 @@ object Base64ParsingSpec extends TestSuite {
     "base64CustomBlock"
   )
 
-  def testParser(encoded: String) = new TestParser(encoded) with DynamicRuleHandler[TestParser, Array[Byte] :: HNil] {
-    type Result = String
-    def parser: TestParser                           = this
-    def ruleNotFound(ruleName: String): Result       = "n/a"
-    def success(result: Array[Byte] :: HNil): Result = new String(result.head, UTF8)
-    def parseError(error: ParseError): Result        = throw error
-    def failure(error: Throwable): Result            = throw error
-  }
+  def testParser(encoded: String) =
+    new TestParser(encoded) with DynamicRuleHandler[TestParser, Array[Byte] :: HNil] {
+      type Result = String
+      def parser: TestParser                           = this
+      def ruleNotFound(ruleName: String): Result       = "n/a"
+      def success(result: Array[Byte] :: HNil): Result = new String(result.head, UTF8)
+      def parseError(error: ParseError): Result        = throw error
+      def failure(error: Throwable): Result            = throw error
+    }
 
   def test(ruleName: String, base64: Base64): Unit =
     (1 to 100).foreach { x =>

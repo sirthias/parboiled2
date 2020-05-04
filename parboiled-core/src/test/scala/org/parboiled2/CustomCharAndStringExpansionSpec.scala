@@ -35,9 +35,10 @@ object CustomCharAndStringExpansionSpec extends TestParserSpec {
       }
 
       "allow for custom string expansion" - new TestParser0 {
-        implicit def wspStr(s: String): Rule0 = rule {
-          str(s) ~ zeroOrMore(' ')
-        }
+        implicit def wspStr(s: String): Rule0 =
+          rule {
+            str(s) ~ zeroOrMore(' ')
+          }
 
         def targetRule = rule("foo" ~ "bar" ~ EOI)
 

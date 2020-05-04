@@ -121,9 +121,9 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val shapeless       = Def.setting("com.chuusai"    %%% "shapeless"   % "2.3.3"  % Compile)
-val utest           = Def.setting("com.lihaoyi"    %%% "utest"       % "0.7.4"  % Test)
-val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck"  % "1.14.3" % Test)
+val shapeless       = Def.setting("com.chuusai" %%% "shapeless" % "2.3.3" % Compile)
+val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.7.4" % Test)
+val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.14.3" % Test)
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
 
 // benchmarks and examples only
@@ -175,8 +175,8 @@ lazy val scalaParser = project
     libraryDependencies ++= Seq(shapeless.value, utest.value)
   )
 
-lazy val parboiledJVM    = parboiled.jvm
-lazy val parboiledJS     = parboiled.js
+lazy val parboiledJVM = parboiled.jvm
+lazy val parboiledJS  = parboiled.js
 
 lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
@@ -213,8 +213,8 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-lazy val parboiledCoreJVM    = parboiledCore.jvm
-lazy val parboiledCoreJS     = parboiledCore.js
+lazy val parboiledCoreJVM = parboiledCore.jvm
+lazy val parboiledCoreJS  = parboiledCore.js
 
 lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)

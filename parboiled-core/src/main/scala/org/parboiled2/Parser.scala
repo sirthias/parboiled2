@@ -221,9 +221,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         scheme.parseError(ParseError(pos, pos, RuleTrace(Nil, RuleTrace.Fail(e.expected)) :: Nil))
       case NonFatal(e) =>
         scheme.failure(e)
-    } finally {
-      phase = null
-    }
+    } finally phase = null
   }
 
   /**
@@ -261,8 +259,8 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     */
   def __restoreState(mark: Mark): Unit = {
     _cursor = (mark.value >>> 32).toInt
-    _cursorChar = ((mark.value >>> 16) & 0x000000000000FFFF).toChar
-    valueStack.size = (mark.value & 0x000000000000FFFF).toInt
+    _cursorChar = ((mark.value >>> 16) & 0x000000000000ffff).toChar
+    valueStack.size = (mark.value & 0x000000000000ffff).toInt
   }
 
   /**
@@ -295,12 +293,11 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __exitAtomic(saved: Boolean): Unit =
-    if (saved) {
+    if (saved)
       phase match {
         case x: EstablishingReportedErrorIndex => x.currentAtomicStart = Int.MinValue
         case _                                 => throw new IllegalStateException
       }
-    }
 
   /**
     * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -324,13 +321,12 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __exitQuiet(saved: Int): Unit =
-    if (saved >= 0) {
+    if (saved >= 0)
       phase match {
         case x: DetermineReportQuiet => x.inQuiet = false
         case x: CollectingRuleTraces => x.minErrorIndex = saved
         case _                       => throw new IllegalStateException
       }
-    }
 
   /**
     * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
@@ -339,9 +335,8 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     phase match {
       case null | _: EstablishingPrincipalErrorIndex => // nothing to do
       case x: CollectingRuleTraces =>
-        if (_cursor >= x.minErrorIndex) {
+        if (_cursor >= x.minErrorIndex)
           if (x.errorMismatches == x.traceNr) throw Parser.StartTracingException else x.errorMismatches += 1
-        }
       case x: EstablishingReportedErrorIndex =>
         if (x.currentAtomicStart > x.maxAtomicErrorStart) x.maxAtomicErrorStart = x.currentAtomicStart
       case x: DetermineReportQuiet =>
@@ -394,14 +389,13 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         __advance()
         __updateMaxCursor()
         __matchStringWrapped(string, ix + 1)
-      } else {
+      } else
         try __registerMismatch()
         catch {
           case Parser.StartTracingException =>
             import RuleTrace._
             __bubbleUp(NonTerminal(StringMatch(string), -ix) :: Nil, CharMatch(string charAt ix))
         }
-      }
     else true
 
   /**
@@ -424,14 +418,13 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         __advance()
         __updateMaxCursor()
         __matchIgnoreCaseStringWrapped(string, ix + 1)
-      } else {
+      } else
         try __registerMismatch()
         catch {
           case Parser.StartTracingException =>
             import RuleTrace._
             __bubbleUp(NonTerminal(IgnoreCaseString(string), -ix) :: Nil, IgnoreCaseChar(string charAt ix))
         }
-      }
     else true
 
   /**
@@ -520,7 +513,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
 
   protected class __SubParserInput extends ParserInput {
     val offset                                            = _cursor // the number of chars the input the sub-parser sees is offset from the outer input start
-    def getLine(line: Int): String                        = ??? // TODO
+    def getLine(line: Int): String                        = ???     // TODO
     def sliceCharArray(start: Int, end: Int): Array[Char] = input.sliceCharArray(start + offset, end + offset)
     def sliceString(start: Int, end: Int): String         = input.sliceString(start + offset, end + offset)
     def length: Int                                       = input.length - offset

@@ -52,12 +52,12 @@ object Join extends LowPrioJoin {
 
   implicit def forUnit[I <: HList, L <: HList]: Aux[I, L, Unit, I, L] = `n/a`
 
-  implicit def forHList[I <: HList, L <: HList, R <: HList, O <: HList](
-      implicit x: Prepend.Aux[L, R, O]
+  implicit def forHList[I <: HList, L <: HList, R <: HList, O <: HList](implicit
+      x: Prepend.Aux[L, R, O]
   ): Aux[I, L, R, I, O] = `n/a`
 
-  implicit def forRule[I <: HList, O <: HList, I2 <: HList, O2 <: HList, In <: HList, Out <: HList](
-      implicit i: TailSwitch.Aux[I2, I2, O, O, I, HNil, In],
+  implicit def forRule[I <: HList, O <: HList, I2 <: HList, O2 <: HList, In <: HList, Out <: HList](implicit
+      i: TailSwitch.Aux[I2, I2, O, O, I, HNil, In],
       o: TailSwitch.Aux[O, O, I2, I2, O2, HNil, Out]
   ): Aux[I, O, Rule[I2, O2], In, Out] = `n/a`
 }
@@ -67,7 +67,7 @@ sealed abstract class LowPrioJoin {
   type Aux[I <: HList, L <: HList, R, In0 <: HList, Out0 <: HList] =
     Join[I, L, R] { type In = In0; type Out = Out0 }
 
-  implicit def forAny[I <: HList, L <: HList, R, In <: HList, Out <: HList](
-      implicit x: Aux[I, L, R :: HNil, In, Out]
+  implicit def forAny[I <: HList, L <: HList, R, In <: HList, Out <: HList](implicit
+      x: Aux[I, L, R :: HNil, In, Out]
   ): Aux[I, L, R, In, Out] = `n/a`
 }

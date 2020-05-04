@@ -49,10 +49,11 @@ class CsvParser(val input: ParserInput, headerPresent: Boolean, fieldDelimiter: 
 
   val TEXTDATA = `TEXTDATA-BASE` -- fieldDelimiter
 
-  def file = rule {
-    OWS ~ optional(test(headerPresent) ~ header ~ NL) ~ oneOrMore(record)
-      .separatedBy(NL) ~ optional(NL) ~ EOI ~> CsvFile
-  }
+  def file =
+    rule {
+      OWS ~ optional(test(headerPresent) ~ header ~ NL) ~ oneOrMore(record)
+        .separatedBy(NL) ~ optional(NL) ~ EOI ~> CsvFile
+    }
 
   def header = rule(record)
 
@@ -60,9 +61,10 @@ class CsvParser(val input: ParserInput, headerPresent: Boolean, fieldDelimiter: 
 
   def field = rule(`quoted-field` | `unquoted-field`)
 
-  def `quoted-field` = rule {
-    OWS ~ '"' ~ clearSB() ~ zeroOrMore((QTEXTDATA | "\"\"") ~ appendSB()) ~ '"' ~ OWS ~ push(sb.toString)
-  }
+  def `quoted-field` =
+    rule {
+      OWS ~ '"' ~ clearSB() ~ zeroOrMore((QTEXTDATA | "\"\"") ~ appendSB()) ~ '"' ~ OWS ~ push(sb.toString)
+    }
 
   def `unquoted-field` = rule(capture(zeroOrMore(TEXTDATA)))
 
