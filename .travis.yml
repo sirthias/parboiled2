@@ -3,7 +3,7 @@ sudo: false
 jdk: openjdk8
 scala:
 - 2.12.11
-- 2.13.1
+- 2.13.3
 script:
 - sbt "++ ${TRAVIS_SCALA_VERSION}" "all scalafmtCheck test:scalafmtCheck scalafmtSbtCheck" test "scalaParser/testOnly scalaparser.SnippetSpec"
 matrix:
