@@ -80,7 +80,7 @@ object CharPredicateSpec extends TestSuite {
         case CharPredicate.MaskBased(a, b) => a -> b
         case _                             => throw new IllegalStateException()
       }
-      "%016x|%016x" format (lowMask, highMask)
+      "%016x|%016x".format(lowMask, highMask)
     }
   }
 }
