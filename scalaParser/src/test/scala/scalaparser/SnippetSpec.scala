@@ -1,12 +1,12 @@
 package scalaparser
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 import utest._
 import org.parboiled2._
 
 object SnippetSpec extends TestSuite {
 
-  val tests = Tests{
+  val tests = Tests {
 
     "The ScalaParser should properly parse the positive example snippets" - {
 
@@ -15,24 +15,21 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 002" - {
-        check(
-          """
+        check("""
             |package torimatomeru
             |
             |package lols""")
       }
 
       "example 003" - {
-        check(
-          """package torimatomeru
+        check("""package torimatomeru
             |import a
             |import b
           """)
       }
 
       "example 004" - {
-        check(
-          """package torimatomeru
+        check("""package torimatomeru
             |
             |import org.parboiled2.ParseError
             |import utest._
@@ -45,8 +42,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 005" - {
-        check(
-          """object SyntaxTest extends TestSuite{
+        check("""object SyntaxTest extends TestSuite{
             |  def check[T](input: String) = {
             |
             |  }
@@ -54,16 +50,14 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 006" - {
-        check(
-          """object SyntaxTest{
+        check("""object SyntaxTest{
             |  a()
             |  throw 1
             |}""")
       }
 
       "example 007" - {
-        check(
-          """object SyntaxTest extends TestSuite{
+        check("""object SyntaxTest extends TestSuite{
             |  {
             |        println
             |        throw 1
@@ -72,8 +66,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 002" - {
-        check(
-          """package scalatex
+        check("""package scalatex
             |
             |
             |import org.parboiled2._
@@ -95,8 +88,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 009" - {
-        check(
-          """object Moo{
+        check("""object Moo{
             |  a
             |  .b
             |
@@ -105,8 +97,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 010" - {
-        check(
-          """object Moo{
+        check("""object Moo{
             | filename
             |        .asInstanceOf[Literal]
             |10
@@ -114,8 +105,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 011" - {
-        check(
-          """object Cow{
+        check("""object Cow{
             |  ().mkString
             |
             |  1
@@ -123,15 +113,13 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 012" - {
-        check(
-          """object O{
+        check("""object O{
             | private[this] val applyMacroFull = 1
             |}""")
       }
 
       "example 013" - {
-        check(
-          """object O{
+        check("""object O{
             | private[this] def applyMacroFull(c: Context)
             |                      (expr: c.Expr[String],
             |                       runtimeErrors: Boolean,
@@ -142,8 +130,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 014" - {
-        check(
-          """object O{
+        check("""object O{
             |  class DebugFailure extends Exception
             |
             |  1
@@ -151,8 +138,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 015" - {
-        check(
-          """package torimatomeru
+        check("""package torimatomeru
             |
             |package syntax
             |
@@ -162,8 +148,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 016" - {
-        check(
-          """object Foo{
+        check("""object Foo{
             |  0 match {
             |    case A | B => 0
             |  }
@@ -171,8 +156,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 017" - {
-        check(
-          """object Compiler{
+        check("""object Compiler{
             |
             |  def apply = {
             |    def rec = t match {
@@ -185,38 +169,33 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 018" - {
-        check(
-          """object O {
+        check("""object O {
             |    A(A(A(A(A(A(A(A())))))))
             |}""")
       }
 
       "example 019" - {
-        check(
-          """object O{
+        check("""object O{
             |   A(A(A(A(A(A(A(A(A(A(A(A(A(A(A(A())))))))))))))))
             |}""")
       }
 
       "example 020" - {
-        check(
-          """object L{
+        check("""object L{
             |  a.b = c
             |  a().b = c
             |}      """)
       }
 
       "example 021" - {
-        check(
-          """object L{
+        check("""object L{
             |  a b c
             |  d = 1
             |}""")
       }
 
       "example 022" - {
-        check(
-          """/*                     __                                               *\
+        check("""/*                     __                                               *\
             |**     ________ ___   / /  ___      __ ____  Scala.js CLI               **
             |**    / __/ __// _ | / /  / _ | __ / // __/  (c) 2013-2014, LAMP/EPFL   **
             |**  __\ \/ /__/ __ |/ /__/ __ |/_// /_\ \    http://scala-js.org/       **
@@ -229,8 +208,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 023" - {
-        check(
-          """object O{
+        check("""object O{
             |  for {
             |      a  <- b
             |      c <- d
@@ -241,8 +219,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 024" - {
-        check(
-          """object O{
+        check("""object O{
             |  val jarFile =
             |      try { 1 }
             |      catch { case _: F => G }
@@ -250,15 +227,13 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 025" - {
-        check(
-          """object F{
+        check("""object F{
             |  func{ case _: F => fail }
             |}""")
       }
 
       "example 026" - {
-        check(
-          """object Foo{
+        check("""object Foo{
             |    val a = d // g
             |    val b = e // h
             |    val c = f
@@ -266,8 +241,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 027" - {
-        check(
-          """object L{
+        check("""object L{
             |  x match{
             |    case y.Y(z) => z
             |  }
@@ -275,8 +249,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 028" - {
-        check(
-          """object K{
+        check("""object K{
             |  val a: B {
             |    val c: D
             |  }
@@ -286,8 +259,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 029" - {
-        check(
-          """object LOLS{
+        check("""object LOLS{
             |    def run() {}
             |
             |    def apply() {}
@@ -295,15 +267,13 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 030" - {
-        check(
-          """object O{
+        check("""object O{
             |  a =:= b.c
             |}""")
       }
 
       "example 031" - {
-        check(
-          """object K{
+        check("""object K{
             |  a(
             |    1: _*
             |  )
@@ -311,8 +281,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 032" - {
-        check(
-          """object P{
+        check("""object P{
             |      tree match {
             |        case stats :+ expr  => 1
             |      }
@@ -320,37 +289,32 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 033" - {
-        check(
-          """object K{
+        check("""object K{
             |  val trueA = 1
             |}""")
       }
 
       "example 034" - {
-        check(
-          """object K{
+        check("""object K{
             |  val nullo :: cow = 1
             |}""")
       }
 
       "example 035" - {
-        check(
-          """object K{
+        check("""object K{
             |  val omg_+ = 1
             |}""")
       }
 
       "example 036" - {
-        check(
-          """object K{
+        check("""object K{
             |  val + = 1
             |  var * = 2
             |}""")
       }
 
       "example 037" - {
-        check(
-          """object O{
+        check("""object O{
             |  c match {
             |    case b_  => 1
             |  }
@@ -358,8 +322,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 038" - {
-        check(
-          """trait Basic {
+        check("""trait Basic {
             |  b match {
             |    case C => true; case _ => false
             |  }
@@ -367,23 +330,20 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 039" - {
-        check(
-          """trait Basic {
+        check("""trait Basic {
             |  !a.b
             |}""")
       }
 
       "example 040" - {
-        check(
-          """class Parser {
+        check("""class Parser {
             |  {() => }
             |}
             |""")
       }
 
       "example 040" - {
-        check(
-          """
+        check("""
             |
             |
             |
@@ -403,22 +363,19 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 042" - {
-        check(
-          """object GenJSCode {
+        check("""object GenJSCode {
             |  code: @switch
             |}""")
       }
 
       "example 043" - {
-        check(
-          """object B {
+        check("""object B {
             |  { a: L => }
             |}""")
       }
 
       "example 044" - {
-        check(
-          """object O{
+        check("""object O{
             |  {
             |    val index = 0
             |    i: Int => 10
@@ -428,24 +385,21 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 045" - {
-        check(
-          """object GenJSCode{
+        check("""object GenJSCode{
             |  val g: G.this.g.type
             |}
             |""")
       }
 
       "example 046" - {
-        check(
-          """object K{
+        check("""object K{
             |  class RTTypeTest
             |  private object O
             |}""")
       }
 
       "example 047" - {
-        check(
-          """object O{
+        check("""object O{
             |  if (eqeq &&
             |
             |    false)  1
@@ -454,8 +408,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 048" - {
-        check(
-          """object O{
+        check("""object O{
             |  for(
             |    x <- Nil map
             |
@@ -465,8 +418,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 049" - {
-        check(
-          """object O{
+        check("""object O{
             |  for{
             |    x <- Nil
             |    if
@@ -477,22 +429,19 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 050" - {
-        check(
-          """object ScopedVar {
+        check("""object ScopedVar {
             |  def withScopedVars(ass: Seq[_]) = 1
             |}""")
       }
 
       "example 051" - {
-        check(
-          """abstract class JSASTTest extends DirectTest {
+        check("""abstract class JSASTTest extends DirectTest {
             |  def show: this.type = ()
             |}""")
       }
 
       "example 052" - {
-        check(
-          """object Traversers {
+        check("""object Traversers {
             |  {
             |        1
             |        cases foreach nil
@@ -501,60 +450,52 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 053" - {
-        check(
-          """object Utils {
+        check("""object Utils {
             |  "\\"
             |}
             |""")
       }
 
       "example 054" - {
-        check(
-          """object F{
+        check("""object F{
             |  this eq that.asInstanceOf[AnyRef]
             |}""")
       }
 
       "example 055" - {
-        check(
-          """class C{
+        check("""class C{
             |  0x00 <= 2 && 1
             |}
             |""")
       }
 
       "example 056" - {
-        check(
-          """class Runtime private
+        check("""class Runtime private
           """)
       }
 
       "example 057" - {
-        check(
-          """object System {
+        check("""object System {
             |  def a[@b T[@b V]] = 1
             |}
             |""")
       }
 
       "example 058" - {
-        check(
-          """object U{
+        check("""object U{
             |  private val _fragment = fld(Fragment)
             |  _fld = null
             |}""")
       }
 
       "example 059" - {
-        check(
-          """class Array{
+        check("""class Array{
             |  def length_= = 1
             |}""")
       }
 
       "example 060" - {
-        check(
-          """object K{
+        check("""object K{
             |  def newBuilder =
             |    new B
             |
@@ -563,29 +504,25 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 061" - {
-        check(
-          """trait Function12[-T1, +R]
+        check("""trait Function12[-T1, +R]
           """)
       }
 
       "example 062" - {
-        check(
-          """@a // Don't do this at home!
+        check("""@a // Don't do this at home!
             |trait B
           """)
       }
 
       "example 063" - {
-        check(
-          """object T{
+        check("""object T{
             |  type B = { def F: S }
             |}
             |""")
       }
 
       "example 064" - {
-        check(
-          """
+        check("""
             |object ScalaJSBuild{
             |      (
             |        1 / 2
@@ -595,24 +532,21 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 065" - {
-        check(
-          """trait Writer{
+        check("""trait Writer{
             | '\f'
             |}
           """)
       }
 
       "example 066" - {
-        check(
-          """object CyclicDependencyException {
+        check("""object CyclicDependencyException {
             |    def str(info: ResolutionInfo) =
             |      s"${info.resourceName} from: ${info.origins.mkString(", ")}"
             |}""")
       }
 
       "example 067" - {
-        check(
-          """object OptimizerCore {
+        check("""object OptimizerCore {
             |  tpe match {
             |    case NothingType | _:RecordType=> 1
             |  }
@@ -620,59 +554,51 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 068" - {
-        check(
-          """class A{
+        check("""class A{
             |  1
             |  () => 1
             |}""")
       }
 
       "example 069" - {
-        check(
-          """trait ReactorCanReply {
+        check("""trait ReactorCanReply {
             |  _: InternalReplyReactor =>
             |}""")
       }
 
       "example 070" - {
-        check(
-          """object G{
+        check("""object G{
             |  def isBefore(pd: SubComponent) = settings.stopBefore
             |  phaseDescriptors sliding 2 collectFirst ()
             |}""")
       }
 
       "example 071" - {
-        check(
-          """class SymbolLoaders {
+        check("""class SymbolLoaders {
             |  type T = ClassPath[AbstractFile]#ClassRep
             |}""")
       }
 
       "example 072" - {
-        check(
-          """trait ContextErrors {
+        check("""trait ContextErrors {
             |    def isUnaffiliatedExpr = expanded.isInstanceOf[scala.reflect.api.Exprs#Expr[_]]
             |}""")
       }
 
       "example 073" - {
-        check(
-          """trait Typers{
+        check("""trait Typers{
             |  s"nested ${ if (1) "trait" else "class" }"
             |}""")
       }
 
       "example 074" - {
-        check(
-          """trait ReflectSetup { this: Global =>
+        check("""trait ReflectSetup { this: Global =>
             |  phase = 1
             |}""")
       }
 
       "example 075" - {
-        check(
-          """trait Predef {
+        check("""trait Predef {
             |  @x
             |  // a
             |  type T
@@ -680,8 +606,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 076" - {
-        check(
-          """object StringContext {
+        check("""object StringContext {
 
               s"${
                 require(index >= 0 && index < str.length)
@@ -694,65 +619,56 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 077" - {
-        check(
-          """trait Growable {
+        check("""trait Growable {
             |    +=
             |}""")
       }
 
       "example 078" - {
-        check(
-          """package immutable {
+        check("""package immutable {
             |  object O
             |}""")
       }
 
       "example 079" - {
-        check(
-          """import java.util.concurrent.TimeUnit.{ NANOSECONDS => NANOS, MILLISECONDS => MILLIS }
+        check("""import java.util.concurrent.TimeUnit.{ NANOSECONDS => NANOS, MILLISECONDS => MILLIS }
           """)
       }
 
       "example 080" - {
-        check(
-          """class FunFinder{
+        check("""class FunFinder{
             |  val targetName = s"$name${ if (isModule) "$" else "" }"
             |}""")
       }
 
       "example 081" - {
-        check(
-          """class AkkaException{
+        check("""class AkkaException{
             |  for (i <- 0 until trace.length)
             |    ()
             |}""")
       }
 
       "example 082" - {
-        check(
-          """object Test4 {
+        check("""object Test4 {
             |    type T = F @field
             |    @BeanProperty val x = 1
             |}""")
       }
 
       "example 083" - {
-        check(
-          """package `dmacro` {
+        check("""package `dmacro` {
             |}""")
       }
 
       "example 084" - {
-        check(
-          """class A {
+        check("""class A {
             |  def fn1 = List apply 1
             |  def fn2 = List apply[Int] 2
             |}""")
       }
 
       "example 085" - {
-        check(
-          """class C {
+        check("""class C {
             |  def this(x: Int) = {
             |    this();
             |    class D;
@@ -761,15 +677,13 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 086" - {
-        check(
-          """trait B[T] {
+        check("""trait B[T] {
             |  def f1(a: T): Unit { }
             |}""")
       }
 
       "example 087" - {
-        check(
-          """object test {
+        check("""object test {
             |  case object Int16 extends SampleFormat1
             |  (1) match {
             |    case _   => 1
@@ -778,8 +692,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 088" - {
-        check(
-          """object A {
+        check("""object A {
             |  def x {
             |    implicit lazy val e: Int = 0
             |  }
@@ -787,8 +700,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 089" - {
-        check(
-          """object test {
+        check("""object test {
             |  for {
             |    n <- A
             |    a <- B
@@ -805,58 +717,50 @@ object SnippetSpec extends TestSuite {
       //        }
 
       "example 090" - {
-        check(
-          """abstract class Mix___eFoo___wBar_I_ extends Foo___ with Bar_I_    { ; ; f; }
+        check("""abstract class Mix___eFoo___wBar_I_ extends Foo___ with Bar_I_    { ; ; f; }
           """)
       }
 
       "example 091" - {
-        check(
-          """package test2 {
+        check("""package test2 {
             |object N1M0;
             |}""")
       }
 
       "example 092" - {
-        check(
-          """class IP extends {
+        check("""class IP extends {
             |  val baz = "bar";
             |} with Foo(() => baz);""")
       }
 
       "example 093" - {
-        check(
-          """object Test extends App {
+        check("""object Test extends App {
             |  val x: C {} = 1
             |}""")
       }
 
       "example 094" - {
-        check(
-          """trait LensFunctions {
+        check("""trait LensFunctions {
             |  type T = A @> B
             |}""")
       }
 
       "example 095" - {
-        check(
-          """object ContravariantCoyonedaUsage {
+        check("""object ContravariantCoyonedaUsage {
             |  (schwartzian[Vector[String], ccord.I]
             |      (unstructuredData)(v => ccord.k(v(i)))(ccord.fi))
             |}""")
       }
 
       "example 096" - {
-        check(
-          """object MapTest{
+        check("""object MapTest{
             |  forAll { a: Int ==>> Int =>
             |  }
             |}""")
       }
 
       "example 097" - {
-        check(
-          """object Test {
+        check("""object Test {
             |  def countingDownActor = {
             |    val ms = 1
             |    (m: Int) =>
@@ -867,8 +771,7 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 098" - {
-        check(
-          """object X{
+        check("""object X{
             |  type T = {
             |    ;;;
             |    type x = Int
@@ -880,36 +783,31 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 099" - {
-        check(
-          """object X{
+        check("""object X{
             |  <div />
             |}""")
       }
 
       "example 100" - {
-        check(
-          """object X{
+        check("""object X{
             |  <div id="hello" />
             |}""")
       }
 
       "example 101" - {
-        check(
-          """object X{
+        check("""object X{
             |  <url>https://github.com/lihaoyi/scalatags</url>
             |}""")
       }
 
       "example 102" - {
-        check(
-          """object X{
+        check("""object X{
             |  <url>{ ;;;1 + 1 }</url>
             |}""")
       }
 
       "example 103" - {
-        check(
-          """object UserAgentCalculator extends Factory {
+        check("""object UserAgentCalculator extends Factory {
             |    for {
             |      userAgent <- userAgent
             |      findResult = ieMatch.find if findResult
@@ -925,30 +823,26 @@ object SnippetSpec extends TestSuite {
       //        }
 
       "example 104" - {
-        check(
-          """class HtmlPage {
+        check("""class HtmlPage {
             |  <meta http-equiv="content-type" content={ 1 }/>
             |} """)
       }
 
       "example 105" - {
-        check(
-          """object K{
+        check("""object K{
             |  <script> {{</script>
             |}""")
       }
 
       "example 106" - {
-        check(
-          """object O{
+        check("""object O{
             |  e match { case <title>{ _* }</title> => }
             |}
             |""")
       }
 
       "example 107" - {
-        check(
-          """object Publish {
+        check("""object Publish {
             |  val x =
             |    <inceptionYear>2009</inceptionYear>
             |
@@ -962,15 +856,13 @@ object SnippetSpec extends TestSuite {
       }
 
       "example 108" - {
-        check(
-          """object K{
+        check("""object K{
             |    <foo baz="&amp;dog"/>
             |}""")
       }
 
       "example 109" - {
-        check(
-          """object X{
+        check("""object X{
             |   pomExtra :=
             |      <url>https://github.com/lihaoyi/scalatags</url>
             |        <licenses>
@@ -998,8 +890,7 @@ object SnippetSpec extends TestSuite {
     "The ScalaParser should properly parse the negative example snippets" - {
       "example 500" - {
         checkError(
-          "packge torimatomeru"
-          ,
+          "packge torimatomeru",
           """Invalid input 'g', expected 'a' (line 1, column 5):
             |packge torimatomeru
             |    ^
@@ -1008,45 +899,46 @@ object SnippetSpec extends TestSuite {
             |  /CompilationUnit/ /Body/ |:-4 /TopPackageSeq/ +:-4 /Key/ /RawKey/ "package":-4 / 'a'
             |  /CompilationUnit/ /Body/ |:-4 /TopStatSeq/ +:-4 /TopStat/ |:-4 /PkgBlock/ /Key/ /RawKey/ "package":-4 / 'a'
             |  /CompilationUnit/ /Body/ |:-4 /TopStatSeq/ +:-4 /TopStat/ |:-4 /PkgObj/ /Key/ /RawKey/ "package":-4 / 'a'
-            |""".stripMargin)
+            |""".stripMargin
+        )
       }
-  //    checkError("110",
-  //      """object O{
-  //        |  for{
-  //        |    x <- Nil map
-  //        |
-  //        |  (x => x)
-  //        |  } yield x
-  //        |}""",
-  //    """
-  //      |
-  //    """)
-  //
-  //    checkError("111",
-  //      """object O{
-  //        |  for{
-  //        |    x <- Nil
-  //        |    if 1 ==
-  //        |
-  //        |    2
-  //        |  } yield x
-  //        |}""")
-  //
-  //    checkError("112",
-  //      """object O{
-  //        |  for{
-  //        |    x <- Nil
-  //        |    _ = 1 ==
-  //        |
-  //        |    2
-  //        |  } yield x
-  //        |}""")
-  //
-  //    checkError("113",
-  //      """object System {
-  //        |  def a[@b T[V @b]] = 1
-  //        |}
-  //        |""")
+      //    checkError("110",
+      //      """object O{
+      //        |  for{
+      //        |    x <- Nil map
+      //        |
+      //        |  (x => x)
+      //        |  } yield x
+      //        |}""",
+      //    """
+      //      |
+      //    """)
+      //
+      //    checkError("111",
+      //      """object O{
+      //        |  for{
+      //        |    x <- Nil
+      //        |    if 1 ==
+      //        |
+      //        |    2
+      //        |  } yield x
+      //        |}""")
+      //
+      //    checkError("112",
+      //      """object O{
+      //        |  for{
+      //        |    x <- Nil
+      //        |    _ = 1 ==
+      //        |
+      //        |    2
+      //        |  } yield x
+      //        |}""")
+      //
+      //    checkError("113",
+      //      """object System {
+      //        |  def a[@b T[V @b]] = 1
+      //        |}
+      //        |""")
     }
   }
 
@@ -1058,17 +950,17 @@ object SnippetSpec extends TestSuite {
     val parser = new ScalaParser(snippet.stripMargin)
     parser.CompilationUnit.run() match {
       case Failure(error: ParseError) => fail(error.format(parser, formatter))
-      case Failure(error) => fail(error)
-      case Success(_) => assert(true)
+      case Failure(error)             => fail(error)
+      case Success(_)                 => assert(true)
     }
   }
 
   def checkError(snippet: String, expectedError: String): Unit = {
     val parser = new ScalaParser(snippet.stripMargin)
-    parser.CompilationUnit.run() match{
+    parser.CompilationUnit.run() match {
       case Failure(e: ParseError) => assert(e.format(parser, formatter) == expectedError.stripMargin)
-      case Failure(e) => fail(e)
-      case Success(_) => fail("Parsing unexpectedly succeeded")
+      case Failure(e)             => fail(e)
+      case Success(_)             => fail("Parsing unexpectedly succeeded")
     }
   }
 

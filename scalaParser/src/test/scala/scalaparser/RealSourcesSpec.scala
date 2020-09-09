@@ -8,7 +8,7 @@ import org.parboiled2._
 
 object RealSourcesSpec extends TestSuite {
 
-  val tests = Tests{
+  val tests = Tests {
 
     "The ScalaParser should successfully parse the following project sources" - {
 
@@ -24,17 +24,20 @@ object RealSourcesSpec extends TestSuite {
 
       "spire" - checkDir("~/Documents/forks/spire")
 
-      "sbt" - checkDir("~/Documents/forks/xsbt",
+      "sbt" - checkDir(
+        "~/Documents/forks/xsbt",
         "sbt/std/InputWrapper.scala", // unicode escapes
         "sbt/src/sbt-test",
-        "util/cross/src/main/input_sources")
+        "util/cross/src/main/input_sources"
+      )
 
-      "scala" - checkDir("~/Documents/forks/scala",
+      "scala" - checkDir(
+        "~/Documents/forks/scala",
         // Not real Scala files
         "dbuild-meta-json-gen.scala",
         "genprod.scala",
-        "disabled", // don't bother parsing disabled tests
-        "neg", // or neg tests
+        "disabled",                        // don't bother parsing disabled tests
+        "neg",                             // or neg tests
         "deprecate-early-type-defs.scala", // or deprecated tests
         // or unicode escapes
         "test/files/run/literals.scala",
@@ -43,25 +46,26 @@ object RealSourcesSpec extends TestSuite {
         // Lots of guys in these folders seem to be borked, skip all of them
         "test/files/positions",
         "test/files/presentation",
-        "test/pending")
+        "test/pending"
+      )
     }
   }
 
-  val utf8 = Charset.forName("UTF-8")
+  val utf8      = Charset.forName("UTF-8")
   val formatter = new ErrorFormatter(showTraces = true)
 
   def checkDir(path: String, blackList: String*): String => Boolean = { exampleName =>
     def checkFile(path: String): Int = {
       val inputStream = new FileInputStream(path)
-      val utf8Bytes = Array.ofDim[Byte](inputStream.available)
+      val utf8Bytes   = Array.ofDim[Byte](inputStream.available)
       inputStream.read(utf8Bytes)
       inputStream.close()
-      val charBuffer = utf8.decode(ByteBuffer.wrap(utf8Bytes))
-      val parser = new ScalaParser(ParserInput(charBuffer.array(), charBuffer.remaining()))
+      val charBuffer        = utf8.decode(ByteBuffer.wrap(utf8Bytes))
+      val parser            = new ScalaParser(ParserInput(charBuffer.array(), charBuffer.remaining()))
       def fail(msg: String) = Predef.assert(false, msg)
       parser.CompilationUnit.run().failed foreach {
         case error: ParseError => fail(s"Error in file `$path`:\n" + error.format(parser, formatter))
-        case error => fail(s"Exception in file `$path`:\n$error")
+        case error             => fail(s"Exception in file `$path`:\n$error")
       }
       parser.input.length
     }
@@ -78,8 +82,8 @@ object RealSourcesSpec extends TestSuite {
         if !blackList.exists(fileName.contains)
       } yield checkFile(fileName)
     val totalChars = fileChars.sum / 1000
-    val millis = (System.nanoTime() - startTime)/1000000
-    println(s"$exampleName:\n  ${totalChars}K chars in $millis ms (${totalChars*1000/millis}K chars/sec})")
+    val millis     = (System.nanoTime() - startTime) / 1000000
+    println(s"$exampleName:\n  ${totalChars}K chars in $millis ms (${totalChars * 1000 / millis}K chars/sec})")
     true
   }
 }

@@ -35,10 +35,10 @@ object CharacterClasses {
 
   val ALPHA = CharPredicate.Alpha
 
-  val ALPHANUM = CharPredicate.AlphaNum
-  val ALPHANUM$ = CharPredicate.AlphaNum ++ '$'
+  val ALPHANUM   = CharPredicate.AlphaNum
+  val ALPHANUM$  = CharPredicate.AlphaNum ++ '$'
   val ALPHANUM$_ = CharPredicate.AlphaNum ++ $_
 
-  val KEYCHAR = CharPredicate(":;=#@\u21d2\u2190")
+  val KEYCHAR  = CharPredicate(":;=#@\u21d2\u2190")
   val KEYCHAR2 = CharPredicate("-:%")
 }

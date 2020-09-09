@@ -7,9 +7,9 @@ import scala.annotation.switch
 trait L1_KeywordsAndOperators { this: Parser with L0_Basics =>
   import CharacterClasses._
 
-  def Operator = rule { !SymbolicKeyword ~ OpChar.+ }
+  def Operator = rule(!SymbolicKeyword ~ OpChar.+)
 
-  def Keyword = rule( AlphaKeyword | SymbolicKeyword )
+  def Keyword = rule(AlphaKeyword | SymbolicKeyword)
 
   def `_`         = Key("_")
   def `abstract`  = Key("abstract")
@@ -53,30 +53,30 @@ trait L1_KeywordsAndOperators { this: Parser with L0_Basics =>
   def `<%` = SymbolicKey("<%")
   def `>:` = SymbolicKey(">:")
   def `<:` = SymbolicKey("<:")
-  def `=>` = rule( SymbolicKey("=>") | SymbolicKey('⇒') )
-  def `<-` = rule( SymbolicKey("<-") | SymbolicKey('←') )
+  def `=>` = rule(SymbolicKey("=>") | SymbolicKey('⇒'))
+  def `<-` = rule(SymbolicKey("<-") | SymbolicKey('←'))
   def `:`  = SymbolicKey(':')
   def `=`  = SymbolicKey('=')
   def `@`  = SymbolicKey('@')
   def `#`  = SymbolicKey("#")
 
-  def Null = RawKey("null")
-  def True = RawKey("true")
+  def Null  = RawKey("null")
+  def True  = RawKey("true")
   def False = RawKey("false")
 
   // keyword-like patterns (not really keywords though)
-  def `_*` = rule( `_` ~ WL ~ "*" )
-  def `}` = rule( Semis.? ~ WL ~ '}' )
-  def `{` = rule( WL ~ '{' ~ Semis.? )
+  def `_*` = rule(`_` ~ WL ~ "*")
+  def `}`  = rule(Semis.? ~ WL ~ '}')
+  def `{`  = rule(WL ~ '{' ~ Semis.?)
 
   //////////////////////////// PRIVATE ///////////////////////////////////
 
-  private def Key(s: String) = rule( WL ~ RawKey(s) )
-  private def RawKey(s: String) = rule( s ~ !AlphaNum$_ )
-  private def SymbolicKey(c: Char) = rule( WL ~ c ~ !OpChar )
-  private def SymbolicKey(s: String) = rule( WL ~ s ~ !OpChar )
+  private def Key(s: String)         = rule(WL ~ RawKey(s))
+  private def RawKey(s: String)      = rule(s ~ !AlphaNum$_)
+  private def SymbolicKey(c: Char)   = rule(WL ~ c ~ !OpChar)
+  private def SymbolicKey(s: String) = rule(WL ~ s ~ !OpChar)
 
-  private def SymbolicKeyword = rule { ("=>" | KEYCHAR | '<' ~ KEYCHAR2 | ">:") ~ !OpChar }
+  private def SymbolicKeyword = rule(("=>" | KEYCHAR | '<' ~ KEYCHAR2 | ">:") ~ !OpChar)
 
   private def AlphaKeyword = rule {
     run {
@@ -100,7 +100,7 @@ trait L1_KeywordsAndOperators { this: Parser with L0_Basics =>
         case 'w' => "while" | "with"
         case 'y' => str("yield")
         case '_' => ANY
-        case _ => MISMATCH
+        case _   => MISMATCH
       }
     } ~ !AlphaNum$_
   }
