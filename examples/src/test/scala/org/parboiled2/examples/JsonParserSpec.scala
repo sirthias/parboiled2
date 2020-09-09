@@ -56,11 +56,11 @@ object JsonParserSpec extends TestSuite {
       }
       "properly parse a simple JsObject" - (
         parse(""" { "key" :42, "key2": "value" }""") ==>
-        JsObject("key" -> JsNumber(42), "key2" -> JsString("value"))
+          JsObject("key" -> JsNumber(42), "key2" -> JsString("value"))
       )
       "properly parse a simple JsArray" - (
         parse("""[null, 1.23 ,{"key":true } ] """) ==>
-        JsArray(JsNull, JsNumber(1.23), JsObject("key" -> JsTrue))
+          JsArray(JsNull, JsNumber(1.23), JsObject("key" -> JsTrue))
       )
     }
   }

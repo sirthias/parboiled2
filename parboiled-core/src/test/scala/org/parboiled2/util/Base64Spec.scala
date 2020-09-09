@@ -34,17 +34,16 @@ object Base64Spec extends TestSuite {
 
   val tests = Tests {
     "Base64" - {
-      testVectors.foreach {
-        case (expectedDecoded, expectedEncoded) =>
-          val expectedDecodedBytes = expectedDecoded.getBytes(StandardCharsets.UTF_8)
+      testVectors.foreach { case (expectedDecoded, expectedEncoded) =>
+        val expectedDecodedBytes = expectedDecoded.getBytes(StandardCharsets.UTF_8)
 
-          val encoded = Base64.rfc2045().encodeToString(expectedDecodedBytes, lineSep = false)
+        val encoded = Base64.rfc2045().encodeToString(expectedDecodedBytes, lineSep = false)
 
-          assert(
-            expectedEncoded == encoded,
-            expectedDecodedBytes sameElements Base64.rfc2045().decode(encoded.toCharArray),
-            expectedDecodedBytes sameElements Base64.rfc2045().decodeFast(encoded.toCharArray)
-          )
+        assert(
+          expectedEncoded == encoded,
+          expectedDecodedBytes sameElements Base64.rfc2045().decode(encoded.toCharArray),
+          expectedDecodedBytes sameElements Base64.rfc2045().decodeFast(encoded.toCharArray)
+        )
       }
     }
   }

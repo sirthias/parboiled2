@@ -28,8 +28,8 @@ object CharUtilsSpec extends TestSuite with UTestScalaCheck {
   val tests = Tests {
 
     "CharUtils" - {
-      "hexValue" - forAll(hexChars) {
-        case (i, c) => CharUtils.hexValue(c) == i
+      "hexValue" - forAll(hexChars) { case (i, c) =>
+        CharUtils.hexValue(c) == i
       }.checkUTest()
       "numberOfHexDigits" - forAll { l: Long => CharUtils.numberOfHexDigits(l) == java.lang.Long.toHexString(l).length }
         .checkUTest()
