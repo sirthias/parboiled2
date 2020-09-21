@@ -49,9 +49,9 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.2.0"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.2.1"
 
-The latest released version is **2.2.0**. It is available for Scala 2.12, 2.13 as well as scala.js 1.0.
+The latest released version is **2.2.1**. It is available for Scala 2.12, 2.13 as well as scala.js 1.2.
 
 *parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
 (currently version 2.3.3).
