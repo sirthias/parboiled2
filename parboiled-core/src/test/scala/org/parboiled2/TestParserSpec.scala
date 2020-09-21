@@ -55,8 +55,10 @@ abstract class TestParserSpec extends TestSuite {
     def assertMismatched(str: String): Unit          = assert(parse(str).isLeft)
 
     //def beMismatchedWithError(pe: ParseError) = parse(_: String).left.toOption.get === pe
-    def assertMismatchedWithErrorMsg(msg: String)(str: String): Unit =
-      assert(parse(str).left.toOption.map(formatError(_, errorFormatter)).get == msg.stripMargin)
+    def assertMismatchedWithErrorMsg(expected: String)(str: String): Unit = {
+      val actual = parse(str).left.toOption.map(formatError(_, errorFormatter)).get
+      assert(actual == expected.stripMargin)
+    }
 
     def parse(input: String): Either[ParseError, Out] = {
       this.input = input

@@ -77,7 +77,10 @@ class ErrorFormatter(
     if (ix < input.length) {
       val chars = mismatchLength(error)
       if (chars == 1) sb.append("Invalid input '").append(CharUtils.escape(input charAt ix)).append('\'')
-      else sb.append("Invalid input \"").append(CharUtils.escape(input.sliceString(ix, ix + chars))).append('"')
+      else
+        sb.append("Invalid input \"")
+          .append(CharUtils.escape(input.sliceString(ix, math.min(ix + chars, input.length))))
+          .append('"')
     } else sb.append("Unexpected end of input")
   }
 
