@@ -1,0 +1,25 @@
+name: CI
+on:
+  pull_request:
+  push:
+  schedule:
+  - cron: '0 0 * * 0'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - java: 8
+          - java: 11
+    steps:
+    - uses: actions/checkout@v1
+    - uses: olafurpg/setup-scala@v10
+      with:
+        java-version: "adopt@1.${{ matrix.java }}"
+    - uses: coursier/cache-action@v5
+    - name: ${{ matrix.name }} ${{ matrix.java }}
+      run: sbt
+           "all scalafmtSbtCheck scalafmtCheckAll scalaParser/scalafmtCheckAll"
+           "+test"
+           "+scalaParser/testOnly scalaparser.SnippetSpec"

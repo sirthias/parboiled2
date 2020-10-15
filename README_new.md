@@ -1,9 +1,6 @@
 # PARBOILED2 DOCUMENTATION
  A Macro-Based PEG Parser Generator for Scala 2.12+
 
-[image](https://travis-ci.org/sirthias/parboiled2.svg?branch=release-2.1)<br>
-[target](https://travis-ci.org/sirthias/parboiled2)
-
 ## Introduction
 
 *parboiled2* is a Scala 2.12+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars` (PEGs), which runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
