@@ -19,8 +19,7 @@ package org.parboiled2
 import scala.annotation.tailrec
 import java.lang.{StringBuilder => JStringBuilder}
 
-/**
-  * Abstraction for error formatting logic.
+/** Abstraction for error formatting logic.
   * Instantiate with a custom configuration or override with custom logic.
   *
   * @param showExpected whether a description of the expected input is to be shown
@@ -44,14 +43,12 @@ class ErrorFormatter(
     traceCutOff: Int = 120
 ) {
 
-  /**
-    * Formats the given [[ParseError]] into a String using the settings configured for this formatter instance.
+  /** Formats the given [[ParseError]] into a String using the settings configured for this formatter instance.
     */
   def format(error: ParseError, input: ParserInput): String =
     format(new JStringBuilder(128), error, input).toString
 
-  /**
-    * Formats the given [[ParseError]] into the given StringBuilder
+  /** Formats the given [[ParseError]] into the given StringBuilder
     * using the settings configured for this formatter instance.
     */
   def format(sb: JStringBuilder, error: ParseError, input: ParserInput): JStringBuilder = {
@@ -63,14 +60,12 @@ class ErrorFormatter(
     if (showTraces) sb.append('\n').append('\n').append(formatTraces(error)) else sb
   }
 
-  /**
-    * Formats a description of the error's cause into a single line String.
+  /** Formats a description of the error's cause into a single line String.
     */
   def formatProblem(error: ParseError, input: ParserInput): String =
     formatProblem(new JStringBuilder(64), error, input).toString
 
-  /**
-    * Formats a description of the error's cause into the given StringBuilder.
+  /** Formats a description of the error's cause into the given StringBuilder.
     */
   def formatProblem(sb: JStringBuilder, error: ParseError, input: ParserInput): JStringBuilder = {
     val ix = error.position.index
@@ -84,8 +79,7 @@ class ErrorFormatter(
     } else sb.append("Unexpected end of input")
   }
 
-  /**
-    * Determines the number of characters to be shown as "mismatched" for the given [[ParseError]].
+  /** Determines the number of characters to be shown as "mismatched" for the given [[ParseError]].
     */
   def mismatchLength(error: ParseError): Int =
     // Failing negative syntactic predicates, i.e. with a succeeding inner match, do not contribute
@@ -101,26 +95,22 @@ class ErrorFormatter(
       }
     }
 
-  /**
-    * Formats what is expected at the error location into a single line String including text padding.
+  /** Formats what is expected at the error location into a single line String including text padding.
     */
   def formatExpected(error: ParseError): String =
     formatExpected(new JStringBuilder(64), error).toString
 
-  /**
-    * Formats what is expected at the error location into the given StringBuilder including text padding.
+  /** Formats what is expected at the error location into the given StringBuilder including text padding.
     */
   def formatExpected(sb: JStringBuilder, error: ParseError): JStringBuilder =
     sb.append(", expected ").append(formatExpectedAsString(error))
 
-  /**
-    * Formats what is expected at the error location into a single line String.
+  /** Formats what is expected at the error location into a single line String.
     */
   def formatExpectedAsString(error: ParseError): String =
     formatExpectedAsString(new JStringBuilder(64), error).toString
 
-  /**
-    * Formats what is expected at the error location into the given StringBuilder.
+  /** Formats what is expected at the error location into the given StringBuilder.
     */
   def formatExpectedAsString(sb: JStringBuilder, error: ParseError): JStringBuilder = {
     @tailrec def rec(remaining: List[String]): JStringBuilder =
@@ -133,30 +123,26 @@ class ErrorFormatter(
     rec(formatExpectedAsList(error))
   }
 
-  /**
-    * Formats what is expected at the error location as a [[List]] of Strings.
+  /** Formats what is expected at the error location as a [[List]] of Strings.
     */
   def formatExpectedAsList(error: ParseError): List[String] = {
     val distinctStrings = error.effectiveTraces.map(formatAsExpected).distinct
     distinctStrings.toList
   }
 
-  /**
-    * Formats the given trace into an "expected" string.
+  /** Formats the given trace into an "expected" string.
     */
   def formatAsExpected(trace: RuleTrace): String =
     if (trace.prefix.isEmpty) formatTerminal(trace.terminal)
     else formatNonTerminal(trace.prefix.head, showFrameStartOffset = false)
 
-  /**
-    * Formats the input line in which the error occurred and underlines
+  /** Formats the input line in which the error occurred and underlines
     * the given error's position in the line with a caret.
     */
   def formatErrorLine(error: ParseError, input: ParserInput): String =
     formatErrorLine(new JStringBuilder(64), error, input).toString
 
-  /**
-    * Formats the input line in which the error occurred and underlines
+  /** Formats the input line in which the error occurred and underlines
     * the given error's position in the line with a caret.
     */
   def formatErrorLine(sb: JStringBuilder, error: ParseError, input: ParserInput): JStringBuilder = {
@@ -167,8 +153,7 @@ class ErrorFormatter(
     sb.append('^')
   }
 
-  /**
-    * Performs tab expansion as configured by the `expandTabs` member.
+  /** Performs tab expansion as configured by the `expandTabs` member.
     * The `errorColumn` as well as the returned [[Int]] value are both 1-based.
     */
   def expandErrorLineTabs(line: String, errorColumn: Int): (Int, String) = {
@@ -186,8 +171,7 @@ class ErrorFormatter(
     else errorColumn               -> line
   }
 
-  /**
-    * Formats a [[Vector]] of [[RuleTrace]] instances into a String.
+  /** Formats a [[Vector]] of [[RuleTrace]] instances into a String.
     */
   def formatTraces(error: ParseError): String = {
     import error._
@@ -201,8 +185,7 @@ class ErrorFormatter(
       )
   }
 
-  /**
-    * Formats a [[RuleTrace]] into a String.
+  /** Formats a [[RuleTrace]] into a String.
     */
   def formatTrace(trace: RuleTrace, errorIndex: Int): String = {
     import RuleTrace._
@@ -236,8 +219,7 @@ class ErrorFormatter(
     if (sb.length > traceCutOff) "..." + sb.substring(math.max(sb.length - traceCutOff - 3, 0)) else sb.toString
   }
 
-  /**
-    * Formats the head element of a [[RuleTrace]] into a String.
+  /** Formats the head element of a [[RuleTrace]] into a String.
     */
   def formatNonTerminal(
       nonTerminal: RuleTrace.NonTerminal,

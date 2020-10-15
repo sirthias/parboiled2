@@ -29,53 +29,45 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
 
   require(maxValueStackSize <= 65536, "`maxValueStackSize` > 2^16 is not supported") // due to current snapshot design
 
-  /**
-    * The input this parser instance is running against.
+  /** The input this parser instance is running against.
     */
   def input: ParserInput
 
-  /**
-    * Converts a compile-time only rule definition into the corresponding rule method implementation.
+  /** Converts a compile-time only rule definition into the corresponding rule method implementation.
     */
   def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = macro ParserMacros.ruleImpl[I, O]
 
-  /**
-    * Converts a compile-time only rule definition into the corresponding rule method implementation
+  /** Converts a compile-time only rule definition into the corresponding rule method implementation
     * with an explicitly given name.
     */
   def namedRule[I <: HList, O <: HList](name: String)(r: Rule[I, O]): Rule[I, O] =
     macro ParserMacros.namedRuleImpl[I, O]
 
-  /**
-    * The index of the next (yet unmatched) input character.
+  /** The index of the next (yet unmatched) input character.
     * Might be equal to `input.length`!
     */
   def cursor: Int = _cursor
 
-  /**
-    * The next (yet unmatched) input character, i.e. the one at the `cursor` index.
+  /** The next (yet unmatched) input character, i.e. the one at the `cursor` index.
     * Identical to `if (cursor < input.length) input.charAt(cursor) else EOI` but more efficient.
     */
   def cursorChar: Char = _cursorChar
 
-  /**
-    * Returns the last character that was matched, i.e. the one at index cursor - 1
+  /** Returns the last character that was matched, i.e. the one at index cursor - 1
     * Note: for performance optimization this method does *not* do a range check,
     * i.e. depending on the ParserInput implementation you might get an exception
     * when calling this method before any character was matched by the parser.
     */
   def lastChar: Char = charAt(-1)
 
-  /**
-    * Returns the character at the input index with the given delta to the cursor.
+  /** Returns the character at the input index with the given delta to the cursor.
     * Note: for performance optimization this method does *not* do a range check,
     * i.e. depending on the ParserInput implementation you might get an exception
     * when calling this method before any character was matched by the parser.
     */
   def charAt(offset: Int): Char = input.charAt(_cursor + offset)
 
-  /**
-    * Same as `charAt` but range-checked.
+  /** Same as `charAt` but range-checked.
     * Returns the input character at the index with the given offset from the cursor.
     * If this index is out of range the method returns `EOI`.
     */
@@ -84,23 +76,20 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     if (0 <= ix && ix < input.length) input.charAt(ix) else EOI
   }
 
-  /**
-    * Allows "raw" (i.e. untyped) access to the `ValueStack`.
+  /** Allows "raw" (i.e. untyped) access to the `ValueStack`.
     * In most cases you shouldn't need to access the value stack directly from your code.
     * Use only if you know what you are doing!
     */
   def valueStack: ValueStack = _valueStack
 
-  /**
-    * The maximum number of error traces that parser will collect in case of a parse error.
+  /** The maximum number of error traces that parser will collect in case of a parse error.
     * Override with a custom value if required.
     * Set to zero to completely disable error trace collection (which will cause `formatError`
     * to no be able to render any "expected" string!).
     */
   def errorTraceCollectionLimit: Int = 24
 
-  /**
-    * Formats the given [[ParseError]] into a String using the given formatter instance.
+  /** Formats the given [[ParseError]] into a String using the given formatter instance.
     */
   def formatError(error: ParseError, formatter: ErrorFormatter = new ErrorFormatter()): String =
     formatter.format(error, input)
@@ -127,13 +116,11 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     if (phase ne null) phase.applyOffset(offset)
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __inErrorAnalysis = phase ne null
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __run[L <: HList](rule: => RuleN[L])(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = {
     def runRule(): Boolean = {
@@ -224,8 +211,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     } finally phase = null
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __advance(): Boolean = {
     var c   = _cursor
@@ -238,8 +224,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     true
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __updateMaxCursor(): Boolean = {
     phase match {
@@ -249,13 +234,11 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     true
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __saveState: Mark = new Mark((_cursor.toLong << 32) + (_cursorChar.toLong << 16) + valueStack.size)
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __restoreState(mark: Mark): Unit = {
     _cursor = (mark.value >>> 32).toInt
@@ -263,8 +246,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     valueStack.size = (mark.value & 0x000000000000ffff).toInt
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __enterNotPredicate(): AnyRef = {
     val saved = phase
@@ -272,13 +254,11 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     saved
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __exitNotPredicate(saved: AnyRef): Unit = phase = saved.asInstanceOf[ErrorAnalysisPhase]
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __enterAtomic(start: Int): Boolean =
     phase match {
@@ -289,8 +269,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
       case _ => false
     }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __exitAtomic(saved: Boolean): Unit =
     if (saved)
@@ -299,8 +278,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         case _                                 => throw new IllegalStateException
       }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __enterQuiet(): Int =
     phase match {
@@ -317,8 +295,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
       case _ => -1
     }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __exitQuiet(saved: Int): Unit =
     if (saved >= 0)
@@ -328,8 +305,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         case _                       => throw new IllegalStateException
       }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __registerMismatch(): Boolean = {
     phase match {
@@ -346,19 +322,16 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     false
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __bubbleUp(terminal: RuleTrace.Terminal): Nothing = __bubbleUp(Nil, terminal)
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __bubbleUp(prefix: List[RuleTrace.NonTerminal], terminal: RuleTrace.Terminal): Nothing =
     throw new TracingBubbleException(RuleTrace(prefix, terminal))
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __push(value: Any): Boolean = {
     value match {
@@ -369,8 +342,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     true
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   @tailrec final def __matchString(string: String, ix: Int = 0): Boolean =
     if (ix < string.length)
@@ -380,8 +352,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
       } else false
     else true
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   @tailrec final def __matchStringWrapped(string: String, ix: Int = 0): Boolean =
     if (ix < string.length)
@@ -398,8 +369,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         }
     else true
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   @tailrec final def __matchIgnoreCaseString(string: String, ix: Int = 0): Boolean =
     if (ix < string.length)
@@ -409,8 +379,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
       } else false
     else true
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   @tailrec final def __matchIgnoreCaseStringWrapped(string: String, ix: Int = 0): Boolean =
     if (ix < string.length)
@@ -427,8 +396,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         }
     else true
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   @tailrec final def __matchAnyOf(string: String, ix: Int = 0): Boolean =
     if (ix < string.length)
@@ -436,16 +404,14 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
       else __matchAnyOf(string, ix + 1)
     else false
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   @tailrec final def __matchNoneOf(string: String, ix: Int = 0): Boolean =
     if (ix < string.length)
       _cursorChar != EOI && string.charAt(ix) != _cursorChar && __matchNoneOf(string, ix + 1)
     else __advance()
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __matchMap(m: Map[String, Any], ignoreCase: Boolean): Boolean = {
     val prioritizedKeys = new mutable.PriorityQueue[String]()(Ordering.by(_.length))
@@ -464,8 +430,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     false
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __matchMapWrapped(m: Map[String, Any], ignoreCase: Boolean): Boolean = {
     val prioritizedKeys = new mutable.PriorityQueue[String]()(Ordering.by(_.length))
@@ -489,13 +454,11 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     }
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __hardFail(expected: String) = throw new Parser.Fail(expected)
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   class TracingBubbleException(private var _trace: RuleTrace) extends RuntimeException with NoStackTrace {
     def trace                                                        = _trace
@@ -560,28 +523,23 @@ object Parser {
       }
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   class Mark private[Parser] (val value: Long) extends AnyVal
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   object StartTracingException extends RuntimeException with NoStackTrace
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   object CutError extends RuntimeException with NoStackTrace
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   object UnquietMismatch extends RuntimeException with NoStackTrace
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   class Fail(val expected: String) extends RuntimeException with NoStackTrace
 
@@ -641,8 +599,7 @@ object Parser {
 object ParserMacros {
   import scala.reflect.macros.whitebox.Context
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   type RunnableRuleContext[L <: HList] = Context { type PrefixType = Rule.Runnable[L] }
 
@@ -664,8 +621,7 @@ object ParserMacros {
     c.Expr[scheme.value.Result](runCall)
   }
 
-  /**
-    * THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
+  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   type ParserContext = Context { type PrefixType = Parser }
 

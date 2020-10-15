@@ -18,8 +18,7 @@ package org.parboiled2.support
 
 import shapeless._
 
-/**
-  * "Unpacks" an HList if it has only zero or one element(s).
+/** "Unpacks" an HList if it has only zero or one element(s).
   *   Out =
   *     Unit  if L == HNil
   *     T     if L == T :: HNil
@@ -59,8 +58,7 @@ object Unpack extends AlternativeUnpacks {
 
 sealed abstract class AlternativeUnpacks {
 
-  /**
-    * Import if you'd like to *always* deliver the valueStack as an `HList`
+  /** Import if you'd like to *always* deliver the valueStack as an `HList`
     * at the end of the parsing run, even if it has only zero or one element(s).
     */
   implicit def dontUnpack[L <: HList]: Unpack.Aux[L, L] = DontUnpack.asInstanceOf[Unpack.Aux[L, L]]

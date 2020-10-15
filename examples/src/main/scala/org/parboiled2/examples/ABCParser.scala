@@ -44,8 +44,7 @@ object ABCParser extends App {
   }
 }
 
-/**
-  * This parser reads the classic non-context-free language:
+/** This parser reads the classic non-context-free language:
   *
   *     a^n b^n c^n (for n > 1)
   *

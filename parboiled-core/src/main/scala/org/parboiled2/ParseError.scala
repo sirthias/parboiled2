@@ -37,8 +37,7 @@ case class ParseError(position: Position, principalPosition: Position, traces: i
     }
 }
 
-/**
-  * Defines a position in an [[ParserInput]].
+/** Defines a position in an [[ParserInput]].
   *
   * @param index index into the input buffer (0-based)
   * @param line the text line the error occurred in (1-based)
@@ -60,8 +59,7 @@ object Position {
 case class RuleTrace(prefix: List[RuleTrace.NonTerminal], terminal: RuleTrace.Terminal) {
   import RuleTrace._
 
-  /**
-    * Returns a RuleTrace starting with the first [[RuleTrace.Atomic]] element or the first sub-trace whose
+  /** Returns a RuleTrace starting with the first [[RuleTrace.Atomic]] element or the first sub-trace whose
     * offset from the reported error index is zero (e.g. the [[RuleTrace.Terminal]]).
     * If this is wrapped in one or more [[RuleTrace.NonTerminal.Named]] the outermost of these is returned instead.
     */
@@ -78,8 +76,7 @@ case class RuleTrace(prefix: List[RuleTrace.NonTerminal], terminal: RuleTrace.Te
     if (newPrefix ne prefix) copy(prefix = newPrefix) else this
   }
 
-  /**
-    * Wraps this trace with a [[RuleTrace.Named]] wrapper if the given name is non-empty.
+  /** Wraps this trace with a [[RuleTrace.Named]] wrapper if the given name is non-empty.
     */
   def named(name: String): RuleTrace = {
     val newHead = NonTerminal(Named(name), if (prefix.isEmpty) 0 else prefix.head.offset)

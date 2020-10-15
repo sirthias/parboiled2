@@ -16,8 +16,7 @@
 
 package org.parboiled2
 
-/**
-  * For certain high-performance use-cases it is better to construct Strings
+/** For certain high-performance use-cases it is better to construct Strings
   * that the parser is to produce/extract from the input in a char-by-char fashion.
   *
   * Mixing this trait into your parser gives you a simple facility to support this.

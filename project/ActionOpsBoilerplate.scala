@@ -16,8 +16,7 @@
 
 import sbt._
 
-/**
-  * Generate action ops boilerplate for consuming/producing up to 22 values from/to the value stack.
+/** Generate action ops boilerplate for consuming/producing up to 22 values from/to the value stack.
   *
   * @author Mathias Doenitz
   * @author Alexander Myltsev

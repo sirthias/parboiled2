@@ -20,8 +20,7 @@ import scala.collection.immutable
 import scala.reflect.macros.whitebox.Context
 import shapeless.HList
 
-/**
-  * An application needs to implement this interface to receive the result
+/** An application needs to implement this interface to receive the result
   * of a dynamic parsing run.
   * Often times this interface is directly implemented by the Parser class itself
   * (even though this is not a requirement).
@@ -31,8 +30,7 @@ trait DynamicRuleHandler[P <: Parser, L <: HList] extends Parser.DeliveryScheme[
   def ruleNotFound(ruleName: String): Result
 }
 
-/**
-  * Runs one of the rules of a parser instance of type `P` given the rules name.
+/** Runs one of the rules of a parser instance of type `P` given the rules name.
   * The rule must have type `RuleN[L]`.
   */
 trait DynamicRuleDispatch[P <: Parser, L <: HList] {
@@ -41,8 +39,7 @@ trait DynamicRuleDispatch[P <: Parser, L <: HList] {
 
 object DynamicRuleDispatch {
 
-  /**
-    * Implements efficient runtime dispatch to a predefined set of parser rules.
+  /** Implements efficient runtime dispatch to a predefined set of parser rules.
     * Given a number of rule names this macro-supported method creates a `DynamicRuleDispatch` instance along with
     * a sequence of the given rule names.
     * Note that there is no reflection involved and compilation will fail, if one of the given rule names

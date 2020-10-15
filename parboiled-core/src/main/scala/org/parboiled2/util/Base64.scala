@@ -48,8 +48,7 @@ class Base64(alphabet: String) {
   def getAlphabet: Array[Char] =
     CA
 
-  /**
-    * Decodes a BASE64 encoded char array. All illegal characters will be ignored and can handle both arrays with
+  /** Decodes a BASE64 encoded char array. All illegal characters will be ignored and can handle both arrays with
     * and without line separators.
     *
     * @param sArr The source array. <code>null</code> or length 0 will return an empty array.
@@ -126,8 +125,7 @@ class Base64(alphabet: String) {
     dArr
   }
 
-  /**
-    * Decodes a BASE64 encoded char array that is known to be resonably well formatted. The method is about twice as
+  /** Decodes a BASE64 encoded char array that is known to be resonably well formatted. The method is about twice as
     * fast as {@link #decode(char[])}. The preconditions are:<br>
     * + The array must have a line length of 76 chars OR no line separators at all (one line).<br>
     * + Line separator must be "\r\n", as specified in RFC 2045
@@ -235,8 +233,7 @@ class Base64(alphabet: String) {
     dArr
   }
 
-  /**
-    * Encodes a raw byte array into a BASE64 <code>String</code> representation in accordance with RFC 2045.
+  /** Encodes a raw byte array into a BASE64 <code>String</code> representation in accordance with RFC 2045.
     *
     * @param sArr    The bytes to convert. If <code>null</code> or length 0 an empty array will be returned.
     * @param lineSep Optional "\r\n" after 76 characters, unless end of file.<br>
@@ -248,8 +245,7 @@ class Base64(alphabet: String) {
     // Reuse char[] since we can't create a String incrementally anyway and StringBuffer/Builder would be slower.
     new String(encodeToChar(sArr, lineSep))
 
-  /**
-    * Encodes a raw byte array into a BASE64 <code>char[]</code> representation i accordance with RFC 2045.
+  /** Encodes a raw byte array into a BASE64 <code>char[]</code> representation i accordance with RFC 2045.
     *
     * @param sArr    The bytes to convert. If <code>null</code> or length 0 an empty array will be returned.
     * @param lineSep Optional "\r\n" after 76 characters, unless end of file.<br>

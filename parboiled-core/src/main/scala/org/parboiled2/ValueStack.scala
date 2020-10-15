@@ -19,8 +19,7 @@ package org.parboiled2
 import scala.annotation.tailrec
 import shapeless._
 
-/**
-  * A mutable untyped stack of values.
+/** A mutable untyped stack of values.
   * In most cases you won't have to access its API directly since parboiled2's DSL
   * should allow you a safer and easier way to interact with the stack.
   * However, in some cases, when you know what you are doing, direct access can be helpful.
@@ -32,23 +31,19 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
 
   private[parboiled2] def size_=(newSize: Int): Unit = _size = newSize
 
-  /**
-    * The number of elements currently on the stack.
+  /** The number of elements currently on the stack.
     */
   override def size: Int = _size
 
-  /**
-    * True if no elements are currently on the stack.
+  /** True if no elements are currently on the stack.
     */
   override def isEmpty: Boolean = _size == 0
 
-  /**
-    * Removes all elements from the stack.
+  /** Removes all elements from the stack.
     */
   def clear(): Unit = _size = 0
 
-  /**
-    * Puts the given value onto the stack.
+  /** Puts the given value onto the stack.
     * Throws a `ValueStackOverflowException` if the stack has no more space available.
     */
   def push(value: Any): Unit = {
@@ -59,8 +54,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     _size = newSize
   }
 
-  /**
-    * Puts the given HList of values onto the stack.
+  /** Puts the given HList of values onto the stack.
     * Throws a `ValueStackOverflowException` if the stack has no more space available.
     */
   @tailrec final def pushAll(hlist: HList): Unit =
@@ -71,8 +65,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
       case HNil =>
     }
 
-  /**
-    * Inserts the given value into the stack `down` elements below the current
+  /** Inserts the given value into the stack `down` elements below the current
     * top element. `insert(0, 'x')` is therefore equal to `push('x')`.
     * Throws a `ValueStackOverflowException` if the stack has no more space available.
     * Throws a `ValueStackUnderflowException` if `down > size`.
@@ -92,8 +85,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
         _size = newSize
     }
 
-  /**
-    * Removes the top element from the stack and returns it.
+  /** Removes the top element from the stack and returns it.
     * Throws a `ValueStackUnderflowException` if the stack is empty.
     */
   def pop(): Any =
@@ -103,8 +95,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
       buffer(newSize)
     } else throw new ValueStackUnderflowException
 
-  /**
-    * Removes the element `down` elements below the current top element from the stack
+  /** Removes the element `down` elements below the current top element from the stack
     * and returns it. `pullOut(0)` is therefore equal to `pop()`.
     * Throws a `ValueStackUnderflowException` if `down >= size`.
     * Throws an `IllegalArgumentException` is `down` is negative.
@@ -123,16 +114,14 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
         result
     }
 
-  /**
-    * Returns the top element without removing it.
+  /** Returns the top element without removing it.
     * Throws a `ValueStackUnderflowException` if the stack is empty.
     */
   def peek: Any =
     if (_size > 0) buffer(_size - 1)
     else throw new ValueStackUnderflowException
 
-  /**
-    * Returns the element `down` elements below the current top element without removing it.
+  /** Returns the element `down` elements below the current top element without removing it.
     * `peek(0)` is therefore equal to `peek()`.
     * Throws a `ValueStackUnderflowException` if `down >= size`.
     * Throws an `IllegalArgumentException` is `down` is negative.
@@ -146,8 +135,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
         else buffer(_size - down - 1)
     }
 
-  /**
-    * Replaces the element `down` elements below the current top element with the given one.
+  /** Replaces the element `down` elements below the current top element with the given one.
     * Throws a `ValueStackUnderflowException` if `down >= size`.
     * Throws an `IllegalArgumentException` if `down` is negative.
     */
@@ -157,8 +145,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     buffer(_size - down - 1) = value
   }
 
-  /**
-    * Swaps the top 2 stack elements.
+  /** Swaps the top 2 stack elements.
     * Throws a `ValueStackUnderflowException` if `size < 2`.
     */
   def swap(): Unit = {
@@ -168,8 +155,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     buffer(_size - 2) = temp
   }
 
-  /**
-    * Swaps the top 3 stack elements.
+  /** Swaps the top 3 stack elements.
     * Throws a `ValueStackUnderflowException` if `size < 3`.
     */
   def swap3(): Unit = {
@@ -179,8 +165,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     buffer(_size - 3) = temp
   }
 
-  /**
-    * Swaps the top 4 stack elements.
+  /** Swaps the top 4 stack elements.
     * Throws a `ValueStackUnderflowException` if `size < 4`.
     */
   def swap4(): Unit = {
@@ -193,8 +178,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     buffer(_size - 3) = temp
   }
 
-  /**
-    * Swaps the top 5 stack elements.
+  /** Swaps the top 5 stack elements.
     * Throws a `ValueStackUnderflowException` if `size < 5`.
     */
   def swap5(): Unit = {
@@ -207,8 +191,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     buffer(_size - 4) = temp
   }
 
-  /**
-    * Returns all current stack elements as a new array.
+  /** Returns all current stack elements as a new array.
     */
   def toArray: Array[Any] = {
     val a = new Array[Any](_size)
@@ -216,8 +199,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     a
   }
 
-  /**
-    * Copies all elements between the given `start` (inclusive) and `end` (exclusive)
+  /** Copies all elements between the given `start` (inclusive) and `end` (exclusive)
     * indices into an HList that is prepended to the given tail.
     * Throws an `IllegalArgumentException` if `start < 0 || start > end`.
     * Throws a `ValueStackUnderflowException` if `end > size`.
@@ -228,14 +210,12 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     else toHList[L](start, end - 1, buffer(end - 1) :: prependTo)
   }
 
-  /**
-    * Creates a string representation of the current value stack contents.
+  /** Creates a string representation of the current value stack contents.
     * Mostly useful for debugging.
     */
   def show: String = mkString("[", ", ", "]")
 
-  /**
-    * Returns an iterator that iterates over a *snapshot* of the stack elements
+  /** Returns an iterator that iterates over a *snapshot* of the stack elements
     * at the time of this method call. I.e. subsequent mutations are not visible
     * to the iterator.
     */

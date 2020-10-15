@@ -23,8 +23,7 @@ import shapeless._
 
 trait RuleDSLCombinators {
 
-  /**
-    * Runs its inner rule and succeeds even if the inner rule doesn't.
+  /** Runs its inner rule and succeeds even if the inner rule doesn't.
     * Resulting rule type is
     *   Rule0             if r == Rule0
     *   Rule1[Option[T]]  if r == Rule1[T]
@@ -34,8 +33,7 @@ trait RuleDSLCombinators {
   def optional[I <: HList, O <: HList](r: Rule[I, O])(implicit l: Lifter[Option, I, O]): Rule[l.In, l.OptionalOut] =
     `n/a`
 
-  /**
-    * Runs its inner rule until it fails, always succeeds.
+  /** Runs its inner rule until it fails, always succeeds.
     * Resulting rule type is
     *   Rule0          if r == Rule0
     *   Rule1[Seq[T]]  if r == Rule1[T]
@@ -46,8 +44,7 @@ trait RuleDSLCombinators {
       l: Lifter[immutable.Seq, I, O]
   ): Rule[l.In, l.OptionalOut] with Repeated = `n/a`
 
-  /**
-    * Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
+  /** Runs its inner rule until it fails, succeeds if its inner rule succeeded at least once.
     * Resulting rule type is
     *   Rule0          if r == Rule0
     *   Rule1[Seq[T]]  if r == Rule1[T]
@@ -58,15 +55,13 @@ trait RuleDSLCombinators {
       l: Lifter[immutable.Seq, I, O]
   ): Rule[l.In, l.StrictOut] with Repeated = `n/a`
 
-  /**
-    * Runs its inner rule but resets the parser (cursor and value stack) afterwards,
+  /** Runs its inner rule but resets the parser (cursor and value stack) afterwards,
     * succeeds only if its inner rule succeeded.
     */
   @compileTimeOnly("Calls to `&` must be inside `rule` macro")
   def &(r: Rule[_, _]): Rule0 = `n/a`
 
-  /**
-    * Marks a rule as "undividable" from an error reporting perspective.
+  /** Marks a rule as "undividable" from an error reporting perspective.
     * The parser will never report errors *inside* of the marked rule.
     * Rather, if the rule mismatches, the error will be reported at the
     * very beginning of the attempted rule match.
@@ -74,8 +69,7 @@ trait RuleDSLCombinators {
   @compileTimeOnly("Calls to `atomic` must be inside `rule` macro")
   def atomic[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = `n/a`
 
-  /**
-    * Marks a rule as "quiet" from an error reporting perspective.
+  /** Marks a rule as "quiet" from an error reporting perspective.
     * Quiet rules only show up in error rule traces if no "unquiet" rules match up to the error location.
     * This marker frequently used for low-level syntax rules (like whitespace or comments) that might be matched
     * essentially everywhere and are therefore not helpful when appearing in the "expected" set of an error report.
@@ -83,8 +77,7 @@ trait RuleDSLCombinators {
   @compileTimeOnly("Calls to `atomic` must be inside `rule` macro")
   def quiet[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = `n/a`
 
-  /**
-    * Allows creation of a sub parser and running of one of its rules as part of the current parsing process.
+  /** Allows creation of a sub parser and running of one of its rules as part of the current parsing process.
     * The subparser will start parsing at the current input position and the outer parser (this parser)
     * will continue where the sub-parser stopped.
     */
@@ -99,8 +92,7 @@ trait RuleDSLCombinators {
 
   sealed trait NTimes {
 
-    /**
-      * Repeats the given sub rule `r` the given number of times.
+    /** Repeats the given sub rule `r` the given number of times.
       * Both bounds of the range must be positive and the upper bound must be >= the lower bound.
       * If the upper bound is zero the rule is equivalent to `MATCH`.
       *

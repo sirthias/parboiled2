@@ -18,35 +18,29 @@ package org.parboiled2
 
 import org.parboiled2.util.Base64
 
-/**
-  * Rules for parsing Base-64 encoded strings.
+/** Rules for parsing Base-64 encoded strings.
   */
 trait Base64Parsing { this: Parser =>
   import Base64Parsing._
 
-  /**
-    * Parses an RFC4045-encoded string and decodes it onto the value stack.
+  /** Parses an RFC4045-encoded string and decodes it onto the value stack.
     */
   def rfc2045String: Rule1[Array[Byte]] = base64(rfc2045Alphabet, Base64.rfc2045().fillChar, rfc2045StringDecoder)
 
-  /**
-    * Parses an RFC4045-encoded string potentially containing newlines and decodes it onto the value stack.
+  /** Parses an RFC4045-encoded string potentially containing newlines and decodes it onto the value stack.
     */
   def rfc2045Block: Rule1[Array[Byte]] = base64(rfc2045Alphabet, Base64.rfc2045().fillChar, rfc2045BlockDecoder)
 
-  /**
-    * Parses a org.parboiled2.util.Base64.custom()-encoded string and decodes it onto the value stack.
+  /** Parses a org.parboiled2.util.Base64.custom()-encoded string and decodes it onto the value stack.
     */
   def base64CustomString: Rule1[Array[Byte]] = base64(customAlphabet, Base64.custom().fillChar, customStringDecoder)
 
-  /**
-    * Parses a org.parboiled2.util.Base64.custom()-encoded string potentially containing newlines
+  /** Parses a org.parboiled2.util.Base64.custom()-encoded string potentially containing newlines
     * and decodes it onto the value stack.
     */
   def base64CustomBlock: Rule1[Array[Byte]] = base64(customAlphabet, Base64.custom().fillChar, customBlockDecoder)
 
-  /**
-    * Parses a BASE64-encoded string with the given alphabet and decodes it onto the value
+  /** Parses a BASE64-encoded string with the given alphabet and decodes it onto the value
     * stack using the given codec.
     */
   @deprecated(

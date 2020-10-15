@@ -21,31 +21,26 @@ import java.nio.ByteBuffer
 
 trait ParserInput {
 
-  /**
-    * Returns the character at the given (zero-based) index.
+  /** Returns the character at the given (zero-based) index.
     * Note: this method is hot and should be small and efficient.
     * A range-check is not required for the parser to work correctly.
     */
   def charAt(ix: Int): Char
 
-  /**
-    * The number of characters in this input.
+  /** The number of characters in this input.
     * Note: this method is hot and should be small and efficient.
     */
   def length: Int
 
-  /**
-    * Returns the characters between index `start` (inclusively) and `end` (exclusively) as a `String`.
+  /** Returns the characters between index `start` (inclusively) and `end` (exclusively) as a `String`.
     */
   def sliceString(start: Int, end: Int): String
 
-  /**
-    * Returns the characters between index `start` (inclusively) and `end` (exclusively) as an `Array[Char]`.
+  /** Returns the characters between index `start` (inclusively) and `end` (exclusively) as an `Array[Char]`.
     */
   def sliceCharArray(start: Int, end: Int): Array[Char]
 
-  /**
-    * Gets the input line with the given number as a String.
+  /** Gets the input line with the given number as a String.
     * Note: the first line is line number one!
     */
   def getLine(line: Int): String
@@ -79,8 +74,7 @@ object ParserInput {
     }
   }
 
-  /**
-    * ParserInput reading directly off a byte array.
+  /** ParserInput reading directly off a byte array.
     * This avoids a separate decoding step but assumes that each byte represents exactly one character,
     * which is encoded by ISO-8859-1!
     * You can therefore use this ParserInput type only if you know that all input will be `ISO-8859-1`-encoded,

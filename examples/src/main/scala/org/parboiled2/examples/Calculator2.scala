@@ -61,8 +61,7 @@ object Calculator2 extends App {
   case class Division(lhs: Expr, rhs: Expr)       extends Expr
 }
 
-/**
-  * This parser reads simple calculator expressions and builds an AST
+/** This parser reads simple calculator expressions and builds an AST
   * for them, to be evaluated in a separate phase, after parsing is completed.
   */
 class Calculator2(val input: ParserInput) extends Parser {

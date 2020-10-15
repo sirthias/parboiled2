@@ -25,8 +25,7 @@ object CsvParser extends {
   case class Record(fields: immutable.Seq[String])
   case class Error(msg: String)
 
-  /**
-    * Parses the given input into a [[CsvFile]] or an [[Error]] instance.
+  /** Parses the given input into a [[CsvFile]] or an [[Error]] instance.
     */
   def apply(input: ParserInput, headerPresent: Boolean = true, fieldDelimiter: Char = ','): Either[Error, CsvFile] = {
     import Parser.DeliveryScheme.Either
@@ -38,8 +37,7 @@ object CsvParser extends {
   private val QTEXTDATA       = `TEXTDATA-BASE` ++ "\r\n"
 }
 
-/**
-  * Simple, fast CSV parser.
+/** Simple, fast CSV parser.
   *
   * See http://tools.ietf.org/html/rfc4180#section-2
   */

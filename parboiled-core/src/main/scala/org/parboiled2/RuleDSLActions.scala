@@ -23,22 +23,19 @@ import shapeless._
 
 trait RuleDSLActions {
 
-  /**
-    * Pushes the input text matched by its inner rule onto the value stack
+  /** Pushes the input text matched by its inner rule onto the value stack
     * after its inner rule has been run successfully (and only then).
     */
   @compileTimeOnly("Calls to `capture` must be inside `rule` macro")
   def capture[I <: HList, O <: HList](r: Rule[I, O])(implicit p: Prepend[O, String :: HNil]): Rule[I, p.Out] = `n/a`
 
-  /**
-    * Implements a semantic predicate. If the argument expression evaluates to `true` the created
+  /** Implements a semantic predicate. If the argument expression evaluates to `true` the created
     * rule matches otherwise it doesn't.
     */
   @compileTimeOnly("Calls to `test` must be inside `rule` macro")
   def test(condition: Boolean): Rule0 = `n/a`
 
-  /**
-    * Runs the given block / expression / action function.
+  /** Runs the given block / expression / action function.
     * A `run` rule can have several shapes, depending on its argument type. If the `arg` evaluates to
     *
     * - a rule (i.e. has type `R <: Rule[_, _]`) the result type of `run` is this rule's type (i.e. `R`) and the
@@ -63,8 +60,7 @@ trait RuleDSLActions {
   @compileTimeOnly("Calls to `run` must be inside `rule` macro")
   def run[T](arg: T)(implicit rr: RunResult[T]): rr.Out = `n/a`
 
-  /**
-    * Pushes the given value onto the value stack.
+  /** Pushes the given value onto the value stack.
     * - if `T` is `Unit` nothing is pushed (i.e. `push` with a block/expression evaluating to `Unit` is identical to `run`)
     * - if `T <: HList` all values of the HList is pushed as individual elements
     * - otherwise a single value of type `T` is pushed.
@@ -72,8 +68,7 @@ trait RuleDSLActions {
   @compileTimeOnly("Calls to `push` must be inside `rule` macro")
   def push[T](value: T)(implicit h: HListable[T]): RuleN[h.Out] = `n/a`
 
-  /**
-    * Drops one or more values from the top of the value stack.
+  /** Drops one or more values from the top of the value stack.
     * E.g. `drop[Int]` will drop the top ``Int`` value and `drop[Int :: String :: HNil]` will drop the top two values,
     * which must be an ``Int`` underneath a ``String`` (the string being the top stack element).
     */

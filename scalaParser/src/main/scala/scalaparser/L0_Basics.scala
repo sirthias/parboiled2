@@ -21,13 +21,11 @@ trait L0_Basics { this: Parser =>
 
   def GeneralLower = rule(atomic(`LOWER$_` | test(cursorChar.isLower) ~ ANY))
 
-  /**
-    * Whitespace, including newlines. This is the default for most things.
+  /** Whitespace, including newlines. This is the default for most things.
     */
   def WL = rule(quiet((WSCHAR | Comment | Newline).*))
 
-  /**
-    * Whitespace, excluding newlines.
+  /** Whitespace, excluding newlines.
     * Only really useful in e.g. {} blocks, where we want to avoid
     * capturing newlines so semicolon-inference works
     */

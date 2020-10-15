@@ -44,8 +44,7 @@ object Calculator1 extends App {
   }
 }
 
-/**
-  * This parser reads simple calculator expressions and evaluates them right during
+/** This parser reads simple calculator expressions and evaluates them right during
   * the parsing run with the help of the value stack.
   */
 class Calculator1(val input: ParserInput) extends Parser {
