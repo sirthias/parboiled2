@@ -7,7 +7,7 @@ val commonSettings = Seq(
   description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
   startYear := Some(2009),
   licenses := Seq("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-  unmanagedResources in Compile += baseDirectory.value.getParentFile.getParentFile / "LICENSE",
+  (Compile / unmanagedResources) += baseDirectory.value.getParentFile.getParentFile / "LICENSE",
   scmInfo := Some(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
   ),
@@ -51,9 +51,9 @@ val commonSettings = Seq(
       case x => sys.error(s"unsupported scala version: $x")
     }
   },
-  scalacOptions in (Compile, console) ~= (_ filterNot (o ⇒ o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
-  scalacOptions in (Test, console) ~= (_ filterNot (o ⇒ o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
-  scalacOptions in (Compile, doc) += "-no-link-warnings",
+  Compile / console / scalacOptions ~= (_ filterNot (o ⇒ o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
+  Test / console / scalacOptions ~= (_ filterNot (o ⇒ o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
+  Compile / doc / scalacOptions += "-no-link-warnings",
   sourcesInBase := false,
   // file headers
   headerLicense := Some(HeaderLicense.ALv2("2009-2019", "Mathias Doenitz")),
@@ -62,19 +62,19 @@ val commonSettings = Seq(
 )
 
 lazy val crossSettings = Seq(
-  sourceDirectories in (Compile, scalafmt) := (unmanagedSourceDirectories in Compile).value,
-  sourceDirectories in (Test, scalafmt) := (unmanagedSourceDirectories in Test).value
+  (Compile / scalafmt / sourceDirectories) := (Compile / unmanagedSourceDirectories).value,
+  (Test / scalafmt / sourceDirectories) := (Test / unmanagedSourceDirectories).value
 )
 
 lazy val scalajsSettings = Seq(
   scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule).withSourceMap(false)),
-  scalaJSStage in Global := FastOptStage,
+  Global / scalaJSStage := FastOptStage,
   scalacOptions ~= { _.filterNot(_ == "-Ywarn-dead-code") }
 )
 
 lazy val publishingSettings = Seq(
   publishMavenStyle := true,
-  publishArtifact in Test := false,
+  Test / publishArtifact := false,
   pomIncludeRepository := (_ ⇒ false),
   publishTo := sonatypePublishTo.value,
   publishConfiguration := publishConfiguration.value.withOverwrite(true),
@@ -89,7 +89,7 @@ lazy val releaseSettings = {
   val runCompile = ReleaseStep(action = { st: State ⇒
     val extracted = Project.extract(st)
     val ref       = extracted.get(thisProjectRef)
-    extracted.runAggregated(compile in Compile in ref, st)
+    extracted.runAggregated(ref / Compile / compile, st)
   })
 
   Seq(
@@ -162,7 +162,7 @@ lazy val jsonBenchmark = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(`json4s-native`, `json4s-jackson`),
-    bench := (run in Compile).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated
+    bench := (Compile / run).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated
   )
 
 lazy val scalaParser = project
@@ -187,19 +187,19 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
   .settings(parboiledOsgiSettings)
   .settings(utestSettings)
   .jvmSettings(
-    mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJVM.project, Compile, packageBin)).value,
-    mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageSrc)).value,
-    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJVM.project, Compile, packageDoc)).value
+    (Compile / packageBin / mappings) ++= (parboiledCoreJVM.project / Compile / packageBin / mappings).value,
+    (Compile / packageSrc / mappings) ++= (parboiledCoreJVM.project / Compile / packageSrc / mappings).value,
+    (Compile / packageDoc / mappings) ++= (parboiledCoreJVM.project / Compile / packageDoc / mappings).value
   )
   .jsSettings(
-    mappings in (Compile, packageBin) ++= (mappings in (parboiledCoreJS.project, Compile, packageBin)).value,
-    mappings in (Compile, packageSrc) ++= (mappings in (parboiledCoreJS.project, Compile, packageSrc)).value,
-    mappings in (Compile, packageDoc) ++= (mappings in (parboiledCoreJS.project, Compile, packageDoc)).value
+    (Compile / packageBin / mappings) ++= (parboiledCoreJS.project / Compile / packageBin / mappings).value,
+    (Compile / packageSrc / mappings) ++= (parboiledCoreJS.project / Compile / packageSrc / mappings).value,
+    (Compile / packageDoc / mappings) ++= (parboiledCoreJS.project / Compile / packageDoc / mappings).value
   )
   .settings(
     libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
-    mappings in (Compile, packageBin) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
-    mappings in (Compile, packageDoc) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
+    (Compile / packageBin / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
+    (Compile / packageDoc / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     pomPostProcess := {                                                          // we need to remove the dependency onto the parboiledCore module from the POM
       import scala.xml.transform._
       import scala.xml.{NodeSeq, Node => XNode}
@@ -227,6 +227,6 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform)
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
-    generateActionOps := ActionOpsBoilerplate((sourceManaged in Compile).value, streams.value),
-    (sourceGenerators in Compile) += generateActionOps.taskValue
+    generateActionOps := ActionOpsBoilerplate((Compile / sourceManaged).value, streams.value),
+    Compile / sourceGenerators += generateActionOps.taskValue
   )
