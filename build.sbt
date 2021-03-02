@@ -127,8 +127,8 @@ val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.15.3" %
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
 
 // benchmarks and examples only
-val `json4s-native`  = "org.json4s" %% "json4s-native"  % "3.6.10"
-val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "3.6.10"
+val `json4s-native`  = "org.json4s" %% "json4s-native"  % "3.6.11"
+val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "3.6.11"
 val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.6"
 
 /////////////////////// PROJECTS /////////////////////////
