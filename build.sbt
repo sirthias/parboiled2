@@ -136,8 +136,8 @@ val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.6"
 lazy val root = project
   .in(file("."))
   .aggregate(examples, jsonBenchmark)
-  .aggregate(parboiledJVM, parboiledJS)
-  .aggregate(parboiledCoreJVM, parboiledCoreJS)
+  .aggregate(parboiledJVM, parboiledJS, parboiledNative)
+  .aggregate(parboiledCoreJVM, parboiledCoreJS, parboiledCoreNative)
   .settings(commonSettings)
   .settings(releaseSettings)
   .settings(publish / skip := true)
@@ -175,10 +175,11 @@ lazy val scalaParser = project
     libraryDependencies ++= Seq(shapeless.value, utest.value)
   )
 
-lazy val parboiledJVM = parboiled.jvm
-lazy val parboiledJS  = parboiled.js
+lazy val parboiledJVM    = parboiled.jvm
+lazy val parboiledJS     = parboiled.js
+lazy val parboiledNative = parboiled.native
 
-lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
+lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Pure)
   .enablePlugins(AutomateHeaderPlugin, SbtOsgi)
   .dependsOn(parboiledCore)
@@ -195,6 +196,11 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
     (Compile / packageBin / mappings) ++= (parboiledCoreJS.project / Compile / packageBin / mappings).value,
     (Compile / packageSrc / mappings) ++= (parboiledCoreJS.project / Compile / packageSrc / mappings).value,
     (Compile / packageDoc / mappings) ++= (parboiledCoreJS.project / Compile / packageDoc / mappings).value
+  )
+  .nativeSettings(
+    (Compile / packageBin / mappings) ++= (parboiledCoreNative.project / Compile / packageBin / mappings).value,
+    (Compile / packageSrc / mappings) ++= (parboiledCoreNative.project / Compile / packageSrc / mappings).value,
+    (Compile / packageDoc / mappings) ++= (parboiledCoreNative.project / Compile / packageDoc / mappings).value
   )
   .settings(
     libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
@@ -213,17 +219,17 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-lazy val parboiledCoreJVM = parboiledCore.jvm
-lazy val parboiledCoreJS  = parboiledCore.js
+lazy val parboiledCoreJVM    = parboiledCore.jvm
+lazy val parboiledCoreJS     = parboiledCore.js
+lazy val parboiledCoreNative = parboiledCore.native
 
-lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform)
+lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Pure)
   .in(file("parboiled-core"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
   .settings(utestSettings)
-  .jvmSettings(libraryDependencies += scalaCheck.value)
-  .jsSettings(libraryDependencies += scalaCheck.value)
+  .settings(libraryDependencies += scalaCheck.value)
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
