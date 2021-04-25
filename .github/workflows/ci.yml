@@ -21,6 +21,8 @@ jobs:
     - name: ${{ matrix.name }} ${{ matrix.java }}
       run: sbt
            scalafmtSbtCheck
+           "+headerCheckAll"
+           "+scalaParser/headerCheckAll"
            "+scalafmtCheckAll"
            "+scalaParser/scalafmtCheckAll"
            "+test"
