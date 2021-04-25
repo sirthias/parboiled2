@@ -20,6 +20,8 @@ jobs:
     - uses: coursier/cache-action@v6
     - name: ${{ matrix.name }} ${{ matrix.java }}
       run: sbt
-           "all scalafmtSbtCheck scalafmtCheckAll scalaParser/scalafmtCheckAll"
+           scalafmtSbtCheck
+           "+scalafmtCheckAll"
+           "+scalaParser/scalafmtCheckAll"
            "+test"
            "+scalaParser/testOnly scalaparser.SnippetSpec"
