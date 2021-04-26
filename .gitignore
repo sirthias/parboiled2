@@ -1,28 +1,67 @@
-# SBT
-boot/
-lib_managed/
-src_managed/
-test-output/
-target/
-.history
+# Only put project-/build-tool-specific things here!
+# Everything specific to your particular dev machine
+# (like OS- or IDE-related artifacts) should go into
+# a personal, global .gitignore file!
+# (See https://help.github.com/articles/ignoring-files/ for details)
 
-# IntelliJ
-.idea/
-*.iml
-*.ipr
-*.iws
-out/
+index.js
 
-# Eclipse
-.cache
-.classpath
-.project
-.scala_dependencies
-.settings
-.target/
+########### SBT ###########
+.bsp
+lib_managed
+target
+project/boot
+project/build/target
+project/plugins/lib_managed
+project/plugins/src_managed
+project/plugins/target
+project/plugins/project/build.properties
+buildinfo.properties
+proguard-sbt.txt
 
-# Mac
-.DS_Store
+########### Xcode ###########
+Pods/
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace
 
-# Other
-*.pyc
+########### Android ###########
+build/
+.gradle
+local.properties
+
+########### node.js ###########
+node_modules/
+npm-debug.log
+yarn-error.log
+
+########### BUCK ###########
+buck-out/
+\.buckd/
+*.keystore
+
+########### fastlane ###########
+# It is recommended to not store the screenshots in the git repo. Instead, use fastlane to re-generate the
+# screenshots whenever they are needed.
+# For more information about the recommended setup visit:
+# https://docs.fastlane.tools/best-practices/source-control/
+*/fastlane/report.xml
+*/fastlane/Preview.html
+*/fastlane/screenshots
+
+########### Bundle artifact ###########
+*.jsbundle
