@@ -121,7 +121,7 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val shapeless       = Def.setting("com.chuusai" %%% "shapeless" % "2.3.6" % Compile)
+val shapeless       = Def.setting("com.chuusai" %%% "shapeless" % "2.3.7" % Compile)
 val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.7.10" % Test)
 val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.15.4" % Test)
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
