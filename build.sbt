@@ -121,7 +121,6 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val shapeless       = Def.setting("com.chuusai" %%% "shapeless" % "2.3.7" % Compile)
 val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.7.10" % Test)
 val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.15.4" % Test)
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
@@ -172,7 +171,7 @@ lazy val scalaParser = project
   .settings(utestSettings)
   .settings(
     publish / skip := true,
-    libraryDependencies ++= Seq(shapeless.value, utest.value)
+    libraryDependencies ++= Seq(utest.value)
   )
 
 lazy val parboiledJVM    = parboiled.jvm
@@ -203,7 +202,7 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     (Compile / packageDoc / mappings) ++= (parboiledCoreNative.project / Compile / packageDoc / mappings).value
   )
   .settings(
-    libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
+    libraryDependencies ++= Seq(`scala-reflect`.value, utest.value),
     (Compile / packageBin / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     (Compile / packageDoc / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     pomPostProcess := {                                                          // we need to remove the dependency onto the parboiledCore module from the POM
@@ -232,7 +231,7 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(libraryDependencies += scalaCheck.value)
   .settings(
     publish / skip := true,
-    libraryDependencies ++= Seq(`scala-reflect`.value, shapeless.value, utest.value),
+    libraryDependencies ++= Seq(`scala-reflect`.value, utest.value),
     generateActionOps := ActionOpsBoilerplate((Compile / sourceManaged).value, streams.value),
     Compile / sourceGenerators += generateActionOps.taskValue
   )
