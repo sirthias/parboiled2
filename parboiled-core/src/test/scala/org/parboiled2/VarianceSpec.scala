@@ -16,8 +16,8 @@
 
 package org.parboiled2
 
-import shapeless.test.illTyped
 import shapeless._
+import utest.{compileError, ArrowAssert}
 
 //// pure compile-time-only test
 class VarianceSpec {
@@ -53,7 +53,7 @@ class VarianceSpec {
           def A: Rule2[String, Any]   = ???
           def B: PopRule[Int :: HNil] = ???
         }
-        illTyped("""class P extends Par { def C = rule { A ~ B } }""", "Illegal rule composition")
+        compileError("""class P extends Par { def C = rule { A ~ B } }""").msg ==> "Illegal rule composition"
       }
 
       // invalid example 3
@@ -62,7 +62,7 @@ class VarianceSpec {
           def A: Rule1[String]        = ???
           def B: PopRule[Int :: HNil] = ???
         }
-        illTyped("""class P extends Par { def C = rule { A ~ B } }""", "Illegal rule composition")
+        compileError("""class P extends Par { def C = rule { A ~ B } }""").msg ==> "Illegal rule composition"
       }
     }
 
@@ -83,7 +83,7 @@ class VarianceSpec {
           def A: Rule0      = ???
           def B: Rule1[Any] = ???
         }
-        illTyped("""class P extends Par { def C: Rule1[Int] = rule { A ~ B } }""", "type mismatch;.*")
+        compileError("""class P extends Par { def C: Rule1[Int] = rule { A ~ B } }""").msg ==> "type mismatch;.*"
       }
     }
   }
