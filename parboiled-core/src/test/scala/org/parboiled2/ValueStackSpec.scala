@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import shapeless.{HList, HNil}
+import org.parboiled2.support.hlist.{HList, HNil}
 import utest.{intercept, _}
 
 object ValueStackSpec extends TestSuite {

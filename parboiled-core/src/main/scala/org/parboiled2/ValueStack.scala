@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import scala.annotation.tailrec
-import shapeless._
+import org.parboiled2.support.hlist._
 
 /** A mutable untyped stack of values.
   * In most cases you won't have to access its API directly since parboiled2's DSL
@@ -59,7 +59,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     */
   @tailrec final def pushAll(hlist: HList): Unit =
     hlist match {
-      case shapeless.::(head, tail) =>
+      case org.parboiled2.support.hlist.::(head, tail) =>
         push(head)
         pushAll(tail)
       case HNil =>

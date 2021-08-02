@@ -17,9 +17,9 @@
 package org.parboiled2
 
 import scala.annotation.compileTimeOnly
-import shapeless.ops.hlist.Prepend
+import org.parboiled2.support.hlist.ops.hlist.Prepend
 import org.parboiled2.support._
-import shapeless._
+import org.parboiled2.support.hlist._
 
 trait RuleDSLActions {
 

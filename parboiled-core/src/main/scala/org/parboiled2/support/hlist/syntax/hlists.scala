@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package shapeless
+package org.parboiled2.support.hlist
 package syntax
 
-import shapeless.ops.hlist.Reverse
+import org.parboiled2.support.hlist.ops.hlist.Reverse
 
 /** Carrier for `HList` operations.
   *
@@ -30,7 +30,7 @@ final class HListOps[L <: HList](l: L) extends Serializable {
 
   /** Prepend the argument element to this `HList`.
     */
-  def ::[H](h: H): H :: L = shapeless.::(h, l)
+  def ::[H](h: H): H :: L = org.parboiled2.support.hlist.::(h, l)
 
   /** Reverses this `HList`.
     */

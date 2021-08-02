@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import utest._
-import shapeless._
+import org.parboiled2.support.hlist._
 
 object ReductionResetSpec extends TestParserSpec {
 

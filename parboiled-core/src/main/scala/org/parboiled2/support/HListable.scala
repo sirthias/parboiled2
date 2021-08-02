@@ -16,7 +16,7 @@
 
 package org.parboiled2.support
 
-import shapeless._
+import org.parboiled2.support.hlist._
 
 trait HListable[T] {
   type Out <: HList

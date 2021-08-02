@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package shapeless
+package org.parboiled2.support.hlist
 
 /** `HList` ADT base trait.
   *
@@ -50,7 +50,7 @@ sealed trait HNil extends HList {
 case object HNil extends HNil
 
 object HList {
-  import syntax.HListOps
+  import org.parboiled2.support.hlist.syntax.HListOps
 
   def apply(): HNil.type = HNil
 
@@ -62,6 +62,6 @@ object HList {
     */
   object ListCompat {
     val :: = scala.collection.immutable.::
-    val #: = shapeless.::
+    val #: = org.parboiled2.support.hlist.::
   }
 }

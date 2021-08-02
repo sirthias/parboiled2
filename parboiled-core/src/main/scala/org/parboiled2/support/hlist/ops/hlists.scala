@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package shapeless
+package org.parboiled2.support.hlist
 package ops
 
 object hlist {
