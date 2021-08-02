@@ -16,7 +16,6 @@
 
 package org.parboiled2
 
-import shapeless.test.illTyped
 import utest.{TestableString => _, _}
 
 object BasicSpec extends TestParserSpec {
@@ -203,11 +202,11 @@ object BasicSpec extends TestParserSpec {
         def TestableString = ParserInput.Empty
         def input          = TestableString
 
-        illTyped("""rule { "00" - "5" }""", "lower bound must be a single char string")
-        illTyped("""rule { "0" - "55" }""", "upper bound must be a single char string")
-        illTyped("""rule { "" - "5" }""", "lower bound must be a single char string")
-        illTyped("""rule { "0" - "" }""", "upper bound must be a single char string")
-        illTyped("""rule { "5" - "1" }""", "lower bound must not be > upper bound")
+        compileError("""rule { "00" - "5" }""").msg ==> "lower bound must be a single char string"
+        compileError("""rule { "0" - "55" }""").msg ==> "upper bound must be a single char string"
+        compileError("""rule { "" - "5" }""").msg ==> "lower bound must be a single char string"
+        compileError("""rule { "0" - "" }""").msg ==> "upper bound must be a single char string"
+        compileError("""rule { "5" - "1" }""").msg ==> "lower bound must not be > upper bound"
       }
     }
   }
