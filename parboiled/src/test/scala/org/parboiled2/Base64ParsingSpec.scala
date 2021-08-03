@@ -18,7 +18,7 @@ package org.parboiled2
 
 import scala.util.Random
 import org.parboiled2.util.Base64
-import shapeless._
+import org.parboiled2.support.hlist._
 import utest._
 
 object Base64ParsingSpec extends TestSuite {

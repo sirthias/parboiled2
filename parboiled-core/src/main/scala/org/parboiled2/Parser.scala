@@ -21,7 +21,7 @@ import scala.collection.immutable.VectorBuilder
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 import scala.util.control.{NoStackTrace, NonFatal}
-import shapeless._
+import org.parboiled2.support.hlist._
 import org.parboiled2.support._
 
 abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 1024) extends RuleDSL {

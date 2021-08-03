@@ -54,7 +54,7 @@ object ActionOpsBoilerplate {
       |
       |package org.parboiled2.support
       |
-      |import shapeless._
+      |import org.parboiled2.support.hlist._
       |import org.parboiled2.Rule
       |
       |// provides the supported `~>` "overloads" for rules of type `Rule[I, O]` as `Out`

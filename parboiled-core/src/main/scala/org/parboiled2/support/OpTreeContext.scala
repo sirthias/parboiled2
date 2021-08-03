@@ -623,7 +623,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         case q"support.this.HListable.fromAnyRef[$t]" => q"valueStack.pop(); true"
         case q"support.this.HListable.fromHList[$t]" =>
           @tailrec def rec(t: Type, result: List[Tree] = Nil): List[Tree] =
-            t match { // TODO: how can we use type quotes here, e.g. tq"shapeless.HNil"?
+            t match { // TODO: how can we use type quotes here, e.g. tq"org.parboiled2.support.hlist.HNil"?
               case TypeRef(_, sym, List(_, tail)) if sym == HListConsTypeSymbol =>
                 rec(tail, q"valueStack.pop()" :: result)
               case TypeRef(_, sym, _) if sym == HNilTypeSymbol => result
@@ -769,8 +769,8 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
   def Separator(op: OpTree): Separator = wrapped => op.render(wrapped)
 
-  lazy val HListConsTypeSymbol = c.mirror.staticClass("shapeless.$colon$colon")
-  lazy val HNilTypeSymbol      = c.mirror.staticClass("shapeless.HNil")
+  lazy val HListConsTypeSymbol = c.mirror.staticClass("org.parboiled2.support.hlist.$colon$colon")
+  lazy val HNilTypeSymbol      = c.mirror.staticClass("org.parboiled2.support.hlist.HNil")
 
   // tries to match and expand the leaves of the given Tree
   def expand(tree: Tree, wrapped: Boolean): Tree =

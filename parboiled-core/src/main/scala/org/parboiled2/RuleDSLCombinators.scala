@@ -19,7 +19,7 @@ package org.parboiled2
 import scala.annotation.compileTimeOnly
 import scala.collection.immutable
 import org.parboiled2.support._
-import shapeless._
+import org.parboiled2.support.hlist._
 
 trait RuleDSLCombinators {
 

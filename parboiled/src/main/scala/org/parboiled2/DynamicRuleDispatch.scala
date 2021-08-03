@@ -18,7 +18,7 @@ package org.parboiled2
 
 import scala.collection.immutable
 import scala.reflect.macros.whitebox.Context
-import shapeless.HList
+import org.parboiled2.support.hlist.HList
 
 /** An application needs to implement this interface to receive the result
   * of a dynamic parsing run.

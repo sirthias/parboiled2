@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import org.parboiled2.support.Unpack
-import shapeless._
+import org.parboiled2.support.hlist._
 import utest._
 
 abstract class TestParserSpec extends TestSuite {

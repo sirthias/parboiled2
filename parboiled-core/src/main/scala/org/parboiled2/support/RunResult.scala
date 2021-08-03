@@ -16,7 +16,7 @@
 
 package org.parboiled2.support
 
-import shapeless._
+import org.parboiled2.support.hlist._
 import org.parboiled2._
 
 // phantom type, only used for rule DSL typing
