@@ -1,6 +1,12 @@
 import ReleaseTransformations._
 import sbtcrossproject.CrossPlugin.autoImport._
 
+val Scala3 = "3.0.0"
+
+val isScala3 = Def.setting(
+  CrossVersion.partialVersion(scalaVersion.value).exists(_._1 == 3)
+)
+
 val commonSettings = Seq(
   organization := "org.parboiled",
   homepage     := Some(new URL("http://parboiled.org")),
@@ -12,7 +18,7 @@ val commonSettings = Seq(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
   ),
   scalaVersion       := "2.12.14",
-  crossScalaVersions := Seq("2.12.14", "2.13.6"),
+  crossScalaVersions := Seq("2.12.14", "2.13.6", Scala3),
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
@@ -48,6 +54,8 @@ val commonSettings = Seq(
           "-Ybackend-parallelism",
           "8"
         )
+      case Some((3, 0)) =>
+        Seq("-language:implicitConversions")
       case x => sys.error(s"unsupported scala version: $x")
     }
   },
@@ -64,6 +72,11 @@ val commonSettings = Seq(
 lazy val crossSettings = Seq(
   (Compile / scalafmt / sourceDirectories) := (Compile / unmanagedSourceDirectories).value,
   (Test / scalafmt / sourceDirectories)    := (Test / unmanagedSourceDirectories).value
+)
+
+lazy val nativeSettings = Seq(
+  // Currently scala-native does not support Dotty
+  crossScalaVersions := crossScalaVersions.value.filterNot(Scala3 == _)
 )
 
 lazy val scalajsSettings = Seq(
@@ -128,7 +141,7 @@ val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVers
 // benchmarks and examples only
 val `json4s-native`  = "org.json4s" %% "json4s-native"  % "4.0.3"
 val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "4.0.3"
-val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.6"
+val `spray-json`     = ("io.spray"   %% "spray-json"     % "1.3.6").cross(CrossVersion.for3Use2_13)
 
 /////////////////////// PROJECTS /////////////////////////
 
@@ -202,7 +215,10 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     (Compile / packageDoc / mappings) ++= (parboiledCoreNative.project / Compile / packageDoc / mappings).value
   )
   .settings(
-    libraryDependencies ++= Seq(`scala-reflect`.value, utest.value),
+    libraryDependencies ++= {
+      if (isScala3.value) Seq(utest.value)
+      else Seq(`scala-reflect`.value, utest.value)
+    },
     (Compile / packageBin / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     (Compile / packageDoc / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
@@ -215,6 +231,7 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
       new RuleTransformer(filter).transform(_).head
     }
   )
+  .nativeSettings(nativeSettings)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
@@ -231,7 +248,11 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(libraryDependencies += scalaCheck.value)
   .settings(
     publish / skip := true,
-    libraryDependencies ++= Seq(`scala-reflect`.value, utest.value),
+    libraryDependencies ++= {
+      if (isScala3.value) Seq(utest.value)
+      else Seq(`scala-reflect`.value, utest.value)
+    },
     generateActionOps := ActionOpsBoilerplate((Compile / sourceManaged).value, streams.value),
     Compile / sourceGenerators += generateActionOps.taskValue
   )
+  .nativeSettings(nativeSettings)
