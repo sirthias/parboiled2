@@ -486,7 +486,9 @@ object Parser {
 
   object DeliveryScheme extends AlternativeDeliverySchemes {
 
-    implicit def Try[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
+    implicit def Try[L <: HList, Out](implicit
+        unpack: Unpack.Aux[L, Out]
+    ): DeliveryScheme[L] { type Result = Try[Out] } =
       new DeliveryScheme[L] {
         type Result = Try[Out]
         def success(result: L)            = Success(unpack(result))
@@ -497,7 +499,9 @@ object Parser {
 
   sealed abstract class AlternativeDeliverySchemes {
 
-    implicit def Either[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
+    implicit def Either[L <: HList, Out](implicit
+        unpack: Unpack.Aux[L, Out]
+    ): DeliveryScheme[L] { type Result = Either[ParseError, Out] } =
       new DeliveryScheme[L] {
         type Result = Either[ParseError, Out]
         def success(result: L)            = Right(unpack(result))
@@ -505,7 +509,7 @@ object Parser {
         def failure(error: Throwable)     = throw error
       }
 
-    implicit def Throw[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]) =
+    implicit def Throw[L <: HList, Out](implicit unpack: Unpack.Aux[L, Out]): DeliveryScheme[L] { type Result = Out } =
       new DeliveryScheme[L] {
         type Result = Out
         def success(result: L)            = unpack(result)

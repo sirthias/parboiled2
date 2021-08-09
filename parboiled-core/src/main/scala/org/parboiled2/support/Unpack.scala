@@ -33,7 +33,7 @@ sealed trait Unpack[L <: HList] {
 
 object Unpack extends AlternativeUnpacks {
 
-  implicit def fromAux[L <: HList, Out0](implicit aux: Aux[L, Out0]) =
+  implicit def fromAux[L <: HList, Out0](implicit aux: Aux[L, Out0]): Unpack[L] { type Out = Out0 } =
     new Unpack[L] {
       type Out = Out0
       def apply(hlist: L) = aux(hlist)
