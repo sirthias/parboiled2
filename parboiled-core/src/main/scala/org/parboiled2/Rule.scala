@@ -113,14 +113,7 @@ sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
 
 /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
   */
-object Rule extends Rule0 {
-
-  /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
-    */
-  implicit class Runnable[L <: HList](rule: RuleN[L]) {
-    def run()(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = macro ParserMacros.runImpl[L]
-  }
-}
+object Rule extends Rule0 with RuleRunnable
 
 abstract class RuleDSL extends RuleDSLBasics with RuleDSLCombinators with RuleDSLActions
 
