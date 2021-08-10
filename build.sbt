@@ -1,7 +1,7 @@
 import ReleaseTransformations._
 import sbtcrossproject.CrossPlugin.autoImport._
 
-val Scala3 = "3.0.0"
+val Scala3 = "3.0.1"
 
 val isScala3 = Def.setting(
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 == 3)
