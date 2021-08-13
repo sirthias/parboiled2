@@ -66,7 +66,7 @@ val commonSettings = Seq(
   // file headers
   headerLicense := Some(HeaderLicense.ALv2("2009-2019", "Mathias Doenitz")),
   // reformat main and test sources on compile
-  scalafmtOnCompile := true
+  scalafmtOnCompile := false
 )
 
 lazy val crossSettings = Seq(
