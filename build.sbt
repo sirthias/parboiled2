@@ -1,7 +1,9 @@
 import ReleaseTransformations._
 import sbtcrossproject.CrossPlugin.autoImport._
 
-val Scala3 = "3.0.1"
+val Scala2_12 = "2.12.14"
+val Scala2_13 = "2.13.6"
+val Scala3    = "3.0.1"
 
 val isScala3 = Def.setting(
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 == 3)
@@ -17,17 +19,15 @@ val commonSettings = Seq(
   scmInfo := Some(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
   ),
-  scalaVersion       := "2.12.14",
-  crossScalaVersions := Seq("2.12.14", "2.13.6", Scala3),
+  scalaVersion       := Scala3,
+  crossScalaVersions := Seq(Scala2_12, Scala2_13, Scala3),
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
     "UTF-8",
     "-feature",
     "-language:_",
-    "-unchecked",
-    "-Xlint:_,-missing-interpolator",
-    "-Ywarn-dead-code"
+    "-unchecked"
     //"-Ywarn-numeric-widen",
   ),
   scalacOptions ++= {
@@ -45,10 +45,14 @@ val commonSettings = Seq(
           "8",
           "-Xfatal-warnings",
           "-Xfuture",
+          "-Xlint:_,-missing-interpolator",
+          "-Ywarn-dead-code",
           "-Xsource:2.13" // new warning: deprecate assignments in argument position
         )
       case Some((2, 13)) =>
         Seq(
+          "-Xlint:_,-missing-interpolator",
+          "-Ywarn-dead-code",
           "-Ywarn-unused:imports,-patvars,-privates,-locals,-implicits,-explicits",
           "-Ycache-macro-class-loader:last-modified",
           "-Ybackend-parallelism",
@@ -76,7 +80,8 @@ lazy val crossSettings = Seq(
 
 lazy val nativeSettings = Seq(
   // Currently scala-native does not support Dotty
-  crossScalaVersions := crossScalaVersions.value.filterNot(Scala3 == _)
+  crossScalaVersions := crossScalaVersions.value.filterNot(Scala3 == _),
+  scalaVersion := Scala2_12
 )
 
 lazy val scalajsSettings = Seq(
@@ -141,7 +146,7 @@ val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVers
 // benchmarks and examples only
 val `json4s-native`  = "org.json4s" %% "json4s-native"  % "4.0.3"
 val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "4.0.3"
-val `spray-json`     = ("io.spray"   %% "spray-json"     % "1.3.6").cross(CrossVersion.for3Use2_13)
+val `spray-json`     = ("io.spray"  %% "spray-json"     % "1.3.6").cross(CrossVersion.for3Use2_13)
 
 /////////////////////// PROJECTS /////////////////////////
 
