@@ -157,7 +157,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class Cut(lhs: OpTree, rhs: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey             = reify(RuleTrace.Cut).tree
+    def ruleTraceNonTerminalKey = reify(RuleTrace.Cut).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       var matched = ${lhs.render(wrapped)}
       if (matched) {
@@ -331,7 +331,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class Optional(op: OpTree, collector: Collector) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey             = reify(RuleTrace.Optional).tree
+    def ruleTraceNonTerminalKey = reify(RuleTrace.Optional).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       val mark = __saveState
       val matched = ${op.render(wrapped)}
@@ -471,7 +471,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class AndPredicate(op: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey             = reify(RuleTrace.AndPredicate).tree
+    def ruleTraceNonTerminalKey = reify(RuleTrace.AndPredicate).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       val mark = __saveState
       val matched = ${op.render(wrapped)}
@@ -543,7 +543,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey             = reify(RuleTrace.Capture).tree
+    def ruleTraceNonTerminalKey = reify(RuleTrace.Capture).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       ${if (!wrapped) q"val start = cursor" else q"();"}
       val matched = ${op.render(wrapped)}
@@ -718,14 +718,14 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       def rewrite(arg: TermName, tree: Tree): Tree =
         tree match {
           case Block(statements, res) => block(statements, rewrite(arg, res))
-          case q"$p.$rule"            => q"""
+          case q"$p.$rule" => q"""
             val $arg = new __SubParserInput()  // TODO: avoid re-allocation by re-using a cached instance
             val __subParser = $p
             val offset = cursor
             __subParser.copyStateFrom(this, offset)
             try __subParser.$rule ne null
             finally this.copyStateFrom(__subParser, -offset)"""
-          case x                      => c.abort(x.pos, "Illegal runSubParser expr: " + show(x))
+          case x => c.abort(x.pos, "Illegal runSubParser expr: " + show(x))
         }
 
       val q"($arg => $body)" = c.untypecheck(fTree)
