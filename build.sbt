@@ -3,15 +3,15 @@ import sbtcrossproject.CrossPlugin.autoImport._
 
 val commonSettings = Seq(
   organization := "org.parboiled",
-  homepage := Some(new URL("http://parboiled.org")),
-  description := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
-  startYear := Some(2009),
-  licenses := Seq("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  homepage     := Some(new URL("http://parboiled.org")),
+  description  := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
+  startYear    := Some(2009),
+  licenses     := Seq("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   (Compile / unmanagedResources) += baseDirectory.value.getParentFile.getParentFile / "LICENSE",
   scmInfo := Some(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
   ),
-  scalaVersion := "2.12.14",
+  scalaVersion       := "2.12.14",
   crossScalaVersions := Seq("2.12.14", "2.13.6"),
   scalacOptions ++= Seq(
     "-deprecation",
@@ -63,7 +63,7 @@ val commonSettings = Seq(
 
 lazy val crossSettings = Seq(
   (Compile / scalafmt / sourceDirectories) := (Compile / unmanagedSourceDirectories).value,
-  (Test / scalafmt / sourceDirectories) := (Test / unmanagedSourceDirectories).value
+  (Test / scalafmt / sourceDirectories)    := (Test / unmanagedSourceDirectories).value
 )
 
 lazy val scalajsSettings = Seq(
@@ -73,11 +73,11 @@ lazy val scalajsSettings = Seq(
 )
 
 lazy val publishingSettings = Seq(
-  publishMavenStyle := true,
-  Test / publishArtifact := false,
-  pomIncludeRepository := (_ ⇒ false),
-  publishTo := sonatypePublishTo.value,
-  publishConfiguration := publishConfiguration.value.withOverwrite(true),
+  publishMavenStyle         := true,
+  Test / publishArtifact    := false,
+  pomIncludeRepository      := (_ ⇒ false),
+  publishTo                 := sonatypePublishTo.value,
+  publishConfiguration      := publishConfiguration.value.withOverwrite(true),
   publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
   developers := List(
     Developer("sirthias", "Mathias Doenitz", "devnull@bullet.io", url("https://github.com/sirthias")),
@@ -115,7 +115,7 @@ lazy val releaseSettings = {
 val utestSettings = Seq(testFrameworks := Seq(new TestFramework("utest.runner.Framework")))
 
 lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
-  OsgiKeys.exportPackage := Seq("org.parboiled2.*;version=${Bundle-Version}"),
+  OsgiKeys.exportPackage  := Seq("org.parboiled2.*;version=${Bundle-Version}"),
   OsgiKeys.privatePackage := Seq()
 )
 
@@ -205,7 +205,7 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     libraryDependencies ++= Seq(`scala-reflect`.value, utest.value),
     (Compile / packageBin / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     (Compile / packageDoc / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
-    pomPostProcess := {                                                          // we need to remove the dependency onto the parboiledCore module from the POM
+    pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
       import scala.xml.transform._
       import scala.xml.{NodeSeq, Node => XNode}
 
