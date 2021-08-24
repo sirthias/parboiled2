@@ -81,7 +81,7 @@ lazy val crossSettings = Seq(
 lazy val nativeSettings = Seq(
   // Currently scala-native does not support Dotty
   crossScalaVersions := crossScalaVersions.value.filterNot(Scala3 == _),
-  scalaVersion := Scala2_12
+  scalaVersion       := Scala2_12
 )
 
 lazy val scalajsSettings = Seq(
