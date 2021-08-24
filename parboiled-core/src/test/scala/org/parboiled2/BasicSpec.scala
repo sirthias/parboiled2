@@ -33,6 +33,7 @@ object BasicSpec extends TestParserSpec {
         "" must beMismatched
       }
 
+      /*
       "a simple char `val`" - new TestParser0 {
         val c          = 'x'
         def targetRule = rule(c)
@@ -194,8 +195,9 @@ object BasicSpec extends TestParserSpec {
         "abcde" must beMatchedWith(5)
         "abcdef" must beMatchedWith(6)
       }
+       */
     }
-
+    /*
     "The Parser" - {
       "disallow compilation of an illegal character range" - new Parser {
         // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
@@ -209,5 +211,6 @@ object BasicSpec extends TestParserSpec {
         compileError("""rule { "5" - "1" }""").msg ==> "lower bound must not be > upper bound"
       }
     }
+     */
   }
 }

@@ -22,12 +22,14 @@ private[parboiled2] trait ParserMacroMethods {
 
   /** Converts a compile-time only rule definition into the corresponding rule method implementation.
     */
-  def rule[I <: HList, O <: HList](r: Rule[I, O]): Rule[I, O] = ???
+  inline def rule[I <: HList, O <: HList](inline r: Rule[I, O]): Rule[I, O] = ${ ParserMacros.ruleImpl('r) }
 
   /** Converts a compile-time only rule definition into the corresponding rule method implementation
     * with an explicitly given name.
     */
-  def namedRule[I <: HList, O <: HList](name: String)(r: Rule[I, O]): Rule[I, O] = ???
+  inline def namedRule[I <: HList, O <: HList](name: String)(inline r: Rule[I, O]): Rule[I, O] = ${
+    ParserMacros.nameRuleImpl('name)('r)
+  }
 
 }
 
@@ -40,4 +42,44 @@ private[parboiled2] trait RuleRunnable {
   }
 }
 
-object ParserMacros {}
+object ParserMacros {
+  import scala.quoted._
+  import scala.compiletime._
+
+  def ruleImpl[I <: HList: Type, O <: HList: Type](r: Expr[Rule[I, O]])(using Quotes): Expr[Rule[I, O]] =
+    nameRuleImpl(Expr("todo"))(r)
+
+  def nameRuleImpl[I <: HList: Type, O <: HList: Type](
+      name: Expr[String]
+  )(r: Expr[Rule[I, O]])(using Quotes): Expr[Rule[I, O]] = {
+    import quotes.reflect.*
+    val opTree: OpTree = r match {
+      case '{ ($p: Parser).ch($c) } =>
+        println("Char rule!!")
+        CharMatch(p, c)
+      case _ => reportError("does not understand", name)
+    }
+
+    '{
+      def wrapped: Boolean = ${ opTree.render(wrapped = true) }
+      val matched          = wrapped
+      if (matched) org.parboiled2.Rule.asInstanceOf[Rule[I, O]] else null
+    }
+  }
+
+  private def reportError(error: String, expr: Expr[Any])(using quotes: Quotes): Nothing = {
+    quotes.reflect.report.error(error, expr)
+    throw new Exception(error)
+  }
+
+  sealed trait OpTree {
+    def render(wrapped: Boolean)(using Quotes): Expr[Boolean]
+  }
+
+  case class CharMatch(parser: Expr[Parser], charTree: Expr[Char]) extends OpTree {
+    override def render(wrapped: Boolean)(using Quotes): Expr[Boolean] =
+      '{
+        $parser.cursorChar == $charTree && $parser.__advance()
+      }
+  }
+}
