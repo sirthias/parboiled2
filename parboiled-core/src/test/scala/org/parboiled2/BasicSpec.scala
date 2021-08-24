@@ -33,7 +33,6 @@ object BasicSpec extends TestParserSpec {
         "" must beMismatched
       }
 
-      /*
       "a simple char `val`" - new TestParser0 {
         val c          = 'x'
         def targetRule = rule(c)
@@ -50,6 +49,7 @@ object BasicSpec extends TestParserSpec {
         "" must beMismatched
       }
 
+      /*
       "simple string literals" - new TestParser0 {
         def targetRule = rule("ab" ~ EOI)
         "" must beMismatched
