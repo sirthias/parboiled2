@@ -55,7 +55,6 @@ object ParserMacros {
     import quotes.reflect.*
     val opTree: OpTree = r match {
       case '{ ($p: Parser).ch($c) } =>
-        println("Char rule!!")
         CharMatch(p, c)
       case _ => reportError("does not understand", name)
     }
