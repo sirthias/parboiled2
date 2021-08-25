@@ -59,9 +59,12 @@ object ParserMacros {
       case _ => reportError("does not understand", name)
     }
 
+    val parser = opTree.parser
     '{
       def wrapped: Boolean = ${ opTree.render(wrapped = true) }
-      val matched          = wrapped
+      val matched =
+        if ($parser.__inErrorAnalysis) wrapped
+        else ${ opTree.render(wrapped = false) }
       if (matched) org.parboiled2.Rule.asInstanceOf[Rule[I, O]] else null
     }
   }
@@ -72,13 +75,31 @@ object ParserMacros {
   }
 
   sealed trait OpTree {
+    def parser: Expr[Parser]
     def render(wrapped: Boolean)(using Quotes): Expr[Boolean]
   }
 
-  case class CharMatch(parser: Expr[Parser], charTree: Expr[Char]) extends OpTree {
-    override def render(wrapped: Boolean)(using Quotes): Expr[Boolean] =
-      '{
+  sealed abstract class TerminalOpTree(parser: Expr[Parser]) extends OpTree {
+    def bubbleUp(using quotes: Quotes): Expr[Nothing] = '{ $parser.__bubbleUp($ruleTraceTerminal) }
+    def ruleTraceTerminal(using quotes: Quotes): Expr[RuleTrace.Terminal]
+
+    final def render(wrapped: Boolean)(using quotes: Quotes): Expr[Boolean] =
+      if (wrapped) '{
+        try ${ renderInner(wrapped) } catch { case org.parboiled2.Parser.StartTracingException => $bubbleUp }
+      }
+      else renderInner(wrapped)
+
+    protected def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean]
+  }
+
+  case class CharMatch(parser: Expr[Parser], charTree: Expr[Char]) extends TerminalOpTree(parser) {
+    def ruleTraceTerminal(using quotes: Quotes) = '{ org.parboiled2.RuleTrace.CharMatch($charTree) }
+    override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
+      val unwrappedTree = '{
         $parser.cursorChar == $charTree && $parser.__advance()
       }
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
+      else unwrappedTree
+    }
   }
 }
