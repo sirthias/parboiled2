@@ -97,7 +97,7 @@ object ParserMacros {
         .reduceLeft((l, r) => '{ val ll = $l; if (ll) $r else false })
   }
 
-  sealed abstract class TerminalOpTree(parser: Expr[Parser]) extends OpTree {
+  sealed abstract class TerminalOpTree extends OpTree {
     def bubbleUp(using quotes: Quotes): Expr[Nothing] = '{ $parser.__bubbleUp($ruleTraceTerminal) }
     def ruleTraceTerminal(using quotes: Quotes): Expr[RuleTrace.Terminal]
 
@@ -110,7 +110,7 @@ object ParserMacros {
     protected def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean]
   }
 
-  case class CharMatch(parser: Expr[Parser], charTree: Expr[Char]) extends TerminalOpTree(parser) {
+  case class CharMatch(parser: Expr[Parser], charTree: Expr[Char]) extends TerminalOpTree {
     def ruleTraceTerminal(using quotes: Quotes) = '{ org.parboiled2.RuleTrace.CharMatch($charTree) }
     override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
       val unwrappedTree = '{
