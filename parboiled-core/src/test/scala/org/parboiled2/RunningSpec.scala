@@ -22,10 +22,11 @@ import utest._
 object RunningSpec extends TestSuite {
 
   class TestParser(val input: ParserInput) extends Parser {
-    def A               = rule('a' ~ B ~ EOI)
-    def B               = rule(oneOrMore('b'))
-    def C(n: Int)       = rule(n.times('c'))
-    def go(): Try[Unit] = null
+    def A                 = rule('a' ~ B ~ EOI)
+    def B                 = rule(oneOrMore('b'))
+    def C(n: Int)(m: Int) = rule((n - m).times('c'))
+    def D[S <: String]    = rule('d')
+    def go(): Try[Unit]   = null
   }
 
   val tests = Tests {
@@ -43,12 +44,31 @@ object RunningSpec extends TestSuite {
 
       "parser.rule(args).run()" - {
         val p = new TestParser("ccc")
-        p.C(3).run() ==> Success(())
+        p.C(4)(1).run() ==> Success(())
+      }
+
+      "parser.rule[targs].run()" - {
+        val p = new TestParser("d")
+        p.D[String].run() ==> Success(())
+      }
+
+      "this.rule.run()" - {
+        val p = new TestParser("b") {
+          override def go() = B.run()
+        }
+        p.go() ==> Success(())
       }
 
       "rule(B ~ EOI).run()" - {
         val p = new TestParser("bb") {
           override def go() = rule(B ~ EOI).run()
+        }
+        p.go() ==> Success(())
+      }
+
+      "namedRule(B ~ EOI).run()" - {
+        val p = new TestParser("bb") {
+          override def go() = namedRule("règle")(B ~ EOI).run()
         }
         p.go() ==> Success(())
       }
