@@ -60,13 +60,12 @@ object ParserMacros {
               .~((${ rhs }: Rule[I, O]))($c, $d)
           } =>
         Sequence(Seq(opTreeF(lhs), opTreeF(rhs)))
-      case '{ ($p: Parser).ch($c) } =>
-        CharMatch(p, c)
-      case '{ ($p: Parser).str($s) } =>
-        StringMatch(p, s)
-      case '{ ($p: Parser).predicate($pr) } =>
-        CharPredicateMatch(p, pr)
-      case _ => reportError(s"Invalid rule definition: '${r.show}';", r)
+      case '{ ($p: Parser).ch($c) }         => CharMatch(p, c)
+      case '{ ($p: Parser).str($s) }        => StringMatch(p, s)
+      case '{ ($p: Parser).predicate($pr) } => CharPredicateMatch(p, pr)
+      case '{ ($p: Parser).anyOf($s) }      => AnyOf(p, s)
+      case '{ ($p: Parser).noneOf($s) }     => NoneOf(p, s)
+      case _                                => reportError(s"Invalid rule definition: '${r.show}';", r)
     }
 
     val opTree: OpTree = opTreeF(r)
@@ -173,6 +172,26 @@ object ParserMacros {
 
     override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
       val unwrappedTree = '{ $predicateTree($parser.cursorChar) && $parser.__advance() }
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
+      else unwrappedTree
+    }
+  }
+
+  case class AnyOf(parser: Expr[Parser], stringTree: Expr[String]) extends TerminalOpTree {
+    def ruleTraceTerminal(using quotes: Quotes) = '{ org.parboiled2.RuleTrace.AnyOf($stringTree) }
+
+    override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
+      val unwrappedTree = '{ $parser.__matchAnyOf($stringTree) }
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
+      else unwrappedTree
+    }
+  }
+
+  case class NoneOf(parser: Expr[Parser], stringTree: Expr[String]) extends TerminalOpTree {
+    def ruleTraceTerminal(using quotes: Quotes) = '{ org.parboiled2.RuleTrace.NoneOf($stringTree) }
+
+    override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
+      val unwrappedTree = '{ $parser.__matchNoneOf($stringTree) }
       if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
       else unwrappedTree
     }
