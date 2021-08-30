@@ -88,11 +88,31 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     // TODO
   }
 
+  def Sequence(lhs: OpTree, rhs: OpTree): Sequence =
+    lhs -> rhs match {
+      case (Sequence(lops), Sequence(rops)) => Sequence(lops ++ rops)
+      case (Sequence(lops), _)              => Sequence(lops :+ rhs)
+      case (_, Sequence(ops))               => Sequence(lhs +: ops)
+      case _                                => Sequence(Seq(lhs, rhs))
+    }
   case class Sequence(ops: Seq[OpTree]) extends OpTree {
     override def render(wrapped: Boolean): Expr[Boolean] =
       ops
         .map(_.render(wrapped))
         .reduceLeft((l, r) => '{ val ll = $l; if (ll) $r else false })
+  }
+
+  case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.Capture }
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      '{
+        val start1  = ${ if (wrapped) start else '{ $parser.cursor } }
+        val matched = ${ op.render(wrapped) }
+        if (matched) {
+          $parser.valueStack.push($parser.input.sliceString(start1, $parser.cursor))
+          true
+        } else false
+      }
   }
 
   case class CharMatch(charTree: Expr[Char]) extends TerminalOpTree {
@@ -243,19 +263,6 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
       else unwrappedTree
     }
-  }
-
-  case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = '{ RuleTrace.Capture }
-    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
-      '{
-        val start1  = ${ if (wrapped) start else '{ $parser.cursor } }
-        val matched = ${ op.render(wrapped) }
-        if (matched) {
-          $parser.valueStack.push($parser.input.sliceString(start1, $parser.cursor))
-          true
-        } else false
-      }
   }
 
   case class Unknown(syntax: String, tree: String, outerSyntax: String) extends TerminalOpTree {
