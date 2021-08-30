@@ -103,7 +103,6 @@ object BasicSpec extends TestParserSpec {
         "ab" must beMismatched
       }
 
-      /*
       "ignoreCase(char)" - new TestParser0 {
         def targetRule = rule(ignoreCase('x') ~ EOI)
         "" must beMismatched
@@ -122,6 +121,7 @@ object BasicSpec extends TestParserSpec {
         "abc" must beMismatched
       }
 
+      /*
       "ANY" - new TestParser0 {
         def targetRule = rule(ANY)
         "a" must beMatched

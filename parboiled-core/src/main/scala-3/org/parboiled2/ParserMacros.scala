@@ -60,12 +60,14 @@ object ParserMacros {
               .~((${ rhs }: Rule[I, O]))($c, $d)
           } =>
         Sequence(Seq(opTreeF(lhs), opTreeF(rhs)))
-      case '{ ($p: Parser).ch($c) }         => CharMatch(p, c)
-      case '{ ($p: Parser).str($s) }        => StringMatch(p, s)
-      case '{ ($p: Parser).predicate($pr) } => CharPredicateMatch(p, pr)
-      case '{ ($p: Parser).anyOf($s) }      => AnyOf(p, s)
-      case '{ ($p: Parser).noneOf($s) }     => NoneOf(p, s)
-      case _                                => reportError(s"Invalid rule definition: '${r.show}';", r)
+      case '{ ($p: Parser).ch($c) }                 => CharMatch(p, c)
+      case '{ ($p: Parser).str($s) }                => StringMatch(p, s)
+      case '{ ($p: Parser).ignoreCase($c: Char) }   => IgnoreCaseChar(p, c)
+      case '{ ($p: Parser).ignoreCase($s: String) } => IgnoreCaseString(p, s)
+      case '{ ($p: Parser).predicate($pr) }         => CharPredicateMatch(p, pr)
+      case '{ ($p: Parser).anyOf($s) }              => AnyOf(p, s)
+      case '{ ($p: Parser).noneOf($s) }             => NoneOf(p, s)
+      case _                                        => reportError(s"Invalid rule definition: '${r.show}';", r)
     }
 
     val opTree: OpTree = opTreeF(r)
@@ -164,6 +166,58 @@ object ParserMacros {
       // }
       if (wrapped) '{ $parser.__matchStringWrapped($stringTree) }
       else '{ $parser.__matchString($stringTree) }
+  }
+
+  case class IgnoreCaseChar(parser: Expr[Parser], charTree: Expr[Char]) extends TerminalOpTree {
+    def ruleTraceTerminal(using quotes: Quotes) = '{ org.parboiled2.RuleTrace.IgnoreCaseChar($charTree) }
+
+    override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
+      val unwrappedTree = '{
+        _root_.java.lang.Character.toLowerCase($parser.cursorChar) == $charTree && $parser.__advance()
+      }
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
+      else unwrappedTree
+    }
+  }
+
+  case class IgnoreCaseString(parser: Expr[Parser], stringTree: Expr[String]) extends OpTree {
+    final private val autoExpandMaxStringLength = 8
+
+    override def render(wrapped: Boolean)(using Quotes): Expr[Boolean] =
+      // TODO: optimize litera constant
+      // def unrollUnwrapped(s: String, ix: Int = 0): Tree =
+      //   if (ix < s.length) q"""
+      //     if (_root_.java.lang.Character.toLowerCase(cursorChar) == ${s charAt ix}) {
+      //       __advance()
+      //       ${unrollUnwrapped(s, ix + 1)}
+      //     } else false"""
+      //   else q"true"
+      // def unrollWrapped(s: String, ix: Int = 0): Tree =
+      //   if (ix < s.length) {
+      //     val ch = s charAt ix
+      //     q"""if (_root_.java.lang.Character.toLowerCase(cursorChar) == $ch) {
+      //       __advance()
+      //       __updateMaxCursor()
+      //       ${unrollWrapped(s, ix + 1)}
+      //     } else {
+      //       try __registerMismatch()
+      //       catch {
+      //         case org.parboiled2.Parser.StartTracingException =>
+      //           import org.parboiled2.RuleTrace._
+      //           __bubbleUp(NonTerminal(IgnoreCaseString($stringTree), -$ix) :: Nil, IgnoreCaseChar($ch))
+      //       }
+      //     }"""
+      //   } else q"true"
+
+      // stringTree match {
+      //   case Literal(Constant(s: String)) if s.length <= autoExpandMaxStringLength =>
+      //     if (s.isEmpty) q"true" else if (wrapped) unrollWrapped(s) else unrollUnwrapped(s)
+      //   case _ =>
+      //     if (wrapped) q"__matchIgnoreCaseStringWrapped($stringTree)"
+      //     else q"__matchIgnoreCaseString($stringTree)"
+      // }
+      if (wrapped) '{ $parser.__matchIgnoreCaseStringWrapped($stringTree) }
+      else '{ $parser.__matchIgnoreCaseString($stringTree) }
   }
 
   case class CharPredicateMatch(parser: Expr[Parser], predicateTree: Expr[CharPredicate])
