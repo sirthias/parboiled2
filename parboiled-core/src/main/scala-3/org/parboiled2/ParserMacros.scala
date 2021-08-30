@@ -336,7 +336,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     override protected def renderInner(wrapped: Boolean): Expr[Boolean] =
       '{
         throw new RuntimeException(
-          s"unknown rule: [${${ Expr(syntax) }}] '${${ Expr(tree) }} in [${${ Expr(outerSyntax) }}]"
+          s"unknown rule: [${${ Expr(syntax) }}] '${${ Expr(tree) }}' in [${${ Expr(outerSyntax) }}]"
         )
       }
   }
@@ -369,13 +369,12 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree = {
     import quotes.reflect.*
 
-    def collector(lifter: Term): Collector = rule0Collector
-    /*lifterTree match {
-        case q"support.this.$a.forRule0[$b]"             => rule0Collector
-        case q"support.this.$a.forRule1[$b, $c]"         => rule1Collector
-        case q"support.this.$a.forReduction[$b, $c, $d]" => rule0Collector
-        case x                                           => c.abort(x.pos, "Unexpected Lifter: " + lifterTree)
-      }*/
+    def collector(lifter: Term): Collector =
+      lifter match {
+        case TypeApply(Ident("forRule0" | "forReduction"), _) => rule0Collector
+        case TypeApply(Ident("forRule1"), _)                  => rule1Collector
+        case x                                                => reportError(s"Unexpected lifter ${lifter.show(using Printer.TreeStructure)}", lifter.asExpr)
+      }
 
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
       case '{ ($p: Parser).ch($c) }                              => CharMatch(c)
@@ -396,7 +395,22 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           case Apply(TypeApply(Select(lhs, "|"), _), List(rhs))           => FirstOf(rec(lhs), rec(rhs))
           case Apply(Apply(TypeApply(Select(_, "zeroOrMore"), _), List(arg)), List(l)) =>
             ZeroOrMore(rec(arg), collector(l))
-          case Apply(Select(base, "*"), List(l))                              => ZeroOrMore(rec(base), collector(l))
+          case Apply(Select(base, "*"), List(l)) => ZeroOrMore(rec(base), collector(l))
+
+          case Apply(
+                Select(
+                  Apply(
+                    TypeApply(Select(_, "rule2WithSeparatedBy"), _),
+                    List(Apply(Apply(TypeApply(Select(_, "zeroOrMore"), _), List(base)), List(l)))
+                  ),
+                  "separatedBy"
+                ),
+                List(sep)
+              ) =>
+            ZeroOrMore(rec(base), collector(l), Separator(rec(sep)))
+          case Apply(Apply(Select(base, "*"), List(sep)), List(l)) =>
+            ZeroOrMore(rec(base), collector(l), Separator(rec(sep)))
+
           case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) => Capture(rec(arg))
           case _                                                              => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
         }
@@ -413,7 +427,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   /////////////////////////////////// helpers ////////////////////////////////////
 
   trait Collector {
-    def withCollector[T](f: CollectorInstance => T): T
+    def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean]
   }
   trait CollectorInstance {
     def popToBuilder: Expr[Unit]
@@ -422,18 +436,22 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   // no-op collector
   object rule0Collector extends Collector with CollectorInstance {
-    override def withCollector[T](f: CollectorInstance => T): T = f(this)
-    val popToBuilder: Expr[Unit]                                = '{}
-    val pushBuilderResult: Expr[Unit]                           = '{}
+    override def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean] = f(this)
+    val popToBuilder: Expr[Unit]                                                     = '{}
+    val pushBuilderResult: Expr[Unit]                                                = '{}
   }
 
-  lazy val rule1Collector: Collector = null /* FIXME: new Collector(
-    valBuilder = q"val builder = new scala.collection.immutable.VectorBuilder[Any]",
-    popToBuilder = q"builder += valueStack.pop()",
-    pushBuilderResult = q"valueStack.push(builder.result()); true",
-    pushSomePop = q"valueStack.push(Some(valueStack.pop()))",
-    pushNone = q"valueStack.push(None)"
-  )*/
+  object rule1Collector extends Collector {
+    override def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean] = '{
+      val builder = new scala.collection.immutable.VectorBuilder[Any]
+      ${
+        f(new CollectorInstance {
+          override def popToBuilder: Expr[Unit]      = '{ builder += $parser.valueStack.pop() }
+          override def pushBuilderResult: Expr[Unit] = '{ $parser.valueStack.push(builder.result()) }
+        })
+      }
+    }
+  }
 
   type Separator = Boolean => Expr[Boolean]
   def Separator(op: OpTree): Separator = wrapped => op.render(wrapped)
