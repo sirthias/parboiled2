@@ -128,7 +128,6 @@ object BasicSpec extends TestParserSpec {
         "" must beMismatched
       }
 
-      /*
       "EOI" - new TestParser0 {
         def targetRule = rule(EOI)
         "" must beMatched
@@ -137,8 +136,8 @@ object BasicSpec extends TestParserSpec {
 
       "character ranges" - new TestParser0 {
         // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
-        override def TestableString = rule(("1" - "5") ~ EOI)
-        def targetRule              = TestableString
+        override def TestableString: Rule0 = rule(("1" - "5") ~ EOI)
+        def targetRule                     = TestableString
 
         "1" must beMatched
         "3" must beMatched
@@ -149,6 +148,7 @@ object BasicSpec extends TestParserSpec {
         "8" must beMismatched
       }
 
+      /*
       "MATCH" - new TestParser0 {
         def targetRule = rule(MATCH ~ EOI)
         "" must beMatched
@@ -166,6 +166,7 @@ object BasicSpec extends TestParserSpec {
         def typed[S <: String]     = rule(MATCH)
         "foo-bar42-baz1337-free" must beMatched
       }
+       */
 
       "Map[String, T]" - new TestParser1[Int] {
         val colors     = Map("red" -> 1, "green" -> 2, "blue" -> 3)
@@ -195,9 +196,8 @@ object BasicSpec extends TestParserSpec {
         "abcde" must beMatchedWith(5)
         "abcdef" must beMatchedWith(6)
       }
-       */
     }
-    /*
+
     "The Parser" - {
       "disallow compilation of an illegal character range" - new Parser {
         // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
@@ -211,6 +211,5 @@ object BasicSpec extends TestParserSpec {
         compileError("""rule { "5" - "1" }""").msg ==> "lower bound must not be > upper bound"
       }
     }
-     */
   }
 }

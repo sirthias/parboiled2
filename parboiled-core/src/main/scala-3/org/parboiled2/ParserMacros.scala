@@ -122,6 +122,14 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       if (wrapped) '{ $parser.__matchStringWrapped($stringTree) }
       else '{ $parser.__matchString($stringTree) }
   }
+
+  case class MapMatch(mapTree: Expr[Map[String, Any]], ignoreCaseTree: Expr[Boolean]) extends OpTree {
+
+    override def render(wrapped: Boolean): Expr[Boolean] =
+      if (wrapped) '{ $parser.__matchMapWrapped($mapTree, $ignoreCaseTree) }
+      else '{ $parser.__matchMap($mapTree, $ignoreCaseTree) }
+  }
+
   case class IgnoreCaseChar(charTree: Expr[Char]) extends TerminalOpTree {
     def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.IgnoreCaseChar($charTree) }
 
@@ -214,23 +222,51 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     }
   }
 
+  def CharRange(lowerTree: Expr[String], upperTree: Expr[String]): CharacterRange =
+    (lowerTree.value, upperTree.value) match {
+      case (Some(lower), Some(upper)) =>
+        if (lower.length != 1) reportError("lower bound must be a single char string", lowerTree)
+        if (upper.length != 1) reportError("upper bound must be a single char string", upperTree)
+        val lowerBoundChar = lower.charAt(0)
+        val upperBoundChar = upper.charAt(0)
+        if (lowerBoundChar > upperBoundChar) reportError("lower bound must not be > upper bound", lowerTree)
+        CharacterRange(Expr(lowerBoundChar), Expr(upperBoundChar))
+      case _ => reportError("Character ranges must be specified with string literals", lowerTree)
+    }
+
+  case class CharacterRange(lowerBound: Expr[Char], upperBound: Expr[Char]) extends TerminalOpTree {
+    def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.CharRange($lowerBound, $upperBound) }
+
+    override def renderInner(wrapped: Boolean): Expr[Boolean] = {
+      val unwrappedTree = '{
+        val char = $parser.cursorChar
+        $lowerBound <= char && char <= $upperBound && $parser.__advance()
+      }
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
+      else unwrappedTree
+    }
+  }
+
   def deconstruct(rule: Expr[Rule[_, _]]): OpTree = {
     import quotes.reflect.*
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
-      case '{ ($p: Parser).ch($c) }                 => CharMatch(c)
-      case '{ ($p: Parser).str($s) }                => StringMatch(s)
-      case '{ ($p: Parser).ignoreCase($c: Char) }   => IgnoreCaseChar(c)
-      case '{ ($p: Parser).ignoreCase($s: String) } => IgnoreCaseString(s)
-      case '{ ($p: Parser).predicate($pr) }         => CharPredicateMatch(pr)
-      case '{ ($p: Parser).anyOf($s) }              => AnyOf(s)
-      case '{ ($p: Parser).noneOf($s) }             => NoneOf(s)
-      case '{ ($p: Parser).ANY }                    => ANY
-      case x                                        =>
+      case '{ ($p: Parser).ch($c) }                              => CharMatch(c)
+      case '{ ($p: Parser).str($s) }                             => StringMatch(s)
+      case '{ ($p: Parser).valueMap($m: Map[String, Any]) }      => MapMatch(m, '{ false })
+      case '{ ($p: Parser).valueMap($m: Map[String, Any], $ic) } => MapMatch(m, ic)
+      case '{ ($p: Parser).ignoreCase($c: Char) }                => IgnoreCaseChar(c)
+      case '{ ($p: Parser).ignoreCase($s: String) }              => IgnoreCaseString(s)
+      case '{ ($p: Parser).predicate($pr) }                      => CharPredicateMatch(pr)
+      case '{ ($p: Parser).anyOf($s) }                           => AnyOf(s)
+      case '{ ($p: Parser).noneOf($s) }                          => NoneOf(s)
+      case '{ ($p: Parser).ANY }                                 => ANY
+      case '{ ($p: Parser).str2CharRangeSupport($l).-($r) }      => CharRange(l, r)
+      case x                                                     =>
         // These patterns cannot be parsed as quoted patterns because of the complicated type applies
         x.asTerm.underlyingArgument match {
           case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _) =>
             Sequence(Seq(rec(lhs), rec(rhs)))
-          case _ => reportError(s"Invalid rule definition: [$x]", x)
+          case _ => reportError(s"Invalid rule definition: [${x.show}]", x)
         }
     }
 
@@ -239,7 +275,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   private def reportError(error: String, expr: Expr[Any]): Nothing = {
     quotes.reflect.report.error(error, expr)
-    throw new Exception(error)
+    throw new scala.quoted.runtime.StopMacroExpansion
   }
 }
 
