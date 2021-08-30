@@ -356,7 +356,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) =>
             Capture(rec(arg))
           case _ =>
-            Unknown(x.toString, rule.show, outerRule.toString)
+            Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
         }
     }
 
