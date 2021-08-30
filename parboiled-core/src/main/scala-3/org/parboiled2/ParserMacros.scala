@@ -243,8 +243,10 @@ object ParserMacros {
 
   def ruleImpl[I <: HList: Type, O <: HList: Type](parser: Expr[Parser], r: Expr[Rule[I, O]])(using
       Quotes
-  ): Expr[Rule[I, O]] =
-    nameRuleImpl(parser, Expr("todo"), r)
+  ): Expr[Rule[I, O]] = {
+    import quotes.reflect.*
+    nameRuleImpl(parser, Expr(Symbol.spliceOwner.owner.name), r)
+  }
 
   def nameRuleImpl[I <: HList: Type, O <: HList: Type](parser: Expr[Parser], name: Expr[String], r: Expr[Rule[I, O]])(
       using Quotes
