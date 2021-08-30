@@ -165,6 +165,39 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         }
       }
   }
+  case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
+    def ruleTraceNonTerminalKey       = '{ RuleTrace.OneOrMore }
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      collector.withCollector { coll =>
+        '{
+          @ _root_.scala.annotation.tailrec
+          def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
+            val matched = ${ op.render(wrapped) }
+            if (matched) {
+              ${ coll.popToBuilder }
+              ${
+                if (separator eq null) '{ rec($parser.__saveState) }
+                else
+                  '{
+                    val m = $parser.__saveState
+                    if (${ separator(wrapped) }) rec(m) else m
+                  }
+              }
+            } else mark
+          }
+
+          val firstMark = $parser.__saveState
+          val mark      = rec(firstMark)
+          mark != firstMark && { // FIXME: almost the same as ZeroOrMore and should be combined
+            $parser.__restoreState(mark)
+            ${ coll.pushBuilderResult }
+            true
+          }
+        }
+      }
+  }
 
   case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Capture }
@@ -393,6 +426,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         x.asTerm.underlyingArgument match {
           case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _) => Sequence(Seq(rec(lhs), rec(rhs)))
           case Apply(TypeApply(Select(lhs, "|"), _), List(rhs))           => FirstOf(rec(lhs), rec(rhs))
+
           case Apply(Apply(TypeApply(Select(_, "zeroOrMore"), _), List(arg)), List(l)) =>
             ZeroOrMore(rec(arg), collector(l))
           case Apply(Select(base, "*"), List(l)) => ZeroOrMore(rec(base), collector(l))
@@ -410,6 +444,24 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             ZeroOrMore(rec(base), collector(l), Separator(rec(sep)))
           case Apply(Apply(Select(base, "*"), List(sep)), List(l)) =>
             ZeroOrMore(rec(base), collector(l), Separator(rec(sep)))
+
+          case Apply(Apply(TypeApply(Select(_, "oneOrMore"), _), List(arg)), List(l)) =>
+            OneOrMore(rec(arg), collector(l))
+          case Apply(Select(base, "+"), List(l)) => OneOrMore(rec(base), collector(l))
+
+          case Apply(
+                Select(
+                  Apply(
+                    TypeApply(Select(_, "rule2WithSeparatedBy"), _),
+                    List(Apply(Apply(TypeApply(Select(_, "oneOrMore"), _), List(base)), List(l)))
+                  ),
+                  "separatedBy"
+                ),
+                List(sep)
+              ) =>
+            OneOrMore(rec(base), collector(l), Separator(rec(sep)))
+          case Apply(Apply(Select(base, "+"), List(sep)), List(l)) =>
+            OneOrMore(rec(base), collector(l), Separator(rec(sep)))
 
           case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) => Capture(rec(arg))
           case _                                                              => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
