@@ -48,6 +48,30 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     def render(wrapped: Boolean): Expr[Boolean]
   }
 
+  sealed abstract class NonTerminalOpTree extends OpTree {
+    def bubbleUp(e: Expr[org.parboiled2.Parser#TracingBubbleException], start: Expr[Int]): Expr[Nothing]
+
+    // renders a Boolean Tree
+    def render(wrapped: Boolean): Expr[Boolean] =
+      if (wrapped) '{
+        val start = $parser.cursor
+        try ${ renderInner('start, wrapped) } catch {
+          case e: org.parboiled2.Parser#TracingBubbleException => ${ bubbleUp('e, 'start) }
+        }
+      }
+      else renderInner(Expr(-1) /* dummy, won't be used */, wrapped)
+
+    // renders a Boolean Tree
+    protected def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean]
+  }
+
+  sealed abstract class DefaultNonTerminalOpTree extends NonTerminalOpTree {
+    def bubbleUp(e: Expr[org.parboiled2.Parser#TracingBubbleException], start: Expr[Int]): Expr[Nothing] = '{
+      $e.bubbleUp($ruleTraceNonTerminalKey, $start)
+    }
+    def ruleTraceNonTerminalKey: Expr[RuleTrace.NonTerminalKey]
+  }
+
   sealed abstract class TerminalOpTree extends OpTree {
     def bubbleUp: Expr[Nothing] = '{ $parser.__bubbleUp($ruleTraceTerminal) }
     def ruleTraceTerminal: Expr[RuleTrace.Terminal]
@@ -60,7 +84,6 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     protected def renderInner(wrapped: Boolean): Expr[Boolean]
   }
-
   sealed abstract class PotentiallyNamedTerminalOpTree extends TerminalOpTree {
     // TODO
   }
@@ -122,6 +145,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       if (wrapped) '{ $parser.__matchStringWrapped($stringTree) }
       else '{ $parser.__matchString($stringTree) }
   }
+
   case class IgnoreCaseChar(charTree: Expr[Char]) extends TerminalOpTree {
     def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.IgnoreCaseChar($charTree) }
 
@@ -214,7 +238,32 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     }
   }
 
-  def deconstruct(rule: Expr[Rule[_, _]]): OpTree = {
+  case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.Capture }
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      '{
+        val start1  = ${ if (wrapped) start else '{ $parser.cursor } }
+        val matched = ${ op.render(wrapped) }
+        if (matched) {
+          $parser.valueStack.push($parser.input.sliceString(start1, $parser.cursor))
+          true
+        } else false
+      }
+  }
+
+  case class Unknown(syntax: String, tree: String, outerSyntax: String) extends TerminalOpTree {
+    override def ruleTraceTerminal: Expr[RuleTrace.Terminal] =
+      '{ RuleTrace.Fail(s"unknown rule: $$infoExpr") }
+
+    override protected def renderInner(wrapped: Boolean): Expr[Boolean] =
+      '{
+        throw new RuntimeException(
+          s"unknown rule: [${${ Expr(syntax) }}] '${${ Expr(tree) }} in [${${ Expr(outerSyntax) }}]"
+        )
+      }
+  }
+
+  def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree = {
     import quotes.reflect.*
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
       case '{ ($p: Parser).ch($c) }                 => CharMatch(c)
@@ -230,11 +279,14 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         x.asTerm.underlyingArgument match {
           case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _) =>
             Sequence(Seq(rec(lhs), rec(rhs)))
-          case _ => reportError(s"Invalid rule definition: [$x]", x)
+          case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) =>
+            Capture(rec(arg))
+          case _ =>
+            Unknown(x.toString, rule.show, outerRule.toString)
         }
     }
 
-    rec(rule.asTerm)
+    rec(outerRule.asTerm)
   }
 
   private def reportError(error: String, expr: Expr[Any]): Nothing = {
