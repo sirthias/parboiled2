@@ -67,7 +67,7 @@ object CombinatorSpec extends TestParserSpec {
         "b" must beMismatched
       }
 
-      "`Rule0.*.sep('|')` modifier" - new TestParser0 {
+      "`Rule0.*('|')` modifier" - new TestParser0 {
         def targetRule = rule(str("a").*('|') ~ EOI)
         "" must beMatched
         "a" must beMatched
