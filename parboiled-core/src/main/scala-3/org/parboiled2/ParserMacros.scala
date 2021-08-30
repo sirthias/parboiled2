@@ -102,6 +102,36 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         .reduceLeft((l, r) => '{ val ll = $l; if (ll) $r else false })
   }
 
+  def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
+    lhs -> rhs match {
+      case (FirstOf(lops), FirstOf(rops)) => FirstOf(lops ++ rops)
+      case (FirstOf(lops), _)             => FirstOf(lops :+ rhs)
+      case (_, FirstOf(ops))              => FirstOf(lhs +: ops)
+      case _                              => FirstOf(Seq(lhs, rhs))
+    }
+  case class FirstOf(ops: Seq[OpTree]) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.FirstOf }
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      '{
+        val mark = $parser.__saveState
+        ${
+          ops
+            .map(_.render(wrapped))
+            .reduceLeft((l0, r) =>
+              '{
+                val l = $l0
+                if (!l) {
+                  $parser.__restoreState(mark)
+                  $r
+                } else
+                  true // work-around for https://issues.scala-lang.org/browse/SI-8657", FIXME: still valid for dotty?
+              }
+            )
+        }
+      }
+  }
+
   case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Capture }
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
@@ -321,6 +351,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         x.asTerm.underlyingArgument match {
           case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _) =>
             Sequence(Seq(rec(lhs), rec(rhs)))
+          case Apply(TypeApply(Select(lhs, "|"), _), List(rhs)) =>
+            FirstOf(rec(lhs), rec(rhs))
           case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) =>
             Capture(rec(arg))
           case _ =>
