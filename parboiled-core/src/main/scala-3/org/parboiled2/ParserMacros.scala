@@ -64,7 +64,9 @@ object ParserMacros {
         CharMatch(p, c)
       case '{ ($p: Parser).str($s) } =>
         StringMatch(p, s)
-      case _ => reportError("Invalid rule definition", r)
+      case '{ ($p: Parser).predicate($pr) } =>
+        CharPredicateMatch(p, pr)
+      case _ => reportError(s"Invalid rule definition: '${r.show}';", r)
     }
 
     val opTree: OpTree = opTreeF(r)
@@ -108,6 +110,10 @@ object ParserMacros {
       else renderInner(wrapped)
 
     protected def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean]
+  }
+
+  sealed abstract class PotentiallyNamedTerminalOpTree extends TerminalOpTree {
+    // TODO
   }
 
   case class CharMatch(parser: Expr[Parser], charTree: Expr[Char]) extends TerminalOpTree {
@@ -159,5 +165,16 @@ object ParserMacros {
       // }
       if (wrapped) '{ $parser.__matchStringWrapped($stringTree) }
       else '{ $parser.__matchString($stringTree) }
+  }
+
+  case class CharPredicateMatch(parser: Expr[Parser], predicateTree: Expr[CharPredicate])
+      extends PotentiallyNamedTerminalOpTree {
+    def ruleTraceTerminal(using quotes: Quotes) = '{ org.parboiled2.RuleTrace.CharPredicateMatch($predicateTree) }
+
+    override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
+      val unwrappedTree = '{ $predicateTree($parser.cursorChar) && $parser.__advance() }
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
+      else unwrappedTree
+    }
   }
 }

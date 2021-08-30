@@ -75,7 +75,6 @@ object BasicSpec extends TestParserSpec {
         "abc" must beMismatched
       }
 
-      /*
       "a CharPredicate" - new TestParser0 {
         def targetRule = rule(CharPredicate.Digit)
         "0" must beMatched
@@ -84,6 +83,7 @@ object BasicSpec extends TestParserSpec {
         "" must beMismatched
       }
 
+      /*
       "anyOf" - new TestParser0 {
         def targetRule = rule(anyOf("abc") ~ EOI)
         "" must beMismatched
