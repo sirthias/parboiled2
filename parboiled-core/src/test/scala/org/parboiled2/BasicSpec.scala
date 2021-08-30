@@ -121,7 +121,6 @@ object BasicSpec extends TestParserSpec {
         "abc" must beMismatched
       }
 
-      /*
       "ANY" - new TestParser0 {
         def targetRule = rule(ANY)
         "a" must beMatched
@@ -129,6 +128,7 @@ object BasicSpec extends TestParserSpec {
         "" must beMismatched
       }
 
+      /*
       "EOI" - new TestParser0 {
         def targetRule = rule(EOI)
         "" must beMatched

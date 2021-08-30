@@ -67,6 +67,7 @@ object ParserMacros {
       case '{ ($p: Parser).predicate($pr) }         => CharPredicateMatch(p, pr)
       case '{ ($p: Parser).anyOf($s) }              => AnyOf(p, s)
       case '{ ($p: Parser).noneOf($s) }             => NoneOf(p, s)
+      case '{ ($p: Parser).ANY }                    => ANY(p)
       case _                                        => reportError(s"Invalid rule definition: '${r.show}';", r)
     }
 
@@ -246,6 +247,16 @@ object ParserMacros {
 
     override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
       val unwrappedTree = '{ $parser.__matchNoneOf($stringTree) }
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
+      else unwrappedTree
+    }
+  }
+
+  case class ANY(parser: Expr[Parser]) extends TerminalOpTree {
+    def ruleTraceTerminal(using quotes: Quotes) = '{ org.parboiled2.RuleTrace.ANY }
+
+    override def renderInner(wrapped: Boolean)(using Quotes): Expr[Boolean] = {
+      val unwrappedTree = '{ $parser.cursorChar != EOI && $parser.__advance() }
       if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
       else unwrappedTree
     }
