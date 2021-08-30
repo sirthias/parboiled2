@@ -132,6 +132,40 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
+  sealed abstract class WithSeparator extends DefaultNonTerminalOpTree {
+    def withSeparator(sep: Separator): OpTree
+  }
+
+  case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
+    def ruleTraceNonTerminalKey       = '{ RuleTrace.ZeroOrMore }
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      collector.withCollector { coll =>
+        '{
+          @ _root_.scala.annotation.tailrec
+          def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
+            val matched = ${ op.render(wrapped) }
+            if (matched) {
+              ${ coll.popToBuilder }
+              ${
+                if (separator eq null) '{ rec($parser.__saveState) }
+                else
+                  '{
+                    val m = $parser.__saveState
+                    if (${ separator(wrapped) }) rec(m) else m
+                  }
+              }
+            } else mark
+          }
+
+          $parser.__restoreState(rec($parser.__saveState))
+          ${ coll.pushBuilderResult }
+          true
+        }
+      }
+  }
+
   case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Capture }
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
@@ -334,6 +368,15 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree = {
     import quotes.reflect.*
+
+    def collector(lifter: Term): Collector = rule0Collector
+    /*lifterTree match {
+        case q"support.this.$a.forRule0[$b]"             => rule0Collector
+        case q"support.this.$a.forRule1[$b, $c]"         => rule1Collector
+        case q"support.this.$a.forReduction[$b, $c, $d]" => rule0Collector
+        case x                                           => c.abort(x.pos, "Unexpected Lifter: " + lifterTree)
+      }*/
+
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
       case '{ ($p: Parser).ch($c) }                              => CharMatch(c)
       case '{ ($p: Parser).str($s) }                             => StringMatch(s)
@@ -349,14 +392,13 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case x                                                     =>
         // These patterns cannot be parsed as quoted patterns because of the complicated type applies
         x.asTerm.underlyingArgument match {
-          case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _) =>
-            Sequence(Seq(rec(lhs), rec(rhs)))
-          case Apply(TypeApply(Select(lhs, "|"), _), List(rhs)) =>
-            FirstOf(rec(lhs), rec(rhs))
-          case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) =>
-            Capture(rec(arg))
-          case _ =>
-            Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
+          case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _) => Sequence(Seq(rec(lhs), rec(rhs)))
+          case Apply(TypeApply(Select(lhs, "|"), _), List(rhs))           => FirstOf(rec(lhs), rec(rhs))
+          case Apply(Apply(TypeApply(Select(_, "zeroOrMore"), _), List(arg)), List(l)) =>
+            ZeroOrMore(rec(arg), collector(l))
+          case Apply(Select(base, "*"), List(l))                              => ZeroOrMore(rec(base), collector(l))
+          case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) => Capture(rec(arg))
+          case _                                                              => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
         }
     }
 
@@ -367,6 +409,34 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     quotes.reflect.report.error(error, expr)
     throw new scala.quoted.runtime.StopMacroExpansion
   }
+
+  /////////////////////////////////// helpers ////////////////////////////////////
+
+  trait Collector {
+    def withCollector[T](f: CollectorInstance => T): T
+  }
+  trait CollectorInstance {
+    def popToBuilder: Expr[Unit]
+    def pushBuilderResult: Expr[Unit]
+  }
+
+  // no-op collector
+  object rule0Collector extends Collector with CollectorInstance {
+    override def withCollector[T](f: CollectorInstance => T): T = f(this)
+    val popToBuilder: Expr[Unit]                                = '{}
+    val pushBuilderResult: Expr[Unit]                           = '{}
+  }
+
+  lazy val rule1Collector: Collector = null /* FIXME: new Collector(
+    valBuilder = q"val builder = new scala.collection.immutable.VectorBuilder[Any]",
+    popToBuilder = q"builder += valueStack.pop()",
+    pushBuilderResult = q"valueStack.push(builder.result()); true",
+    pushSomePop = q"valueStack.push(Some(valueStack.pop()))",
+    pushNone = q"valueStack.push(None)"
+  )*/
+
+  type Separator = Boolean => Expr[Boolean]
+  def Separator(op: OpTree): Separator = wrapped => op.render(wrapped)
 }
 
 object ParserMacros {
