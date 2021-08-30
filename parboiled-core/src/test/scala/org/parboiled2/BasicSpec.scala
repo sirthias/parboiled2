@@ -166,6 +166,7 @@ object BasicSpec extends TestParserSpec {
         def typed[S <: String]     = rule(MATCH)
         "foo-bar42-baz1337-free" must beMatched
       }
+       */
 
       "Map[String, T]" - new TestParser1[Int] {
         val colors     = Map("red" -> 1, "green" -> 2, "blue" -> 3)
@@ -195,7 +196,6 @@ object BasicSpec extends TestParserSpec {
         "abcde" must beMatchedWith(5)
         "abcdef" must beMatchedWith(6)
       }
-       */
     }
 
     "The Parser" - {
