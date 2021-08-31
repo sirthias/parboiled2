@@ -56,11 +56,10 @@ object ParserMacros {
     val runCall = c.prefix.tree match {
       case q"parboiled2.this.Rule.Runnable[$l]($ruleExpr)" =>
         ruleExpr match {
-          case q"$p.$r" if p.tpe <:< typeOf[Parser]        => q"val p = $p; p.__run[$l](p.$r)($scheme)"
-          case q"$p.$r($args)" if p.tpe <:< typeOf[Parser] => q"val p = $p; p.__run[$l](p.$r($args))($scheme)"
-          case q"$p.$r[$t]" if p.tpe <:< typeOf[Parser]    => q"val p = $p; p.__run[$l](p.$r[$t])($scheme)"
-          case q"$p.$r[$t]" if p.tpe <:< typeOf[RuleX]     => q"__run[$l]($ruleExpr)($scheme)"
-          case x                                           => c.abort(x.pos, "Illegal `.run()` call base: " + x)
+          case q"$p.$r[..$ts](...$argss)" if p.tpe <:< typeOf[Parser] =>
+            q"val p = $p; p.__run[$l](p.$r[..$ts](...$argss))($scheme)"
+          case rule if rule.tpe <:< typeOf[RuleX] => q"__run[$l]($ruleExpr)($scheme)"
+          case x                                  => c.abort(x.pos, "Illegal `.run()` call base: " + x)
         }
       case x => c.abort(x.pos, "Illegal `Runnable.apply` call: " + x)
     }
