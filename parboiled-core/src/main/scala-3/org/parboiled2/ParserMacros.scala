@@ -208,6 +208,24 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
+  case class Optional(op: OpTree, collector: Collector) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.Optional }
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      collector.withCollector { coll =>
+        '{
+          val mark    = $parser.__saveState
+          val matched = ${ op.render(wrapped) }
+          if (matched) {
+            ${ coll.pushSomePop }
+          } else {
+            $parser.__restoreState(mark)
+            ${ coll.pushNone }
+          }
+          true
+        }
+      }
+  }
+
   private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
 
@@ -541,7 +559,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     // a list of names for operations that are not yet implemented but that should not be interpreted as rule calls
     // FIXME: can be removed when everything is implemented
-    val ruleNameBlacklist = Set("str", "!", "optional", "run", "zeroOrMore", "times", "oneOrMore")
+    val ruleNameBlacklist =
+      Set("str", "!", "?", "&", "optional", "run", "zeroOrMore", "times", "oneOrMore", "rule2ActionOperator")
 
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
       case '{ ($p: Parser).ch($c) }                              => CharMatch(c)
@@ -584,6 +603,11 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           case Apply(Apply(TypeApply(Select(_, "oneOrMore"), _), List(arg)), List(l)) =>
             OneOrMore(rec(arg), collector(l))
           case Apply(Select(base, "+"), List(l)) => OneOrMore(rec(base), collector(l))
+
+          case Apply(Apply(TypeApply(Select(_, "optional"), _), List(arg)), List(l)) =>
+            Optional(rec(arg), collector(l))
+          case Apply(Select(arg, "?"), List(l)) =>
+            Optional(rec(arg), collector(l))
 
           case Apply(
                 Apply(
@@ -640,13 +664,18 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   trait CollectorInstance {
     def popToBuilder: Expr[Unit]
     def pushBuilderResult: Expr[Unit]
+    def pushSomePop: Expr[Unit]
+    def pushNone: Expr[Unit]
   }
 
   // no-op collector
   object rule0Collector extends Collector with CollectorInstance {
     override def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean] = f(this)
-    val popToBuilder: Expr[Unit]                                                     = '{}
-    val pushBuilderResult: Expr[Unit]                                                = '{}
+    private val unit: Expr[Unit]                                                     = '{}
+    def popToBuilder: Expr[Unit]                                                     = unit
+    def pushBuilderResult: Expr[Unit]                                                = unit
+    def pushSomePop: Expr[Unit]                                                      = unit
+    def pushNone: Expr[Unit]                                                         = unit
   }
 
   object rule1Collector extends Collector {
@@ -654,8 +683,10 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       val builder = new scala.collection.immutable.VectorBuilder[Any]
       ${
         f(new CollectorInstance {
-          override def popToBuilder: Expr[Unit]      = '{ builder += $parser.valueStack.pop() }
-          override def pushBuilderResult: Expr[Unit] = '{ $parser.valueStack.push(builder.result()) }
+          def popToBuilder: Expr[Unit]      = '{ builder += $parser.valueStack.pop() }
+          def pushBuilderResult: Expr[Unit] = '{ $parser.valueStack.push(builder.result()) }
+          def pushSomePop: Expr[Unit]       = '{ $parser.valueStack.push(Some($parser.valueStack.pop())) }
+          def pushNone: Expr[Unit]          = '{ $parser.valueStack.push(None) }
         })
       }
     }
