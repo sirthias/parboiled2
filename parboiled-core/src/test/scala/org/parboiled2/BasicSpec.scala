@@ -148,6 +148,7 @@ object BasicSpec extends TestParserSpec {
         "8" must beMismatched
       }
 
+      /*
       "MATCH" - new TestParser0 {
         def targetRule = rule(MATCH ~ EOI)
         "" must beMatched
@@ -165,6 +166,7 @@ object BasicSpec extends TestParserSpec {
         def typed[S <: String]     = rule(MATCH)
         "foo-bar42-baz1337-free" must beMatched
       }
+       */
 
       "Map[String, T]" - new TestParser1[Int] {
         val colors     = Map("red" -> 1, "green" -> 2, "blue" -> 3)
