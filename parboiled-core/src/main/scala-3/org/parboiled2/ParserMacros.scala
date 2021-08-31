@@ -46,6 +46,8 @@ private[parboiled2] trait RuleRunnable {
 
 import scala.quoted._
 class OpTreeContext(parser: Expr[Parser])(using Quotes) {
+  import quotes.reflect.*
+
   sealed trait OpTree {
     def render(wrapped: Boolean): Expr[Boolean]
   }
@@ -86,8 +88,13 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     protected def renderInner(wrapped: Boolean): Expr[Boolean]
   }
-  sealed abstract class PotentiallyNamedTerminalOpTree extends TerminalOpTree {
-    // TODO
+  sealed abstract private class PotentiallyNamedTerminalOpTree(arg: Term) extends TerminalOpTree {
+    override def bubbleUp: Expr[Nothing] =
+      callName(arg) match {
+        case Some(name) =>
+          '{ $parser.__bubbleUp(RuleTrace.NonTerminal(RuleTrace.Named(${ Expr(name) }), 0) :: Nil, $ruleTraceTerminal) }
+        case None => super.bubbleUp
+      }
   }
 
   def Sequence(lhs: OpTree, rhs: OpTree): Sequence =
@@ -201,7 +208,6 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
-  import quotes.reflect.*
   private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
 
@@ -317,6 +323,22 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     }
   }
 
+  private case class RuleCall(call: Either[OpTree, Expr[Rule[_, _]]], calleeNameTree: Expr[String])
+      extends NonTerminalOpTree {
+
+    def bubbleUp(e: Expr[Parser#TracingBubbleException], start: Expr[Int]): Expr[Nothing] =
+      '{ $e.prepend(RuleTrace.RuleCall, $start).bubbleUp(RuleTrace.Named($calleeNameTree), $start) }
+
+    override def render(wrapped: Boolean): Expr[Boolean] = call match {
+      case Left(_)     => super.render(wrapped)
+      case Right(rule) => '{ $rule ne null }
+    }
+    protected def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = {
+      val Left(value) = call
+      value.render(wrapped)
+    }
+  }
+
   case class CharMatch(charTree: Expr[Char]) extends TerminalOpTree {
     def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.CharMatch($charTree) }
     override def renderInner(wrapped: Boolean): Expr[Boolean] = {
@@ -427,7 +449,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       else '{ $parser.__matchIgnoreCaseString($stringTree) }
   }
 
-  case class CharPredicateMatch(predicateTree: Expr[CharPredicate]) extends PotentiallyNamedTerminalOpTree {
+  private case class CharPredicateMatch(predicateTree: Expr[CharPredicate])
+      extends PotentiallyNamedTerminalOpTree(predicateTree.asTerm) {
     def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.CharPredicateMatch($predicateTree) }
 
     override def renderInner(wrapped: Boolean): Expr[Boolean] = {
@@ -503,6 +526,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       else unwrappedTree
     }
   }
+
+  def topLevel(opTree: OpTree, name: Expr[String]): OpTree = RuleCall(Left(opTree), name)
 
   def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree = {
     import quotes.reflect.*
@@ -585,7 +610,12 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             OneOrMore(rec(base), collector(l), Separator(rec(sep)))
 
           case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) => Capture(rec(arg))
-          case _                                                              => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
+          case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _)) =>
+            RuleCall(
+              Right(call.asExprOf[Rule[_, _]]),
+              Expr(callName(call) getOrElse reportError("Illegal rule call: " + call, call.asExpr))
+            )
+          case _ => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
         }
     }
 
@@ -629,15 +659,15 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   type Separator = Boolean => Expr[Boolean]
   private def Separator(op: OpTree): Separator = wrapped => op.render(wrapped)
 
-  /*@tailrec
-  private def callName(tree: Tree): Option[String] =
+  @tailrec
+  private def callName(tree: Term): Option[String] =
     tree match {
-      case Ident(name)       => Some(name.decodedName.toString)
-      case Select(_, name)   => Some(name.decodedName.toString)
+      case Ident(name)       => Some(name)
+      case Select(_, name)   => Some(name)
       case Apply(fun, _)     => callName(fun)
       case TypeApply(fun, _) => callName(fun)
       case _                 => None
-    }*/
+    }
 
   // tries to match and expand the leaves of the given Tree
   private def expand(tree: Tree, wrapped: Boolean): Tree =
@@ -688,7 +718,7 @@ object ParserMacros {
     import quotes.reflect.*
 
     val ctx    = new OpTreeContext(parser)
-    val opTree = ctx.deconstruct(r)
+    val opTree = ctx.topLevel(ctx.deconstruct(r), name)
 
     '{
       def wrapped: Boolean = ${ opTree.render(wrapped = true) }

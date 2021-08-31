@@ -37,7 +37,7 @@ object ActionSpec extends TestParserSpec {
         "abb" must beMatchedWith("bb")
       }
 
-      "`test`" - new TestParser0 {
+      /*"`test`" - new TestParser0 {
         var flag       = true
         def targetRule = rule(test(flag))
         "x" must beMatched
@@ -103,7 +103,7 @@ object ActionSpec extends TestParserSpec {
       "`run(F2producingHList)`" - new TestParserN[String :: Int :: HNil] {
         def targetRule = rule(push(1 :: "X" :: HNil) ~ run((i: Int, x: String) => x :: i :: HNil) ~ EOI)
         "" must beMatchedWith("X" :: 1 :: HNil)
-      }
+      }*/
 
       // FIXME: problem with TailSwitch, type error
       /*"`run(F1producingRule)`" - new TestParser0 {
