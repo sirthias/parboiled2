@@ -402,9 +402,7 @@ base match {
     }
   }
 
-  private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
-
+  private def expandLambda(body: Term): Expr[Boolean] = {
     def popToVals(valdefs: List[ValDef]): List[Statement] = {
       def convertOne(v: ValDef): ValDef =
         v.tpt.tpe.asType match {
@@ -414,20 +412,24 @@ base match {
       valdefs.map(convertOne).reverse
     }
 
-    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = {
-      body match {
-        case Lambda(args, body) =>
-          def rewrite(tree: Term): Term =
-            tree match {
-              case Block(statements, res) => block(statements, rewrite(res))
-              //case x if isSubClass(actionType.last, "org.parboiled2.Rule") => expand(x, wrapped)
-              case x => '{ $parser.__push(${ x.asExpr }) }.asTerm
-            }
-          // do a beta reduction, using the parameter definitions as stubs for variables
-          // that hold values popped from the stack
-          block(popToVals(args), rewrite(body)).asExprOf[Boolean]
-      }
+    body match {
+      case Lambda(args, body) =>
+        def rewrite(tree: Term): Term =
+          tree match {
+            case Block(statements, res) => block(statements, rewrite(res))
+            //case x if isSubClass(actionType.last, "org.parboiled2.Rule") => expand(x, wrapped)
+            case x => '{ $parser.__push(${ x.asExpr }) }.asTerm
+          }
+        // do a beta reduction, using the parameter definitions as stubs for variables
+        // that hold values popped from the stack
+        block(popToVals(args), rewrite(body)).asExprOf[Boolean]
     }
+  }
+
+  private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = expandLambda(body)
 
     /*val actionType: List[Type] = actionTypeTree.tpe match {
       case TypeRef(_, _, args) if args.nonEmpty => args
@@ -461,6 +463,84 @@ base match {
         }
 
       actionBody(c.untypecheck(actionTree))
+    }*/
+  }
+
+  case class RunAction(body: Expr[_]) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.Run }
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      /*def actionBody(tree: Tree): Tree =
+          tree match {
+            case Block(statements, res) => block(statements, actionBody(res))
+
+            case q"(..$args => $body)" =>
+              def rewrite(tree: Tree): Tree =
+                tree match {
+                  case Block(statements, res)                                     => block(statements, rewrite(res))
+                  case x if isSubClass(resultTypeTree.tpe, "org.parboiled2.Rule") => expand(x, wrapped)
+                  case x                                                          => q"__push($x)"
+                }
+              val valDefs = args
+                .zip(argTypeTrees)
+                .map { case (a, t) => q"val ${a.name} = valueStack.pop().asInstanceOf[${t.tpe}]" }
+                .reverse
+              block(valDefs, rewrite(body))
+
+            case x => c.abort(argTree.pos, "Unexpected `run` argument: " + show(argTree))
+          }
+
+        actionBody(c.untypecheck(argTree))*/
+
+      body.asTerm.tpe.asType match {
+        case '[Rule[_, _]]                => expand(body, wrapped)
+        case '[t1 => r]                   => expandLambda(body.asTerm)
+        case '[(t1, t2) => r]             => expandLambda(body.asTerm)
+        case '[(t1, t2, t3) => r]         => expandLambda(body.asTerm)
+        case '[(t1, t2, t3, t4) => r]     => expandLambda(body.asTerm)
+        case '[(t1, t2, t3, t4, t5) => r] => expandLambda(body.asTerm)
+        case '[x]                         => '{ $body; true }
+      }
+    /*def renderFunctionAction(resultTypeTree: Tree, argTypeTrees: Tree*): Tree = {
+      def actionBody(tree: Tree): Tree =
+        tree match {
+          case Block(statements, res) => block(statements, actionBody(res))
+
+          case q"(..$args => $body)" =>
+            def rewrite(tree: Tree): Tree =
+              tree match {
+                case Block(statements, res)                                     => block(statements, rewrite(res))
+                case x if isSubClass(resultTypeTree.tpe, "org.parboiled2.Rule") => expand(x, wrapped)
+                case x                                                          => q"__push($x)"
+              }
+            val valDefs = args
+              .zip(argTypeTrees)
+              .map { case (a, t) => q"val ${a.name} = valueStack.pop().asInstanceOf[${t.tpe}]" }
+              .reverse
+            block(valDefs, rewrite(body))
+
+          case x => c.abort(argTree.pos, "Unexpected `run` argument: " + show(argTree))
+        }
+
+      actionBody(c.untypecheck(argTree))
+    }
+
+    rrTree match {
+      case q"RunResult.this.Aux.forAny[$t]" => block(argTree, q"true")
+
+      case q"RunResult.this.Aux.forRule[$t]" => expand(argTree, wrapped)
+
+      case q"RunResult.this.Aux.forF1[$z, $r, $in, $out]($a)"             => renderFunctionAction(r, z)
+      case q"RunResult.this.Aux.forF2[$y, $z, $r, $in, $out]($a)"         => renderFunctionAction(r, y, z)
+      case q"RunResult.this.Aux.forF3[$x, $y, $z, $r, $in, $out]($a)"     => renderFunctionAction(r, x, y, z)
+      case q"RunResult.this.Aux.forF4[$w, $x, $y, $z, $r, $in, $out]($a)" => renderFunctionAction(r, w, x, y, z)
+      case q"RunResult.this.Aux.forF5[$v, $w, $x, $y, $z, $r, $in, $out]($a)" =>
+        renderFunctionAction(r, v, w, x, y, z)
+
+      case q"RunResult.this.Aux.forFHList[$il, $r, $in, $out]($a)" =>
+        c.abort(argTree.pos, "`run` with a function taking an HList is not yet implemented") // TODO: implement
+
+      case x => c.abort(rrTree.pos, "Unexpected RunResult.Aux: " + show(x))
     }*/
   }
 
@@ -731,7 +811,8 @@ base match {
 
   def topLevel(opTree: OpTree, name: Expr[String]): OpTree = RuleCall(Left(opTree), name)
 
-  def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree = {
+  def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree = deconstructPF(outerRule).get
+  def deconstructPF(outerRule: Expr[Rule[_, _]]): Option[OpTree] = {
     import quotes.reflect.*
 
     def collector(lifter: Term): Collector =
@@ -759,7 +840,7 @@ base match {
         "rule2WithSeparatedBy"
       )
 
-    def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
+    lazy val rules0PF: PartialFunction[Expr[Rule[_, _]], OpTree] = {
       case '{ ($p: Parser).ch($c) }                                                        => CharMatch(c)
       case '{ ($p: Parser).str($s) }                                                       => StringMatch(s)
       case '{ ($p: Parser).valueMap($m: Map[String, Any]) }                                => MapMatch(m, '{ false })
@@ -853,35 +934,41 @@ base match {
           case _                 => reportError(s"Illegal `separatedBy` base: $base", base)
         }
 
-      case x =>
-        x.asTerm.underlyingArgument match {
-          // cannot easily be converted because we would have to list all ActionOps instances
-          case Apply(
-                Apply(
-                  TypeApply(
-                    Select(
-                      Select(Apply(Apply(TypeApply(Select(_, "rule2ActionOperator"), _), List(base)), _), "~>"),
-                      "apply"
-                    ),
-                    _
-                  ),
-                  List(body)
-                ),
-                List(_, TypeApply(Ident("apply"), ts))
-              ) =>
-            Sequence(rec(base), Action(body, ts))
-
-          case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _))
-              if !callName(call).exists(ruleNameBlacklist) =>
-            RuleCall(
-              Right(call.asExprOf[Rule[_, _]]),
-              Expr(callName(call) getOrElse reportError("Illegal rule call: " + call, call.asExpr))
-            )
-          case _ => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
-        }
+      case '{ ($p: Parser).run[t]($e)($l) } => RunAction(e)
     }
 
-    rec(outerRule.asTerm)
+    lazy val rules1PF: PartialFunction[Term, OpTree] = {
+      // cannot easily be converted because we would have to list all ActionOps instances
+      case Apply(
+            Apply(
+              TypeApply(
+                Select(
+                  Select(Apply(Apply(TypeApply(Select(_, "rule2ActionOperator"), _), List(base)), _), "~>"),
+                  "apply"
+                ),
+                _
+              ),
+              List(body)
+            ),
+            List(_, TypeApply(Ident("apply"), ts))
+          ) =>
+        Sequence(rec(base), Action(body, ts))
+
+      case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _))
+          if !callName(call).exists(ruleNameBlacklist) =>
+        RuleCall(
+          Right(call.asExprOf[Rule[_, _]]),
+          Expr(callName(call) getOrElse reportError("Illegal rule call: " + call, call.asExpr))
+        )
+      //case _ => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
+    }
+    lazy val allRules = rules0PF.orElse(rules1PF.compose[Expr[Rule[_, _]]] { case x => x.asTerm.underlyingArgument })
+    def rec(rule: Term): OpTree = allRules.applyOrElse(
+      rule.asExprOf[Rule[_, _]],
+      rule => Unknown(rule.show, "" /*rule.show(using Printer.TreeStructure)*/, outerRule.toString)
+    )
+
+    allRules.lift(outerRule)
   }
 
   private def reportError(error: String, expr: Expr[Any]): Nothing = {
@@ -939,6 +1026,8 @@ base match {
     }
 
   // tries to match and expand the leaves of the given Tree
+  private def expand(expr: Expr[_], wrapped: Boolean): Expr[Boolean] =
+    expand(expr.asTerm, wrapped).asExprOf[Boolean]
   private def expand(tree: Tree, wrapped: Boolean): Tree =
     tree match {
       case Block(statements, res) => block(statements, expand(res, wrapped).asInstanceOf[Term])
@@ -946,7 +1035,11 @@ base match {
         If(cond, expand(thenExp, wrapped).asInstanceOf[Term], expand(elseExp, wrapped).asInstanceOf[Term])
       case Match(selector, cases)    => Match(selector, cases.map(expand(_, wrapped).asInstanceOf[CaseDef]))
       case CaseDef(pat, guard, body) => CaseDef(pat, guard, expand(body, wrapped).asInstanceOf[Term])
-      case x                         => tree //??? //opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) => q"$t ne null")
+      case x =>
+        deconstructPF(x.asExprOf[Rule[_, _]])                  // can we pass the body as a rule?
+          .map(_.render(wrapped))                              // then render it
+          .getOrElse('{ ${ x.asExprOf[Rule[_, _]] } ne null }) // otherwise, assume the expression is a rule itself
+          .asTerm
     }
 
   private def block(a: Term, b: Term): Term =
