@@ -277,6 +277,23 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
+  private case class PushAction(valueExpr: Expr[_], argType: Type[_]) extends OpTree {
+
+    def render(wrapped: Boolean): Expr[Boolean] = {
+      val body =
+        argType match {
+          case '[Unit]  => valueExpr
+          case '[HList] => '{ $parser.valueStack.pushAll($valueExpr.asInstanceOf[HList]) }
+          case _        => '{ $parser.valueStack.push($valueExpr) }
+        }
+
+      '{
+        $body
+        true
+      }
+    }
+  }
+
   case class CharMatch(charTree: Expr[Char]) extends TerminalOpTree {
     def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.CharMatch($charTree) }
     override def renderInner(wrapped: Boolean): Expr[Boolean] = {
@@ -486,6 +503,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case '{ ($p: Parser).noneOf($s) }                          => NoneOf(s)
       case '{ ($p: Parser).ANY }                                 => ANY
       case '{ ($p: Parser).str2CharRangeSupport($l).-($r) }      => CharRange(l, r)
+      case '{ ($p: Parser).push[t]($value) }                     => PushAction(value, Type.of[t])
       case x                                                     =>
         // These patterns cannot be parsed as quoted patterns because of the complicated type applies
         x.asTerm.underlyingArgument match {
