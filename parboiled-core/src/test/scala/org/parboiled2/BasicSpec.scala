@@ -148,12 +148,11 @@ object BasicSpec extends TestParserSpec {
         "8" must beMismatched
       }
 
-      /*
       "MATCH" - new TestParser0 {
         def targetRule = rule(MATCH ~ EOI)
         "" must beMatched
         "x" must beMismatched
-      }*/
+      }
 
       "called rules" - new TestParser0 {
         def targetRule = {
