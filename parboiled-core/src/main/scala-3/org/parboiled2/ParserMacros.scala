@@ -105,11 +105,24 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case (_, Sequence(ops))               => Sequence(lhs +: ops)
       case _                                => Sequence(Seq(lhs, rhs))
     }
+
   case class Sequence(ops: Seq[OpTree]) extends OpTree {
     override def render(wrapped: Boolean): Expr[Boolean] =
       ops
         .map(_.render(wrapped))
         .reduceLeft((l, r) => '{ val ll = $l; if (ll) $r else false })
+  }
+
+  case class Cut(lhs: OpTree, rhs: OpTree) extends DefaultNonTerminalOpTree {
+    override def ruleTraceNonTerminalKey = '{ RuleTrace.Cut }
+    override def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = '{
+      var matched = ${ lhs.render(wrapped) }
+      if (matched) {
+        matched = ${ rhs.render(wrapped) }
+        if (!matched) throw org.parboiled2.Parser.CutError
+        true
+      } else false
+    } // work-around for https://issues.scala-lang.org/browse/SI-8657
   }
 
   def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
@@ -775,8 +788,9 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case x                                                     =>
         // These patterns cannot be parsed as quoted patterns because of the complicated type applies
         x.asTerm.underlyingArgument match {
-          case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _) => Sequence(Seq(rec(lhs), rec(rhs)))
-          case Apply(TypeApply(Select(lhs, "|"), _), List(rhs))           => FirstOf(rec(lhs), rec(rhs))
+          case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _)   => Sequence(Seq(rec(lhs), rec(rhs)))
+          case Apply(Apply(TypeApply(Select(lhs, "~!~"), _), List(rhs)), _) => Cut(rec(lhs), rec(rhs))
+          case Apply(TypeApply(Select(lhs, "|"), _), List(rhs))             => FirstOf(rec(lhs), rec(rhs))
 
           case Apply(Apply(TypeApply(Select(_, "zeroOrMore"), _), List(arg)), List(l)) =>
             ZeroOrMore(rec(arg), collector(l))
