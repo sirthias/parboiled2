@@ -226,6 +226,127 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
+  private def Times(base: Term, rule: OpTree, collector: Collector, separator: Separator = null): OpTree =
+    base match {
+      case Apply(Select(_, "int2NTimes"), List(n)) =>
+        Times(
+          rule,
+          new MinMaxSupplier {
+            override def apply[T: Type](f: (Expr[Int], Expr[Int]) => Expr[T]): Expr[T] =
+              '{
+                val min = ${ n.asExprOf[Int] }
+                val max = min
+
+                ${ f('min, 'max) }
+              }
+          },
+          collector,
+          separator
+        )
+      case Apply(Select(_, "range2NTimes"), List(rangeExpr)) =>
+        Times(
+          rule,
+          new MinMaxSupplier {
+            override def apply[T: Type](f: (Expr[Int], Expr[Int]) => Expr[T]): Expr[T] =
+              '{
+                val r   = ${ rangeExpr.asExprOf[Range] }
+                val min = r.min
+                val max = r.max
+
+                ${ f('min, 'max) }
+              }
+          },
+          collector,
+          separator
+        )
+      case _ => Unknown(base.show, base.show(using Printer.TreeStructure), "")
+    }
+  /* FIXME: implement optimzations for literal values as shown below
+
+   base match {
+      case q"$a.this.int2NTimes($n)" =>
+        n match {
+          case Literal(Constant(i: Int)) =>
+            if (i <= 0) c.abort(base.pos, "`x` in `x.times` must be positive")
+            else if (i == 1) rule
+            else Times(rule, q"val min, max = $n", collector, separator)
+          case x @ (Ident(_) | Select(_, _)) => Times(rule, q"val min = $n; val max = min", collector, separator)
+          case _                             => c.abort(n.pos, "Invalid int base expression for `.times(...)`: " + n)
+        }
+      case q"$a.this.range2NTimes($r)" =>
+        r match {
+          case q"${_}.Predef.intWrapper($mn).to($mx)" =>
+            mn match {
+              case Literal(Constant(min: Int)) =>
+                if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
+              case (Ident(_) | Select(_, _)) =>
+              case _                         => c.abort(r.pos, "Invalid int range expression for `min` in `.times(...)`: " + r)
+            }
+            mx match {
+              case Literal(Constant(max: Int)) =>
+                if (max <= 0) c.abort(mx.pos, "`max` in `(min to max).times` must be positive")
+              case (Ident(_) | Select(_, _)) =>
+              case _                         => c.abort(r.pos, "Invalid int range expression for `max` in `.times(...)`: " + r)
+            }
+            (mn, mx) match {
+              case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) =>
+                if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
+              case _ =>
+            }
+            Times(rule, q"val min = $mn; val max = $mx", collector, separator)
+          case x @ (Ident(_) | Select(_, _)) =>
+            Times(rule, q"val r = $r; val min = r.start; val max = r.end", collector, separator)
+          case _ => c.abort(r.pos, "Invalid range base expression for `.times(...)`: " + r)
+        }
+      case _ => c.abort(base.pos, "Invalid base expression for `.times(...)`: " + base)
+    }*/
+
+  trait MinMaxSupplier {
+    def apply[T: Type](f: (Expr[Int], Expr[Int]) => Expr[T]): Expr[T]
+  }
+
+  case class Times(
+      op: OpTree,
+      withMinMax: MinMaxSupplier,
+      collector: Collector,
+      separator: Separator
+  ) extends WithSeparator {
+    def withSeparator(sep: Separator) = copy(separator = sep)
+    def ruleTraceNonTerminalKey       = withMinMax((min, max) => '{ org.parboiled2.RuleTrace.Times($min, $max) })
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      collector.withCollector { coll =>
+        withMinMax { (minE, maxE) =>
+          '{
+            val min = $minE
+            val max = $maxE
+            require(min <= max, "`max` in `(min to max).times` must be >= `min`")
+
+            @ _root_.scala.annotation.tailrec
+            def rec(count: Int, mark: org.parboiled2.Parser.Mark): Boolean = {
+              val matched = ${ op.render(wrapped) }
+              if (matched) {
+                ${ coll.popToBuilder }
+                if (count < max) ${
+                  if (separator eq null) '{ rec(count + 1, $parser.__saveState) }
+                  else
+                    '{
+                      val m = $parser.__saveState
+                      if (${ separator(wrapped) }) rec(count + 1, m)
+                      else (count >= min) && { $parser.__restoreState(m); true }
+                    }
+                }
+                else true
+
+              } else (count > min) && { $parser.__restoreState(mark); true }
+            }
+
+            (max <= 0) || rec(1, $parser.__saveState) && { ${ coll.pushBuilderResult }; true }
+          }
+        }
+      }
+  }
+
   private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
 
@@ -560,7 +681,20 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     // a list of names for operations that are not yet implemented but that should not be interpreted as rule calls
     // FIXME: can be removed when everything is implemented
     val ruleNameBlacklist =
-      Set("str", "!", "?", "&", "optional", "run", "zeroOrMore", "times", "oneOrMore", "rule2ActionOperator")
+      Set(
+        "str",
+        "!",
+        "?",
+        "&",
+        "optional",
+        "run",
+        "zeroOrMore",
+        "times",
+        "oneOrMore",
+        "rule2ActionOperator",
+        "range2NTimes",
+        "rule2WithSeparatedBy"
+      )
 
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
       case '{ ($p: Parser).ch($c) }                              => CharMatch(c)
@@ -586,17 +720,6 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             ZeroOrMore(rec(arg), collector(l))
           case Apply(Select(base, "*"), List(l)) => ZeroOrMore(rec(base), collector(l))
 
-          case Apply(
-                Select(
-                  Apply(
-                    TypeApply(Select(_, "rule2WithSeparatedBy"), _),
-                    List(Apply(Apply(TypeApply(Select(_, "zeroOrMore"), _), List(base)), List(l)))
-                  ),
-                  "separatedBy"
-                ),
-                List(sep)
-              ) =>
-            ZeroOrMore(rec(base), collector(l), Separator(rec(sep)))
           case Apply(Apply(Select(base, "*"), List(sep)), List(l)) =>
             ZeroOrMore(rec(base), collector(l), Separator(rec(sep)))
 
@@ -608,6 +731,9 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             Optional(rec(arg), collector(l))
           case Apply(Select(arg, "?"), List(l)) =>
             Optional(rec(arg), collector(l))
+
+          case Apply(Apply(TypeApply(Select(base, "times"), _), List(arg)), List(l)) =>
+            Times(base, rec(arg), collector(l))
 
           case Apply(
                 Apply(
@@ -623,17 +749,16 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
                 List(_, TypeApply(Ident("apply"), ts))
               ) =>
             Sequence(rec(base), Action(body, ts))
+
           case Apply(
-                Select(
-                  Apply(
-                    TypeApply(Select(_, "rule2WithSeparatedBy"), _),
-                    List(Apply(Apply(TypeApply(Select(_, "oneOrMore"), _), List(base)), List(l)))
-                  ),
-                  "separatedBy"
-                ),
+                Select(Apply(TypeApply(Select(_, "rule2WithSeparatedBy"), _), List(base)), "separatedBy"),
                 List(sep)
               ) =>
-            OneOrMore(rec(base), collector(l), Separator(rec(sep)))
+            rec(base) match {
+              case ws: WithSeparator => ws.withSeparator(Separator(rec(sep)))
+              case _                 => reportError(s"Illegal `separatedBy` base: $base", base.asExpr)
+            }
+
           case Apply(Apply(Select(base, "+"), List(sep)), List(l)) =>
             OneOrMore(rec(base), collector(l), Separator(rec(sep)))
 
