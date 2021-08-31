@@ -138,11 +138,11 @@ object ActionSpec extends TestParserSpec {
         "" must beMatched
       }
 
-      /*"`~>` producing `Unit`" - new TestParser1[Int] {
+      "`~>` producing `Unit`" - new TestParser1[Int] {
         def testRule   = rule(push(1 :: "X" :: HNil) ~> (_ => ()))
         def targetRule = testRule
         "" must beMatchedWith(1)
-      }*/
+      }
 
       case class Foo(i: Int, s: String)
 
@@ -151,7 +151,7 @@ object ActionSpec extends TestParserSpec {
         "" must beMatchedWith(Foo(1, "X"))
       }*/
 
-      /*"`~>` full take" - new TestParser1[Foo] {
+      "`~>` full take" - new TestParser1[Foo] {
         def testRule   = rule(push(1 :: "X" :: HNil) ~> (Foo(_, _)))
         def targetRule = testRule
         "" must beMatchedWith(Foo(1, "X"))
@@ -167,7 +167,7 @@ object ActionSpec extends TestParserSpec {
         def testRule   = rule(capture("x") ~> (_ :: 1 :: 3.0 :: HNil))
         def targetRule = testRule
         "x" must beMatchedWith("x" :: 1 :: 3.0 :: HNil)
-      }*/
+      }
 
       /*FIXME: one or more of these don't terminate while typing "`~>` with a statement block" - new TestParser1[Char] {
         var captured = ' '
