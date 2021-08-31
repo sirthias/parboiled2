@@ -541,7 +541,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     // a list of names for operations that are not yet implemented but that should not be interpreted as rule calls
     // FIXME: can be removed when everything is implemented
-    val ruleNameBlacklist = Set("str", "!", "optional")
+    val ruleNameBlacklist = Set("str", "!", "optional", "run", "zeroOrMore", "times", "oneOrMore")
 
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
       case '{ ($p: Parser).ch($c) }                              => CharMatch(c)
