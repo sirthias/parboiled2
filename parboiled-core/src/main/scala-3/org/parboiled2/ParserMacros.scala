@@ -462,6 +462,14 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     }*/
   }
 
+  case class SemanticPredicate(flagTree: Expr[Boolean]) extends TerminalOpTree {
+    def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.SemanticPredicate }
+
+    override def renderInner(wrapped: Boolean): Expr[Boolean] =
+      if (wrapped) '{ $flagTree || $parser.__registerMismatch() }
+      else flagTree
+  }
+
   case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Capture }
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
@@ -761,6 +769,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case '{ ($p: Parser).noneOf($s) }                          => NoneOf(s)
       case '{ ($p: Parser).ANY }                                 => ANY
       case '{ ($p: Parser).str2CharRangeSupport($l).-($r) }      => CharRange(l, r)
+      case '{ ($p: Parser).test($flag) }                         => SemanticPredicate(flag)
       case '{ ($p: Parser).push[t]($value) }                     => PushAction(value, Type.of[t])
       case '{ ($p: Parser).drop[t] }                             => DropAction(Type.of[t])
       case x                                                     =>
