@@ -45,7 +45,7 @@ object ActionSpec extends TestParserSpec {
         "x" must beMismatched
       }
 
-      /*"`run(nonRuleExpr)`" - new TestParser0 {
+      "`run(nonRuleExpr)`" - new TestParser0 {
         var flag       = false
         def targetRule = rule('a' ~ run { flag = true } ~ EOI)
         "a" must beMatched
@@ -91,8 +91,9 @@ object ActionSpec extends TestParserSpec {
       }
 
       "`run(F1producingUnit)`" - new TestParser1[Int] {
-        def targetRule = rule(push(1 :: "X" :: HNil) ~ run((x: String) => require(x == "X")) ~ EOI)
-        "" must beMatchedWith(1)
+        def targetRule = rule(push(1) ~ capture(anyOf("XY")) ~ run((x: String) => require(x == "X")) ~ EOI)
+        "X" must beMatchedWith(1)
+        intercept[AssertionError]("Y" must beMismatched)
       }
 
       "`run(F2producingValue)`" - new TestParser1[Char] {
@@ -103,7 +104,7 @@ object ActionSpec extends TestParserSpec {
       "`run(F2producingHList)`" - new TestParserN[String :: Int :: HNil] {
         def targetRule = rule(push(1 :: "X" :: HNil) ~ run((i: Int, x: String) => x :: i :: HNil) ~ EOI)
         "" must beMatchedWith("X" :: 1 :: HNil)
-      }*/
+      }
 
       // FIXME: problem with TailSwitch, type error
       /*"`run(F1producingRule)`" - new TestParser0 {
@@ -169,7 +170,7 @@ object ActionSpec extends TestParserSpec {
         "x" must beMatchedWith("x" :: 1 :: 3.0 :: HNil)
       }
 
-      /*FIXME: one or more of these don't terminate while typing "`~>` with a statement block" - new TestParser1[Char] {
+      "`~>` with a statement block" - new TestParser1[Char] {
         var captured = ' '
         def testRule =
           rule {
@@ -180,7 +181,8 @@ object ActionSpec extends TestParserSpec {
         captured ==> 'x'
       }
 
-      "`~>` producing a Rule0" - new TestParser0 {
+      // FIXME: one or more of these don't terminate while typing
+      /*"`~>` producing a Rule0" - new TestParser0 {
         def testRule   = rule(capture("x") ~> (str(_)) ~ EOI)
         def targetRule = testRule
         "x" must beMismatched
