@@ -347,6 +347,17 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
+  case class AndPredicate(op: OpTree) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.AndPredicate }
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      '{
+        val mark    = $parser.__saveState
+        val matched = ${ op.render(wrapped) }
+        $parser.__restoreState(mark)
+        matched
+      }
+  }
+
   private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
 
@@ -749,6 +760,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
                 List(_, TypeApply(Ident("apply"), ts))
               ) =>
             Sequence(rec(base), Action(body, ts))
+
+          case Apply(Select(_, "&"), List(arg)) => AndPredicate(rec(arg))
 
           case Apply(
                 Select(Apply(TypeApply(Select(_, "rule2WithSeparatedBy"), _), List(base)), "separatedBy"),

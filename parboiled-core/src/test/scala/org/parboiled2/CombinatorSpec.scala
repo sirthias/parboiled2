@@ -167,7 +167,7 @@ object CombinatorSpec extends TestParserSpec {
         "a" must beMismatched
         "b" must beMatched
         "" must beMatched
-      }
+      }*/
 
       "`&` modifier" - new TestParser0 {
         def targetRule = rule(&("a"))
@@ -175,7 +175,7 @@ object CombinatorSpec extends TestParserSpec {
         cursor ==> 0
         "b" must beMismatched
         "" must beMismatched
-      }*/
+      }
 
       "`1.times(Rule0)` modifier" - new TestParser0 {
         def targetRule = rule(1.times("a"))
