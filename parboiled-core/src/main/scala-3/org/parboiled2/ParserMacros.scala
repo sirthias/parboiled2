@@ -539,6 +539,10 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         case x                                                => reportError(s"Unexpected lifter ${lifter.show(using Printer.TreeStructure)}", lifter.asExpr)
       }
 
+    // a list of names for operations that are not yet implemented but that should not be interpreted as rule calls
+    // FIXME: can be removed when everything is implemented
+    val ruleNameBlacklist = Set("str", "!", "optional")
+
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
       case '{ ($p: Parser).ch($c) }                              => CharMatch(c)
       case '{ ($p: Parser).str($s) }                             => StringMatch(s)
@@ -610,7 +614,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             OneOrMore(rec(base), collector(l), Separator(rec(sep)))
 
           case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) => Capture(rec(arg))
-          case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _)) =>
+          case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _))
+              if !callName(call).exists(ruleNameBlacklist) =>
             RuleCall(
               Right(call.asExprOf[Rule[_, _]]),
               Expr(callName(call) getOrElse reportError("Illegal rule call: " + call, call.asExpr))
