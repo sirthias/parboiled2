@@ -358,6 +358,47 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
+  case class NotPredicate(op: OpTree) extends OpTree {
+
+    def render(wrapped: Boolean): Expr[Boolean] = {
+      def unwrappedExpr(setMatchEnd: Option[Expr[Int] => Expr[Unit]]): Expr[Boolean] = '{
+        val mark    = $parser.__saveState
+        val saved   = $parser.__enterNotPredicate()
+        val matched = ${ op.render(wrapped) }
+        $parser.__exitNotPredicate(saved)
+        ${
+          setMatchEnd match {
+            case Some(matchEndSetter) => matchEndSetter('{ $parser.cursor })
+            case None                 => '{}
+          }
+        }
+        $parser.__restoreState(mark)
+        !matched
+      }
+
+      if (wrapped) {
+        val base = op match {
+          case x: TerminalOpTree   => '{ RuleTrace.NotPredicate.Terminal(${ x.ruleTraceTerminal }) }
+          case x: RuleCall         => '{ RuleTrace.NotPredicate.RuleCall(${ x.calleeNameTree }) }
+          case x: StringMatch      => '{ RuleTrace.NotPredicate.Named(s"\"${${ x.stringTree }}\"") }
+          case x: IgnoreCaseString => '{ RuleTrace.NotPredicate.Named(s"\"${${ x.stringTree }}\"") }
+          //case x: Named            => '{RuleTrace.NotPredicate.Named(s"\"${${x.stringTree}}\"")}
+          case _ => '{ RuleTrace.NotPredicate.Anonymous }
+        }
+        '{
+          var matchEnd = 0
+          try ${ unwrappedExpr(Some(v => '{ matchEnd = $v })) } || $parser.__registerMismatch()
+          catch {
+            case Parser.StartTracingException =>
+              $parser.__bubbleUp {
+                RuleTrace.NotPredicate($base, matchEnd - $parser.cursor)
+              }
+          }
+        }
+      } else unwrappedExpr(None)
+    }
+  }
+
   private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
 
@@ -762,6 +803,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             Sequence(rec(base), Action(body, ts))
 
           case Apply(Select(_, "&"), List(arg)) => AndPredicate(rec(arg))
+          case Select(arg, "unary_!")           => NotPredicate(rec(arg))
 
           case Apply(
                 Select(Apply(TypeApply(Select(_, "rule2WithSeparatedBy"), _), List(base)), "separatedBy"),
