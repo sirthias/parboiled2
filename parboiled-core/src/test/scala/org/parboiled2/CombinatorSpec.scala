@@ -162,12 +162,12 @@ object CombinatorSpec extends TestParserSpec {
         "axx" must beMismatched
       }
 
-      /*"`!(Rule0)` modifier" - new TestParser0 {
+      "`!(Rule0)` modifier" - new TestParser0 {
         def targetRule = rule(!"a")
         "a" must beMismatched
         "b" must beMatched
         "" must beMatched
-      }*/
+      }
 
       "`&` modifier" - new TestParser0 {
         def targetRule = rule(&("a"))
