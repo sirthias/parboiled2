@@ -175,7 +175,7 @@ object CombinatorSpec extends TestParserSpec {
         cursor ==> 0
         "b" must beMismatched
         "" must beMismatched
-      }
+      }*/
 
       "`1.times(Rule0)` modifier" - new TestParser0 {
         def targetRule = rule(1.times("a"))
@@ -261,7 +261,7 @@ object CombinatorSpec extends TestParserSpec {
         "ax" must beMismatched
         "axx" must beMatchedWith("axx")
         "axxx" must beMismatched
-      }*/
+      }
     }
   }
 }
