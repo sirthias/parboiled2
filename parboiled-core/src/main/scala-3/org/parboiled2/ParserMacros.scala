@@ -270,6 +270,24 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
+  case class RuleCall(call: Either[OpTree, Expr[Rule[_, _]]], calleeNameTree: Expr[String]) extends NonTerminalOpTree {
+    override def bubbleUp(e: Expr[org.parboiled2.Parser#TracingBubbleException], start: Expr[Int]): Expr[Nothing] = '{
+      $e.prepend(org.parboiled2.RuleTrace.RuleCall, $start)
+        .bubbleUp(org.parboiled2.RuleTrace.Named($calleeNameTree), $start)
+    }
+
+    override def render(wrapped: Boolean): Expr[Boolean] =
+      call match {
+        case Left(_)  => super.render(wrapped)
+        case Right(x) => '{ $x ne null }
+      }
+
+    override def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = {
+      val Left(value) = call.asInstanceOf[Left[OpTree, Expr[Rule[_, _]]]]
+      value.render(wrapped)
+    }
+  }
+
   def CharRange(lowerTree: Expr[String], upperTree: Expr[String]): CharacterRange =
     (lowerTree.value, upperTree.value) match {
       case (Some(lower), Some(upper)) =>
@@ -309,19 +327,42 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case '{ ($p: Parser).noneOf($s) }                          => NoneOf(s)
       case '{ ($p: Parser).ANY }                                 => ANY
       case '{ ($p: Parser).str2CharRangeSupport($l).-($r) }      => CharRange(l, r)
-      case x                                                     =>
+      case x =>
+        def unknown() = Unknown(x.asTerm.show(using Printer.TreeStructure), rule.show, outerRule.toString)
+
         // These patterns cannot be parsed as quoted patterns because of the complicated type applies
         x.asTerm.underlyingArgument match {
           case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _) =>
             Sequence(Seq(rec(lhs), rec(rhs)))
           case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) =>
             Capture(rec(arg))
+
+          case call @ Select(_, symbol) if symbol == "unary_!" =>
+            // TODO: remove if symbol != "unary_!" when NotPredicate is implemented
+            unknown()
+          case call @ Select(_, _) =>
+            callName(call) match {
+              case Some(name) => RuleCall(Right(call.asExprOf[Rule[_, _]]), Expr(name))
+              case None       => unknown()
+            }
           case _ =>
-            Unknown(x.toString, rule.show, outerRule.toString)
+            unknown()
         }
     }
 
     rec(outerRule.asTerm)
+  }
+
+  @scala.annotation.tailrec
+  private def callName(tree: quotes.reflect.Tree): Option[String] = {
+    import quotes.reflect.*
+    tree match {
+      case Ident(name)       => Some(name)
+      case Select(_, name)   => Some(name)
+      case Apply(fun, _)     => callName(fun)
+      case TypeApply(fun, _) => callName(fun)
+      case _                 => None
+    }
   }
 
   private def reportError(error: String, expr: Expr[Any]): Nothing = {
