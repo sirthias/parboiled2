@@ -106,21 +106,21 @@ object ActionSpec extends TestParserSpec {
       }
 
       // FIXME: problem with TailSwitch, type error
-//      "`run(F1producingRule)`" - new TestParser0 {
-//        def targetRule = rule(ANY ~ push(lastChar - '0') ~ run((i: Int) => test(i % 2 == 0)) ~ EOI)
-//        "4" must beMatched
-//        "5" must beMismatched
-//      }
+      "`run(F1producingRule)`" - new TestParser0 {
+        def targetRule = rule(ANY ~ push(lastChar - '0') ~ run((i: Int) => test(i % 2 == 0)) ~ EOI)
+        "4" must beMatched
+        "5" must beMismatched
+      }
 
       //    "`run(F1TakingHList)`" in new TestParser1[Int] {
       //      def targetRule = rule { push(42 :: "X" :: HNil) ~ run((l: Int :: String :: HNil) => l.head * 2) }
       //      "" must beMatchedWith(84)
       //    }
 
-      /*FIXME: type error "`push` simple value" - new TestParser1[String] {
-        def targetRule = rule('x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI)
+      "`push` simple value" - new TestParser1[String] {
+        def targetRule: Rule1[String] = rule('x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI)
         "xy" must beMatchedWith("yeah")
-      }*/
+      }
 
       "`push` HList" - new TestParserN[Int :: Double :: Long :: String :: HNil] {
         def targetRule = rule('x' ~ push(42 :: 3.14 :: HNil) ~ push(0L :: "yeah" :: HNil) ~ EOI)
@@ -138,11 +138,11 @@ object ActionSpec extends TestParserSpec {
         "" must beMatched
       }
 
-      "`~>` producing `Unit`" - new TestParser1[Int] {
+      /*"`~>` producing `Unit`" - new TestParser1[Int] {
         def testRule   = rule(push(1 :: "X" :: HNil) ~> (_ => ()))
         def targetRule = testRule
         "" must beMatchedWith(1)
-      }
+      }*/
 
       case class Foo(i: Int, s: String)
 
@@ -151,7 +151,7 @@ object ActionSpec extends TestParserSpec {
         "" must beMatchedWith(Foo(1, "X"))
       }*/
 
-      "`~>` full take" - new TestParser1[Foo] {
+      /*"`~>` full take" - new TestParser1[Foo] {
         def testRule   = rule(push(1 :: "X" :: HNil) ~> (Foo(_, _)))
         def targetRule = testRule
         "" must beMatchedWith(Foo(1, "X"))
@@ -167,7 +167,7 @@ object ActionSpec extends TestParserSpec {
         def testRule   = rule(capture("x") ~> (_ :: 1 :: 3.0 :: HNil))
         def targetRule = testRule
         "x" must beMatchedWith("x" :: 1 :: 3.0 :: HNil)
-      }
+      }*/
 
       /*FIXME: one or more of these don't terminate while typing "`~>` with a statement block" - new TestParser1[Char] {
         var captured = ' '
