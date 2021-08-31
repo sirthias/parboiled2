@@ -126,7 +126,7 @@ object CombinatorSpec extends TestParserSpec {
         "" must beMismatched
       }
 
-      "`oneOrMore(Rule[I, O <: I])` modifier" - new TestParser1[String] {
+      /*"`oneOrMore(Rule[I, O <: I])` modifier" - new TestParser1[String] {
         def targetRule = rule(capture("a") ~ oneOrMore(ch('x') ~> ((_: String) + 'x')) ~ EOI)
         "a" must beMismatched
         "ax" must beMatchedWith("ax")
@@ -261,7 +261,7 @@ object CombinatorSpec extends TestParserSpec {
         "ax" must beMismatched
         "axx" must beMatchedWith("axx")
         "axxx" must beMismatched
-      }
+      }*/
     }
   }
 }

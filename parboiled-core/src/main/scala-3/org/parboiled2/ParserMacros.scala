@@ -18,6 +18,8 @@ package org.parboiled2
 
 import org.parboiled2.support.hlist.HList
 
+import scala.annotation.tailrec
+
 private[parboiled2] trait ParserMacroMethods { parser: Parser =>
 
   /** Converts a compile-time only rule definition into the corresponding rule method implementation.
@@ -197,6 +199,69 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           }
         }
       }
+  }
+
+  import quotes.reflect.*
+  private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
+
+    def popToVals(valdefs: List[ValDef]): List[Statement] = {
+      def convertOne(v: ValDef): ValDef =
+        v.tpt.tpe.asType match {
+          case '[t] => ValDef.copy(v)(v.name, v.tpt, Some('{ $parser.valueStack.pop().asInstanceOf[t] }.asTerm))
+        }
+
+      valdefs.map(convertOne).reverse
+    }
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = {
+      body match {
+        case Lambda(args, body) =>
+          def rewrite(tree: Term): Term =
+            tree match {
+              case Block(statements, res) => block(statements, rewrite(res))
+              //case x if isSubClass(actionType.last, "org.parboiled2.Rule") => expand(x, wrapped)
+              case x => '{ $parser.__push(${ x.asExpr }) }.asTerm
+            }
+          // do a beta reduction, using the parameter definitions as stubs for variables
+          // that hold values popped from the stack
+          block(popToVals(args), rewrite(body)).asExprOf[Boolean]
+      }
+    }
+
+    /*val actionType: List[Type] = actionTypeTree.tpe match {
+      case TypeRef(_, _, args) if args.nonEmpty => args
+      case x                                    => c.abort(actionTree.pos, "Unexpected action type: " + x)
+    }
+    def ruleTraceNonTerminalKey = reify(RuleTrace.Action).tree
+
+    def renderInner(wrapped: Boolean): Tree = {
+      val argTypes = actionType dropRight 1
+
+      def popToVals(valNames: List[TermName]): List[Tree] =
+        (valNames zip argTypes).map { case (n, t) => q"val $n = valueStack.pop().asInstanceOf[$t]" }.reverse
+
+      def actionBody(tree: Tree): Tree =
+        tree match {
+          case Block(statements, res) => block(statements, actionBody(res))
+
+          case x @ (Ident(_) | Select(_, _)) =>
+            val valNames = argTypes.indices.map(i => TermName("value" + i)).toList
+            val args     = valNames map Ident.apply
+            block(popToVals(valNames), q"__push($x(..$args))")
+
+          case q"(..$args => $body)" =>
+            def rewrite(tree: Tree): Tree =
+              tree match {
+                case Block(statements, res)                                  => block(statements, rewrite(res))
+                case x if isSubClass(actionType.last, "org.parboiled2.Rule") => expand(x, wrapped)
+                case x                                                       => q"__push($x)"
+              }
+            block(popToVals(args.map(_.name)), rewrite(body))
+        }
+
+      actionBody(c.untypecheck(actionTree))
+    }*/
   }
 
   case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
@@ -450,6 +515,20 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           case Apply(Select(base, "+"), List(l)) => OneOrMore(rec(base), collector(l))
 
           case Apply(
+                Apply(
+                  TypeApply(
+                    Select(
+                      Select(Apply(Apply(TypeApply(Select(_, "rule2ActionOperator"), _), List(base)), _), "~>"),
+                      "apply"
+                    ),
+                    _
+                  ),
+                  List(body)
+                ),
+                List(_, TypeApply(Ident("apply"), ts))
+              ) =>
+            Sequence(rec(base), Action(body, ts))
+          case Apply(
                 Select(
                   Apply(
                     TypeApply(Select(_, "rule2WithSeparatedBy"), _),
@@ -506,7 +585,48 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   }
 
   type Separator = Boolean => Expr[Boolean]
-  def Separator(op: OpTree): Separator = wrapped => op.render(wrapped)
+  private def Separator(op: OpTree): Separator = wrapped => op.render(wrapped)
+
+  /*@tailrec
+  private def callName(tree: Tree): Option[String] =
+    tree match {
+      case Ident(name)       => Some(name.decodedName.toString)
+      case Select(_, name)   => Some(name.decodedName.toString)
+      case Apply(fun, _)     => callName(fun)
+      case TypeApply(fun, _) => callName(fun)
+      case _                 => None
+    }*/
+
+  // tries to match and expand the leaves of the given Tree
+  private def expand(tree: Tree, wrapped: Boolean): Tree =
+    tree match {
+      case Block(statements, res) => block(statements, expand(res, wrapped).asInstanceOf[Term])
+      case If(cond, thenExp, elseExp) =>
+        If(cond, expand(thenExp, wrapped).asInstanceOf[Term], expand(elseExp, wrapped).asInstanceOf[Term])
+      case Match(selector, cases)    => Match(selector, cases.map(expand(_, wrapped).asInstanceOf[CaseDef]))
+      case CaseDef(pat, guard, body) => CaseDef(pat, guard, expand(body, wrapped).asInstanceOf[Term])
+      case x                         => tree //??? //opTreePF.andThen(_.render(wrapped)).applyOrElse(tree, (t: Tree) => q"$t ne null")
+    }
+
+  private def block(a: Term, b: Term): Term =
+    a match {
+      case Block(a1, a2) =>
+        b match {
+          case Block(b1, b2) => Block(a1 ::: a2 :: b1, b2)
+          case _             => Block(a1 ::: a2 :: Nil, b)
+        }
+      case _ =>
+        b match {
+          case Block(b1, b2) => Block(a :: b1, b2)
+          case _             => Block(a :: Nil, b)
+        }
+    }
+
+  private def block(stmts: List[Statement], expr: Term): Term =
+    expr match {
+      case Block(a, b) => block(stmts ::: a ::: Nil, b)
+      case _           => Block(stmts, expr)
+    }
 }
 
 object ParserMacros {
