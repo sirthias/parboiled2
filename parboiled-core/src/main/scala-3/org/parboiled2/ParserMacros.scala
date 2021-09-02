@@ -240,83 +240,72 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
-  private def Times(base: Term, rule: OpTree, collector: Collector, separator: Separator = null): OpTree =
-    base match {
-      case Apply(Select(_, "int2NTimes"), List(n)) =>
-        Times(
-          rule,
-          new MinMaxSupplier {
-            override def apply[T: Type](f: (Expr[Int], Expr[Int]) => Expr[T]): Expr[T] =
-              '{
-                val min = ${ n.asExprOf[Int] }
-                val max = min
-
-                ${ f('min, 'max) }
-              }
-          },
-          collector,
-          separator
-        )
-      case Apply(Select(_, "range2NTimes"), List(rangeExpr)) =>
-        Times(
-          rule,
-          new MinMaxSupplier {
-            override def apply[T: Type](f: (Expr[Int], Expr[Int]) => Expr[T]): Expr[T] =
-              '{
-                val r   = ${ rangeExpr.asExprOf[Range] }
-                val min = r.min
-                val max = r.max
-
-                ${ f('min, 'max) }
-              }
-          },
-          collector,
-          separator
-        )
-      case _ => Unknown(base.show, base.show(using Printer.TreeStructure), "")
-    }
-  /* FIXME: implement optimzations for literal values as shown below
-
-   base match {
-      case q"$a.this.int2NTimes($n)" =>
-        n match {
-          case Literal(Constant(i: Int)) =>
-            if (i <= 0) c.abort(base.pos, "`x` in `x.times` must be positive")
-            else if (i == 1) rule
-            else Times(rule, q"val min, max = $n", collector, separator)
-          case x @ (Ident(_) | Select(_, _)) => Times(rule, q"val min = $n; val max = min", collector, separator)
-          case _                             => c.abort(n.pos, "Invalid int base expression for `.times(...)`: " + n)
-        }
-      case q"$a.this.range2NTimes($r)" =>
-        r match {
-          case q"${_}.Predef.intWrapper($mn).to($mx)" =>
-            mn match {
-              case Literal(Constant(min: Int)) =>
-                if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
-              case (Ident(_) | Select(_, _)) =>
-              case _                         => c.abort(r.pos, "Invalid int range expression for `min` in `.times(...)`: " + r)
-            }
-            mx match {
-              case Literal(Constant(max: Int)) =>
-                if (max <= 0) c.abort(mx.pos, "`max` in `(min to max).times` must be positive")
-              case (Ident(_) | Select(_, _)) =>
-              case _                         => c.abort(r.pos, "Invalid int range expression for `max` in `.times(...)`: " + r)
-            }
-            (mn, mx) match {
-              case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) =>
-                if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
-              case _ =>
-            }
-            Times(rule, q"val min = $mn; val max = $mx", collector, separator)
-          case x @ (Ident(_) | Select(_, _)) =>
-            Times(rule, q"val r = $r; val min = r.start; val max = r.end", collector, separator)
-          case _ => c.abort(r.pos, "Invalid range base expression for `.times(...)`: " + r)
-        }
-      case _ => c.abort(base.pos, "Invalid base expression for `.times(...)`: " + base)
-    }*/
-
   trait MinMaxSupplier {
     def apply[T: Type](f: (Expr[Int], Expr[Int]) => Expr[T]): Expr[T]
+  }
+  object MinMaxSupplier {
+    def constant(n: Expr[Int]): MinMaxSupplier =
+      new MinMaxSupplier {
+        override def apply[T: Type](f: (Expr[Int], Expr[Int]) => Expr[T]): Expr[T] =
+          '{
+            val min = $n
+            val max = min
+
+            ${ f('min, 'max) }
+          }
+      }
+
+    def range(rangeExpr: Expr[Range]): MinMaxSupplier =
+      new MinMaxSupplier {
+        override def apply[T: Type](f: (Expr[Int], Expr[Int]) => Expr[T]): Expr[T] =
+          '{
+            val r   = $rangeExpr
+            val min = r.min
+            val max = r.max
+
+            ${ f('min, 'max) }
+          }
+      }
+
+    /* FIXME: implement optimzations for literal values as shown below
+
+base match {
+  case q"$a.this.int2NTimes($n)" =>
+    n match {
+      case Literal(Constant(i: Int)) =>
+        if (i <= 0) c.abort(base.pos, "`x` in `x.times` must be positive")
+        else if (i == 1) rule
+        else Times(rule, q"val min, max = $n", collector, separator)
+      case x @ (Ident(_) | Select(_, _)) => Times(rule, q"val min = $n; val max = min", collector, separator)
+      case _                             => c.abort(n.pos, "Invalid int base expression for `.times(...)`: " + n)
+    }
+  case q"$a.this.range2NTimes($r)" =>
+    r match {
+      case q"${_}.Predef.intWrapper($mn).to($mx)" =>
+        mn match {
+          case Literal(Constant(min: Int)) =>
+            if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
+          case (Ident(_) | Select(_, _)) =>
+          case _                         => c.abort(r.pos, "Invalid int range expression for `min` in `.times(...)`: " + r)
+        }
+        mx match {
+          case Literal(Constant(max: Int)) =>
+            if (max <= 0) c.abort(mx.pos, "`max` in `(min to max).times` must be positive")
+          case (Ident(_) | Select(_, _)) =>
+          case _                         => c.abort(r.pos, "Invalid int range expression for `max` in `.times(...)`: " + r)
+        }
+        (mn, mx) match {
+          case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) =>
+            if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
+          case _ =>
+        }
+        Times(rule, q"val min = $mn; val max = $mx", collector, separator)
+      case x @ (Ident(_) | Select(_, _)) =>
+        Times(rule, q"val r = $r; val min = r.start; val max = r.end", collector, separator)
+      case _ => c.abort(r.pos, "Invalid range base expression for `.times(...)`: " + r)
+    }
+  case _ => c.abort(base.pos, "Invalid base expression for `.times(...)`: " + base)
+}*/
   }
 
   case class Times(
@@ -835,6 +824,21 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).?($l: support.Lifter[Option, `i`, `o`]) } =>
         Optional(rec(base.asTerm), collector(l.asTerm))
 
+      case '{ type i <: HList; type o <: HList; ($p: Parser).int2NTimes($n).times[`i`, `o`]($arg)($l) } =>
+        Times(
+          rec(arg.asTerm),
+          MinMaxSupplier.constant(n),
+          collector(l.asTerm),
+          null
+        )
+      case '{ type i <: HList; type o <: HList; ($p: Parser).range2NTimes($r).times[`i`, `o`]($arg)($l) } =>
+        Times(
+          rec(arg.asTerm),
+          MinMaxSupplier.range(r),
+          collector(l.asTerm),
+          null
+        )
+
       case '{ type i <: HList; type o <: HList; !($arg: Rule[`i`, `o`]) } =>
         NotPredicate(rec(arg.asTerm))
 
@@ -850,12 +854,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         }
 
       case x =>
-        // These patterns cannot be parsed as quoted patterns because of the complicated type applies
         x.asTerm.underlyingArgument match {
-
-          case Apply(Apply(TypeApply(Select(base, "times"), _), List(arg)), List(l)) =>
-            Times(base, rec(arg), collector(l))
-
+          // cannot easily be converted because we would have to list all ActionOps instances
           case Apply(
                 Apply(
                   TypeApply(
