@@ -555,41 +555,49 @@ base match {
   case class StringMatch(stringTree: Expr[String]) extends OpTree {
     final private val autoExpandMaxStringLength = 8
 
-    override def render(wrapped: Boolean): Expr[Boolean] =
-      // TODO: add optimization for literal constant
-      // def unrollUnwrapped(s: String, ix: Int = 0): Tree =
-      //   if (ix < s.length) q"""
-      //     if (cursorChar == ${s charAt ix}) {
-      //       __advance()
-      //       ${unrollUnwrapped(s, ix + 1)}:Boolean
-      //     } else false"""
-      //   else q"true"
-      // def unrollWrapped(s: String, ix: Int = 0): Tree =
-      //   if (ix < s.length) {
-      //     val ch = s charAt ix
-      //     q"""if (cursorChar == $ch) {
-      //       __advance()
-      //       __updateMaxCursor()
-      //       ${unrollWrapped(s, ix + 1)}
-      //     } else {
-      //       try __registerMismatch()
-      //       catch {
-      //         case org.parboiled2.Parser.StartTracingException =>
-      //           import org.parboiled2.RuleTrace._
-      //           __bubbleUp(NonTerminal(StringMatch($stringTree), -$ix) :: Nil, CharMatch($ch))
-      //       }
-      //     }"""
-      //   } else q"true"
+    override def render(wrapped: Boolean): Expr[Boolean] = {
+      def unrollUnwrapped(s: String, ix: Int = 0): Expr[Boolean] =
+        if (ix < s.length)
+          '{
+            if ($parser.cursorChar == ${ Expr(s.charAt(ix)) }) {
+              $parser.__advance()
+              ${ unrollUnwrapped(s, ix + 1) }
+            } else false
+          }
+        else '{ true }
 
-      // stringTree match {
-      //   case Literal(Constant(s: String)) if s.length <= autoExpandMaxStringLength =>
-      //     if (s.isEmpty) q"true" else if (wrapped) unrollWrapped(s) else unrollUnwrapped(s)
-      //   case _ =>
-      //     if (wrapped) q"__matchStringWrapped($stringTree)"
-      //     else q"__matchString($stringTree)"
-      // }
-      if (wrapped) '{ $parser.__matchStringWrapped($stringTree) }
-      else '{ $parser.__matchString($stringTree) }
+      def unrollWrapped(s: String, ix: Int = 0): Expr[Boolean] =
+        if (ix < s.length) {
+          val ch = Expr(s.charAt(ix))
+          '{
+            if ($parser.cursorChar == $ch) {
+              $parser.__advance()
+              $parser.__updateMaxCursor()
+              ${ unrollWrapped(s, ix + 1) }
+            } else {
+              try $parser.__registerMismatch()
+              catch {
+                case org.parboiled2.Parser.StartTracingException =>
+                  import org.parboiled2.RuleTrace._
+                  $parser.__bubbleUp(
+                    NonTerminal(org.parboiled2.RuleTrace.StringMatch($stringTree), -${ Expr(ix) }) :: Nil,
+                    org.parboiled2.RuleTrace.CharMatch($ch)
+                  )
+              }
+            }
+          }
+        } else '{ true }
+
+      stringTree.asTerm match {
+        case Literal(StringConstant(s: String)) if s.length <= autoExpandMaxStringLength =>
+          if (s.isEmpty) '{ true }
+          else if (wrapped) unrollWrapped(s)
+          else unrollUnwrapped(s)
+        case _ =>
+          if (wrapped) '{ $parser.__matchStringWrapped($stringTree) }
+          else '{ $parser.__matchString($stringTree) }
+      }
+    }
   }
 
   case class MapMatch(mapTree: Expr[Map[String, Any]], ignoreCaseTree: Expr[Boolean]) extends OpTree {
@@ -615,40 +623,47 @@ base match {
     final private val autoExpandMaxStringLength = 8
 
     override def render(wrapped: Boolean): Expr[Boolean] =
-      // TODO: optimize litera constant
-      // def unrollUnwrapped(s: String, ix: Int = 0): Tree =
-      //   if (ix < s.length) q"""
-      //     if (_root_.java.lang.Character.toLowerCase(cursorChar) == ${s charAt ix}) {
-      //       __advance()
-      //       ${unrollUnwrapped(s, ix + 1)}
-      //     } else false"""
-      //   else q"true"
-      // def unrollWrapped(s: String, ix: Int = 0): Tree =
-      //   if (ix < s.length) {
-      //     val ch = s charAt ix
-      //     q"""if (_root_.java.lang.Character.toLowerCase(cursorChar) == $ch) {
-      //       __advance()
-      //       __updateMaxCursor()
-      //       ${unrollWrapped(s, ix + 1)}
-      //     } else {
-      //       try __registerMismatch()
-      //       catch {
-      //         case org.parboiled2.Parser.StartTracingException =>
-      //           import org.parboiled2.RuleTrace._
-      //           __bubbleUp(NonTerminal(IgnoreCaseString($stringTree), -$ix) :: Nil, IgnoreCaseChar($ch))
-      //       }
-      //     }"""
-      //   } else q"true"
+      def unrollUnwrapped(s: String, ix: Int = 0): Expr[Boolean] =
+        if (ix < s.length)
+          '{
+            if (_root_.java.lang.Character.toLowerCase($parser.cursorChar) == ${ Expr(s.charAt(ix)) }) {
+              $parser.__advance()
+              ${ unrollUnwrapped(s, ix + 1) }
+            } else false
+          }
+        else '{ true }
 
-      // stringTree match {
-      //   case Literal(Constant(s: String)) if s.length <= autoExpandMaxStringLength =>
-      //     if (s.isEmpty) q"true" else if (wrapped) unrollWrapped(s) else unrollUnwrapped(s)
-      //   case _ =>
-      //     if (wrapped) q"__matchIgnoreCaseStringWrapped($stringTree)"
-      //     else q"__matchIgnoreCaseString($stringTree)"
-      // }
-      if (wrapped) '{ $parser.__matchIgnoreCaseStringWrapped($stringTree) }
-      else '{ $parser.__matchIgnoreCaseString($stringTree) }
+      def unrollWrapped(s: String, ix: Int = 0): Expr[Boolean] =
+        if (ix < s.length) {
+          val ch = Expr(s.charAt(ix))
+          '{
+            if (_root_.java.lang.Character.toLowerCase($parser.cursorChar) == $ch) {
+              $parser.__advance()
+              $parser.__updateMaxCursor()
+              ${ unrollWrapped(s, ix + 1) }
+            } else {
+              try $parser.__registerMismatch()
+              catch {
+                case org.parboiled2.Parser.StartTracingException =>
+                  import org.parboiled2.RuleTrace._
+                  $parser.__bubbleUp(
+                    NonTerminal(org.parboiled2.RuleTrace.IgnoreCaseString($stringTree), -${ Expr(ix) }) :: Nil,
+                    org.parboiled2.RuleTrace.IgnoreCaseChar($ch)
+                  )
+              }
+            }
+          }
+        } else '{ true }
+
+      stringTree.asTerm match {
+        case Literal(StringConstant(s: String)) if s.length <= autoExpandMaxStringLength =>
+          if (s.isEmpty) '{ true }
+          else if (wrapped) unrollWrapped(s)
+          else unrollUnwrapped(s)
+        case _ =>
+          if (wrapped) '{ $parser.__matchIgnoreCaseStringWrapped($stringTree) }
+          else '{ $parser.__matchIgnoreCaseString($stringTree) }
+      }
   }
 
   private case class CharPredicateMatch(predicateTree: Expr[CharPredicate])
