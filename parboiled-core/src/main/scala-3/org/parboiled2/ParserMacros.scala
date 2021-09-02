@@ -771,42 +771,87 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       )
 
     def rec(rule: Term): OpTree = rule.asExprOf[Rule[_, _]] match {
-      case '{ ($p: Parser).ch($c) }                              => CharMatch(c)
-      case '{ ($p: Parser).str($s) }                             => StringMatch(s)
-      case '{ ($p: Parser).valueMap($m: Map[String, Any]) }      => MapMatch(m, '{ false })
-      case '{ ($p: Parser).valueMap($m: Map[String, Any], $ic) } => MapMatch(m, ic)
-      case '{ ($p: Parser).ignoreCase($c: Char) }                => IgnoreCaseChar(c)
-      case '{ ($p: Parser).ignoreCase($s: String) }              => IgnoreCaseString(s)
-      case '{ ($p: Parser).predicate($pr) }                      => CharPredicateMatch(pr)
-      case '{ ($p: Parser).anyOf($s) }                           => AnyOf(s)
-      case '{ ($p: Parser).noneOf($s) }                          => NoneOf(s)
-      case '{ ($p: Parser).ANY }                                 => ANY
-      case '{ ($p: Parser).str2CharRangeSupport($l).-($r) }      => CharRange(l, r)
-      case '{ ($p: Parser).test($flag) }                         => SemanticPredicate(flag)
-      case '{ ($p: Parser).push[t]($value) }                     => PushAction(value, Type.of[t])
-      case '{ ($p: Parser).drop[t] }                             => DropAction(Type.of[t])
-      case x                                                     =>
+      case '{ ($p: Parser).ch($c) }                                                        => CharMatch(c)
+      case '{ ($p: Parser).str($s) }                                                       => StringMatch(s)
+      case '{ ($p: Parser).valueMap($m: Map[String, Any]) }                                => MapMatch(m, '{ false })
+      case '{ ($p: Parser).valueMap($m: Map[String, Any], $ic) }                           => MapMatch(m, ic)
+      case '{ ($p: Parser).ignoreCase($c: Char) }                                          => IgnoreCaseChar(c)
+      case '{ ($p: Parser).ignoreCase($s: String) }                                        => IgnoreCaseString(s)
+      case '{ ($p: Parser).predicate($pr) }                                                => CharPredicateMatch(pr)
+      case '{ ($p: Parser).anyOf($s) }                                                     => AnyOf(s)
+      case '{ ($p: Parser).noneOf($s) }                                                    => NoneOf(s)
+      case '{ ($p: Parser).ANY }                                                           => ANY
+      case '{ ($p: Parser).str2CharRangeSupport($l).-($r) }                                => CharRange(l, r)
+      case '{ ($p: Parser).test($flag) }                                                   => SemanticPredicate(flag)
+      case '{ ($p: Parser).push[t]($value) }                                               => PushAction(value, Type.of[t])
+      case '{ ($p: Parser).drop[t] }                                                       => DropAction(Type.of[t])
+      case '{ type i <: HList; type o <: HList; ($p: Parser).capture[`i`, `o`]($arg)($l) } => Capture(rec(arg.asTerm))
+      case '{
+            type i1 <: HList; type o1 <: HList
+            type i2 <: HList; type o2 <: HList
+            ($lhs: Rule[`i1`, `o1`]).~[`i2`, `o2`]($rhs)($_, $_)
+          } =>
+        Sequence(Seq(rec(lhs.asTerm), rec(rhs.asTerm)))
+
+      case '{
+            type i1 <: HList; type o1 <: HList
+            type i2 <: `i1`; type o2 >: `o1` <: HList
+            ($lhs: Rule[`i1`, `o1`]).|[`i2`, `o2`]($rhs)
+          } =>
+        FirstOf(rec(lhs.asTerm), rec(rhs.asTerm))
+
+      case '{
+            type i1 <: HList; type o1 <: HList
+            type i2 <: HList; type o2 <: HList
+            ($lhs: Rule[`i1`, `o1`]).~!~[`i2`, `o2`]($rhs)($_, $_)
+          } =>
+        Cut(rec(lhs.asTerm), rec(rhs.asTerm))
+
+      case '{ type i <: HList; type o <: HList; ($p: Parser).zeroOrMore[`i`, `o`]($arg)($l) } =>
+        ZeroOrMore(rec(arg.asTerm), collector(l.asTerm))
+
+      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).*($l: support.Lifter[Seq, `i`, `o`]) } =>
+        ZeroOrMore(rec(base.asTerm), collector(l.asTerm))
+
+      case '{
+            type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).*($sep: Rule0)($l: support.Lifter[Seq, `i`, `o`])
+          } =>
+        ZeroOrMore(rec(base.asTerm), collector(l.asTerm), Separator(rec(sep.asTerm)))
+
+      case '{ type i <: HList; type o <: HList; ($p: Parser).oneOrMore[`i`, `o`]($arg)($l) } =>
+        OneOrMore(rec(arg.asTerm), collector(l.asTerm))
+
+      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).+($l: support.Lifter[Seq, `i`, `o`]) } =>
+        OneOrMore(rec(base.asTerm), collector(l.asTerm))
+
+      case '{
+            type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).+($sep: Rule0)($l: support.Lifter[Seq, `i`, `o`])
+          } =>
+        OneOrMore(rec(base.asTerm), collector(l.asTerm), Separator(rec(sep.asTerm)))
+
+      case '{ type i <: HList; type o <: HList; ($p: Parser).optional[`i`, `o`]($arg)($l) } =>
+        Optional(rec(arg.asTerm), collector(l.asTerm))
+
+      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).?($l: support.Lifter[Option, `i`, `o`]) } =>
+        Optional(rec(base.asTerm), collector(l.asTerm))
+
+      case '{ type i <: HList; type o <: HList; !($arg: Rule[`i`, `o`]) } =>
+        NotPredicate(rec(arg.asTerm))
+
+      case '{ ($p: Parser).&($arg) } =>
+        AndPredicate(rec(arg.asTerm))
+
+      case '{
+            type i <: HList; type o <: HList; ($p: Parser).rule2WithSeparatedBy[`i`, `o`]($base).separatedBy($sep)
+          } =>
+        rec(base.asTerm) match {
+          case ws: WithSeparator => ws.withSeparator(Separator(rec(sep.asTerm)))
+          case _                 => reportError(s"Illegal `separatedBy` base: $base", base)
+        }
+
+      case x =>
         // These patterns cannot be parsed as quoted patterns because of the complicated type applies
         x.asTerm.underlyingArgument match {
-          case Apply(Apply(TypeApply(Select(lhs, "~"), _), List(rhs)), _)   => Sequence(Seq(rec(lhs), rec(rhs)))
-          case Apply(Apply(TypeApply(Select(lhs, "~!~"), _), List(rhs)), _) => Cut(rec(lhs), rec(rhs))
-          case Apply(TypeApply(Select(lhs, "|"), _), List(rhs))             => FirstOf(rec(lhs), rec(rhs))
-
-          case Apply(Apply(TypeApply(Select(_, "zeroOrMore"), _), List(arg)), List(l)) =>
-            ZeroOrMore(rec(arg), collector(l))
-          case Apply(Select(base, "*"), List(l)) => ZeroOrMore(rec(base), collector(l))
-
-          case Apply(Apply(Select(base, "*"), List(sep)), List(l)) =>
-            ZeroOrMore(rec(base), collector(l), Separator(rec(sep)))
-
-          case Apply(Apply(TypeApply(Select(_, "oneOrMore"), _), List(arg)), List(l)) =>
-            OneOrMore(rec(arg), collector(l))
-          case Apply(Select(base, "+"), List(l)) => OneOrMore(rec(base), collector(l))
-
-          case Apply(Apply(TypeApply(Select(_, "optional"), _), List(arg)), List(l)) =>
-            Optional(rec(arg), collector(l))
-          case Apply(Select(arg, "?"), List(l)) =>
-            Optional(rec(arg), collector(l))
 
           case Apply(Apply(TypeApply(Select(base, "times"), _), List(arg)), List(l)) =>
             Times(base, rec(arg), collector(l))
@@ -826,22 +871,6 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
               ) =>
             Sequence(rec(base), Action(body, ts))
 
-          case Apply(Select(_, "&"), List(arg)) => AndPredicate(rec(arg))
-          case Select(arg, "unary_!")           => NotPredicate(rec(arg))
-
-          case Apply(
-                Select(Apply(TypeApply(Select(_, "rule2WithSeparatedBy"), _), List(base)), "separatedBy"),
-                List(sep)
-              ) =>
-            rec(base) match {
-              case ws: WithSeparator => ws.withSeparator(Separator(rec(sep)))
-              case _                 => reportError(s"Illegal `separatedBy` base: $base", base.asExpr)
-            }
-
-          case Apply(Apply(Select(base, "+"), List(sep)), List(l)) =>
-            OneOrMore(rec(base), collector(l), Separator(rec(sep)))
-
-          case Apply(Apply(TypeApply(Select(_, "capture"), _), List(arg)), _) => Capture(rec(arg))
           case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _))
               if !callName(call).exists(ruleNameBlacklist) =>
             RuleCall(
