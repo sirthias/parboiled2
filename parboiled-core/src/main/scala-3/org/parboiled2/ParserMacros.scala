@@ -402,7 +402,7 @@ base match {
     }
   }
 
-  private def expandLambda(body: Term): Expr[Boolean] = {
+  private def expandLambda(body: Term, wrapped: Boolean): Expr[Boolean] = {
     def popToVals(valdefs: List[ValDef]): List[Statement] = {
       def convertOne(v: ValDef): ValDef =
         v.tpt.tpe.asType match {
@@ -415,10 +415,13 @@ base match {
     body match {
       case Lambda(args, body) =>
         def rewrite(tree: Term): Term =
-          tree match {
-            case Block(statements, res) => block(statements, rewrite(res))
-            //case x if isSubClass(actionType.last, "org.parboiled2.Rule") => expand(x, wrapped)
-            case x => '{ $parser.__push(${ x.asExpr }) }.asTerm
+          tree.tpe.asType match {
+            case '[Rule[_, _]] => expand(tree, wrapped).asInstanceOf[Term]
+            case _ =>
+              tree match {
+                case Block(statements, res) => block(statements, rewrite(res))
+                case x                      => '{ $parser.__push(${ x.asExpr }) }.asTerm
+              }
           }
         // do a beta reduction, using the parameter definitions as stubs for variables
         // that hold values popped from the stack
@@ -429,7 +432,7 @@ base match {
   private case class Action(body: Term, ts: List[TypeTree]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
 
-    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = expandLambda(body)
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = expandLambda(body, wrapped)
 
     /*val actionType: List[Type] = actionTypeTree.tpe match {
       case TypeRef(_, _, args) if args.nonEmpty => args
@@ -494,11 +497,11 @@ base match {
 
       body.asTerm.tpe.asType match {
         case '[Rule[_, _]]                => expand(body, wrapped)
-        case '[t1 => r]                   => expandLambda(body.asTerm)
-        case '[(t1, t2) => r]             => expandLambda(body.asTerm)
-        case '[(t1, t2, t3) => r]         => expandLambda(body.asTerm)
-        case '[(t1, t2, t3, t4) => r]     => expandLambda(body.asTerm)
-        case '[(t1, t2, t3, t4, t5) => r] => expandLambda(body.asTerm)
+        case '[t1 => r]                   => expandLambda(body.asTerm, wrapped)
+        case '[(t1, t2) => r]             => expandLambda(body.asTerm, wrapped)
+        case '[(t1, t2, t3) => r]         => expandLambda(body.asTerm, wrapped)
+        case '[(t1, t2, t3, t4) => r]     => expandLambda(body.asTerm, wrapped)
+        case '[(t1, t2, t3, t4, t5) => r] => expandLambda(body.asTerm, wrapped)
         case '[x]                         => '{ $body; true }
       }
     /*def renderFunctionAction(resultTypeTree: Tree, argTypeTrees: Tree*): Tree = {
