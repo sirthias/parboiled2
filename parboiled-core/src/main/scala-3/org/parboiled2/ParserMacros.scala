@@ -433,68 +433,12 @@ base match {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Action }
 
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = expandLambda(body, wrapped)
-
-    /*val actionType: List[Type] = actionTypeTree.tpe match {
-      case TypeRef(_, _, args) if args.nonEmpty => args
-      case x                                    => c.abort(actionTree.pos, "Unexpected action type: " + x)
-    }
-    def ruleTraceNonTerminalKey = reify(RuleTrace.Action).tree
-
-    def renderInner(wrapped: Boolean): Tree = {
-      val argTypes = actionType dropRight 1
-
-      def popToVals(valNames: List[TermName]): List[Tree] =
-        (valNames zip argTypes).map { case (n, t) => q"val $n = valueStack.pop().asInstanceOf[$t]" }.reverse
-
-      def actionBody(tree: Tree): Tree =
-        tree match {
-          case Block(statements, res) => block(statements, actionBody(res))
-
-          case x @ (Ident(_) | Select(_, _)) =>
-            val valNames = argTypes.indices.map(i => TermName("value" + i)).toList
-            val args     = valNames map Ident.apply
-            block(popToVals(valNames), q"__push($x(..$args))")
-
-          case q"(..$args => $body)" =>
-            def rewrite(tree: Tree): Tree =
-              tree match {
-                case Block(statements, res)                                  => block(statements, rewrite(res))
-                case x if isSubClass(actionType.last, "org.parboiled2.Rule") => expand(x, wrapped)
-                case x                                                       => q"__push($x)"
-              }
-            block(popToVals(args.map(_.name)), rewrite(body))
-        }
-
-      actionBody(c.untypecheck(actionTree))
-    }*/
   }
 
   case class RunAction(body: Expr[_]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Run }
 
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
-      /*def actionBody(tree: Tree): Tree =
-          tree match {
-            case Block(statements, res) => block(statements, actionBody(res))
-
-            case q"(..$args => $body)" =>
-              def rewrite(tree: Tree): Tree =
-                tree match {
-                  case Block(statements, res)                                     => block(statements, rewrite(res))
-                  case x if isSubClass(resultTypeTree.tpe, "org.parboiled2.Rule") => expand(x, wrapped)
-                  case x                                                          => q"__push($x)"
-                }
-              val valDefs = args
-                .zip(argTypeTrees)
-                .map { case (a, t) => q"val ${a.name} = valueStack.pop().asInstanceOf[${t.tpe}]" }
-                .reverse
-              block(valDefs, rewrite(body))
-
-            case x => c.abort(argTree.pos, "Unexpected `run` argument: " + show(argTree))
-          }
-
-        actionBody(c.untypecheck(argTree))*/
-
       body.asTerm.tpe.asType match {
         case '[Rule[_, _]]                => expand(body, wrapped)
         case '[t1 => r]                   => expandLambda(body.asTerm, wrapped)
@@ -504,47 +448,6 @@ base match {
         case '[(t1, t2, t3, t4, t5) => r] => expandLambda(body.asTerm, wrapped)
         case '[x]                         => '{ $body; true }
       }
-    /*def renderFunctionAction(resultTypeTree: Tree, argTypeTrees: Tree*): Tree = {
-      def actionBody(tree: Tree): Tree =
-        tree match {
-          case Block(statements, res) => block(statements, actionBody(res))
-
-          case q"(..$args => $body)" =>
-            def rewrite(tree: Tree): Tree =
-              tree match {
-                case Block(statements, res)                                     => block(statements, rewrite(res))
-                case x if isSubClass(resultTypeTree.tpe, "org.parboiled2.Rule") => expand(x, wrapped)
-                case x                                                          => q"__push($x)"
-              }
-            val valDefs = args
-              .zip(argTypeTrees)
-              .map { case (a, t) => q"val ${a.name} = valueStack.pop().asInstanceOf[${t.tpe}]" }
-              .reverse
-            block(valDefs, rewrite(body))
-
-          case x => c.abort(argTree.pos, "Unexpected `run` argument: " + show(argTree))
-        }
-
-      actionBody(c.untypecheck(argTree))
-    }
-
-    rrTree match {
-      case q"RunResult.this.Aux.forAny[$t]" => block(argTree, q"true")
-
-      case q"RunResult.this.Aux.forRule[$t]" => expand(argTree, wrapped)
-
-      case q"RunResult.this.Aux.forF1[$z, $r, $in, $out]($a)"             => renderFunctionAction(r, z)
-      case q"RunResult.this.Aux.forF2[$y, $z, $r, $in, $out]($a)"         => renderFunctionAction(r, y, z)
-      case q"RunResult.this.Aux.forF3[$x, $y, $z, $r, $in, $out]($a)"     => renderFunctionAction(r, x, y, z)
-      case q"RunResult.this.Aux.forF4[$w, $x, $y, $z, $r, $in, $out]($a)" => renderFunctionAction(r, w, x, y, z)
-      case q"RunResult.this.Aux.forF5[$v, $w, $x, $y, $z, $r, $in, $out]($a)" =>
-        renderFunctionAction(r, v, w, x, y, z)
-
-      case q"RunResult.this.Aux.forFHList[$il, $r, $in, $out]($a)" =>
-        c.abort(argTree.pos, "`run` with a function taking an HList is not yet implemented") // TODO: implement
-
-      case x => c.abort(rrTree.pos, "Unexpected RunResult.Aux: " + show(x))
-    }*/
   }
 
   case class SemanticPredicate(flagTree: Expr[Boolean]) extends TerminalOpTree {
