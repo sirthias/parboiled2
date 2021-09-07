@@ -732,6 +732,39 @@ base match {
     }
   }
 
+  case class Fail(stringExpr: Expr[String]) extends OpTree {
+    def render(wrapped: Boolean): Expr[Boolean] = '{ throw new org.parboiled2.Parser.Fail($stringExpr) }
+  }
+  case class Named(op: OpTree, stringExpr: Expr[String]) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey                                        = '{ RuleTrace.Named($stringExpr) }
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = op.render(wrapped)
+  }
+  case class Atomic(op: OpTree) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.Atomic }
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      if (wrapped) '{
+        val saved   = $parser.__enterAtomic($start)
+        val matched = ${ op.render(wrapped) }
+        $parser.__exitAtomic(saved)
+        matched
+      }
+      else op.render(wrapped)
+  }
+
+  case class Quiet(op: OpTree) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.Quiet }
+
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
+      if (wrapped) '{
+        val saved   = $parser.__enterQuiet()
+        val matched = ${ op.render(wrapped) }
+        $parser.__exitQuiet(saved)
+        matched
+      }
+      else op.render(wrapped)
+  }
+
   def topLevel(opTree: OpTree, name: Expr[String]): OpTree = RuleCall(Left(opTree), name)
 
   def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree = deconstructPF(outerRule).get
@@ -857,7 +890,12 @@ base match {
           case _                 => reportError(s"Illegal `separatedBy` base: $base", base)
         }
 
-      case '{ ($p: Parser).run[t]($e)($l) } => RunAction(e)
+      case '{ ($p: Parser).run[t]($e)($l) }                                           => RunAction(e)
+      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).named($str) } => Named(rec(base.asTerm), str)
+      case '{ type i <: HList; type o <: HList; ($p: Parser).atomic[`i`, `o`]($r) }   => Atomic(rec(r.asTerm))
+      case '{ type i <: HList; type o <: HList; ($p: Parser).quiet[`i`, `o`]($r) }    => Quiet(rec(r.asTerm))
+      case '{ ($p: Parser).fail($str) }                                               => Fail(str)
+      case '{ type i <: HList; type o <: HList; ($p: Parser).failX[`i`, `o`]($str) }  => Fail(str)
     }
 
     lazy val rules1PF: PartialFunction[Term, OpTree] = {
