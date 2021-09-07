@@ -50,7 +50,7 @@ trait Base64Parsing { this: Parser =>
   def base64StringOrBlock(alphabet: CharPredicate, decoder: Decoder): Rule1[Array[Byte]] = {
     val start = cursor
     rule {
-      oneOrMore(alphabet) ~ run {
+      oneOrMore(alphabet) ~ run[Rule1[Array[Byte]]] {
         decoder(input.sliceCharArray(start, cursor)) match {
           case null  => MISMATCH
           case bytes => push(bytes)
@@ -62,7 +62,7 @@ trait Base64Parsing { this: Parser =>
   private def base64(alphabet: CharPredicate, fillChar: Char, decoder: Decoder): Rule1[Array[Byte]] = {
     val start = cursor
     rule {
-      oneOrMore(alphabet) ~ zeroOrMore(ch(fillChar)) ~ run {
+      oneOrMore(alphabet) ~ zeroOrMore(ch(fillChar)) ~ run[Rule1[Array[Byte]]] {
         decoder(input.sliceCharArray(start, cursor)) match {
           case null  => MISMATCH
           case bytes => push(bytes)
