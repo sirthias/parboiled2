@@ -19,7 +19,7 @@ package org.parboiled2.examples
 import scala.collection.immutable
 import org.parboiled2._
 
-object CsvParser extends {
+object CsvParser {
 
   case class CsvFile(header: Option[Record], records: immutable.Seq[Record])
   case class Record(fields: immutable.Seq[String])
@@ -50,12 +50,12 @@ class CsvParser(val input: ParserInput, headerPresent: Boolean, fieldDelimiter: 
   def file =
     rule {
       OWS ~ optional(test(headerPresent) ~ header ~ NL) ~ oneOrMore(record)
-        .separatedBy(NL) ~ optional(NL) ~ EOI ~> CsvFile
+        .separatedBy(NL) ~ optional(NL) ~ EOI ~> (CsvFile(_, _))
     }
 
   def header = rule(record)
 
-  def record = rule(oneOrMore(field).separatedBy(fieldDelimiter) ~> Record)
+  def record = rule(oneOrMore(field).separatedBy(fieldDelimiter) ~> (Record(_)))
 
   def field = rule(`quoted-field` | `unquoted-field`)
 
