@@ -387,8 +387,8 @@ base match {
           case x: RuleCall         => '{ RuleTrace.NotPredicate.RuleCall(${ x.calleeNameTree }) }
           case x: StringMatch      => '{ RuleTrace.NotPredicate.Named(s"\"${${ x.stringTree }}\"") }
           case x: IgnoreCaseString => '{ RuleTrace.NotPredicate.Named(s"\"${${ x.stringTree }}\"") }
-          //case x: Named            => '{RuleTrace.NotPredicate.Named(s"\"${${x.stringTree}}\"")}
-          case _ => '{ RuleTrace.NotPredicate.Anonymous }
+          case x: Named            => '{ RuleTrace.NotPredicate.Named(s"\"${${ x.stringExpr }}\"") }
+          case _                   => '{ RuleTrace.NotPredicate.Anonymous }
         }
         '{
           var matchEnd = 0
