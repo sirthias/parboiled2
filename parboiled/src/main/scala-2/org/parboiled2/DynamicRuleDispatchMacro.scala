@@ -16,28 +16,12 @@
 
 package org.parboiled2
 
-import scala.collection.immutable
 import scala.reflect.macros.whitebox.Context
 import org.parboiled2.support.hlist.HList
 
-/** An application needs to implement this interface to receive the result
-  * of a dynamic parsing run.
-  * Often times this interface is directly implemented by the Parser class itself
-  * (even though this is not a requirement).
-  */
-trait DynamicRuleHandler[P <: Parser, L <: HList] extends Parser.DeliveryScheme[L] {
-  def parser: P
-  def ruleNotFound(ruleName: String): Result
-}
+import scala.collection.immutable
 
-/** Runs one of the rules of a parser instance of type `P` given the rules name.
-  * The rule must have type `RuleN[L]`.
-  */
-trait DynamicRuleDispatch[P <: Parser, L <: HList] {
-  def apply(handler: DynamicRuleHandler[P, L], ruleName: String): handler.Result
-}
-
-object DynamicRuleDispatch {
+trait DynamicRuleDispatchMacro { _: DynamicRuleDispatch.type =>
 
   /** Implements efficient runtime dispatch to a predefined set of parser rules.
     * Given a number of rule names this macro-supported method creates a `DynamicRuleDispatch` instance along with
@@ -46,7 +30,7 @@ object DynamicRuleDispatch {
     * does not constitute a method of parser type `P` or has a type different from `RuleN[L]`.
     */
   def apply[P <: Parser, L <: HList](ruleNames: String*): (DynamicRuleDispatch[P, L], immutable.Seq[String]) =
-    macro __create[P, L]
+    macro DynamicRuleDispatch.__create[P, L]
 
   ///////////////////// INTERNAL ////////////////////////
 
