@@ -16,7 +16,6 @@
 
 package org.parboiled2
 
-import scala.collection.immutable
 import org.parboiled2.support.hlist.HList
 
 /** An application needs to implement this interface to receive the result
