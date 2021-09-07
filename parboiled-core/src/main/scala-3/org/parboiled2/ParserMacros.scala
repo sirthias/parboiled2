@@ -106,8 +106,10 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case _                                => Sequence(Seq(lhs, rhs))
     }
 
-  case class Sequence(ops: Seq[OpTree]) extends OpTree {
-    override def render(wrapped: Boolean): Expr[Boolean] =
+  case class Sequence(ops: Seq[OpTree]) extends DefaultNonTerminalOpTree {
+    require(ops.size >= 2)
+    override def ruleTraceNonTerminalKey = '{ RuleTrace.Sequence }
+    override def renderInner(start: quoted.Expr[Int], wrapped: Boolean): Expr[Boolean] =
       ops
         .map(_.render(wrapped))
         .reduceLeft((l, r) => '{ val ll = $l; if (ll) $r else false })
