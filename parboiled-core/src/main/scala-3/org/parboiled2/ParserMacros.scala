@@ -268,46 +268,52 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             ${ f('min, 'max) }
           }
       }
+  }
 
-    /* FIXME: implement optimzations for literal values as shown below
+  def Int2NTimes(
+      n: Expr[Int],
+      op: OpTree,
+      withMinMax: MinMaxSupplier,
+      collector: Collector,
+      separator: Separator
+  ): OpTree =
+    n.asTerm match {
+      case Literal(IntConstant(i)) =>
+        if (i <= 0) reportError("`x` in `x.times` must be positive", n)
+        else if (i == 1) op
+        else Times(op, withMinMax, collector, separator)
+      case _ =>
+        Times(op, withMinMax, collector, separator)
+    }
 
-base match {
-  case q"$a.this.int2NTimes($n)" =>
-    n match {
-      case Literal(Constant(i: Int)) =>
-        if (i <= 0) c.abort(base.pos, "`x` in `x.times` must be positive")
-        else if (i == 1) rule
-        else Times(rule, q"val min, max = $n", collector, separator)
-      case x @ (Ident(_) | Select(_, _)) => Times(rule, q"val min = $n; val max = min", collector, separator)
-      case _                             => c.abort(n.pos, "Invalid int base expression for `.times(...)`: " + n)
+  def Range2NTimes(
+      range: Expr[Range],
+      op: OpTree,
+      withMinMax: MinMaxSupplier,
+      collector: Collector,
+      separator: Separator
+  ): OpTree = {
+    range match {
+      case '{ scala.Predef.intWrapper($mn).to($mx) } =>
+        mn.asTerm match {
+          case Literal(IntConstant(min)) if min <= 0 =>
+            reportError("`min` in `(min to max).times` must be positive", mn)
+          case _ => ()
+        }
+        mx.asTerm match {
+          case Literal(IntConstant(max)) if max <= 0 =>
+            reportError("`max` in `(min to max).times` must be positive", mx)
+          case _ => ()
+        }
+        (mn.asTerm, mx.asTerm) match {
+          case (Literal(IntConstant(min)), Literal(IntConstant(max))) if max < min =>
+            reportError("`max` in `(min to max).times` must be >= `min`", mx)
+          case _ => ()
+        }
+        Times(op, withMinMax, collector, separator)
+      case _ =>
+        reportError("Invalid base expression for `.times(...)`: " + range.show, range)
     }
-  case q"$a.this.range2NTimes($r)" =>
-    r match {
-      case q"${_}.Predef.intWrapper($mn).to($mx)" =>
-        mn match {
-          case Literal(Constant(min: Int)) =>
-            if (min <= 0) c.abort(mn.pos, "`min` in `(min to max).times` must be positive")
-          case (Ident(_) | Select(_, _)) =>
-          case _                         => c.abort(r.pos, "Invalid int range expression for `min` in `.times(...)`: " + r)
-        }
-        mx match {
-          case Literal(Constant(max: Int)) =>
-            if (max <= 0) c.abort(mx.pos, "`max` in `(min to max).times` must be positive")
-          case (Ident(_) | Select(_, _)) =>
-          case _                         => c.abort(r.pos, "Invalid int range expression for `max` in `.times(...)`: " + r)
-        }
-        (mn, mx) match {
-          case (Literal(Constant(min: Int)), Literal(Constant(max: Int))) =>
-            if (max < min) c.abort(mx.pos, "`max` in `(min to max).times` must be >= `min`")
-          case _ =>
-        }
-        Times(rule, q"val min = $mn; val max = $mx", collector, separator)
-      case x @ (Ident(_) | Select(_, _)) =>
-        Times(rule, q"val r = $r; val min = r.start; val max = r.end", collector, separator)
-      case _ => c.abort(r.pos, "Invalid range base expression for `.times(...)`: " + r)
-    }
-  case _ => c.abort(base.pos, "Invalid base expression for `.times(...)`: " + base)
-}*/
   }
 
   case class Times(
@@ -862,14 +868,16 @@ base match {
         Optional(rec(base.asTerm), collector(l.asTerm))
 
       case '{ type i <: HList; type o <: HList; ($p: Parser).int2NTimes($n).times[`i`, `o`]($arg)($l) } =>
-        Times(
+        Int2NTimes(
+          n,
           rec(arg.asTerm),
           MinMaxSupplier.constant(n),
           collector(l.asTerm),
           null
         )
       case '{ type i <: HList; type o <: HList; ($p: Parser).range2NTimes($r).times[`i`, `o`]($arg)($l) } =>
-        Times(
+        Range2NTimes(
+          r,
           rec(arg.asTerm),
           MinMaxSupplier.range(r),
           collector(l.asTerm),
