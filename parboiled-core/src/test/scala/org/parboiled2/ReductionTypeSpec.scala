@@ -26,10 +26,10 @@ object ReductionTypeSpec extends TestSuite {
   case class Foo2(lhs: Foo, rhs: Foo) extends Foo
 
   class FooParser(val input: ParserInput) extends Parser {
-    def OneOrMoreExpr: Rule1[Foo2] = rule(foo1 ~ oneOrMore(foo1 ~> Foo2.apply))
-    def ZeroOrMoreExpr: Rule1[Foo] = rule(foo1 ~ zeroOrMore(foo1 ~> Foo2.apply))
-    def OptionalExpr: Rule1[Foo]   = rule(foo1 ~ optional(foo1 ~> Foo2.apply))
-    def TimesExpr: Rule1[Foo2]     = rule(foo1 ~ 2.times(foo1 ~> Foo2.apply))
+    def OneOrMoreExpr: Rule1[Foo2] = rule(foo1 ~ oneOrMore(foo1 ~> Foo2.apply _))
+    def ZeroOrMoreExpr: Rule1[Foo] = rule(foo1 ~ zeroOrMore(foo1 ~> Foo2.apply _))
+    def OptionalExpr: Rule1[Foo]   = rule(foo1 ~ optional(foo1 ~> Foo2.apply _))
+    def TimesExpr: Rule1[Foo2]     = rule(foo1 ~ 2.times(foo1 ~> Foo2.apply _))
 
     def foo1: Rule1[Foo] = rule(push(Foo1))
   }

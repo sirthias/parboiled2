@@ -50,12 +50,12 @@ class CsvParser(val input: ParserInput, headerPresent: Boolean, fieldDelimiter: 
   def file =
     rule {
       OWS ~ optional(test(headerPresent) ~ header ~ NL) ~ oneOrMore(record)
-        .separatedBy(NL) ~ optional(NL) ~ EOI ~> CsvFile.apply
+        .separatedBy(NL) ~ optional(NL) ~ EOI ~> CsvFile.apply _
     }
 
   def header = rule(record)
 
-  def record = rule(oneOrMore(field).separatedBy(fieldDelimiter) ~> Record.apply)
+  def record = rule(oneOrMore(field).separatedBy(fieldDelimiter) ~> Record.apply _)
 
   def field = rule(`quoted-field` | `unquoted-field`)
 

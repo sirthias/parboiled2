@@ -27,7 +27,7 @@ trait L1_KeywordsAndOperators { this: Parser with L0_Basics =>
 
   def Keyword = rule(AlphaKeyword | SymbolicKeyword)
 
-  def `_`         = Key("_")
+  def underscore  = Key("_")
   def `abstract`  = Key("abstract")
   def `case`      = Key("case")
   def `catch`     = Key("catch")
@@ -81,7 +81,7 @@ trait L1_KeywordsAndOperators { this: Parser with L0_Basics =>
   def False = RawKey("false")
 
   // keyword-like patterns (not really keywords though)
-  def `_*` = rule(`_` ~ WL ~ "*")
+  def `_*` = rule(underscore ~ WL ~ "*")
   def `}`  = rule(Semis.? ~ WL ~ '}')
   def `{`  = rule(WL ~ '{' ~ Semis.?)
 
