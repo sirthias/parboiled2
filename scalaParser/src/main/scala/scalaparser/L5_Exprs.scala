@@ -27,19 +27,19 @@ trait L5_Exprs {
   def BlockDef: Rule0
 
   def Import: Rule0 = {
-    def ImportExpr: Rule0 = rule(StableId ~ ('.' ~ (`_` | Selectors)).?)
-    def Selectors: Rule0  = rule('{' ~ (Selector ~ ',').* ~ (Selector | `_`) ~ "}")
-    def Selector: Rule0   = rule(Id ~ (`=>` ~ (Id | `_`)).?)
+    def ImportExpr: Rule0 = rule(StableId ~ ('.' ~ (underscore | Selectors)).?)
+    def Selectors: Rule0  = rule('{' ~ (Selector ~ ',').* ~ (Selector | underscore) ~ "}")
+    def Selector: Rule0   = rule(Id ~ (`=>` ~ (Id | underscore)).?)
     rule(`import` ~ ImportExpr.+(','))
   }
 
   def Ascription = rule(`:` ~ (`_*` | Type | Annot.+))
 
   def LambdaHead: Rule0 = {
-    def Binding  = rule((Id | `_`) ~ (`:` ~ Type).?)
+    def Binding  = rule((Id | underscore) ~ (`:` ~ Type).?)
     def Bindings = rule('(' ~ Binding.*(',') ~ ')')
     def Implicit = rule(`implicit`.? ~ Id ~ (`:` ~ InfixType).?)
-    rule((Bindings | Implicit | `_` ~ Ascription.?) ~ `=>`)
+    rule((Bindings | Implicit | underscore ~ Ascription.?) ~ `=>`)
   }
   object StatCtx extends WsCtx(true)
   object ExprCtx extends WsCtx(false)
@@ -95,8 +95,8 @@ trait L5_Exprs {
       def Path        = rule((Id ~ '.').* ~ `this` ~ ('.' ~ Id).* | StableId)
       def New         = rule(`new` ~ NewBody)
       def Parened     = rule('(' ~ Exprs.? ~ ")")
-      def SimpleExpr1 = rule(XmlExpr | New | BlockExpr | WLLiteral | Path | `_` | Parened)
-      rule(SimpleExpr1 ~ ('.' ~ Id | TypeArgs | NoSemis ~ ArgList).* ~ (NoSemis ~ `_`).?)
+      def SimpleExpr1 = rule(XmlExpr | New | BlockExpr | WLLiteral | Path | underscore | Parened)
+      rule(SimpleExpr1 ~ ('.' ~ Id | TypeArgs | NoSemis ~ ArgList).* ~ (NoSemis ~ underscore).?)
     }
     def Guard: Rule0 = rule(`if` ~ PostfixExpr)
   }
@@ -105,7 +105,7 @@ trait L5_Exprs {
     def ExtractorArgs = rule(Pat.*(','))
     def Extractor     = rule(StableId ~ ('(' ~ ExtractorArgs ~ ')').?)
     def TupleEx       = rule('(' ~ ExtractorArgs.? ~ ')')
-    def Thingy        = rule(`_` ~ (`:` ~ TypePat).? ~ !"*")
+    def Thingy        = rule(underscore ~ (`:` ~ TypePat).? ~ !"*")
     rule(XmlPattern | Thingy | WLLiteral | TupleEx | Extractor | VarId)
   }
 
@@ -127,7 +127,7 @@ trait L5_Exprs {
 
   def Patterns: Rule0 = rule(Pat.+(","))
   def Pat: Rule0      = rule(Pat1.+('|'))
-  def Pat1: Rule0     = rule(`_` ~ `:` ~ TypePat | VarId ~ `:` ~ TypePat | Pat2)
+  def Pat1: Rule0     = rule(underscore ~ `:` ~ TypePat | VarId ~ `:` ~ TypePat | Pat2)
 
   def Pat2: Rule0 = {
     def Pat3 = rule(`_*` | SimplePat ~ (Id ~ SimplePat).*)

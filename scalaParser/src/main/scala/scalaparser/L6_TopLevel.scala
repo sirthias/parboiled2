@@ -20,8 +20,8 @@ import org.parboiled2._
 
 trait L6_TopLevel {
   this: Parser
-    with WhitespaceStringsAndChars with L0_Basics with L1_KeywordsAndOperators with L2_Identifiers with L4_Types
-    with L5_Exprs =>
+    with WhitespaceStringsAndChars with L0_Basics with L1_KeywordsAndOperators with L2_Identifiers with L3_Literals
+    with L4_Types with L4_Xml with L5_Exprs =>
 
   def CompilationUnit: Rule0 = {
     def TopPackageSeq = rule((`package` ~ QualId ~ !(WS ~ "{")).+(Semis))
@@ -32,7 +32,7 @@ trait L6_TopLevel {
   def TmplBody: Rule0 = {
     def Prelude  = rule((Annot ~ OneNLMax).* ~ Mod.*)
     def TmplStat = rule(Import | Prelude ~ (Def | Dcl) | StatCtx.Expr)
-    def SelfType = rule((`this` | Id | `_`) ~ (`:` ~ InfixType).? ~ `=>`)
+    def SelfType = rule((`this` | Id | underscore) ~ (`:` ~ InfixType).? ~ `=>`)
     rule('{' ~ SelfType.? ~ Semis.? ~ TmplStat.*(Semis) ~ `}`)
   }
 
@@ -42,7 +42,7 @@ trait L6_TopLevel {
 
   def ValVarDef: Rule0 = {
     def Val = rule(Pat2.+(',') ~ (`:` ~ Type).? ~ `=` ~ StatCtx.Expr)
-    def Var = rule(Ids ~ `:` ~ Type ~ `=` ~ `_` | Val)
+    def Var = rule(Ids ~ `:` ~ Type ~ `=` ~ underscore | Val)
     rule(`val` ~ Val | `var` ~ Var)
   }
 
