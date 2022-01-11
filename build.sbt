@@ -12,7 +12,7 @@ val commonSettings = Seq(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
   ),
   scalaVersion       := "2.12.15",
-  crossScalaVersions := Seq("2.12.15", "2.13.7"),
+  crossScalaVersions := Seq("2.12.15", "2.13.8"),
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
