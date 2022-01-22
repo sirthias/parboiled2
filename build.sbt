@@ -146,7 +146,7 @@ val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVers
 // benchmarks and examples only
 val `json4s-native`  = "org.json4s" %% "json4s-native"  % "4.0.3"
 val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "4.0.3"
-val `spray-json`     = ("io.spray"  %% "spray-json"     % "1.3.6").cross(CrossVersion.for3Use2_13)
+val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.6"
 
 /////////////////////// PROJECTS /////////////////////////
 
