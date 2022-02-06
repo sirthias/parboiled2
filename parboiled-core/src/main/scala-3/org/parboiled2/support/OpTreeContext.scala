@@ -455,6 +455,35 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
+  private case class RunSubParser(fTree: Expr[_]) extends DefaultNonTerminalOpTree {
+    def ruleTraceNonTerminalKey = '{ RuleTrace.RunSubParser }
+    def renderInner(start: quoted.Expr[Int], wrapped: Boolean): Expr[Boolean] = {
+      def rewrite(arg: ValDef, tree: Term): Expr[Boolean] = {
+        tree match {
+//          case Block(statements, res) => ???
+          case Select(a @ Apply(unappliedterm, idk), str) =>
+            val term = Apply(unappliedterm, List('{ $parser.__subParserInput }.asTerm))
+            term.tpe.asType match {
+              case '[p] =>
+                type ParserP = Parser with p
+                '{
+                  val __subParser: ParserP = ${ term.asExpr }.asInstanceOf[ParserP]
+                  val offset               = $parser.cursor
+                  __subParser.copyStateFrom($parser, offset)
+                  try ${ Select.unique('{ __subParser }.asTerm, str).asExpr } != null
+                  finally $parser.copyStateFrom(__subParser, -offset)
+                }
+            }
+          case x => reportError("Illegal runSubParser expr: " + x.show, fTree)
+        }
+      }
+      fTree.asTerm match {
+        case Lambda(List(vd @ ValDef(_, _, _)), body) => rewrite(vd, body)
+        case x                                        => reportError("Illegal runSubParser expr: " + x.show, fTree)
+      }
+    }
+  }
+
   private case class PushAction(valueExpr: Expr[_], argType: Type[_]) extends OpTree {
     def render(wrapped: Boolean): Expr[Boolean] = {
       val body =
@@ -794,6 +823,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case '{ ($p: Parser).push[t]($value) }                                               => PushAction(value, Type.of[t])
       case '{ ($p: Parser).drop[t] }                                                       => DropAction(Type.of[t])
       case '{ type i <: HList; type o <: HList; ($p: Parser).capture[`i`, `o`]($arg)($l) } => Capture(rec(arg.asTerm))
+      case '{ type i <: HList; type o <: HList; ($p: Parser).runSubParser[`i`, `o`]($f) }  => RunSubParser(f)
       case '{
             type i1 <: HList; type o1 <: HList
             type i2 <: HList; type o2 <: HList

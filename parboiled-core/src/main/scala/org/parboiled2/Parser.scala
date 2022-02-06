@@ -473,6 +473,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     def length: Int                                       = input.length - offset
     def charAt(ix: Int): Char                             = input.charAt(offset + ix)
   }
+  def __subParserInput = new __SubParserInput()
 }
 
 object Parser {
