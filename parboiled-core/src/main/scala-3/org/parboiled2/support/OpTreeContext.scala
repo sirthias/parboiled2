@@ -461,7 +461,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       def rewrite(arg: ValDef, tree: Term): Expr[Boolean] = {
         tree match {
           case Block(statements, res) => block(statements, rewrite(arg, res).asTerm).asExprOf[Boolean]
-          case Select(Apply(parserCons, List(consArg @ Ident(_)))), rule) if consArg.symbol == arg.symbol =>
+          case Select(Apply(parserCons, List(consArg @ Ident(_))), rule) if consArg.symbol == arg.symbol =>
             val term = Apply(parserCons, List('{ $parser.__subParserInput }.asTerm))
             term.tpe.asType match {
               case '[p] =>
