@@ -460,9 +460,9 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     def renderInner(start: quoted.Expr[Int], wrapped: Boolean): Expr[Boolean] = {
       def rewrite(arg: ValDef, tree: Term): Expr[Boolean] = {
         tree match {
-//          case Block(statements, res) => ???
-          case Select(a @ Apply(unappliedterm, idk), str) =>
-            val term = Apply(unappliedterm, List('{ $parser.__subParserInput }.asTerm))
+          case Block(statements, res) => block(statements, rewrite(arg, res).asTerm).asExprOf[Boolean]
+          case Select(Apply(parserCons, _), rule) =>
+            val term = Apply(parserCons, List('{ $parser.__subParserInput }.asTerm))
             term.tpe.asType match {
               case '[p] =>
                 type ParserP = Parser with p
@@ -470,7 +470,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
                   val __subParser: ParserP = ${ term.asExpr }.asInstanceOf[ParserP]
                   val offset               = $parser.cursor
                   __subParser.copyStateFrom($parser, offset)
-                  try ${ Select.unique('{ __subParser }.asTerm, str).asExpr } != null
+                  try ${ Select.unique('{ __subParser }.asTerm, rule).asExpr } != null
                   finally $parser.copyStateFrom(__subParser, -offset)
                 }
             }
