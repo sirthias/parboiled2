@@ -465,9 +465,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             val term = Apply(parserCons, List('{ $parser.__subParserInput }.asTerm))
             term.tpe.asType match {
               case '[p] =>
-                type ParserP = Parser with p
                 '{
-                  val __subParser: ParserP = ${ term.asExpr }.asInstanceOf[ParserP]
+                  val __subParser: ParserP = ${ term.asExprOf[Parser with p] }
                   val offset               = $parser.cursor
                   __subParser.copyStateFrom($parser, offset)
                   try ${ Select.unique('{ __subParser }.asTerm, rule).asExpr } != null
