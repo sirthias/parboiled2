@@ -153,8 +153,8 @@ val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.6"
 lazy val root = project
   .in(file("."))
   .aggregate(examples, jsonBenchmark)
-  .aggregate(parboiledJVM, parboiledJS, parboiledNative)
-  .aggregate(parboiledCoreJVM, parboiledCoreJS, parboiledCoreNative)
+  .aggregate(parboiledJVM, parboiledJS)
+  .aggregate(parboiledCoreJVM, parboiledCoreJS)
   .settings(commonSettings)
   .settings(releaseSettings)
   .settings(publish / skip := true)
