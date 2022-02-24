@@ -136,8 +136,8 @@ object BasicSpec extends TestParserSpec {
 
       "character ranges" - new TestParser0 {
         // shadow utests implicit extension on Strings which collides with our `str2CharRangeSupport`
-        override def TestableString = rule(("1" - "5") ~ EOI)
-        def targetRule              = TestableString
+        override def TestableString: Rule0 = rule(("1" - "5") ~ EOI)
+        def targetRule                     = TestableString
 
         "1" must beMatched
         "3" must beMatched

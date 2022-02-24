@@ -16,8 +16,6 @@
 
 package org.parboiled2
 
-import scala.collection.immutable
-import scala.reflect.macros.whitebox.Context
 import org.parboiled2.support.hlist.HList
 
 /** An application needs to implement this interface to receive the result
@@ -37,51 +35,4 @@ trait DynamicRuleDispatch[P <: Parser, L <: HList] {
   def apply(handler: DynamicRuleHandler[P, L], ruleName: String): handler.Result
 }
 
-object DynamicRuleDispatch {
-
-  /** Implements efficient runtime dispatch to a predefined set of parser rules.
-    * Given a number of rule names this macro-supported method creates a `DynamicRuleDispatch` instance along with
-    * a sequence of the given rule names.
-    * Note that there is no reflection involved and compilation will fail, if one of the given rule names
-    * does not constitute a method of parser type `P` or has a type different from `RuleN[L]`.
-    */
-  def apply[P <: Parser, L <: HList](ruleNames: String*): (DynamicRuleDispatch[P, L], immutable.Seq[String]) =
-    macro __create[P, L]
-
-  ///////////////////// INTERNAL ////////////////////////
-
-  def __create[P <: Parser, L <: HList](c: Context)(
-      ruleNames: c.Expr[String]*
-  )(implicit P: c.WeakTypeTag[P], L: c.WeakTypeTag[L]): c.Expr[(DynamicRuleDispatch[P, L], immutable.Seq[String])] = {
-    import c.universe._
-    val names = ruleNames.map {
-      _.tree match {
-        case Literal(Constant(s: String)) => s
-        case x                            => c.abort(x.pos, s"Invalid `String` argument `x`, only `String` literals are supported!")
-      }
-    }.toArray
-    java.util.Arrays.sort(names.asInstanceOf[Array[Object]])
-
-    def rec(start: Int, end: Int): Tree =
-      if (start <= end) {
-        val mid  = (start + end) >>> 1
-        val name = names(mid)
-        q"""val c = $name compare ruleName
-            if (c < 0) ${rec(mid + 1, end)}
-            else if (c > 0) ${rec(start, mid - 1)}
-            else {
-              val p = handler.parser
-              p.__run[$L](p.${TermName(name).encodedName.toTermName})(handler)
-            }"""
-      } else q"handler.ruleNotFound(ruleName)"
-
-    c.Expr[(DynamicRuleDispatch[P, L], immutable.Seq[String])] {
-      q"""val drd =
-            new org.parboiled2.DynamicRuleDispatch[$P, $L] {
-              def apply(handler: org.parboiled2.DynamicRuleHandler[$P, $L], ruleName: String): handler.Result =
-                 ${rec(0, names.length - 1)}
-            }
-          (drd, scala.collection.immutable.Seq(..$ruleNames))"""
-    }
-  }
-}
+object DynamicRuleDispatch extends DynamicRuleDispatchMacro

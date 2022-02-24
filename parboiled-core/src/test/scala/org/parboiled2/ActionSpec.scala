@@ -24,6 +24,10 @@ object ActionSpec extends TestParserSpec {
   val tests = Tests {
 
     "The Parser should correctly handle" - {
+      "`capture` simple" - new TestParser1[String] {
+        def targetRule = rule(capture('b'))
+        "b" must beMatchedWith("b")
+      }
 
       "`capture`" - new TestParser1[String] {
         def targetRule = rule('a' ~ capture(zeroOrMore('b')) ~ EOI)
@@ -87,8 +91,9 @@ object ActionSpec extends TestParserSpec {
       }
 
       "`run(F1producingUnit)`" - new TestParser1[Int] {
-        def targetRule = rule(push(1 :: "X" :: HNil) ~ run((x: String) => require(x == "X")) ~ EOI)
-        "" must beMatchedWith(1)
+        def targetRule = rule(push(1) ~ capture(anyOf("XY")) ~ run((x: String) => require(x == "X")) ~ EOI)
+        "X" must beMatchedWith(1)
+        intercept[AssertionError]("Y" must beMismatched)
       }
 
       "`run(F2producingValue)`" - new TestParser1[Char] {
@@ -113,7 +118,7 @@ object ActionSpec extends TestParserSpec {
       //    }
 
       "`push` simple value" - new TestParser1[String] {
-        def targetRule = rule('x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI)
+        def targetRule: Rule1[String] = rule('x' ~ push(()) ~ push(HNil) ~ 'y' ~ push("yeah") ~ EOI)
         "xy" must beMatchedWith("yeah")
       }
 
@@ -142,7 +147,7 @@ object ActionSpec extends TestParserSpec {
       case class Foo(i: Int, s: String)
 
       "`~>` producing case class (simple notation)" - new TestParser1[Foo] {
-        def targetRule = rule(push(1 :: "X" :: HNil) ~> Foo)
+        def targetRule = rule(push(1 :: "X" :: HNil) ~> (Foo(_, _)))
         "" must beMatchedWith(Foo(1, "X"))
       }
 

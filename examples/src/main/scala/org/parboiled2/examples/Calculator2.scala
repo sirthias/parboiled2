@@ -72,16 +72,16 @@ class Calculator2(val input: ParserInput) extends Parser {
   def Expression: Rule1[Expr] =
     rule {
       Term ~ zeroOrMore(
-        '+' ~ Term ~> Addition
-          | '-' ~ Term ~> Subtraction
+        '+' ~ Term ~> Addition.apply _
+          | '-' ~ Term ~> Subtraction.apply _
       )
     }
 
   def Term =
     rule {
       Factor ~ zeroOrMore(
-        '*' ~ Factor ~> Multiplication
-          | '/' ~ Factor ~> Division
+        '*' ~ Factor ~> Multiplication.apply _
+          | '/' ~ Factor ~> Division.apply _
       )
     }
 
@@ -89,7 +89,7 @@ class Calculator2(val input: ParserInput) extends Parser {
 
   def Parens = rule('(' ~ Expression ~ ')')
 
-  def Number = rule(capture(Digits) ~> Value)
+  def Number = rule(capture(Digits) ~> Value.apply _)
 
   def Digits = rule(oneOrMore(CharPredicate.Digit))
 }

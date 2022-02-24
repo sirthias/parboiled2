@@ -43,7 +43,7 @@ trait L4_Types {
     def ArrowType         = rule(FunctionArgTypes ~ `=>` ~ Type)
     def ExistentialClause = rule(`forSome` ~ `{` ~ (TypeDcl | ValDcl).+(Semis) ~ `}`)
     def PostfixType       = rule(InfixType ~ (`=>` ~ Type | ExistentialClause.?))
-    def Unbounded         = rule(`_` | ArrowType | PostfixType)
+    def Unbounded         = rule(underscore | ArrowType | PostfixType)
     rule(Unbounded ~ TypeBounds)
   }
 
@@ -81,7 +81,7 @@ trait L4_Types {
 
   def TypeArg: Rule0 = {
     def CtxBounds = rule((`<%` ~ Type).* ~ (`:` ~ Type).*)
-    rule((Id | `_`) ~ TypeArgList.? ~ TypeBounds ~ CtxBounds)
+    rule((Id | underscore) ~ TypeArgList.? ~ TypeBounds ~ CtxBounds)
   }
 
   def Annot: Rule0 = rule(`@` ~ SimpleType ~ ('(' ~ (Exprs ~ (`:` ~ `_*`).?).? ~ ")").*)
