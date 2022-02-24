@@ -7,7 +7,7 @@
 Introduction
 ============
 
-*parboiled2* is a Scala 2.11+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
+*parboiled2* is a Scala 2.12+ library enabling lightweight and easy-to-use, yet powerful, fast and elegant parsing of
 arbitrary input text. It implements a macro-based parser generator for `Parsing Expression Grammars`_ (PEGs), which
 runs at compile time and translates a grammar rule definition (written in an internal Scala DSL) into corresponding JVM
 bytecode.
@@ -47,12 +47,12 @@ The artifacts for *parboiled2* live on `Maven Central`_ and can be tied into you
 
 .. code:: Scala
 
-    libraryDependencies += "org.parboiled" %% "parboiled" % "2.3.0"
+    libraryDependencies += "org.parboiled" %% "parboiled" % "2.4.0"
 
-The latest released version is **2.3.0**. It is available for Scala 2.12, 2.13, Scala JS 1.5 and Scala Native 0.4.0.
+The latest released version is **2.4.0**. It is available for Scala 2.12, 2.13 and 3 as well as Scala JS 1.9.
 
-*parboiled2* has only one single dependency that it will transitively pull into your classpath: shapeless_
-(currently version 2.3.4).
+*parboiled2* has no external dependencies. (It used to depend on shapeless_, but the few bits it was using have been
+internalized at some point).
 
 Once on your classpath you can use this single import to bring everything you need into scope:
 

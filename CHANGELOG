@@ -1,3 +1,10 @@
+Version 2.4.0 (2022-02-24)
+--------------------------
+- Upgraded to ScalaJS 1.9.0
+- Added cross-building for Scala 3
+- (Temporarily?) dropped cross-building for scala-native
+
+
 Version 2.3.0 (2021-04-26)
 --------------------------
 - Upgraded to ScalaJS 1.5.1
