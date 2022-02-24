@@ -106,12 +106,11 @@ object ActionSpec extends TestParserSpec {
         "" must beMatchedWith("X" :: 1 :: HNil)
       }
 
-      // FIXME: problem with TailSwitch, type error
-      /*"`run(F1producingRule)`" - new TestParser0 {
+      "`run(F1producingRule)`" - new TestParser0 {
         def targetRule = rule(ANY ~ push(lastChar - '0') ~ run((i: Int) => test(i % 2 == 0)) ~ EOI)
         "4" must beMatched
         "5" must beMismatched
-      }*/
+      }
 
       //    "`run(F1TakingHList)`" in new TestParser1[Int] {
       //      def targetRule = rule { push(42 :: "X" :: HNil) ~ run((l: Int :: String :: HNil) => l.head * 2) }
@@ -147,10 +146,10 @@ object ActionSpec extends TestParserSpec {
 
       case class Foo(i: Int, s: String)
 
-      /*FIXME: type error "`~>` producing case class (simple notation)" - new TestParser1[Foo] {
-        def targetRule = rule(push(1 :: "X" :: HNil) ~> Foo)
+      "`~>` producing case class (simple notation)" - new TestParser1[Foo] {
+        def targetRule = rule(push(1 :: "X" :: HNil) ~> (Foo(_, _)))
         "" must beMatchedWith(Foo(1, "X"))
-      }*/
+      }
 
       "`~>` full take" - new TestParser1[Foo] {
         def testRule   = rule(push(1 :: "X" :: HNil) ~> (Foo(_, _)))
@@ -181,8 +180,7 @@ object ActionSpec extends TestParserSpec {
         captured ==> 'x'
       }
 
-      // FIXME: one or more of these don't terminate while typing
-      /*"`~>` producing a Rule0" - new TestParser0 {
+      "`~>` producing a Rule0" - new TestParser0 {
         def testRule   = rule(capture("x") ~> (str(_)) ~ EOI)
         def targetRule = testRule
         "x" must beMismatched
@@ -203,7 +201,7 @@ object ActionSpec extends TestParserSpec {
         "ba" must beMatched
         "a" must beMismatched
         "b" must beMismatched
-      }*/
+      }
     }
   }
 }
