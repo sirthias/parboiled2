@@ -79,9 +79,6 @@ lazy val crossSettings = Seq(
 )
 
 lazy val nativeSettings = Seq(
-  // Currently scala-native does not support Dotty
-  crossScalaVersions := crossScalaVersions.value.filterNot(Scala3 == _),
-  scalaVersion       := Scala2_12
 )
 
 lazy val scalajsSettings = Seq(
@@ -153,8 +150,8 @@ val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.6"
 lazy val root = project
   .in(file("."))
   .aggregate(examples, jsonBenchmark)
-  .aggregate(parboiledJVM, parboiledJS)
-  .aggregate(parboiledCoreJVM, parboiledCoreJS)
+  .aggregate(parboiledJVM, parboiledJS, parboiledNative)
+  .aggregate(parboiledCoreJVM, parboiledCoreJS, parboiledCoreNative)
   .settings(commonSettings)
   .settings(releaseSettings)
   .settings(publish / skip := true)
