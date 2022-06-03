@@ -180,10 +180,10 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
     def renderInner(wrapped: Boolean): Tree =
       q"""val mark = __saveState; ${ops
-        .map(_.render(wrapped))
-        .reduceLeft((l, r) =>
-          q"val l = $l; if (!l) { __restoreState(mark); $r } else true // work-around for https://issues.scala-lang.org/browse/SI-8657"
-        )}"""
+          .map(_.render(wrapped))
+          .reduceLeft((l, r) =>
+            q"val l = $l; if (!l) { __restoreState(mark); $r } else true // work-around for https://issues.scala-lang.org/browse/SI-8657"
+          )}"""
   }
 
   case class CharMatch(charTree: Tree) extends TerminalOpTree {

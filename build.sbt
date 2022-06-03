@@ -28,7 +28,7 @@ val commonSettings = Seq(
     "-feature",
     "-language:_",
     "-unchecked"
-    //"-Ywarn-numeric-widen",
+    // "-Ywarn-numeric-widen",
   ),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {

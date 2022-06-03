@@ -62,19 +62,19 @@ object ReductionResetSpec extends TestParserSpec {
         def targetRule = Alternative
 
         // re-enable after fixing
-        //"123" must beMatchedWith(123)
+        // "123" must beMatchedWith(123)
       }
 
       "reduction reset in `zeroOrMore`" - new ReductionResetParser {
         def targetRule = ZeroOrMore
 
-        //"123" must beMatchedWith(123)
+        // "123" must beMatchedWith(123)
       }
 
       "reduction reset in `oneOrMore`" - new ReductionResetParser {
         def targetRule = OneOrMore
 
-        //"123." must beMatchedWith(123)
+        // "123." must beMatchedWith(123)
       }
     }
   }

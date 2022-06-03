@@ -31,7 +31,7 @@ object RunResult {
 
   object Aux extends Aux1 {
     implicit def forRule[R <: RuleX]: Aux[R, R] = `n/a`
-    //implicit def forFHList[I <: HList, R, In0 <: HList, Out0 <: HList](implicit x: JA[I, R, In0, Out0]): Aux[I => R, Rule[In0, Out0]] = `n/a`
+    // implicit def forFHList[I <: HList, R, In0 <: HList, Out0 <: HList](implicit x: JA[I, R, In0, Out0]): Aux[I => R, Rule[In0, Out0]] = `n/a`
   }
 
   abstract class Aux1 extends Aux2 {
