@@ -1,7 +1,7 @@
 import ReleaseTransformations._
 import sbtcrossproject.CrossPlugin.autoImport._
 
-val Scala2_12 = "2.12.15"
+val Scala2_12 = "2.12.16"
 val Scala2_13 = "2.13.8"
 val Scala3    = "3.1.2"
 
