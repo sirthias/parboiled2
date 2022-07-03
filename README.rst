@@ -766,7 +766,7 @@ Base64Parsing
     *parboiled* also comes with the ``org.parboiled2.util.Base64`` class which provides an efficient Base64
     encoder/decoder for the standard as well as custom alphabets.
 
-.. _RFC2045: http://tools.ietf.org/html/rfc2045#section-6.8
+.. _RFC2045: https://datatracker.ietf.org/doc/html/rfc2045#section-6.8
 .. _its source: https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/main/scala/org/parboiled2/Base64Parsing.scala
 
 ----
