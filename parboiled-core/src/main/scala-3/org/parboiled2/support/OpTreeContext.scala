@@ -177,8 +177,10 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
 
       '{
+        val firstMark  = $parser.__saveState
         val firstMatch = ${ op.render(wrapped) }
         if (!firstMatch) {
+          $parser.__restoreState(firstMark)
           ${ collector.pushEmptyCollector }
           true
         } else {

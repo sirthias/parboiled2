@@ -358,8 +358,10 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         else q"val m = __saveState; if (${separator(wrapped)}) rec(m) else m"
 
       q"""
+      val firstMark = __saveState
       val firstMatch = ${op.render(wrapped)}
       if (!firstMatch) {
+        __restoreState(firstMark)
         ${collector.pushEmptyCollector}
       } else {
         ${collector.valBuilder}
