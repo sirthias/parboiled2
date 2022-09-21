@@ -358,18 +358,24 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         else q"val m = __saveState; if (${separator(wrapped)}) rec(m) else m"
 
       q"""
-      ${collector.valBuilder}
+      val firstMatch = ${op.render(wrapped)}
+      if (!firstMatch) {
+        ${collector.pushEmptyCollector}
+      } else {
+        ${collector.valBuilder}
+        ${collector.popToBuilder}
 
-      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
-        val matched = ${op.render(wrapped)}
-        if (matched) {
-          ${collector.popToBuilder}
-          $recurse
-        } else mark
-      }
+        @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
+          val matched = ${op.render(wrapped)}
+          if (matched) {
+            ${collector.popToBuilder}
+            $recurse
+          } else mark
+        }
 
-      __restoreState(rec(__saveState))
-      ${collector.pushBuilderResult}"""
+        __restoreState($recurse)
+        ${collector.pushBuilderResult}
+      }"""
     }
   }
 
@@ -743,6 +749,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   /////////////////////////////////// helpers ////////////////////////////////////
 
   class Collector(
+      val pushEmptyCollector: Tree,
       val valBuilder: Tree,
       val popToBuilder: Tree,
       val pushBuilderResult: Tree,
@@ -752,10 +759,11 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
   lazy val rule0Collector = {
     val unit = q"()"
-    new Collector(unit, unit, q"true", unit, unit)
+    new Collector(q"true", unit, unit, q"true", unit, unit)
   }
 
   lazy val rule1Collector = new Collector(
+    pushEmptyCollector = q"valueStack.push(scala.collection.immutable.Vector.empty[Any]); true",
     valBuilder = q"val builder = new scala.collection.immutable.VectorBuilder[Any]",
     popToBuilder = q"builder += valueStack.pop()",
     pushBuilderResult = q"valueStack.push(builder.result()); true",

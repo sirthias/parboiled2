@@ -141,9 +141,10 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     def withSeparator(sep: Separator) = copy(separator = sep)
     def ruleTraceNonTerminalKey       = '{ RuleTrace.ZeroOrMore }
 
-    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
-      collector.withCollector { coll =>
+    def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = {
+      def nonEmptyResult: Expr[Boolean] = collector.withCollector { coll =>
         '{
+          ${ coll.popToBuilder }
           @ _root_.scala.annotation.tailrec
           def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
             val matched = ${ op.render(wrapped) }
@@ -160,11 +161,31 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
             } else mark
           }
 
-          $parser.__restoreState(rec($parser.__saveState))
+          val state = ${
+            if (separator eq null) '{ rec($parser.__saveState) }
+            else
+              '{
+                val m = $parser.__saveState
+                if (${ separator(wrapped) }) rec(m) else m
+              }
+          }
+
+          $parser.__restoreState(state)
           ${ coll.pushBuilderResult }
           true
         }
       }
+
+      '{
+        val firstMatch = ${ op.render(wrapped) }
+        if (!firstMatch) {
+          ${ collector.pushEmptyCollector }
+          true
+        } else {
+          ${ nonEmptyResult }
+        }
+      }
+    }
   }
   case class OneOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends WithSeparator {
     def withSeparator(sep: Separator) = copy(separator = sep)
@@ -953,6 +974,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   /////////////////////////////////// helpers ////////////////////////////////////
 
   trait Collector {
+    def pushEmptyCollector: Expr[Unit]
     def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean]
   }
   trait CollectorInstance {
@@ -964,8 +986,10 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   // no-op collector
   object rule0Collector extends Collector with CollectorInstance {
+    private val unit: Expr[Unit]                = '{}
+    override def pushEmptyCollector: Expr[Unit] = unit
+
     override def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean] = f(this)
-    private val unit: Expr[Unit]                                                     = '{}
     def popToBuilder: Expr[Unit]                                                     = unit
     def pushBuilderResult: Expr[Unit]                                                = unit
     def pushSomePop: Expr[Unit]                                                      = unit
@@ -973,6 +997,11 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   }
 
   object rule1Collector extends Collector {
+
+    override def pushEmptyCollector: Expr[Unit] = '{
+      $parser.valueStack.push(scala.collection.immutable.Vector.empty[Any])
+    }
+
     override def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean] = '{
       val builder = new scala.collection.immutable.VectorBuilder[Any]
       ${
