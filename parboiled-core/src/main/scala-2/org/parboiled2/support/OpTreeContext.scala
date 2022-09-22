@@ -349,6 +349,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class ZeroOrMore(op: OpTree, collector: Collector, separator: Separator = null) extends WithSeparator {
+    val lazyCollector                 = collector.withLazyBuilder
     def withSeparator(sep: Separator) = copy(separator = sep)
     def ruleTraceNonTerminalKey       = reify(RuleTrace.ZeroOrMore).tree
 
@@ -358,26 +359,18 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         else q"val m = __saveState; if (${separator(wrapped)}) rec(m) else m"
 
       q"""
-      val firstMark = __saveState
-      val firstMatch = ${op.render(wrapped)}
-      if (!firstMatch) {
-        __restoreState(firstMark)
-        ${collector.pushEmptyCollector}
-      } else {
-        ${collector.valBuilder}
-        ${collector.popToBuilder}
+      ${lazyCollector.valBuilder}
 
-        @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
-          val matched = ${op.render(wrapped)}
-          if (matched) {
-            ${collector.popToBuilder}
-            $recurse
-          } else mark
-        }
+      @_root_.scala.annotation.tailrec def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
+        val matched = ${op.render(wrapped)}
+        if (matched) {
+          ${lazyCollector.popToBuilder}
+          $recurse
+        } else mark
+      }
 
-        __restoreState($recurse)
-        ${collector.pushBuilderResult}
-      }"""
+      __restoreState(rec(__saveState))
+      ${lazyCollector.pushBuilderResult}"""
     }
   }
 
@@ -751,27 +744,47 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   /////////////////////////////////// helpers ////////////////////////////////////
 
   class Collector(
-      val pushEmptyCollector: Tree,
       val valBuilder: Tree,
       val popToBuilder: Tree,
       val pushBuilderResult: Tree,
       val pushSomePop: Tree,
       val pushNone: Tree
-  )
+  ) {
+    def withLazyBuilder: Collector = this
+  }
 
   lazy val rule0Collector = {
     val unit = q"()"
-    new Collector(q"true", unit, unit, q"true", unit, unit)
+    new Collector(unit, unit, q"true", unit, unit)
   }
 
+  lazy val lazyRule1Collector = new Collector(
+    valBuilder = q"var builder: scala.collection.immutable.VectorBuilder[Any] = null",
+    popToBuilder = q"""
+      if (builder eq null) {
+        builder = new scala.collection.immutable.VectorBuilder[Any]
+      }
+      builder += valueStack.pop()""",
+    pushBuilderResult = q"""
+      if (builder eq null) {
+        valueStack.push(scala.collection.immutable.Vector.empty[Any])
+      } else {
+        valueStack.push(builder.result())
+      }
+      true""",
+    pushSomePop = q"valueStack.push(Some(valueStack.pop()))",
+    pushNone = q"valueStack.push(None)"
+  )
+
   lazy val rule1Collector = new Collector(
-    pushEmptyCollector = q"valueStack.push(scala.collection.immutable.Vector.empty[Any]); true",
     valBuilder = q"val builder = new scala.collection.immutable.VectorBuilder[Any]",
     popToBuilder = q"builder += valueStack.pop()",
     pushBuilderResult = q"valueStack.push(builder.result()); true",
     pushSomePop = q"valueStack.push(Some(valueStack.pop()))",
     pushNone = q"valueStack.push(None)"
-  )
+  ) {
+    override def withLazyBuilder: Collector = lazyRule1Collector
+  }
 
   type Separator = Boolean => Tree
 
