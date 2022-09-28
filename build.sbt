@@ -1,9 +1,9 @@
 import ReleaseTransformations._
 import sbtcrossproject.CrossPlugin.autoImport._
 
-val Scala2_12 = "2.12.16"
+val Scala2_12 = "2.12.17"
 val Scala2_13 = "2.13.9"
-val Scala3    = "3.1.3"
+val Scala3    = "3.2.0"
 
 val isScala3 = Def.setting(
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 == 3)
@@ -136,8 +136,8 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.8.0" % Test)
-val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.16.0" % Test)
+val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.8.1" % Test)
+val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0" % Test)
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
 
 // benchmarks and examples only
