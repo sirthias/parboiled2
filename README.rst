@@ -24,8 +24,8 @@ You might also be interested in reading about `parboiled2 vs. Scala Parser Combi
 `parboiled2 vs. Regular Expressions`_.
 
 .. _PEG:
-.. _Parsing Expression Grammars: http://en.wikipedia.org/wiki/Parsing_expression_grammar
-.. _Context-Free Grammars: http://en.wikipedia.org/wiki/Context-free_grammar
+.. _Parsing Expression Grammars: https://en.wikipedia.org/wiki/Parsing_expression_grammar
+.. _Context-Free Grammars: https://en.wikipedia.org/wiki/Context-free_grammar
 .. _parboiled 1.x: http://parboiled.org
 
 
@@ -60,7 +60,7 @@ Once on your classpath you can use this single import to bring everything you ne
 
     import org.parboiled2._
 
-.. _Maven Central: http://search.maven.org/
+.. _Maven Central: https://search.maven.org/search?q=g:org.parboiled
 .. _shapeless: https://github.com/milessabin/shapeless
 
 
@@ -178,7 +178,7 @@ When this rule is confronted with the input ``abd`` the parser matches the input
 13. Rule ``foo`` completes execution successfully, as its last sub-rule has succeeded.
     The whole input "abd" was matched and the cursor is left at position 3 (after the last-matched character).
 
-.. _ANTLR: http://www.antlr.org/
+.. _ANTLR: https://www.antlr.org/
 
 
 The Rule DSL
@@ -256,7 +256,7 @@ combine `Basic Character Matching`_  with `Rule Combinators and Modifiers`_ and 
 as long as you don't write any logic that circumvents the value stack your parser will be completely type-safe and
 the compiler will be able to catch you if you make mistakes by combining rules in an unsound way.
 
-.. _AST: http://en.wikipedia.org/wiki/Abstract_syntax_tree
+.. _AST: https://en.wikipedia.org/wiki/Abstract_syntax_tree
 
 
 Basic Character Matching
@@ -766,7 +766,7 @@ Base64Parsing
     *parboiled* also comes with the ``org.parboiled2.util.Base64`` class which provides an efficient Base64
     encoder/decoder for the standard as well as custom alphabets.
 
-.. _RFC2045: http://tools.ietf.org/html/rfc2045#section-6.8
+.. _RFC2045: https://datatracker.ietf.org/doc/html/rfc2045#section-6.8
 .. _its source: https://github.com/sirthias/parboiled2/blob/v2.0.0-RC1/parboiled/src/main/scala/org/parboiled2/Base64Parsing.scala
 
 ----
@@ -1281,7 +1281,7 @@ Follow these steps to run the example parsers defined here__ on your own machine
 
 1. Clone the *parboiled2* repository::
 
-    git clone git://github.com/sirthias/parboiled2.git
+    git clone git@github.com:sirthias/parboiled2.git
 
 2. Change into the base directory::
 
@@ -1369,8 +1369,8 @@ and its codebase would look a lot more messy.
 
 
 __ https://github.com/alexander-myltsev
-__ http://www.google-melange.com/gsoc/homepage/google/gsoc2013
-__ http://docs.scala-lang.org/overviews/macros/paradise.html
+__ https://www.google-melange.com/archive/gsoc/2013
+__ https://docs.scala-lang.org/overviews/macros/paradise.html
 __ https://github.com/xeno-by
 
 
@@ -1379,6 +1379,6 @@ License
 
 *parboiled2* is released under the `Apache License 2.0`__
 
-__ http://en.wikipedia.org/wiki/Apache_license
+__ https://en.wikipedia.org/wiki/Apache_license
 
 .. |--| unicode:: U+2013

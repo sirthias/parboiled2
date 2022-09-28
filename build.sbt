@@ -1,9 +1,9 @@
 import ReleaseTransformations._
 import sbtcrossproject.CrossPlugin.autoImport._
 
-val Scala2_12 = "2.12.15"
-val Scala2_13 = "2.13.8"
-val Scala3    = "3.1.3"
+val Scala2_12 = "2.12.17"
+val Scala2_13 = "2.13.9"
+val Scala3    = "3.2.0"
 
 val isScala3 = Def.setting(
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 == 3)
@@ -79,9 +79,6 @@ lazy val crossSettings = Seq(
 )
 
 lazy val nativeSettings = Seq(
-  // Currently scala-native does not support Dotty
-  crossScalaVersions := crossScalaVersions.value.filterNot(Scala3 == _),
-  scalaVersion       := Scala2_12
 )
 
 lazy val scalajsSettings = Seq(
@@ -139,13 +136,13 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.7.11" % Test)
-val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.15.4" % Test)
+val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.8.1" % Test)
+val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.17.0" % Test)
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
 
 // benchmarks and examples only
-val `json4s-native`  = "org.json4s" %% "json4s-native"  % "4.0.4"
-val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "4.0.4"
+val `json4s-native`  = "org.json4s" %% "json4s-native"  % "4.0.5"
+val `json4s-jackson` = "org.json4s" %% "json4s-jackson" % "4.0.5"
 val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.6"
 
 /////////////////////// PROJECTS /////////////////////////
@@ -153,8 +150,8 @@ val `spray-json`     = "io.spray"   %% "spray-json"     % "1.3.6"
 lazy val root = project
   .in(file("."))
   .aggregate(examples, jsonBenchmark)
-  .aggregate(parboiledJVM, parboiledJS)
-  .aggregate(parboiledCoreJVM, parboiledCoreJS)
+  .aggregate(parboiledJVM, parboiledJS, parboiledNative)
+  .aggregate(parboiledCoreJVM, parboiledCoreJS, parboiledCoreNative)
   .settings(commonSettings)
   .settings(releaseSettings)
   .settings(publish / skip := true)

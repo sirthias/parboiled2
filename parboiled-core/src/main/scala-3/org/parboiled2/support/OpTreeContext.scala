@@ -142,7 +142,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     def ruleTraceNonTerminalKey       = '{ RuleTrace.ZeroOrMore }
 
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
-      collector.withCollector { coll =>
+      collector.withLazyCollector { coll =>
         '{
           @ _root_.scala.annotation.tailrec
           def rec(mark: org.parboiled2.Parser.Mark): org.parboiled2.Parser.Mark = {
@@ -954,6 +954,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   trait Collector {
     def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean]
+    def withLazyCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean]
   }
   trait CollectorInstance {
     def popToBuilder: Expr[Unit]
@@ -964,12 +965,13 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   // no-op collector
   object rule0Collector extends Collector with CollectorInstance {
-    override def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean] = f(this)
-    private val unit: Expr[Unit]                                                     = '{}
-    def popToBuilder: Expr[Unit]                                                     = unit
-    def pushBuilderResult: Expr[Unit]                                                = unit
-    def pushSomePop: Expr[Unit]                                                      = unit
-    def pushNone: Expr[Unit]                                                         = unit
+    override def withCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean]     = f(this)
+    override def withLazyCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean] = f(this)
+    private val unit: Expr[Unit]                                                         = '{}
+    def popToBuilder: Expr[Unit]                                                         = unit
+    def pushBuilderResult: Expr[Unit]                                                    = unit
+    def pushSomePop: Expr[Unit]                                                          = unit
+    def pushNone: Expr[Unit]                                                             = unit
   }
 
   object rule1Collector extends Collector {
@@ -981,6 +983,31 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           def pushBuilderResult: Expr[Unit] = '{ $parser.valueStack.push(builder.result()) }
           def pushSomePop: Expr[Unit]       = '{ $parser.valueStack.push(Some($parser.valueStack.pop())) }
           def pushNone: Expr[Unit]          = '{ $parser.valueStack.push(None) }
+        })
+      }
+    }
+
+    override def withLazyCollector(f: CollectorInstance => Expr[Boolean]): Expr[Boolean] = '{
+      var builder: scala.collection.immutable.VectorBuilder[Any] = null
+      ${
+        f(new CollectorInstance {
+          def popToBuilder: Expr[Unit] = '{
+            if (builder eq null) {
+              builder = new scala.collection.immutable.VectorBuilder[Any]
+            }
+            builder += $parser.valueStack.pop()
+          }
+
+          def pushBuilderResult: Expr[Unit] = '{
+            if (builder eq null) {
+              $parser.valueStack.push(scala.collection.immutable.Vector.empty[Any])
+            } else {
+              $parser.valueStack.push(builder.result())
+            }
+          }
+
+          def pushSomePop: Expr[Unit] = '{ $parser.valueStack.push(Some($parser.valueStack.pop())) }
+          def pushNone: Expr[Unit]    = '{ $parser.valueStack.push(None) }
         })
       }
     }
