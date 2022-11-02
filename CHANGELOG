@@ -1,3 +1,10 @@
+Version 2.4.1 (2022-11-02)
+--------------------------
+- Re-enabled cross-building for scala native 0.4.7
+- Upgraded to Scala 3.2.1, 2.13.10 and 2.12.17
+- Fixed zeroOrMore unnecessary builder instantiation (#319, thank you, @yanns!)
+
+
 Version 2.4.0 (2022-02-24)
 --------------------------
 - Upgraded to ScalaJS 1.9.0
