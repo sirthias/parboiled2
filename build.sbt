@@ -63,8 +63,8 @@ val commonSettings = Seq(
       case x => sys.error(s"unsupported scala version: $x")
     }
   },
-  Compile / console / scalacOptions ~= (_ filterNot (o ⇒ o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
-  Test / console / scalacOptions ~= (_ filterNot (o ⇒ o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
+  Compile / console / scalacOptions ~= (_ filterNot (o => o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
+  Test / console / scalacOptions ~= (_ filterNot (o => o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
   Compile / doc / scalacOptions += "-no-link-warnings",
   sourcesInBase := false,
   // file headers
@@ -90,7 +90,7 @@ lazy val scalajsSettings = Seq(
 lazy val publishingSettings = Seq(
   publishMavenStyle         := true,
   Test / publishArtifact    := false,
-  pomIncludeRepository      := (_ ⇒ false),
+  pomIncludeRepository      := (_ => false),
   publishTo                 := sonatypePublishTo.value,
   publishConfiguration      := publishConfiguration.value.withOverwrite(true),
   publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
@@ -101,7 +101,7 @@ lazy val publishingSettings = Seq(
 )
 
 lazy val releaseSettings = {
-  val runCompile = ReleaseStep(action = { st: State ⇒
+  val runCompile = ReleaseStep(action = { st: State =>
     val extracted = Project.extract(st)
     val ref       = extracted.get(thisProjectRef)
     extracted.runAggregated(ref / Compile / compile, st)

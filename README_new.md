@@ -969,7 +969,7 @@ However, there is a work-around which might be good enough for your meta-rule ne
     def expression = rule { bracketed(ab) ~ bracketed(cd) }
     val ab = () => rule { "ab" }
     val cd = () => rule { "cd" }
-    def bracketed(inner: () ⇒ Rule0) = rule { '[' ~ inner() ~ ']' }
+    def bracketed(inner: () => Rule0) = rule { '[' ~ inner() ~ ']' }
 ```
 
 If you model the rules that you want to pass as arguments to other rules as `Function0` instances you *can* pass

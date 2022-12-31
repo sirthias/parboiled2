@@ -715,7 +715,7 @@ run(expression)
 
 ----
 
-runSubParser(f: ParserInput ⇒ Rule[I, O]): Rule[I, O]
+runSubParser(f: ParserInput => Rule[I, O]): Rule[I, O]
     This action allows creation of a sub parser and running of one of its rules as part of the current parsing process.
     The subparser will start parsing at the current input position and the outer parser (the one calling
     ``runSubParser``) will continue where the sub-parser stopped.
@@ -1047,9 +1047,9 @@ However, there is a work-around which might be good enough for your meta-rule ne
 .. code:: Scala
 
     def expression = rule { bracketed(ab) ~ bracketed(cd) }
-    val ab = () ⇒ rule { "ab" }
-    val cd = () ⇒ rule { "cd" }
-    def bracketed(inner: () ⇒ Rule0) = rule { '[' ~ inner() ~ ']' }
+    val ab = () => rule { "ab" }
+    val cd = () => rule { "cd" }
+    def bracketed(inner: () => Rule0) = rule { '[' ~ inner() ~ ']' }
 
 If you model the rules that you want to pass as arguments to other rules as ``Function0`` instances you *can* pass
 them around. Assigning those function instances to ``val`` members avoids re-allocation during *every* execution of
