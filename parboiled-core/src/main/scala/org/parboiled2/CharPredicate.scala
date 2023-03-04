@@ -123,7 +123,7 @@ object CharPredicate {
 
   object ApplyMagnet {
     implicit def fromPredicate(predicate: Char => Boolean): ApplyMagnet = new ApplyMagnet(from(predicate))
-    implicit def fromPredicate(predicate: CharPredicate): ApplyMagnet = new ApplyMagnet(predicate)
+    implicit def fromPredicate(predicate: CharPredicate): ApplyMagnet   = new ApplyMagnet(predicate)
     implicit def fromChar(c: Char): ApplyMagnet                         = fromChars(c :: Nil)
     implicit def fromCharArray(array: Array[Char]): ApplyMagnet         = fromChars(array.toIndexedSeq)
     implicit def fromString(chars: String): ApplyMagnet                 = fromChars(chars)

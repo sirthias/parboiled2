@@ -72,7 +72,7 @@ object CharPredicateSpec extends TestSuite {
   }
 
   def show(pred: CharPredicate): String = {
-    val chars = ('\u0000' to '\u0080').flatMap(c => Some(c) filter pred).toArray
+    val chars = ('\u0000' to '\u0080').flatMap(c => Some(c) filter pred.apply).toArray
     new String(chars)
   }
 
