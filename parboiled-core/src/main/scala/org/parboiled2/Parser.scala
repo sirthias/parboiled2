@@ -106,7 +106,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     _cursor = other._cursor - offset
     _valueStack = other._valueStack
     phase = other.phase
-    _inputLength = other._inputLength
+    _inputLength = other._inputLength - offset
     if (phase ne null) phase.applyOffset(offset)
   }
 
