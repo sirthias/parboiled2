@@ -53,17 +53,21 @@ trait DynamicRuleDispatchMacro { _: DynamicRuleDispatch.type =>
         q"""val c = $name compare ruleName
             if (c < 0) ${rec(mid + 1, end)}
             else if (c > 0) ${rec(start, mid - 1)}
-            else {
-              val p = handler.parser
-              p.__run[$L](p.${TermName(name).encodedName.toTermName})(handler)
-            }"""
-      } else q"handler.ruleNotFound(ruleName)"
+            else
+              Some(new RuleRunner[$P, $L] {
+                def apply(handler: DynamicRuleHandler[$P, $L]): handler.Result = {
+                  val p = handler.parser
+                  p.__run[$L](p.${TermName(name).encodedName.toTermName})(handler)
+                }
+              })
+            """
+      } else q"None"
 
     c.Expr[(DynamicRuleDispatch[P, L], immutable.Seq[String])] {
       q"""val drd =
             new org.parboiled2.DynamicRuleDispatch[$P, $L] {
-              def apply(handler: org.parboiled2.DynamicRuleHandler[$P, $L], ruleName: String): handler.Result =
-                 ${rec(0, names.length - 1)}
+              def lookup(ruleName: String): Option[RuleRunner[$P, $L]] =
+                ${rec(0, names.length - 1)}
             }
           (drd, scala.collection.immutable.Seq(..$ruleNames))"""
     }
