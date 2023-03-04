@@ -99,14 +99,14 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
   // the current ErrorAnalysisPhase or null (in the initial run)
   private var phase: ErrorAnalysisPhase = _
 
-  private var _maxLength = -1
+  private var _inputLength = -1
 
   def copyStateFrom(other: Parser, offset: Int): Unit = {
     _cursorChar = other._cursorChar
     _cursor = other._cursor - offset
     _valueStack = other._valueStack
     phase = other.phase
-    _maxLength = other._maxLength
+    _inputLength = other._inputLength
     if (phase ne null) phase.applyOffset(offset)
   }
 
@@ -119,7 +119,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
   def __run[L <: HList](rule: => RuleN[L])(implicit scheme: Parser.DeliveryScheme[L]): scheme.Result = {
     def runRule(): Boolean = {
       _cursor = -1
-      _maxLength = input.length
+      _inputLength = input.length
       __advance()
       valueStack.clear()
       try rule ne null
@@ -207,9 +207,9 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     */
   def __advance(): Boolean = {
     val c = _cursor
-    if (c < _maxLength) {
+    if (c < _inputLength) {
       _cursor = c + 1
-      _cursorChar = if ((c + 1) == _maxLength) EOI else input charAt (c + 1)
+      _cursorChar = if ((c + 1) == _inputLength) EOI else input charAt (c + 1)
     }
     true
   }
