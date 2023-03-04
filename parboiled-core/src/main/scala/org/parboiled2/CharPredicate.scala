@@ -102,17 +102,17 @@ sealed abstract class CharPredicate {
 object CharPredicate {
   val Empty: CharPredicate = MaskBased(0L, 0L)
   val All: CharPredicate   = from(_ => true)
-  val LowerAlpha           = CharPredicate('a' to 'z')
-  val UpperAlpha           = CharPredicate('A' to 'Z')
+  val LowerAlpha           = CharPredicate.from(c => c >= 'a' && c <= 'z')
+  val UpperAlpha           = CharPredicate.from(c => c >= 'A' && c <= 'Z')
   val Alpha                = LowerAlpha ++ UpperAlpha
-  val Digit                = CharPredicate('0' to '9')
-  val Digit19              = CharPredicate('1' to '9')
+  val Digit                = CharPredicate.from(c => c >= '0' && c <= '9')
+  val Digit19              = CharPredicate.from(c => c >= '1' && c <= '9')
   val AlphaNum             = Alpha ++ Digit
-  val LowerHexLetter       = CharPredicate('a' to 'f')
-  val UpperHexLetter       = CharPredicate('A' to 'F')
+  val LowerHexLetter       = CharPredicate.from(c => c >= 'a' && c <= 'f')
+  val UpperHexLetter       = CharPredicate.from(c => c >= 'A' && c <= 'F')
   val HexLetter            = LowerHexLetter ++ UpperHexLetter
   val HexDigit             = Digit ++ HexLetter
-  val Visible              = CharPredicate('\u0021' to '\u007e')
+  val Visible              = CharPredicate.from(c => c >= '\u0021' && c <= '\u007e')
   val Printable            = Visible ++ ' '
 
   def from(predicate: Char => Boolean): CharPredicate = General(predicate)
