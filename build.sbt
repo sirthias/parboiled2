@@ -68,14 +68,7 @@ val commonSettings = Seq(
   Compile / doc / scalacOptions += "-no-link-warnings",
   sourcesInBase := false,
   // file headers
-  headerLicense := Some(HeaderLicense.ALv2("2009-2019", "Mathias Doenitz")),
-  // reformat main and test sources on compile
-  scalafmtOnCompile := true
-)
-
-lazy val crossSettings = Seq(
-  (Compile / scalafmt / sourceDirectories) := (Compile / unmanagedSourceDirectories).value,
-  (Test / scalafmt / sourceDirectories)    := (Test / unmanagedSourceDirectories).value
+  headerLicense := Some(HeaderLicense.ALv2("2009-2019", "Mathias Doenitz"))
 )
 
 lazy val nativeSettings = Seq(
