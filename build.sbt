@@ -9,6 +9,9 @@ val isScala3 = Def.setting(
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 == 3)
 )
 
+ThisBuild / scalaVersion       := Scala3
+ThisBuild / crossScalaVersions := Seq(Scala2_12, Scala2_13, Scala3)
+
 val commonSettings = Seq(
   organization := "org.parboiled",
   homepage     := Some(new URL("http://parboiled.org")),
@@ -19,8 +22,6 @@ val commonSettings = Seq(
   scmInfo := Some(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
   ),
-  scalaVersion       := Scala3,
-  crossScalaVersions := Seq(Scala2_12, Scala2_13, Scala3),
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
@@ -251,3 +252,25 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     Compile / sourceGenerators += generateActionOps.taskValue
   )
   .nativeSettings(nativeSettings)
+
+ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq()
+
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"), JavaSpec.temurin("11"), JavaSpec.temurin("17"))
+
+ThisBuild / githubWorkflowBuild := Seq(
+  WorkflowStep.Sbt(
+    List("headerCheckAll", "scalaParser/headerCheckAll"),
+    name = Some("Header check"),
+    cond = {
+      // Header check only needs to be run for one JVM along with one version of Scala
+      val jVersion = (ThisBuild / githubWorkflowJavaVersions).value.head.render
+      val sVersion = (ThisBuild / crossScalaVersions).value.head
+      Some("${{ matrix.java=='" + jVersion + "' && matrix.scala=='" + sVersion + "'}}")
+    }
+  ),
+  WorkflowStep.Sbt(
+    List("test", "scalaParser/testOnly scalaparser.SnippetSpec"),
+    name = Some("Build project")
+  )
+)
