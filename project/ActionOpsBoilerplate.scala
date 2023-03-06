@@ -126,15 +126,19 @@ object ActionOpsBoilerplate {
 
     s"""
        |  implicit def ops$i[II <: HList, ${`A, ...`(i)}]: ActionOps[II, ${`A ::...`(
-      i
-    )} :: HNil] { type Out = Ops$i[II, ${`A, ...`(
-      i
-    )}] } = `n/a`
+        i
+      )} :: HNil] { type Out = Ops$i[II, ${`A, ...`(
+        i
+      )}] } = `n/a`
        |  sealed trait Ops$i[II <: HList, ${`A, ...`(i)}] {
-       |    def apply[RR](f: () => RR)(implicit j: Join[II, ${`A ::...`(i)} :: HNil, RR], c: FCapture[() => RR]): Rule[j.In, j.Out]
+       |    def apply[RR](f: () => RR)(implicit j: Join[II, ${`A ::...`(
+        i
+      )} :: HNil, RR], c: FCapture[() => RR]): Rule[j.In, j.Out]
        |
        |${(1 to i - 1) map consumeOut mkString "\n"}
-       |    def apply[RR](f: (${`A, ...`(i)}) => RR)(implicit j: Join[II, HNil, RR], c: FCapture[(${`A, ...`(i)}) => RR]): Rule[j.In, j.Out]
+       |    def apply[RR](f: (${`A, ...`(i)}) => RR)(implicit j: Join[II, HNil, RR], c: FCapture[(${`A, ...`(
+        i
+      )}) => RR]): Rule[j.In, j.Out]
        |
        |${(1 to 22 - i) map consumeStack mkString "\n"}
        |  }

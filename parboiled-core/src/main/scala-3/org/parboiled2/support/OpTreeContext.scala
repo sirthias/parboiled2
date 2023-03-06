@@ -36,7 +36,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     def render(wrapped: Boolean): Expr[Boolean] =
       if (wrapped) '{
         val start = $parser.cursor
-        try ${ renderInner('start, wrapped) } catch {
+        try ${ renderInner('start, wrapped) }
+        catch {
           case e: org.parboiled2.Parser#TracingBubbleException => ${ bubbleUp('e, 'start) }
         }
       }
@@ -59,7 +60,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     final def render(wrapped: Boolean): Expr[Boolean] =
       if (wrapped) '{
-        try ${ renderInner(wrapped) } catch { case org.parboiled2.Parser.StartTracingException => $bubbleUp }
+        try ${ renderInner(wrapped) }
+        catch { case org.parboiled2.Parser.StartTracingException => $bubbleUp }
       }
       else renderInner(wrapped)
 
@@ -934,7 +936,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           Right(call.asExprOf[Rule[_, _]]),
           Expr(callName(call) getOrElse reportError("Illegal rule call: " + call, call.asExpr))
         )
-      //case _ => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
+      // case _ => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
     }
     lazy val allRules = rules0PF.orElse(rules1PF.compose[Expr[Rule[_, _]]] { case x => x.asTerm.underlyingArgument })
     def rec(rule: Term): OpTree = allRules.applyOrElse(
