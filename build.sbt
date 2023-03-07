@@ -8,6 +8,7 @@ val isScala3 = Def.setting(
   CrossVersion.partialVersion(scalaVersion.value).exists(_._1 == 3)
 )
 
+ThisBuild / versionScheme      := Some("early-semver")
 ThisBuild / scalaVersion       := Scala3
 ThisBuild / crossScalaVersions := Seq(Scala2_12, Scala2_13, Scala3)
 
