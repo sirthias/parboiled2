@@ -1,4 +1,3 @@
-import ReleaseTransformations._
 import sbtcrossproject.CrossPlugin.autoImport._
 
 val Scala2_12 = "2.12.17"
@@ -94,33 +93,6 @@ lazy val publishingSettings = Seq(
   )
 )
 
-lazy val releaseSettings = {
-  val runCompile = ReleaseStep(action = { st: State =>
-    val extracted = Project.extract(st)
-    val ref       = extracted.get(thisProjectRef)
-    extracted.runAggregated(ref / Compile / compile, st)
-  })
-
-  Seq(
-    releaseCrossBuild := true,
-    releaseProcess := Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      inquireVersions,
-      runClean,
-      runCompile,
-      runTest,
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      publishArtifacts,
-      releaseStepCommand("sonatypeReleaseAll"),
-      setNextVersion,
-      commitNextVersion,
-      pushChanges
-    )
-  )
-}
-
 val utestSettings = Seq(testFrameworks := Seq(new TestFramework("utest.runner.Framework")))
 
 lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
@@ -147,7 +119,6 @@ lazy val root = project
   .aggregate(parboiledJVM, parboiledJS, parboiledNative)
   .aggregate(parboiledCoreJVM, parboiledCoreJS, parboiledCoreNative)
   .settings(commonSettings)
-  .settings(releaseSettings)
   .settings(publish / skip := true)
 
 lazy val examples = project
@@ -254,7 +225,24 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .nativeSettings(nativeSettings)
 
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
-ThisBuild / githubWorkflowPublishTargetBranches := Seq()
+ThisBuild / githubWorkflowPublishTargetBranches :=
+  Seq(
+    RefPredicate.StartsWith(Ref.Tag("v")),
+    RefPredicate.Equals(Ref.Branch("master"))
+  )
+
+ThisBuild / githubWorkflowPublish := Seq(
+  WorkflowStep.Sbt(
+    commands = List("ci-release"),
+    name = Some("Publish project"),
+    env = Map(
+      "PGP_PASSPHRASE"    -> "${{ secrets.PGP_PASSPHRASE }}",
+      "PGP_SECRET"        -> "${{ secrets.PGP_SECRET }}",
+      "SONATYPE_PASSWORD" -> "${{ secrets.SONATYPE_PASSWORD }}",
+      "SONATYPE_USERNAME" -> "${{ secrets.SONATYPE_USERNAME }}"
+    )
+  )
+)
 
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"), JavaSpec.temurin("11"), JavaSpec.temurin("17"))
 
