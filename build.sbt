@@ -245,16 +245,20 @@ ThisBuild / githubWorkflowPublish := Seq(
 )
 
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"), JavaSpec.temurin("11"), JavaSpec.temurin("17"))
+ThisBuild / githubWorkflowOSes         := Seq("ubuntu-latest", "windows-latest")
 
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(
     List("headerCheckAll", "scalaParser/headerCheckAll"),
     name = Some("Header check"),
     cond = {
-      // Header check only needs to be run for one JVM along with one version of Scala
+      // Header check only needs to be run for one JVM, os along with one version of Scala
       val jVersion = (ThisBuild / githubWorkflowJavaVersions).value.head.render
       val sVersion = (ThisBuild / crossScalaVersions).value.head
-      Some("${{ matrix.java=='" + jVersion + "' && matrix.scala=='" + sVersion + "'}}")
+      val uOs      = (ThisBuild / githubWorkflowOSes).value.find(_.contains("ubuntu")).head
+      Some(
+        "${{ matrix.java=='" + jVersion + "' && matrix.scala=='" + sVersion + "' && matrix.os=='" + uOs + "' }}"
+      )
     }
   ),
   WorkflowStep.Sbt(
