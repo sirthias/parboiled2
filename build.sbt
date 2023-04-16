@@ -121,6 +121,9 @@ lazy val root = project
   .aggregate(parboiledCoreJVM, parboiledCoreJS, parboiledCoreNative)
   .settings(commonSettings)
   .settings(publish / skip := true)
+  .settings(
+    name := "parboiled2-root"
+  )
 
 lazy val examples = project
   .enablePlugins(AutomateHeaderPlugin)
