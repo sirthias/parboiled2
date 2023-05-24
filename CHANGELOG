@@ -1,3 +1,13 @@
+Version 2.5.0 (2023-05-24)
+--------------------------
+- Upgraded to Scala 3.3.0, 2.13.10 and 2.12.17
+- Upgraded to ScalaJS 1.13.1
+- Upgraded to Scala native 0.4.12
+- Changed `CharPredicate` to not extend `Char => Boolean` anymore (#417)
+- Reduced allocations by increased reuse of ValueStack (#416)
+- Fixed DynamicRuleDispatch to work with Scala 3 (#426)
+
+
 Version 2.4.1 (2022-11-02)
 --------------------------
 - Re-enabled cross-building for scala native 0.4.7
