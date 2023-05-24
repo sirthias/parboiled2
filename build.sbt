@@ -95,7 +95,7 @@ lazy val publishingSettings = Seq(
   publishMavenStyle         := true,
   Test / publishArtifact    := false,
   pomIncludeRepository      := (_ => false),
-  publishTo                 := sonatypePublishTo.value,
+  publishTo                 := sonatypePublishToBundle.value,
   publishConfiguration      := publishConfiguration.value.withOverwrite(true),
   publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
   developers := List(
