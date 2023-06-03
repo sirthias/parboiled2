@@ -17,7 +17,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - id: scalafmt_versoin
+      - id: scalafmt_version
         run: |
           set -x
           VERSION=$(grep version .scalafmt.conf | sed "s,version = ,,")
@@ -26,5 +26,5 @@ jobs:
       - name: Check project is formatted
         uses: jrouly/scalafmt-native-action@v2
         with:
-          version: "${{steps.scalafmt_versoin.outputs.value}}"
+          version: "${{steps.scalafmt_version.outputs.value}}"
           arguments: '--list --mode diff-ref=origin/master'
