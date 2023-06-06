@@ -36,8 +36,8 @@ jobs:
         if: contains(runner.os, 'windows')
         uses: al-cheb/configure-pagefile-action@v1.3
         with:
-          minimum-size: 2GB
-          maximum-size: 8GB
+          minimum-size: 4GB
+          maximum-size: 16GB
 
       - name: Checkout current branch (full)
         uses: actions/checkout@v3
@@ -67,13 +67,6 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: sbt
-
-      - name: Configure pagefile for Windows
-        if: contains(runner.os, 'windows')
-        uses: al-cheb/configure-pagefile-action@v1.3
-        with:
-          minimum-size: 4GB
-          maximum-size: 16GB
 
       - name: Check that workflows are up to date
         shell: bash
@@ -117,8 +110,8 @@ jobs:
         if: contains(runner.os, 'windows')
         uses: al-cheb/configure-pagefile-action@v1.3
         with:
-          minimum-size: 2GB
-          maximum-size: 8GB
+          minimum-size: 4GB
+          maximum-size: 16GB
 
       - name: Checkout current branch (full)
         uses: actions/checkout@v3
