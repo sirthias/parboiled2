@@ -1,4 +1,5 @@
 import sbtcrossproject.CrossPlugin.autoImport._
+import sbtghactions.windows
 
 val Scala2_12 = "2.12.18"
 val Scala2_13 = "2.13.11"
@@ -261,18 +262,8 @@ ThisBuild / githubWorkflowPublish := Seq(
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"), JavaSpec.temurin("11"), JavaSpec.temurin("17"))
 ThisBuild / githubWorkflowOSes         := Seq("ubuntu-latest", "windows-latest")
 
-// Workaround that is necessary for Windows,
-// see https://github.com/scala-native/scala-native/blob/9a185986f10a5e69c32339d5701c1196e9885e17/.github/actions/windows-setup-env/action.yml#L21-L33
-ThisBuild / githubWorkflowBuildPreamble := Seq(
-  WorkflowStep.Use(
-    name = Some("Configure pagefile for Windows"),
-    ref = UseRef.Public("al-cheb", "configure-pagefile-action", "v1.3"),
-    params = Map(
-      "minimum-size" -> "4GB",
-      "maximum-size" -> "16GB"
-    ),
-    cond = Some("contains(runner.os, 'windows')")
-  )
+ThisBuild / githubWorkflowWindowsPagefileFix := Some(
+  windows.PagefileFix("4GB", "16GB")
 )
 
 ThisBuild / githubWorkflowBuild := Seq(
