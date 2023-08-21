@@ -202,15 +202,7 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     },
     (Compile / packageBin / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     (Compile / packageDoc / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
-    pomPostProcess := { // we need to remove the dependency onto the parboiledCore module from the POM
-      import scala.xml.transform._
-      import scala.xml.{NodeSeq, Node => XNode}
-
-      val filter = new RewriteRule {
-        override def transform(n: XNode) = if ((n \ "artifactId").text.startsWith("parboiledcore")) NodeSeq.Empty else n
-      }
-      new RuleTransformer(filter).transform(_).head
-    }
+    projectDependencies := projectDependencies.value.filterNot(_.name.equalsIgnoreCase("parboiledcore"))
   )
   .nativeSettings(nativeSettings)
 
