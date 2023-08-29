@@ -79,7 +79,7 @@ jobs:
 
       - name: Build project
         shell: bash
-        run: sbt '++ ${{ matrix.scala }}' test 'scalaParser/testOnly scalaparser.SnippetSpec'
+        run: sbt '++ ${{ matrix.scala }}' Test/compile test 'scalaParser/testOnly scalaparser.SnippetSpec'
 
       - name: Compress target directories
         shell: bash

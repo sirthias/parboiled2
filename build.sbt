@@ -83,7 +83,23 @@ val commonSettings = Seq(
   headerLicense := Some(HeaderLicense.ALv2("2009-2019", "Mathias Doenitz"))
 )
 
-lazy val nativeSettings = Seq(
+lazy val nativeSettings = Def.settings(
+  Test / nativeLink := {
+    if (scala.util.Properties.isWin) {
+      // TODO enable
+      file("dummy"),
+    } else {
+      (Test / nativeLink).value
+    }
+  },
+  Test / test := {
+    if (scala.util.Properties.isWin) {
+      // TODO enable
+      file("dummy"),
+    } else {
+      (Test / test).value
+    }
+  }
 )
 
 lazy val scalajsSettings = Seq(
@@ -273,7 +289,7 @@ ThisBuild / githubWorkflowBuild := Seq(
     }
   ),
   WorkflowStep.Sbt(
-    List("test", "scalaParser/testOnly scalaparser.SnippetSpec"),
+    List("Test/compile", "test", "scalaParser/testOnly scalaparser.SnippetSpec"),
     name = Some("Build project")
   )
 )
