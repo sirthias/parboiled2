@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        scala: [2.12.18, 2.13.11, 3.3.0]
+        scala: [2.12.18, 2.13.11, 3.3.1]
         java: [temurin@8, temurin@11, temurin@17]
     runs-on: ${{ matrix.os }}
     steps:
@@ -98,7 +98,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [3.3.0]
+        scala: [3.3.1]
         java: [temurin@8]
     runs-on: ${{ matrix.os }}
     steps:
@@ -162,12 +162,12 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (3.3.0)
+      - name: Download target directories (3.3.1)
         uses: actions/download-artifact@v3
         with:
-          name: target-${{ matrix.os }}-3.3.0-${{ matrix.java }}
+          name: target-${{ matrix.os }}-3.3.1-${{ matrix.java }}
 
-      - name: Inflate target directories (3.3.0)
+      - name: Inflate target directories (3.3.1)
         run: |
           tar xf targets.tar
           rm targets.tar
