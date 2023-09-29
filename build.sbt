@@ -293,3 +293,12 @@ ThisBuild / githubWorkflowBuild := Seq(
     name = Some("Build project")
   )
 )
+
+ThisBuild / githubWorkflowGeneratedCI ~= {
+  _.map {
+    case x if x.id == "publish" =>
+      x.copy(cond = x.cond.map(_ + " && (github.repository_owner == 'sirthias')"))
+    case x =>
+      x
+  }
+}
