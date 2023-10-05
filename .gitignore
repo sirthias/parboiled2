@@ -65,3 +65,6 @@ buck-out/
 
 ########### Bundle artifact ###########
 *.jsbundle
+
+########### Intellij ###########
+.idea
