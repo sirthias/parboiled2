@@ -201,7 +201,9 @@ lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     (Compile / packageBin / mappings) ++= (parboiledCoreJVM.project / Compile / packageBin / mappings).value,
     (Compile / packageSrc / mappings) ++= (parboiledCoreJVM.project / Compile / packageSrc / mappings).value,
     (Compile / packageDoc / mappings) ++= (parboiledCoreJVM.project / Compile / packageDoc / mappings).value,
-    (Compile / packageBin / packageOptions) += Package.ManifestAttributes("Automatic-Module-Name" -> "org.parboiled2.parboiled")
+    (Compile / packageBin / packageOptions) += Package.ManifestAttributes(
+      "Automatic-Module-Name" -> "org.parboiled2.parboiled"
+    )
   )
   .jsSettings(
     (Compile / packageBin / mappings) ++= (parboiledCoreJS.project / Compile / packageBin / mappings).value,
