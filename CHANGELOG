@@ -1,3 +1,11 @@
+Version 2.5.1 (2023-10-09)
+--------------------------
+- Upgraded to Scala 3.3.1, 2.13.12 and 2.12.18
+- Upgraded to ScalaJS 1.14.0
+- Upgraded to Scala native 0.4.15
+- Added `Automatic-Module-Name` to MANIFEST.INF (#498, thank you, @mlischetti!)
+
+
 Version 2.5.0 (2023-05-24)
 --------------------------
 - Upgraded to Scala 3.3.0, 2.13.10 and 2.12.17
