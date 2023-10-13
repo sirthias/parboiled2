@@ -270,7 +270,7 @@ ThisBuild / githubWorkflowPublish := Seq(
   )
 )
 
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"), JavaSpec.temurin("11"), JavaSpec.temurin("17"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"), JavaSpec.temurin("21"))
 ThisBuild / githubWorkflowOSes         := Seq("ubuntu-latest", "windows-latest")
 
 ThisBuild / githubWorkflowWindowsPagefileFix := Some(
