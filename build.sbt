@@ -84,22 +84,6 @@ val commonSettings = Seq(
 )
 
 lazy val nativeSettings = Def.settings(
-  Test / nativeLink := {
-    if (scala.util.Properties.isWin) {
-      // TODO enable
-      file("dummy"),
-    } else {
-      (Test / nativeLink).value
-    }
-  },
-  Test / test := {
-    if (scala.util.Properties.isWin) {
-      // TODO enable
-      file("dummy"),
-    } else {
-      (Test / test).value
-    }
-  }
 )
 
 lazy val scalajsSettings = Seq(
