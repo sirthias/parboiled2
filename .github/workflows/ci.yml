@@ -78,7 +78,7 @@ jobs:
         run: tar cf targets.tar examples/target parboiled-core/.native/target target scalaParser/target jsonBenchmark/target parboiled/.js/target parboiled/.native/target parboiled/.jvm/target parboiled-core/.jvm/target parboiled-core/.js/target project/target
 
       - name: Upload target directories
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.scala }}-${{ matrix.java }}
           path: targets.tar
