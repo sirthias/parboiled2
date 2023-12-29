@@ -59,7 +59,7 @@ trait RuleDSLCombinators {
     * succeeds only if its inner rule succeeded.
     */
   @compileTimeOnly("Calls to `&` must be inside `rule` macro")
-  def &(r: Rule[_, _]): Rule0 = `n/a`
+  def &(r: Rule[?, ?]): Rule0 = `n/a`
 
   /** Marks a rule as "undividable" from an error reporting perspective.
     * The parser will never report errors *inside* of the marked rule.

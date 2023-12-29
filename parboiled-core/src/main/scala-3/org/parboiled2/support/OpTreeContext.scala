@@ -402,7 +402,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case Lambda(args, body) =>
         def rewrite(tree: Term): Term =
           tree.tpe.asType match {
-            case '[Rule[_, _]] => expand(tree, wrapped).asInstanceOf[Term]
+            case '[Rule[?, ?]] => expand(tree, wrapped).asInstanceOf[Term]
             case _ =>
               tree match {
                 case Block(statements, res) => block(statements, rewrite(res))
@@ -421,12 +421,12 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = expandLambda(body, wrapped)
   }
 
-  case class RunAction(body: Expr[_]) extends DefaultNonTerminalOpTree {
+  case class RunAction(body: Expr[?]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.Run }
 
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
       body.asTerm.tpe.asType match {
-        case '[Rule[_, _]]                => expand(body, wrapped)
+        case '[Rule[?, ?]]                => expand(body, wrapped)
         case '[t1 => r]                   => expandLambda(body.asTerm, wrapped)
         case '[(t1, t2) => r]             => expandLambda(body.asTerm, wrapped)
         case '[(t1, t2, t3) => r]         => expandLambda(body.asTerm, wrapped)
@@ -457,7 +457,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
   }
 
-  private case class RunSubParser(fTree: Expr[_]) extends DefaultNonTerminalOpTree {
+  private case class RunSubParser(fTree: Expr[?]) extends DefaultNonTerminalOpTree {
     def ruleTraceNonTerminalKey = '{ RuleTrace.RunSubParser }
     def renderInner(start: quoted.Expr[Int], wrapped: Boolean): Expr[Boolean] = {
       def rewrite(arg: ValDef, tree: Term): Expr[Boolean] = {
@@ -485,7 +485,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     }
   }
 
-  private case class PushAction(valueExpr: Expr[_], argType: Type[_]) extends OpTree {
+  private case class PushAction(valueExpr: Expr[?], argType: Type[?]) extends OpTree {
     def render(wrapped: Boolean): Expr[Boolean] = {
       val body =
         argType match {
@@ -500,14 +500,14 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       }
     }
   }
-  private case class DropAction(tpe: Type[_]) extends OpTree {
+  private case class DropAction(tpe: Type[?]) extends OpTree {
     def render(wrapped: Boolean): Expr[Boolean] = {
       import support.hlist._
       val body =
         tpe match {
           case '[Unit] => '{}
           case '[HList] =>
-            @tailrec def rec(t: Type[_], prefix: Expr[Unit]): Expr[Unit] = t match {
+            @tailrec def rec(t: Type[?], prefix: Expr[Unit]): Expr[Unit] = t match {
               case '[HNil] => prefix
               case '[h :: t] =>
                 rec(Type.of[t], '{ $prefix; $parser.valueStack.pop() })
@@ -1029,7 +1029,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     }
 
   // tries to match and expand the leaves of the given Tree
-  private def expand(expr: Expr[_], wrapped: Boolean): Expr[Boolean] =
+  private def expand(expr: Expr[?], wrapped: Boolean): Expr[Boolean] =
     expand(expr.asTerm, wrapped).asExprOf[Boolean]
   private def expand(tree: Tree, wrapped: Boolean): Tree =
     tree match {
