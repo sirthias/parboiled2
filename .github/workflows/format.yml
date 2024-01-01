@@ -24,7 +24,7 @@ jobs:
           echo "value=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Check project is formatted
-        uses: jrouly/scalafmt-native-action@v2
+        uses: jrouly/scalafmt-native-action@v3
         with:
           version: "${{steps.scalafmt_version.outputs.value}}"
           arguments: '--list --mode diff-ref=origin/master'
