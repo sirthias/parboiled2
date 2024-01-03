@@ -17,14 +17,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - id: scalafmt_version
-        run: |
-          set -x
-          VERSION=$(grep version .scalafmt.conf | sed "s,version = ,,")
-          echo "value=${VERSION}" >> $GITHUB_OUTPUT
-
       - name: Check project is formatted
         uses: jrouly/scalafmt-native-action@v3
         with:
-          version: "${{steps.scalafmt_version.outputs.value}}"
           arguments: '--list --mode diff-ref=origin/master'
