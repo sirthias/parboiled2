@@ -64,16 +64,20 @@ val commonSettings = Seq(
     }
   },
   Compile / scalacOptions ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 12)) | Some((2, 13)) =>
-        Seq(
-          "-opt-inline-from:org.parboiled2.**",
-          "-opt:l:inline"
-        )
-      case Some((3, _)) =>
-        Seq.empty // // Optimizer not yet available for Scala3, see https://docs.scala-lang.org/overviews/compiler-options/optimizer.html
-      case x => sys.error(s"unsupported scala version: $x")
-    }
+    if (insideCI.value) {
+      val log = sLog.value
+      log.info("Running in CI, enabling Scala2 optimizer")
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, 12)) | Some((2, 13)) =>
+          Seq(
+            "-opt-inline-from:org.parboiled2.**",
+            "-opt:l:inline"
+          )
+        case Some((3, _)) =>
+          Seq.empty // // Optimizer not yet available for Scala3, see https://docs.scala-lang.org/overviews/compiler-options/optimizer.html
+        case x => sys.error(s"unsupported scala version: $x")
+      }
+    } else Seq.empty
   },
   Compile / console / scalacOptions ~= (_ filterNot (o => o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
   Test / console / scalacOptions ~= (_ filterNot (o => o == "-Ywarn-unused-import" || o == "-Xfatal-warnings")),
