@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        scala: [2.12.18, 2.13.13, 3.3.2]
+        scala: [2.12.19, 2.13.13, 3.3.2]
         java: [temurin@8, temurin@21]
     runs-on: ${{ matrix.os }}
     steps:
@@ -66,7 +66,7 @@ jobs:
         run: sbt '++ ${{ matrix.scala }}' githubWorkflowCheck
 
       - name: Header check
-        if: ${{ matrix.java=='temurin@8' && matrix.scala=='2.12.18' && matrix.os=='ubuntu-latest' }}
+        if: ${{ matrix.java=='temurin@8' && matrix.scala=='2.12.19' && matrix.os=='ubuntu-latest' }}
         shell: bash
         run: sbt '++ ${{ matrix.scala }}' headerCheckAll scalaParser/headerCheckAll
 
