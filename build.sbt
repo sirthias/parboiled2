@@ -1,7 +1,7 @@
 import sbtcrossproject.CrossPlugin.autoImport._
 import sbtghactions.windows
 
-val Scala2_12 = "2.12.18"
+val Scala2_12 = "2.12.19"
 val Scala2_13 = "2.13.13"
 val Scala3    = "3.3.2"
 
