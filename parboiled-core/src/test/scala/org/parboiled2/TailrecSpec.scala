@@ -18,7 +18,7 @@ package org.parboiled2
 
 import utest._
 
-// test verifying the effectiveness of our workaround for https://issues.scala-lang.org/browse/SI-8657
+// test verifying the effectiveness of our workaround for https://github.com/scala/bug/issues/8657
 object TailrecSpec extends TestParserSpec {
 
   abstract class TailrecParser extends TestParser0 {

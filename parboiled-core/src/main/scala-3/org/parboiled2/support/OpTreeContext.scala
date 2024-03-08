@@ -102,7 +102,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         if (!matched) throw org.parboiled2.Parser.CutError
         true
       } else false
-    } // work-around for https://issues.scala-lang.org/browse/SI-8657
+    } // work-around for https://github.com/scala/bug/issues/8657
   }
 
   def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
@@ -128,7 +128,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
                   $parser.__restoreState(mark)
                   $r
                 } else
-                  true // work-around for https://issues.scala-lang.org/browse/SI-8657", FIXME: still valid for dotty?
+                  true // work-around for https://github.com/scala/bug/issues/8657", FIXME: still valid for dotty?
               }
             )
         }

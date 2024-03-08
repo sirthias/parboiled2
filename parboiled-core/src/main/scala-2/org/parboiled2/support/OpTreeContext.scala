@@ -153,7 +153,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         .map(_.render(wrapped))
         .reduceLeft((l, r) =>
           q"val l = $l; if (l) $r else false"
-        ) // work-around for https://issues.scala-lang.org/browse/SI-8657"
+        ) // work-around for https://github.com/scala/bug/issues/8657"
   }
 
   case class Cut(lhs: OpTree, rhs: OpTree) extends DefaultNonTerminalOpTree {
@@ -164,7 +164,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
         matched = ${rhs.render(wrapped)}
         if (!matched) throw org.parboiled2.Parser.CutError
         true
-      } else false""" // work-around for https://issues.scala-lang.org/browse/SI-8657
+      } else false""" // work-around for https://github.com/scala/bug/issues/8657
   }
 
   def FirstOf(lhs: OpTree, rhs: OpTree): FirstOf =
@@ -182,7 +182,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       q"""val mark = __saveState; ${ops
           .map(_.render(wrapped))
           .reduceLeft((l, r) =>
-            q"val l = $l; if (!l) { __restoreState(mark); $r } else true // work-around for https://issues.scala-lang.org/browse/SI-8657"
+            q"val l = $l; if (!l) { __restoreState(mark); $r } else true // work-around for https://github.com/scala/bug/issues/8657"
           )}"""
   }
 
