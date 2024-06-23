@@ -61,6 +61,9 @@ jobs:
           java-version: 21
           cache: sbt
 
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
       - name: Check that workflows are up to date
         shell: bash
         run: sbt '++ ${{ matrix.scala }}' githubWorkflowCheck
@@ -127,6 +130,9 @@ jobs:
           distribution: temurin
           java-version: 21
           cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
 
       - name: Download target directories (2.12.19)
         uses: actions/download-artifact@v4
