@@ -13,10 +13,10 @@ ThisBuild / crossScalaVersions := Seq(Scala2_12, Scala2_13, Scala3)
 
 val commonSettings = Seq(
   organization := "org.parboiled",
-  homepage     := Some(new URL("http://parboiled.org")),
+  homepage     := Some(url("http://parboiled.org")),
   description  := "Fast and elegant PEG parsing in Scala - lightweight, easy-to-use, powerful",
   startYear    := Some(2009),
-  licenses     := Seq("Apache-2.0" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  licenses     := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   (Compile / unmanagedResources) += baseDirectory.value.getParentFile.getParentFile / "LICENSE",
   scmInfo := Some(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
