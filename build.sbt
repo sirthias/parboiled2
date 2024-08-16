@@ -241,8 +241,7 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches :=
   Seq(
-    RefPredicate.StartsWith(Ref.Tag("v")),
-    RefPredicate.Equals(Ref.Branch("master"))
+    RefPredicate.StartsWith(Ref.Tag("v"))
   )
 
 ThisBuild / githubWorkflowPublish := Seq(
