@@ -47,10 +47,11 @@ val commonSettings = Seq(
           "-Xfuture",
           "-Xlint:_,-missing-interpolator",
           "-Ywarn-dead-code",
-          "-Xsource:2.13" // new warning: deprecate assignments in argument position
+          "-Xsource:3"
         )
       case Some((2, 13)) =>
         Seq(
+          "-Xsource:3-cross",
           "-Xlint:_,-missing-interpolator",
           "-Ywarn-dead-code",
           "-Ywarn-unused:imports,-patvars,-privates,-locals,-implicits,-explicits",
