@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import org.parboiled2.support.hlist.HNil
-import utest._
+import utest.*
 
 object DynamicRuleDispatchSpec extends TestSuite {
 

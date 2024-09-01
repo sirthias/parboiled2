@@ -17,7 +17,7 @@
 package org.parboiled2.examples
 
 import scala.collection.immutable
-import org.parboiled2._
+import org.parboiled2.*
 
 object CsvParser {
 
@@ -43,7 +43,7 @@ object CsvParser {
   */
 class CsvParser(val input: ParserInput, headerPresent: Boolean, fieldDelimiter: Char)
     extends Parser with StringBuilding {
-  import CsvParser._
+  import CsvParser.*
 
   val TEXTDATA = `TEXTDATA-BASE` -- fieldDelimiter
 

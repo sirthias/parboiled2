@@ -16,10 +16,10 @@
 
 package org.parboiled2.support
 
-import org.parboiled2._
+import org.parboiled2.*
 import org.parboiled2.support.hlist.HList
 
-import scala.quoted._
+import scala.quoted.*
 import scala.annotation.tailrec
 
 class OpTreeContext(parser: Expr[Parser])(using Quotes) {
@@ -502,7 +502,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   }
   private case class DropAction(tpe: Type[?]) extends OpTree {
     def render(wrapped: Boolean): Expr[Boolean] = {
-      import support.hlist._
+      import support.hlist.*
       val body =
         tpe match {
           case '[Unit] => '{}
@@ -578,7 +578,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
               try $parser.__registerMismatch()
               catch {
                 case org.parboiled2.Parser.StartTracingException =>
-                  import org.parboiled2.RuleTrace._
+                  import org.parboiled2.RuleTrace.*
                   $parser.__bubbleUp(
                     NonTerminal(org.parboiled2.RuleTrace.StringMatch($stringTree), -${ Expr(ix) }) :: Nil,
                     org.parboiled2.RuleTrace.CharMatch($ch)
@@ -645,7 +645,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
               try $parser.__registerMismatch()
               catch {
                 case org.parboiled2.Parser.StartTracingException =>
-                  import org.parboiled2.RuleTrace._
+                  import org.parboiled2.RuleTrace.*
                   $parser.__bubbleUp(
                     NonTerminal(org.parboiled2.RuleTrace.IgnoreCaseString($stringTree), -${ Expr(ix) }) :: Nil,
                     org.parboiled2.RuleTrace.IgnoreCaseChar($ch)

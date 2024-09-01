@@ -16,7 +16,7 @@
 
 package org.parboiled2.support
 
-import org.parboiled2.support.hlist._
+import org.parboiled2.support.hlist.*
 
 /** "Unpacks" an HList if it has only zero or one element(s).
   *   Out =

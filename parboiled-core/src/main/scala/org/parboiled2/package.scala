@@ -16,7 +16,7 @@
 
 package org
 
-import org.parboiled2.support.hlist._
+import org.parboiled2.support.hlist.*
 import java.nio.charset.Charset
 
 package object parboiled2 {

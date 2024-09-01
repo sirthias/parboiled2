@@ -20,7 +20,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.NumericRange
 
 sealed abstract class CharPredicate {
-  import CharPredicate._
+  import CharPredicate.*
   def apply(char: Char): Boolean
 
   /** Determines wether this CharPredicate is an instance of the high-performance,
@@ -251,7 +251,7 @@ object CharPredicate {
   }
 
   class ArrayBased private[CharPredicate] (private val chars: Array[Char]) extends CharPredicate {
-    import java.util.Arrays._
+    import java.util.Arrays.*
     sort(chars)
 
     // TODO: switch to faster binary search algorithm with an adaptive pivot, e.g. http://ochafik.com/blog/?p=106

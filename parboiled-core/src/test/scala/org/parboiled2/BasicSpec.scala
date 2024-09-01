@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import utest.{TestableString => _, _}
+import utest.{TestableString as _, *}
 
 object BasicSpec extends TestParserSpec {
 

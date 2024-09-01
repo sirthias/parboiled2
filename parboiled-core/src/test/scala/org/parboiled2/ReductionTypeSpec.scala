@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import scala.reflect.ClassTag
-import utest._
+import utest.*
 
 object ReductionTypeSpec extends TestSuite {
 

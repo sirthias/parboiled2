@@ -33,11 +33,11 @@ trait DynamicRuleDispatchMacro { self: DynamicRuleDispatch.type =>
   ): (DynamicRuleDispatch[P, L], immutable.Seq[String]) =
     ${ DynamicRuleDispatch.__create[P, L]('ruleNames) }
 
-  import scala.quoted._
+  import scala.quoted.*
   def __create[P <: Parser: Type, L <: HList: Type](
       ruleNames: Expr[Seq[String]]
   )(using Quotes): Expr[(DynamicRuleDispatch[P, L], immutable.Seq[String])] = {
-    import quotes.reflect._
+    import quotes.reflect.*
 
     val names: Seq[String] = ruleNames match {
       case Varargs(Exprs(args)) => args.sorted

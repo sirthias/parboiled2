@@ -17,8 +17,8 @@
 package org.parboiled2
 
 import org.parboiled2.support.Unpack
-import org.parboiled2.support.hlist._
-import utest._
+import org.parboiled2.support.hlist.*
+import utest.*
 
 abstract class TestParserSpec extends TestSuite {
   type TestParser0             = TestParser[HNil, Unit]

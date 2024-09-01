@@ -21,12 +21,12 @@ import scala.collection.immutable.VectorBuilder
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 import scala.util.control.{NoStackTrace, NonFatal}
-import org.parboiled2.support.hlist._
-import org.parboiled2.support._
+import org.parboiled2.support.hlist.*
+import org.parboiled2.support.*
 
 abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 1024)
     extends RuleDSL with ParserMacroMethods {
-  import Parser._
+  import Parser.*
 
   require(maxValueStackSize <= 65536, "`maxValueStackSize` > 2^16 is not supported") // due to current snapshot design
 
@@ -354,7 +354,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         try __registerMismatch()
         catch {
           case Parser.StartTracingException =>
-            import RuleTrace._
+            import RuleTrace.*
             __bubbleUp(NonTerminal(StringMatch(string), -ix) :: Nil, CharMatch(string charAt ix))
         }
     else true
@@ -381,7 +381,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
         try __registerMismatch()
         catch {
           case Parser.StartTracingException =>
-            import RuleTrace._
+            import RuleTrace.*
             __bubbleUp(NonTerminal(IgnoreCaseString(string), -ix) :: Nil, IgnoreCaseChar(string charAt ix))
         }
     else true

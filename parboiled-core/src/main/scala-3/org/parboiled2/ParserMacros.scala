@@ -44,8 +44,8 @@ private[parboiled2] trait RuleRunnable {
 }
 
 object ParserMacros {
-  import scala.quoted._
-  import scala.compiletime._
+  import scala.quoted.*
+  import scala.compiletime.*
 
   // TODO: the `R` type parameter is a workaround for https://github.com/lampepfl/dotty/issues/13376
   // Discussion at https://github.com/sirthias/parboiled2/pull/274#issuecomment-904926294

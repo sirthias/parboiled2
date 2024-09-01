@@ -19,7 +19,7 @@ package org.parboiled2
 import scala.annotation.unchecked.uncheckedVariance
 import scala.annotation.compileTimeOnly
 import scala.collection.immutable
-import org.parboiled2.support._
+import org.parboiled2.support.*
 import org.parboiled2.support.hlist.HList
 
 sealed trait RuleX

@@ -16,8 +16,8 @@
 
 package org.parboiled2.support
 
-import org.parboiled2.support.hlist._
-import org.parboiled2._
+import org.parboiled2.support.hlist.*
+import org.parboiled2.*
 
 // phantom type, only used for rule DSL typing
 sealed trait RunResult[T] {

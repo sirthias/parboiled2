@@ -21,7 +21,7 @@ import org.parboiled2.util.Base64
 /** Rules for parsing Base-64 encoded strings.
   */
 trait Base64Parsing { this: Parser =>
-  import Base64Parsing._
+  import Base64Parsing.*
 
   /** Parses an RFC4045-encoded string and decodes it onto the value stack.
     */

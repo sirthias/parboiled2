@@ -16,8 +16,8 @@
 
 package org.parboiled2
 
-import utest._
-import org.parboiled2.support.hlist._
+import utest.*
+import org.parboiled2.support.hlist.*
 
 object ReductionResetSpec extends TestParserSpec {
 

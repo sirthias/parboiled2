@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import scala.util.{Success, Try}
-import utest._
+import utest.*
 
 object RunningSpec extends TestSuite {
 
