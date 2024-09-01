@@ -16,7 +16,7 @@
 
 package org.parboiled2.support
 
-import hlist._
+import hlist.*
 
 import scala.annotation.implicitNotFound
 

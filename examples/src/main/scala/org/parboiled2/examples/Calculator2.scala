@@ -19,7 +19,7 @@ package org.parboiled2.examples
 import scala.annotation.tailrec
 import scala.util.{Failure, Success}
 import scala.io.StdIn
-import org.parboiled2._
+import org.parboiled2.*
 
 object Calculator2 extends App {
   repl()
@@ -65,7 +65,7 @@ object Calculator2 extends App {
   * for them, to be evaluated in a separate phase, after parsing is completed.
   */
 class Calculator2(val input: ParserInput) extends Parser {
-  import Calculator2._
+  import Calculator2.*
 
   def InputLine = rule(Expression ~ EOI)
 

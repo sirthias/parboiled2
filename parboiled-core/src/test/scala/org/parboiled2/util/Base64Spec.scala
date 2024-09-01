@@ -16,7 +16,7 @@
 
 package org.parboiled2.util
 
-import utest._
+import utest.*
 import java.nio.charset.StandardCharsets
 
 object Base64Spec extends TestSuite {

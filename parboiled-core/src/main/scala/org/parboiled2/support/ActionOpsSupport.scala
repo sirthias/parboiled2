@@ -16,7 +16,7 @@
 
 package org.parboiled2.support
 
-import org.parboiled2.support.hlist._
+import org.parboiled2.support.hlist.*
 import org.parboiled2.Rule
 import org.parboiled2.support.hlist.ops.hlist.Prepend
 

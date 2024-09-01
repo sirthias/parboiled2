@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import org.parboiled2.support.hlist.{HList, HNil}
-import utest.{intercept, _}
+import utest.{intercept, *}
 
 object ValueStackSpec extends TestSuite {
 

@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import org.parboiled2.support.hlist._
+import org.parboiled2.support.hlist.*
 import utest.{compileError, ArrowAssert}
 
 //// pure compile-time-only test

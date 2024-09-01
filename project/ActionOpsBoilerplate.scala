@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import sbt._
+import sbt.*
 
 /** Generate action ops boilerplate for consuming/producing up to 22 values from/to the value stack.
   *

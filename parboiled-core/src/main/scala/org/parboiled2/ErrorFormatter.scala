@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import scala.annotation.tailrec
-import java.lang.{StringBuilder => JStringBuilder}
+import java.lang.StringBuilder as JStringBuilder
 
 /** Abstraction for error formatting logic.
   * Instantiate with a custom configuration or override with custom logic.
@@ -53,7 +53,7 @@ class ErrorFormatter(
     */
   def format(sb: JStringBuilder, error: ParseError, input: ParserInput): JStringBuilder = {
     formatProblem(sb, error, input)
-    import error._
+    import error.*
     if (showExpected) formatExpected(sb, error)
     if (showPosition) sb.append(" (line ").append(position.line).append(", column ").append(position.column).append(')')
     if (showLine) formatErrorLine(sb.append(':').append('\n'), error, input)
@@ -87,7 +87,7 @@ class ErrorFormatter(
     // reaches further than the PEL. In these cases we want to show the complete inner match as "mismatched",
     // not just the piece up to the PEL. This is what this method corrects for.
     error.effectiveTraces.foldLeft(error.principalPosition.index - error.position.index + 1) { (len, trace) =>
-      import RuleTrace._
+      import RuleTrace.*
       trace.terminal match {
         case NotPredicate(_, x) =>
           math.max(trace.prefix.collectFirst { case NonTerminal(Atomic, off) => off + x } getOrElse x, len)
@@ -146,7 +146,7 @@ class ErrorFormatter(
     * the given error's position in the line with a caret.
     */
   def formatErrorLine(sb: JStringBuilder, error: ParseError, input: ParserInput): JStringBuilder = {
-    import error.position._
+    import error.position.*
     val (expandedCol, expandedLine) = expandErrorLineTabs(input getLine line, column)
     sb.append(expandedLine).append('\n')
     for (i <- 1 until expandedCol) sb.append(' ')
@@ -174,11 +174,11 @@ class ErrorFormatter(
   /** Formats a [[Vector]] of [[RuleTrace]] instances into a String.
     */
   def formatTraces(error: ParseError): String = {
-    import error._
+    import error.*
     traces
       .map(formatTrace(_, position.index))
       .mkString(
-        s"${traces.size} rule${(if (traces.size != 1) "s" else "")}" +
+        s"${traces.size} rule${if (traces.size != 1) "s" else ""}" +
           " mismatched at error location:\n  ",
         "\n  ",
         "\n"
@@ -188,7 +188,7 @@ class ErrorFormatter(
   /** Formats a [[RuleTrace]] into a String.
     */
   def formatTrace(trace: RuleTrace, errorIndex: Int): String = {
-    import RuleTrace._
+    import RuleTrace.*
     val sb                                            = new JStringBuilder
     val doSep: String => JStringBuilder               = sb.append
     val dontSep: String => JStringBuilder             = _ => sb
@@ -225,7 +225,7 @@ class ErrorFormatter(
       nonTerminal: RuleTrace.NonTerminal,
       showFrameStartOffset: Boolean = showFrameStartOffset
   ): String = {
-    import RuleTrace._
+    import RuleTrace.*
     import CharUtils.escape
     val keyString = nonTerminal.key match {
       case Action              => "<action>"
@@ -252,7 +252,7 @@ class ErrorFormatter(
   }
 
   def formatTerminal(terminal: RuleTrace.Terminal): String = {
-    import RuleTrace._
+    import RuleTrace.*
     import CharUtils.escape
     terminal match {
       case ANY                                       => "ANY"

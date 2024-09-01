@@ -19,7 +19,7 @@ package org.parboiled2
 import org.scalacheck.{Gen, Prop, Test}
 import org.scalacheck.util.Pretty
 import org.scalacheck.Prop.forAll
-import utest._
+import utest.*
 
 object CharUtilsSpec extends TestSuite with UTestScalaCheck {
 

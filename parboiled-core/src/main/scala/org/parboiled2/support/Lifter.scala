@@ -17,7 +17,7 @@
 package org.parboiled2.support
 
 import scala.annotation.implicitNotFound
-import org.parboiled2.support.hlist._
+import org.parboiled2.support.hlist.*
 
 @implicitNotFound(
   "The `optional`, `zeroOrMore`, `oneOrMore` and `times` modifiers " + "can only be used on rules of type `Rule0`, `Rule1[T]` and `Rule[I, O <: I]`!"

@@ -57,7 +57,7 @@ object Position {
 }
 
 case class RuleTrace(prefix: List[RuleTrace.NonTerminal], terminal: RuleTrace.Terminal) {
-  import RuleTrace._
+  import RuleTrace.*
 
   /** Returns a RuleTrace starting with the first [[RuleTrace.Atomic]] element or the first sub-trace whose
     * offset from the reported error index is zero (e.g. the [[RuleTrace.Terminal]]).

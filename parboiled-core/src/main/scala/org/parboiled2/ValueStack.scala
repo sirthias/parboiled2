@@ -17,7 +17,7 @@
 package org.parboiled2
 
 import scala.annotation.tailrec
-import org.parboiled2.support.hlist._
+import org.parboiled2.support.hlist.*
 
 /** A mutable untyped stack of values.
   * In most cases you won't have to access its API directly since parboiled2's DSL

@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import org.parboiled2.support.hlist._
+import org.parboiled2.support.hlist.*
 
 //// pure compile-time-only test
 class DSLTest(val input: ParserInput) extends Parser {

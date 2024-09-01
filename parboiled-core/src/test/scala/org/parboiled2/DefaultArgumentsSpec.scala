@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import utest._
+import utest.*
 
 import scala.util.Success
 

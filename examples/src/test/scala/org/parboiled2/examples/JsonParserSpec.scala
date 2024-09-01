@@ -17,9 +17,9 @@
 package org.parboiled2.examples
 
 import scala.util.{Failure, Success}
-import utest._
-import spray.json.{JsonParser => _, _}
-import org.parboiled2._
+import utest.*
+import spray.json.{JsonParser as _, *}
+import org.parboiled2.*
 
 object JsonParserSpec extends TestSuite {
 

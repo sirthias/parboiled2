@@ -17,7 +17,7 @@
 package org.parboiled2.examples
 
 import org.parboiled2.examples.CsvParser.{CsvFile, Record}
-import utest._
+import utest.*
 
 object CsvParserSpec extends TestSuite {
 

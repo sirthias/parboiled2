@@ -16,7 +16,7 @@
 
 package org.parboiled2
 
-import java.lang.{StringBuilder => JStringBuilder}
+import java.lang.StringBuilder as JStringBuilder
 import scala.annotation.tailrec
 
 object CharUtils {

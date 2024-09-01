@@ -17,22 +17,22 @@
 package org.parboiled2.examples
 
 import scala.annotation.switch
-import org.parboiled2._
-import spray.json.{ParserInput => _, _}
+import org.parboiled2.*
+import spray.json.{ParserInput as _, *}
 
 /** This is a feature-complete JSON parser implementation that almost directly
   * models the JSON grammar presented at http://www.json.org as a parboiled2 PEG parser.
   */
 class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
   import CharPredicate.{Digit, Digit19, HexDigit}
-  import JsonParser._
+  import JsonParser.*
 
   // the root rule
   def Json = rule(WhiteSpace ~ Value ~ EOI)
 
   def JsonObject: Rule1[JsObject] =
     rule {
-      ws('{') ~ zeroOrMore(Pair).separatedBy(ws(',')) ~ ws('}') ~> ((fields: Seq[JsField]) => JsObject(fields: _*))
+      ws('{') ~ zeroOrMore(Pair).separatedBy(ws(',')) ~ ws('}') ~> ((fields: Seq[JsField]) => JsObject(fields*))
     }
 
   def Pair = rule(JsonStringUnwrapped ~ ws(':') ~ Value ~> ((_, _)))
@@ -62,7 +62,7 @@ class JsonParser(val input: ParserInput) extends Parser with StringBuilding {
 
   def JsonNumber = rule(capture(Integer ~ optional(Frac) ~ optional(Exp)) ~> (JsNumber(_)) ~ WhiteSpace)
 
-  def JsonArray = rule(ws('[') ~ zeroOrMore(Value).separatedBy(ws(',')) ~ ws(']') ~> (JsArray(_: _*)))
+  def JsonArray = rule(ws('[') ~ zeroOrMore(Value).separatedBy(ws(',')) ~ ws(']') ~> (JsArray(_*)))
 
   def Characters = rule(zeroOrMore(NormalChar | '\\' ~ EscapedChar))
 

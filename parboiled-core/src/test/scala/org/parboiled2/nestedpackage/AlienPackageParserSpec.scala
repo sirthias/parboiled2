@@ -17,7 +17,7 @@
 package org.parboiled2.nestedpackage
 
 import scala.util.Success
-import utest._
+import utest.*
 
 object AlienPackageParserSpec extends TestSuite {
 
