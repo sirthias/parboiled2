@@ -2,7 +2,7 @@ import sbtcrossproject.CrossPlugin.autoImport._
 import sbtghactions.windows
 
 val Scala2_12 = "2.12.20"
-val Scala2_13 = "2.13.14"
+val Scala2_13 = "2.13.15"
 val Scala3    = "3.3.3"
 
 val isScala3 = Def.setting(scalaBinaryVersion.value == "3")
