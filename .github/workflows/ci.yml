@@ -68,6 +68,12 @@ jobs:
         shell: bash
         run: sbt '++ ${{ matrix.scala }}' githubWorkflowCheck
 
+      - if: runner.os == 'Windows'
+        uses: egor-tensin/setup-clang@v1
+        with:
+          version: 20.1.7
+          platform: x64
+
       - name: Header check
         if: ${{ matrix.java=='temurin@8' && matrix.scala=='2.12.20' && matrix.os=='ubuntu-latest' }}
         shell: bash
