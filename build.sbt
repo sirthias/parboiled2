@@ -104,7 +104,7 @@ lazy val publishingSettings = Seq(
   publishTo                 := sonatypePublishToBundle.value,
   publishConfiguration      := publishConfiguration.value.withOverwrite(true),
   publishLocalConfiguration := publishLocalConfiguration.value.withOverwrite(true),
-  developers := List(
+  developers                := List(
     Developer("sirthias", "Mathias Doenitz", "devnull@bullet.io", url("https://github.com/sirthias")),
     Developer("alexander-myltsev", "Alexander Myltsev", "", url("http://www.linkedin.com/in/alexandermyltsev"))
   )
@@ -266,6 +266,14 @@ ThisBuild / githubWorkflowWindowsPagefileFix := Some(
 )
 
 ThisBuild / githubWorkflowBuild := Seq(
+  WorkflowStep.Use(
+    ref = UseRef.Public("egor-tensin", "setup-clang", "v1"),
+    cond = Some("runner.os == 'Windows'"),
+    params = Map(
+      "version"  -> "20.1.7",
+      "platform" -> "x64"
+    )
+  ),
   WorkflowStep.Sbt(
     List("headerCheckAll", "scalaParser/headerCheckAll"),
     name = Some("Header check"),
