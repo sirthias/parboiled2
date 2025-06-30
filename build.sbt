@@ -119,7 +119,7 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.8.4" % Test)
+val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.8.7" % Test)
 val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.18.1" % Test)
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
 
