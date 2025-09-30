@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        scala: [2.12.20, 2.13.16, 3.3.6]
+        scala: [2.12.20, 2.13.17, 3.3.6]
         java: [temurin@8, temurin@21]
     runs-on: ${{ matrix.os }}
     steps:
