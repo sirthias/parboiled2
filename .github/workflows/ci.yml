@@ -34,14 +34,14 @@ jobs:
 
       - name: Configure pagefile for Windows
         if: contains(runner.os, 'windows')
-        uses: al-cheb/configure-pagefile-action@v1.4
+        uses: al-cheb/configure-pagefile-action@v1.5
         with:
           minimum-size: 4GB
           maximum-size: 16GB
           disk-root: 'C:'
 
       - name: Checkout current branch (full)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -88,7 +88,7 @@ jobs:
         run: tar cf targets.tar examples/target parboiled-core/.native/target target scalaParser/target jsonBenchmark/target parboiled/.js/target parboiled/.native/target parboiled/.jvm/target parboiled-core/.jvm/target parboiled-core/.js/target project/target
 
       - name: Upload target directories
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: target-${{ matrix.os }}-${{ matrix.scala }}-${{ matrix.java }}
           path: targets.tar
@@ -110,14 +110,14 @@ jobs:
 
       - name: Configure pagefile for Windows
         if: contains(runner.os, 'windows')
-        uses: al-cheb/configure-pagefile-action@v1.4
+        uses: al-cheb/configure-pagefile-action@v1.5
         with:
           minimum-size: 4GB
           maximum-size: 16GB
           disk-root: 'C:'
 
       - name: Checkout current branch (full)
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -141,7 +141,7 @@ jobs:
         uses: sbt/setup-sbt@v1
 
       - name: Download target directories (2.12.20)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: target-${{ matrix.os }}-2.12.20-${{ matrix.java }}
 
@@ -151,7 +151,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (2.13.18)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: target-${{ matrix.os }}-2.13.18-${{ matrix.java }}
 
@@ -161,7 +161,7 @@ jobs:
           rm targets.tar
 
       - name: Download target directories (3.3.7)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: target-${{ matrix.os }}-3.3.7-${{ matrix.java }}
 
