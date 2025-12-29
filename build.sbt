@@ -266,7 +266,7 @@ ThisBuild / githubWorkflowWindowsPagefileFix := Some(
 
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Use(
-    ref = UseRef.Public("egor-tensin", "setup-clang", "v1"),
+    ref = UseRef.Public("egor-tensin", "setup-clang", "v2"),
     cond = Some("runner.os == 'Windows'"),
     params = Map(
       "version"  -> "20.1.7",
