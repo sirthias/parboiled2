@@ -16,7 +16,7 @@
 
 package org.parboiled2.support
 
-import org.parboiled2.support.hlist._
+import org.parboiled2.support.hlist.*
 
 trait HListable[T] {
   type Out <: HList

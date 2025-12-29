@@ -11,13 +11,14 @@ jobs:
     name: Code is formatted
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout current branch (full)
+      - name: Checkout current branch
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          persist-credentials: false
 
-      - name: Check project is formatted
-        uses: jrouly/scalafmt-native-action@v4
+      - uses: actions/setup-java@v5
         with:
-          arguments: '--list --mode diff-ref=origin/master'
+          distribution: temurin
+          java-version: 21
+
+      - uses: sbt/setup-sbt@v1
+
+      - run: sbt scalafmtSbtCheck "+ scalafmtCheckAll"

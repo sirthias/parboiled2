@@ -58,7 +58,7 @@ object TailSwitch {
     case L => R
     case _ =>
       LI match {
-        case T => Prepend0[Reverse1[RI], R]
+        case T    => Prepend0[Reverse1[RI], R]
         case HNil =>
           TI match {
             case ::[?, t] => TailSwitch0[L, HNil, T, t, R, RI]

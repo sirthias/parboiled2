@@ -86,7 +86,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   case class Sequence(ops: Seq[OpTree]) extends DefaultNonTerminalOpTree {
     require(ops.size >= 2)
-    override def ruleTraceNonTerminalKey = '{ RuleTrace.Sequence }
+    override def ruleTraceNonTerminalKey                                               = '{ RuleTrace.Sequence }
     override def renderInner(start: quoted.Expr[Int], wrapped: Boolean): Expr[Boolean] =
       ops
         .map(_.render(wrapped))
@@ -94,7 +94,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   }
 
   case class Cut(lhs: OpTree, rhs: OpTree) extends DefaultNonTerminalOpTree {
-    override def ruleTraceNonTerminalKey = '{ RuleTrace.Cut }
+    override def ruleTraceNonTerminalKey                                        = '{ RuleTrace.Cut }
     override def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] = '{
       var matched = ${ lhs.render(wrapped) }
       if (matched) {
@@ -203,7 +203,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   }
 
   case class Optional(op: OpTree, collector: Collector) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = '{ RuleTrace.Optional }
+    def ruleTraceNonTerminalKey                                        = '{ RuleTrace.Optional }
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
       collector.withCollector { coll =>
         '{
@@ -337,7 +337,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   }
 
   case class AndPredicate(op: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = '{ RuleTrace.AndPredicate }
+    def ruleTraceNonTerminalKey                                        = '{ RuleTrace.AndPredicate }
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
       '{
         val mark    = $parser.__saveState
@@ -403,7 +403,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         def rewrite(tree: Term): Term =
           tree.tpe.asType match {
             case '[Rule[?, ?]] => expand(tree, wrapped).asInstanceOf[Term]
-            case _ =>
+            case _             =>
               tree match {
                 case Block(statements, res) => block(statements, rewrite(res))
                 case x                      => '{ $parser.__push(${ x.asExpr }) }.asTerm
@@ -440,12 +440,11 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.SemanticPredicate }
 
     override def renderInner(wrapped: Boolean): Expr[Boolean] =
-      if (wrapped) '{ $flagTree || $parser.__registerMismatch() }
-      else flagTree
+      if (wrapped) '{ $flagTree || $parser.__registerMismatch() } else flagTree
   }
 
   case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = '{ RuleTrace.Capture }
+    def ruleTraceNonTerminalKey                                        = '{ RuleTrace.Capture }
     def renderInner(start: Expr[Int], wrapped: Boolean): Expr[Boolean] =
       '{
         val start1  = ${ if (wrapped) start else '{ $parser.cursor } }
@@ -458,11 +457,11 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   }
 
   private case class RunSubParser(fTree: Expr[?]) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = '{ RuleTrace.RunSubParser }
+    def ruleTraceNonTerminalKey                                               = '{ RuleTrace.RunSubParser }
     def renderInner(start: quoted.Expr[Int], wrapped: Boolean): Expr[Boolean] = {
       def rewrite(arg: ValDef, tree: Term): Expr[Boolean] = {
         tree match {
-          case Block(statements, res) => block(statements, rewrite(arg, res).asTerm).asExprOf[Boolean]
+          case Block(statements, res)                                                                    => block(statements, rewrite(arg, res).asTerm).asExprOf[Boolean]
           case Select(Apply(parserCons, List(consArg @ Ident(_))), rule) if consArg.symbol == arg.symbol =>
             val term = Apply(parserCons, List('{ $parser.__subParserInput }.asTerm))
             term.tpe.asType match {
@@ -505,10 +504,10 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       import support.hlist.*
       val body =
         tpe match {
-          case '[Unit] => '{}
+          case '[Unit]  => '{}
           case '[HList] =>
             @tailrec def rec(t: Type[?], prefix: Expr[Unit]): Expr[Unit] = t match {
-              case '[HNil] => prefix
+              case '[HNil]   => prefix
               case '[h :: t] =>
                 rec(Type.of[t], '{ $prefix; $parser.valueStack.pop() })
 
@@ -542,13 +541,12 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
   }
 
   case class CharMatch(charTree: Expr[Char]) extends TerminalOpTree {
-    def ruleTraceTerminal = '{ org.parboiled2.RuleTrace.CharMatch($charTree) }
+    def ruleTraceTerminal                                     = '{ org.parboiled2.RuleTrace.CharMatch($charTree) }
     override def renderInner(wrapped: Boolean): Expr[Boolean] = {
       val unwrappedTree = '{
         $parser.cursorChar == $charTree && $parser.__advance()
       }
-      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
-      else unwrappedTree
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() } else unwrappedTree
     }
   }
 
@@ -594,8 +592,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           else if (wrapped) unrollWrapped(s)
           else unrollUnwrapped(s)
         case _ =>
-          if (wrapped) '{ $parser.__matchStringWrapped($stringTree) }
-          else '{ $parser.__matchString($stringTree) }
+          if (wrapped) '{ $parser.__matchStringWrapped($stringTree) } else '{ $parser.__matchString($stringTree) }
       }
     }
   }
@@ -614,8 +611,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       val unwrappedTree = '{
         _root_.java.lang.Character.toLowerCase($parser.cursorChar) == $charTree && $parser.__advance()
       }
-      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
-      else unwrappedTree
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() } else unwrappedTree
     }
   }
 
@@ -672,8 +668,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     override def renderInner(wrapped: Boolean): Expr[Boolean] = {
       val unwrappedTree = '{ $predicateTree($parser.cursorChar) && $parser.__advance() }
-      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
-      else unwrappedTree
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() } else unwrappedTree
     }
   }
 
@@ -682,8 +677,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     override def renderInner(wrapped: Boolean): Expr[Boolean] = {
       val unwrappedTree = '{ $parser.__matchAnyOf($stringTree) }
-      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
-      else unwrappedTree
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() } else unwrappedTree
     }
   }
 
@@ -692,8 +686,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     override def renderInner(wrapped: Boolean): Expr[Boolean] = {
       val unwrappedTree = '{ $parser.__matchNoneOf($stringTree) }
-      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
-      else unwrappedTree
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() } else unwrappedTree
     }
   }
 
@@ -702,8 +695,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
     override def renderInner(wrapped: Boolean): Expr[Boolean] = {
       val unwrappedTree = '{ $parser.cursorChar != EOI && $parser.__advance() }
-      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
-      else unwrappedTree
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() } else unwrappedTree
     }
   }
 
@@ -739,8 +731,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         val char = $parser.cursorChar
         $lowerBound <= char && char <= $upperBound && $parser.__advance()
       }
-      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() }
-      else unwrappedTree
+      if (wrapped) '{ $unwrappedTree && $parser.__updateMaxCursor() || $parser.__registerMismatch() } else unwrappedTree
     }
   }
 
@@ -779,7 +770,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   def topLevel(opTree: OpTree, name: Expr[String]): OpTree = RuleCall(Left(opTree), name)
 
-  def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree = deconstructPF(outerRule).get
+  def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree           = deconstructPF(outerRule).get
   def deconstructPF(outerRule: Expr[Rule[_, _]]): Option[OpTree] = {
     import quotes.reflect.*
 
@@ -938,7 +929,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         )
       // case _ => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
     }
-    lazy val allRules = rules0PF.orElse(rules1PF.compose[Expr[Rule[_, _]]] { case x => x.asTerm.underlyingArgument })
+    lazy val allRules           = rules0PF.orElse(rules1PF.compose[Expr[Rule[_, _]]] { case x => x.asTerm.underlyingArgument })
     def rec(rule: Term): OpTree = allRules.applyOrElse(
       rule.asExprOf[Rule[_, _]],
       rule => Unknown(rule.show, "" /*rule.show(using Printer.TreeStructure)*/, outerRule.toString)
@@ -1033,12 +1024,12 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     expand(expr.asTerm, wrapped).asExprOf[Boolean]
   private def expand(tree: Tree, wrapped: Boolean): Tree =
     tree match {
-      case Block(statements, res) => block(statements, expand(res, wrapped).asInstanceOf[Term])
+      case Block(statements, res)     => block(statements, expand(res, wrapped).asInstanceOf[Term])
       case If(cond, thenExp, elseExp) =>
         If(cond, expand(thenExp, wrapped).asInstanceOf[Term], expand(elseExp, wrapped).asInstanceOf[Term])
       case Match(selector, cases)    => Match(selector, cases.map(expand(_, wrapped).asInstanceOf[CaseDef]))
       case CaseDef(pat, guard, body) => CaseDef(pat, guard, expand(body, wrapped).asInstanceOf[Term])
-      case x =>
+      case x                         =>
         deconstructPF(x.asExprOf[Rule[_, _]])                  // can we pass the body as a rule?
           .map(_.render(wrapped))                              // then render it
           .getOrElse('{ ${ x.asExprOf[Rule[_, _]] } ne null }) // otherwise, assume the expression is a rule itself

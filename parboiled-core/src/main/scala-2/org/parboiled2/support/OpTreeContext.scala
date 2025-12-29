@@ -17,11 +17,11 @@
 package org.parboiled2.support
 
 import scala.annotation.tailrec
-import org.parboiled2._
+import org.parboiled2.*
 
 trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   val c: OpTreeCtx
-  import c.universe._
+  import c.universe.*
 
   sealed trait OpTree {
     // renders a Boolean Tree
@@ -83,41 +83,41 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
     }
 
   val opTreePF: PartialFunction[Tree, OpTree] = {
-    case q"$lhs.~[$a, $b]($rhs)($c, $d)"                   => Sequence(OpTree(lhs), OpTree(rhs))
-    case q"$lhs.~!~[$a, $b]($rhs)($c, $d)"                 => Cut(OpTree(lhs), OpTree(rhs))
-    case q"$lhs.|[$a, $b]($rhs)"                           => FirstOf(OpTree(lhs), OpTree(rhs))
-    case q"$a.this.ch($c)"                                 => CharMatch(c)
-    case q"$a.this.str($s)"                                => StringMatch(s)
-    case q"$a.this.valueMap[$b]($m)($hl)"                  => MapMatch(m, q"false")
-    case q"$a.this.valueMap[$b]($m, $ic)($hl)"             => MapMatch(m, ic)
-    case q"$a.this.ignoreCase($t)"                         => IgnoreCase(t)
-    case q"$a.this.predicate($p)"                          => CharPredicateMatch(p)
-    case q"$a.this.anyOf($s)"                              => AnyOf(s)
-    case q"$a.this.noneOf($s)"                             => NoneOf(s)
-    case q"$a.this.ANY"                                    => ANY
-    case q"$a.this.optional[$b, $c]($arg)($l)"             => Optional(OpTree(arg), collector(l))
-    case q"$base.?($l)"                                    => Optional(OpTree(base), collector(l))
-    case q"$a.this.zeroOrMore[$b, $c]($arg)($l)"           => ZeroOrMore(OpTree(arg), collector(l))
-    case q"$base.*($l)"                                    => ZeroOrMore(OpTree(base), collector(l))
-    case q"$base.*($sep)($l)"                              => ZeroOrMore(OpTree(base), collector(l), Separator(OpTree(sep)))
-    case q"$a.this.oneOrMore[$b, $c]($arg)($l)"            => OneOrMore(OpTree(arg), collector(l))
-    case q"$base.+($l)"                                    => OneOrMore(OpTree(base), collector(l))
-    case q"$base.+($sep)($l)"                              => OneOrMore(OpTree(base), collector(l), Separator(OpTree(sep)))
-    case q"$base.times[$a, $b]($r)($s)"                    => Times(base, OpTree(r), collector(s))
-    case q"$a.this.&($arg)"                                => AndPredicate(OpTree(arg))
-    case q"$a.unary_!"                                     => NotPredicate(OpTree(a))
-    case q"$a.this.atomic[$b, $c]($arg)"                   => Atomic(OpTree(arg))
-    case q"$a.this.quiet[$b, $c]($arg)"                    => Quiet(OpTree(arg))
-    case q"$a.this.test($flag)"                            => SemanticPredicate(flag)
-    case q"$a.this.capture[$b, $c]($arg)($d)"              => Capture(OpTree(arg))
-    case q"$a.this.run[$b]($arg)($c.fromAux[$d, $e]($rr))" => RunAction(arg, rr)
-    case q"$a.this.push[$b]($arg)($hl)"                    => PushAction(arg, hl)
-    case q"$a.this.drop[$b]($hl)"                          => DropAction(hl)
-    case q"$a.this.runSubParser[$b, $c]($f)"               => RunSubParser(f)
-    case q"$a.this.fail($m)"                               => Fail(m)
-    case q"$a.this.failX[$b, $c]($m)"                      => Fail(m)
-    case q"$a.named($name)"                                => Named(OpTree(a), name)
-    case x @ q"$a.this.str2CharRangeSupport($l).-($r)"     => CharRange(l, r)
+    case q"$lhs.~[$a, $b]($rhs)($c, $d)"                                      => Sequence(OpTree(lhs), OpTree(rhs))
+    case q"$lhs.~!~[$a, $b]($rhs)($c, $d)"                                    => Cut(OpTree(lhs), OpTree(rhs))
+    case q"$lhs.|[$a, $b]($rhs)"                                              => FirstOf(OpTree(lhs), OpTree(rhs))
+    case q"$a.this.ch($c)"                                                    => CharMatch(c)
+    case q"$a.this.str($s)"                                                   => StringMatch(s)
+    case q"$a.this.valueMap[$b]($m)($hl)"                                     => MapMatch(m, q"false")
+    case q"$a.this.valueMap[$b]($m, $ic)($hl)"                                => MapMatch(m, ic)
+    case q"$a.this.ignoreCase($t)"                                            => IgnoreCase(t)
+    case q"$a.this.predicate($p)"                                             => CharPredicateMatch(p)
+    case q"$a.this.anyOf($s)"                                                 => AnyOf(s)
+    case q"$a.this.noneOf($s)"                                                => NoneOf(s)
+    case q"$a.this.ANY"                                                       => ANY
+    case q"$a.this.optional[$b, $c]($arg)($l)"                                => Optional(OpTree(arg), collector(l))
+    case q"$base.?($l)"                                                       => Optional(OpTree(base), collector(l))
+    case q"$a.this.zeroOrMore[$b, $c]($arg)($l)"                              => ZeroOrMore(OpTree(arg), collector(l))
+    case q"$base.*($l)"                                                       => ZeroOrMore(OpTree(base), collector(l))
+    case q"$base.*($sep)($l)"                                                 => ZeroOrMore(OpTree(base), collector(l), Separator(OpTree(sep)))
+    case q"$a.this.oneOrMore[$b, $c]($arg)($l)"                               => OneOrMore(OpTree(arg), collector(l))
+    case q"$base.+($l)"                                                       => OneOrMore(OpTree(base), collector(l))
+    case q"$base.+($sep)($l)"                                                 => OneOrMore(OpTree(base), collector(l), Separator(OpTree(sep)))
+    case q"$base.times[$a, $b]($r)($s)"                                       => Times(base, OpTree(r), collector(s))
+    case q"$a.this.&($arg)"                                                   => AndPredicate(OpTree(arg))
+    case q"$a.unary_!"                                                        => NotPredicate(OpTree(a))
+    case q"$a.this.atomic[$b, $c]($arg)"                                      => Atomic(OpTree(arg))
+    case q"$a.this.quiet[$b, $c]($arg)"                                       => Quiet(OpTree(arg))
+    case q"$a.this.test($flag)"                                               => SemanticPredicate(flag)
+    case q"$a.this.capture[$b, $c]($arg)($d)"                                 => Capture(OpTree(arg))
+    case q"$a.this.run[$b]($arg)($c.fromAux[$d, $e]($rr))"                    => RunAction(arg, rr)
+    case q"$a.this.push[$b]($arg)($hl)"                                       => PushAction(arg, hl)
+    case q"$a.this.drop[$b]($hl)"                                             => DropAction(hl)
+    case q"$a.this.runSubParser[$b, $c]($f)"                                  => RunSubParser(f)
+    case q"$a.this.fail($m)"                                                  => Fail(m)
+    case q"$a.this.failX[$b, $c]($m)"                                         => Fail(m)
+    case q"$a.named($name)"                                                   => Named(OpTree(a), name)
+    case x @ q"$a.this.str2CharRangeSupport($l).-($r)"                        => CharRange(l, r)
     case q"$a.this.charAndValue[$t]($b.ArrowAssoc[$t1]($c).->[$t2]($v))($hl)" =>
       Sequence(CharMatch(c), PushAction(v, hl))
     case q"$a.this.stringAndValue[$t]($b.ArrowAssoc[$t1]($s).->[$t2]($v))($hl)" =>
@@ -157,7 +157,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class Cut(lhs: OpTree, rhs: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = reify(RuleTrace.Cut).tree
+    def ruleTraceNonTerminalKey             = reify(RuleTrace.Cut).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       var matched = ${lhs.render(wrapped)}
       if (matched) {
@@ -331,7 +331,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class Optional(op: OpTree, collector: Collector) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = reify(RuleTrace.Optional).tree
+    def ruleTraceNonTerminalKey             = reify(RuleTrace.Optional).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       val mark = __saveState
       val matched = ${op.render(wrapped)}
@@ -470,7 +470,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class AndPredicate(op: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = reify(RuleTrace.AndPredicate).tree
+    def ruleTraceNonTerminalKey             = reify(RuleTrace.AndPredicate).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       val mark = __saveState
       val matched = ${op.render(wrapped)}
@@ -542,7 +542,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
   }
 
   case class Capture(op: OpTree) extends DefaultNonTerminalOpTree {
-    def ruleTraceNonTerminalKey = reify(RuleTrace.Capture).tree
+    def ruleTraceNonTerminalKey             = reify(RuleTrace.Capture).tree
     def renderInner(wrapped: Boolean): Tree = q"""
       ${if (!wrapped) q"val start = cursor" else q"();"}
       val matched = ${op.render(wrapped)}
@@ -585,10 +585,10 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
 
         case q"RunResult.this.Aux.forRule[$t]" => expand(argTree, wrapped)
 
-        case q"RunResult.this.Aux.forF1[$z, $r, $in, $out]($a)"             => renderFunctionAction(r, z)
-        case q"RunResult.this.Aux.forF2[$y, $z, $r, $in, $out]($a)"         => renderFunctionAction(r, y, z)
-        case q"RunResult.this.Aux.forF3[$x, $y, $z, $r, $in, $out]($a)"     => renderFunctionAction(r, x, y, z)
-        case q"RunResult.this.Aux.forF4[$w, $x, $y, $z, $r, $in, $out]($a)" => renderFunctionAction(r, w, x, y, z)
+        case q"RunResult.this.Aux.forF1[$z, $r, $in, $out]($a)"                 => renderFunctionAction(r, z)
+        case q"RunResult.this.Aux.forF2[$y, $z, $r, $in, $out]($a)"             => renderFunctionAction(r, y, z)
+        case q"RunResult.this.Aux.forF3[$x, $y, $z, $r, $in, $out]($a)"         => renderFunctionAction(r, x, y, z)
+        case q"RunResult.this.Aux.forF4[$w, $x, $y, $z, $r, $in, $out]($a)"     => renderFunctionAction(r, w, x, y, z)
         case q"RunResult.this.Aux.forF5[$v, $w, $x, $y, $z, $r, $in, $out]($a)" =>
           renderFunctionAction(r, v, w, x, y, z)
 
@@ -620,7 +620,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       hlTree match {
         case q"support.this.HListable.fromUnit"       => q"true"
         case q"support.this.HListable.fromAnyRef[$t]" => q"valueStack.pop(); true"
-        case q"support.this.HListable.fromHList[$t]" =>
+        case q"support.this.HListable.fromHList[$t]"  =>
           @tailrec def rec(t: Type, result: List[Tree] = Nil): List[Tree] =
             t match { // TODO: how can we use type quotes here, e.g. tq"org.parboiled2.support.hlist.HNil"?
               case TypeRef(_, sym, List(_, tail)) if sym == HListConsTypeSymbol =>
@@ -717,7 +717,7 @@ trait OpTreeContext[OpTreeCtx <: ParserMacros.ParserContext] {
       def rewrite(arg: TermName, tree: Tree): Tree =
         tree match {
           case Block(statements, res) => block(statements, rewrite(arg, res))
-          case q"$p.$rule" => q"""
+          case q"$p.$rule"            => q"""
             val $arg = new __SubParserInput()  // TODO: avoid re-allocation by re-using a cached instance
             val __subParser = $p
             val offset = cursor

@@ -19,8 +19,8 @@ package scalaparser
 import java.io.{File, FileInputStream}
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
-import utest._
-import org.parboiled2._
+import utest.*
+import org.parboiled2.*
 
 object RealSourcesSpec extends TestSuite {
 

@@ -88,7 +88,7 @@ object RuleTrace {
 
   def commonNonAtomicPrefixLength(traces: Seq[RuleTrace]): Int =
     if (traces.size > 1) {
-      val tracesTail = traces.tail
+      val tracesTail                                                = traces.tail
       def hasElem(ix: Int, elem: NonTerminal): RuleTrace => Boolean =
         _.prefix.drop(ix) match {
           case `elem` :: _ => true

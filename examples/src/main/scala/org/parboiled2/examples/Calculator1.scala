@@ -31,7 +31,7 @@ object Calculator1 extends App {
     print("---\nEnter calculator expression > ")
     Console.out.flush()
     StdIn.readLine() match {
-      case "" =>
+      case ""   =>
       case line =>
         val parser = new Calculator1(line)
         parser.InputLine.run() match {

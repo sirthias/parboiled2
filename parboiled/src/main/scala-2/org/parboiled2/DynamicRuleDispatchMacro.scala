@@ -37,7 +37,7 @@ trait DynamicRuleDispatchMacro { _: DynamicRuleDispatch.type =>
   def __create[P <: Parser, L <: HList](c: Context)(
       ruleNames: c.Expr[String]*
   )(implicit P: c.WeakTypeTag[P], L: c.WeakTypeTag[L]): c.Expr[(DynamicRuleDispatch[P, L], immutable.Seq[String])] = {
-    import c.universe._
+    import c.universe.*
     val names = ruleNames.map {
       _.tree match {
         case Literal(Constant(s: String)) => s

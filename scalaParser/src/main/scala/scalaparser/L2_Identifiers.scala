@@ -16,7 +16,7 @@
 
 package scalaparser
 
-import org.parboiled2._
+import org.parboiled2.*
 
 trait L2_Identifiers { self: Parser with L0_Basics with L1_KeywordsAndOperators =>
 

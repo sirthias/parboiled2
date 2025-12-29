@@ -16,7 +16,7 @@
 
 package scalaparser
 
-import org.parboiled2._
+import org.parboiled2.*
 
 trait L4_Types {
   this: Parser
