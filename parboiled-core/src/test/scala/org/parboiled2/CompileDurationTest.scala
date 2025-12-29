@@ -30,7 +30,7 @@ object CompileDurationTest extends TestParserSpec {
 
       "`~` combinator" - new TestParser1[String] {
         def basicRule: Rule[HNil, String :: HNil] = rule(capture("a"))
-        def targetRule = rule(
+        def targetRule                            = rule(
           basicRule ~ basicRule ~ basicRule ~ basicRule ~ basicRule ~ basicRule ~> combine6 _
         )
 

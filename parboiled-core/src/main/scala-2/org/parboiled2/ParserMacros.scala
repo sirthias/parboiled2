@@ -52,7 +52,7 @@ object ParserMacros {
   def runImpl[L <: HList: c.WeakTypeTag](
       c: RunnableRuleContext[L]
   )()(scheme: c.Expr[Parser.DeliveryScheme[L]]): c.Expr[scheme.value.Result] = {
-    import c.universe._
+    import c.universe.*
     val runCall = c.prefix.tree match {
       case q"parboiled2.this.Rule.Runnable[$l]($ruleExpr)" =>
         ruleExpr match {
@@ -73,7 +73,7 @@ object ParserMacros {
   def ruleImpl[I <: HList: ctx.WeakTypeTag, O <: HList: ctx.WeakTypeTag](
       ctx: ParserContext
   )(r: ctx.Expr[Rule[I, O]]): ctx.Expr[Rule[I, O]] = {
-    import ctx.universe._
+    import ctx.universe.*
     namedRuleImpl(ctx)(ctx.Expr[String](Literal(Constant(ctx.internal.enclosingOwner.name.decodedName.toString))))(r)
   }
 
@@ -82,7 +82,7 @@ object ParserMacros {
   )(name: ctx.Expr[String])(r: ctx.Expr[Rule[I, O]]): ctx.Expr[Rule[I, O]] = {
     val opTreeCtx = new OpTreeContext[ctx.type] { val c: ctx.type = ctx }
     val opTree    = opTreeCtx.RuleCall(Left(opTreeCtx.OpTree(r.tree)), name.tree)
-    import ctx.universe._
+    import ctx.universe.*
     val ruleTree = q"""
       def wrapped: Boolean = ${opTree.render(wrapped = true)}
       val matched =

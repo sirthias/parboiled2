@@ -75,7 +75,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     math.signum(down) match {
       case -1 => throw new IllegalArgumentException("`down` must not be negative")
       case 0  => push(value)
-      case 1 =>
+      case 1  =>
         if (down > _size) throw new ValueStackUnderflowException
         val newSize = _size + 1
         ensureSize(newSize)
@@ -104,7 +104,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     math.signum(down) match {
       case -1 => throw new IllegalArgumentException("`down` must not be negative")
       case 0  => pop()
-      case 1 =>
+      case 1  =>
         if (down >= _size) throw new ValueStackUnderflowException
         val newSize  = _size - 1
         val targetIx = newSize - down
@@ -130,7 +130,7 @@ class ValueStack private[parboiled2] (initialSize: Int, maxSize: Int) extends It
     math.signum(down) match {
       case -1 => throw new IllegalArgumentException("`down` must not be negative")
       case 0  => peek
-      case 1 =>
+      case 1  =>
         if (down >= _size) throw new ValueStackUnderflowException
         else buffer(_size - down - 1)
     }

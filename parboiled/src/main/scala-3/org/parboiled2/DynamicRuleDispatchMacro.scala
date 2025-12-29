@@ -56,7 +56,7 @@ trait DynamicRuleDispatchMacro { self: DynamicRuleDispatch.type =>
 
     '{
       val map: Map[String, RuleRunner[P, L]] = Map($ruleEntries*)
-      val drd =
+      val drd                                =
         new org.parboiled2.DynamicRuleDispatch[P, L] {
           def lookup(ruleName: String): Option[RuleRunner[P, L]] =
             map.get(ruleName)

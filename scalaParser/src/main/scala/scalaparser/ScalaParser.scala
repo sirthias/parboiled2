@@ -16,7 +16,7 @@
 
 package scalaparser
 
-import org.parboiled2._
+import org.parboiled2.*
 
 class ScalaParser(val input: ParserInput)
     extends Parser with WhitespaceStringsAndChars with L0_Basics with L1_KeywordsAndOperators with L2_Identifiers

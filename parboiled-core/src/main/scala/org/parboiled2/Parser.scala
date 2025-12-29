@@ -162,7 +162,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
 
       def done = {
         val principalErrorPos = Position(principalErrorIndex, input)
-        val reportedErrorPos =
+        val reportedErrorPos  =
           if (reportedErrorIndex != principalErrorIndex) Position(reportedErrorIndex, input) else principalErrorPos
         ParseError(reportedErrorPos, principalErrorPos, traces.result())
       }
@@ -252,7 +252,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     */
   def __enterAtomic(start: Int): Boolean =
     phase match {
-      case null => false
+      case null                                                                      => false
       case x: EstablishingReportedErrorIndex if x.currentAtomicStart == Int.MinValue =>
         x.currentAtomicStart = start
         true
@@ -300,7 +300,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
   def __registerMismatch(): Boolean = {
     phase match {
       case null | _: EstablishingPrincipalErrorIndex => // nothing to do
-      case x: CollectingRuleTraces =>
+      case x: CollectingRuleTraces                   =>
         if (_cursor >= x.minErrorIndex)
           if (x.errorMismatches == x.traceNr) throw Parser.StartTracingException else x.errorMismatches += 1
       case x: EstablishingReportedErrorIndex =>
@@ -407,8 +407,8 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     val prioritizedKeys = new mutable.PriorityQueue[String]()(Ordering.by(_.length))
     prioritizedKeys ++= m.keysIterator
     while (prioritizedKeys.nonEmpty) {
-      val mark = __saveState
-      val key  = prioritizedKeys.dequeue()
+      val mark        = __saveState
+      val key         = prioritizedKeys.dequeue()
       val matchResult =
         if (ignoreCase) __matchIgnoreCaseString(key)
         else __matchString(key)
@@ -428,8 +428,8 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
     val start = _cursor
     try {
       while (prioritizedKeys.nonEmpty) {
-        val mark = __saveState
-        val key  = prioritizedKeys.dequeue()
+        val mark        = __saveState
+        val key         = prioritizedKeys.dequeue()
         val matchResult =
           if (ignoreCase) __matchIgnoreCaseStringWrapped(key)
           else __matchStringWrapped(key)

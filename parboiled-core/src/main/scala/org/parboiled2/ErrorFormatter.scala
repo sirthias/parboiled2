@@ -157,7 +157,7 @@ class ErrorFormatter(
     * The `errorColumn` as well as the returned [[Int]] value are both 1-based.
     */
   def expandErrorLineTabs(line: String, errorColumn: Int): (Int, String) = {
-    val sb = new StringBuilder
+    val sb                                           = new StringBuilder
     @tailrec def rec(inCol: Int, errorCol: Int): Int =
       if (inCol < line.length) {
         val ec = if (inCol == errorColumn - 1) sb.length else errorCol

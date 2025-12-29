@@ -17,8 +17,8 @@
 package scalaparser
 
 import scala.util.{Failure, Success}
-import utest._
-import org.parboiled2._
+import utest.*
+import org.parboiled2.*
 
 object SnippetSpec extends TestSuite {
 

@@ -16,7 +16,7 @@
 
 package scalaparser
 
-import org.parboiled2._
+import org.parboiled2.*
 
 trait L5_Exprs {
   this: Parser
@@ -63,7 +63,7 @@ trait L5_Exprs {
         rule(`if` ~ '(' ~ ExprCtx.Expr ~ ')' ~ Expr ~ Else.?)
       }
       def While = rule(`while` ~ '(' ~ Expr ~ ')' ~ Expr)
-      def Try = {
+      def Try   = {
         def Catch   = rule(`catch` ~ Expr)
         def Finally = rule(`finally` ~ Expr)
         rule(`try` ~ Expr ~ Catch.? ~ Finally.?)

@@ -31,7 +31,7 @@ object ABCParser extends App {
     print("---\nEnter expression for abc-parser > ")
     Console.out.flush()
     StdIn.readLine() match {
-      case "" =>
+      case ""   =>
       case line =>
         val parser = new ABCParser(line)
         parser.InputLine.run() match {

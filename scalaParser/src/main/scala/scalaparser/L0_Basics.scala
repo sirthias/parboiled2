@@ -16,10 +16,10 @@
 
 package scalaparser
 
-import org.parboiled2._
+import org.parboiled2.*
 
 trait L0_Basics { this: Parser =>
-  import CharacterClasses._
+  import CharacterClasses.*
 
   def HexNum = rule("0x" ~ HEXDIGIT.+)
 

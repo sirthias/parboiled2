@@ -137,7 +137,7 @@ object ParserMacros {
 
     '{
       def wrapped: Boolean = ${ opTree.render(wrapped = true) }
-      val matched =
+      val matched          =
         if ($parser.__inErrorAnalysis) wrapped
         else ${ opTree.render(wrapped = false) }
       if (matched) org.parboiled2.Rule.asInstanceOf[Rule[I, O]] else null

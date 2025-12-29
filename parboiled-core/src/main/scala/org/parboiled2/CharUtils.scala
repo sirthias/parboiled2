@@ -98,7 +98,7 @@ object CharUtils {
     if (long != Long.MinValue) _numberOfDecimalDigits(long) else 20
 
   private def _numberOfDecimalDigits(long: Long): Int = {
-    def mul10(l: Long) = (l << 3) + (l << 1)
+    def mul10(l: Long)                                      = (l << 3) + (l << 1)
     @tailrec def len(test: Long, l: Long, result: Int): Int =
       if (test > l || test < 0) result else len(mul10(test), l, result + 1)
     if (long < 0) len(10, -long, 2) else len(10, long, 1)
