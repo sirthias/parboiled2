@@ -87,7 +87,7 @@ sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
   @compileTimeOnly("Calls to `.*` must be inside `rule` macro")
   def *(implicit
       l: Lifter[immutable.Seq, I @uncheckedVariance, O @uncheckedVariance]
-  ): Rule[l.In, l.OptionalOut] with Repeated = `n/a`
+  ): Rule[l.In, l.OptionalOut] & Repeated = `n/a`
 
   /** Postfix shortcut for `zeroOrMore(...).separatedBy(...)`.
     */
@@ -101,7 +101,7 @@ sealed class Rule[-I <: HList, +O <: HList] extends RuleX {
   @compileTimeOnly("Calls to `.+` must be inside `rule` macro")
   def +(implicit
       l: Lifter[immutable.Seq, I @uncheckedVariance, O @uncheckedVariance]
-  ): Rule[l.In, l.StrictOut] with Repeated = `n/a`
+  ): Rule[l.In, l.StrictOut] & Repeated = `n/a`
 
   /** Postfix shortcut for `oneOrMore(...).separatedBy(...)`.
     */
