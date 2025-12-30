@@ -47,7 +47,7 @@ abstract class TestParserSpec extends TestSuite {
     def beMismatchedWithErrorMsg(msg: String): MustAssert = BeMatchedWith(assertMismatchedWithErrorMsg(msg))
 
     implicit class StringExt(str: String) {
-      def must(mustAssert: MustAssert): Unit = mustAssert.assert(str)
+      infix def must(mustAssert: MustAssert): Unit = mustAssert.assert(str)
     }
 
     def assertMatched(str: String): Unit             = assert(parse(str).isRight)
