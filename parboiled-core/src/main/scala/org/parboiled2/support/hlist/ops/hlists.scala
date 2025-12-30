@@ -55,16 +55,12 @@ object hlist {
     object Reverse0 {
 
       implicit def hnilReverse[Out <: HList]: Reverse0[Out, HNil, Out] =
-        new Reverse0[Out, HNil, Out] {
-          def apply(acc: Out, l: HNil): Out = acc
-        }
+        (acc: Out, l: HNil) => acc
 
       implicit def hlistReverse[Acc <: HList, InH, InT <: HList, Out <: HList](implicit
           rt: Reverse0[InH :: Acc, InT, Out]
       ): Reverse0[Acc, InH :: InT, Out] =
-        new Reverse0[Acc, InH :: InT, Out] {
-          def apply(acc: Acc, l: InH :: InT): Out = rt(l.head :: acc, l.tail)
-        }
+        (acc: Acc, l: InH :: InT) => rt(l.head :: acc, l.tail)
     }
   }
 
