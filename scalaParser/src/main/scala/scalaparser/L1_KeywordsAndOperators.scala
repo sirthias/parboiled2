@@ -20,7 +20,7 @@ import org.parboiled2.*
 
 import scala.annotation.switch
 
-trait L1_KeywordsAndOperators { this: Parser with L0_Basics =>
+trait L1_KeywordsAndOperators { this: Parser & L0_Basics =>
   import CharacterClasses.*
 
   def Operator = rule(!SymbolicKeyword ~ OpChar.+)
