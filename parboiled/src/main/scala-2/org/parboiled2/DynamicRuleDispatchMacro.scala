@@ -16,6 +16,7 @@
 
 package org.parboiled2
 
+import scala.language.experimental.macros
 import scala.reflect.macros.whitebox.Context
 import org.parboiled2.support.hlist.HList
 

@@ -18,6 +18,7 @@ package org.parboiled2
 
 import org.parboiled2.support.OpTreeContext
 import org.parboiled2.support.hlist.HList
+import scala.language.experimental.macros
 
 private[parboiled2] trait ParserMacroMethods {
 
