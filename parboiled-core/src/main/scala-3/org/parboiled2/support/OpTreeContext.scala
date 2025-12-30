@@ -524,7 +524,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
     }
   }
 
-  private case class RuleCall(call: Either[OpTree, Expr[Rule[_, _]]], calleeNameTree: Expr[String])
+  private case class RuleCall(call: Either[OpTree, Expr[Rule[?, ?]]], calleeNameTree: Expr[String])
       extends NonTerminalOpTree {
 
     def bubbleUp(e: Expr[Parser#TracingBubbleException], start: Expr[Int]): Expr[Nothing] =
@@ -770,8 +770,8 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
 
   def topLevel(opTree: OpTree, name: Expr[String]): OpTree = RuleCall(Left(opTree), name)
 
-  def deconstruct(outerRule: Expr[Rule[_, _]]): OpTree           = deconstructPF(outerRule).get
-  def deconstructPF(outerRule: Expr[Rule[_, _]]): Option[OpTree] = {
+  def deconstruct(outerRule: Expr[Rule[?, ?]]): OpTree           = deconstructPF(outerRule).get
+  def deconstructPF(outerRule: Expr[Rule[?, ?]]): Option[OpTree] = {
     import quotes.reflect.*
 
     def collector(lifter: Term): Collector =
@@ -799,7 +799,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
         "rule2WithSeparatedBy"
       )
 
-    lazy val rules0PF: PartialFunction[Expr[Rule[_, _]], OpTree] = {
+    lazy val rules0PF: PartialFunction[Expr[Rule[?, ?]], OpTree] = {
       case '{ ($p: Parser).ch($c) }                                                        => CharMatch(c)
       case '{ ($p: Parser).str($s) }                                                       => StringMatch(s)
       case '{ ($p: Parser).valueMap($m: Map[String, Any]) }                                => MapMatch(m, '{ false })
@@ -924,14 +924,14 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case call @ (Apply(_, _) | Select(_, _) | Ident(_) | TypeApply(_, _))
           if !callName(call).exists(ruleNameBlacklist) =>
         RuleCall(
-          Right(call.asExprOf[Rule[_, _]]),
+          Right(call.asExprOf[Rule[?, ?]]),
           Expr(callName(call) getOrElse reportError("Illegal rule call: " + call, call.asExpr))
         )
       // case _ => Unknown(rule.show, rule.show(using Printer.TreeStructure), outerRule.toString)
     }
-    lazy val allRules           = rules0PF.orElse(rules1PF.compose[Expr[Rule[_, _]]] { case x => x.asTerm.underlyingArgument })
+    lazy val allRules           = rules0PF.orElse(rules1PF.compose[Expr[Rule[?, ?]]] { case x => x.asTerm.underlyingArgument })
     def rec(rule: Term): OpTree = allRules.applyOrElse(
-      rule.asExprOf[Rule[_, _]],
+      rule.asExprOf[Rule[?, ?]],
       rule => Unknown(rule.show, "" /*rule.show(using Printer.TreeStructure)*/, outerRule.toString)
     )
 
@@ -1030,9 +1030,9 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case Match(selector, cases)    => Match(selector, cases.map(expand(_, wrapped).asInstanceOf[CaseDef]))
       case CaseDef(pat, guard, body) => CaseDef(pat, guard, expand(body, wrapped).asInstanceOf[Term])
       case x                         =>
-        deconstructPF(x.asExprOf[Rule[_, _]])                  // can we pass the body as a rule?
+        deconstructPF(x.asExprOf[Rule[?, ?]])                  // can we pass the body as a rule?
           .map(_.render(wrapped))                              // then render it
-          .getOrElse('{ ${ x.asExprOf[Rule[_, _]] } ne null }) // otherwise, assume the expression is a rule itself
+          .getOrElse('{ ${ x.asExprOf[Rule[?, ?]] } ne null }) // otherwise, assume the expression is a rule itself
           .asTerm
     }
 
