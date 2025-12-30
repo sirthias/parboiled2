@@ -61,7 +61,7 @@ val commonSettings = Seq(
           "8"
         )
       case Some((3, _)) =>
-        Seq("-language:implicitConversions")
+        Nil
       case x => sys.error(s"unsupported scala version: $x")
     }
   },
