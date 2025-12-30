@@ -86,7 +86,7 @@ object RealSourcesSpec extends TestSuite {
       parser.input.length
     }
     def listFiles(file: File): Iterator[String] = {
-      val (dirs, files) = file.listFiles().toIterator.partition(_.isDirectory)
+      val (dirs, files) = file.listFiles().iterator.partition(_.isDirectory)
       files.map(_.getPath) ++ dirs.flatMap(listFiles)
     }
 
