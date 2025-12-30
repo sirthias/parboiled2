@@ -19,9 +19,7 @@ package scalaparser
 import org.parboiled2.*
 
 trait L6_TopLevel {
-  this: Parser
-    with WhitespaceStringsAndChars with L0_Basics with L1_KeywordsAndOperators with L2_Identifiers with L3_Literals
-    with L4_Types with L4_Xml with L5_Exprs =>
+  this: Parser & WhitespaceStringsAndChars & L0_Basics & L1_KeywordsAndOperators & L2_Identifiers & L3_Literals & L4_Types & L4_Xml & L5_Exprs =>
 
   def CompilationUnit: Rule0 = {
     def TopPackageSeq = rule((`package` ~ QualId ~ !(WS ~ "{")).+(Semis))

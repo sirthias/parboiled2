@@ -18,7 +18,7 @@ package scalaparser
 
 import org.parboiled2.*
 
-trait L2_Identifiers { self: Parser with L0_Basics with L1_KeywordsAndOperators =>
+trait L2_Identifiers { self: Parser & L0_Basics & L1_KeywordsAndOperators =>
 
   def VarId                    = rule(WL ~ !Keyword ~ GeneralLower ~ IdRestWithDollar)
   def RawIdNoBackticks         = rule(!Keyword ~ AlphaNum$_ ~ IdRestWithDollar | Operator)

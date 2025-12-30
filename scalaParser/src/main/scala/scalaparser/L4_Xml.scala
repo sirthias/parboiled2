@@ -18,7 +18,7 @@ package scalaparser
 
 import org.parboiled2.*
 
-trait L4_Xml { this: Parser with L0_Basics with L1_KeywordsAndOperators with L2_Identifiers with L3_Literals =>
+trait L4_Xml { this: Parser & L0_Basics & L1_KeywordsAndOperators & L2_Identifiers & L3_Literals =>
 
   def Patterns: Rule0
   def XmlExpr    = rule(WL ~ XmlContent ~ (WL ~ Element).*)

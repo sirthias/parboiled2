@@ -18,7 +18,7 @@ package scalaparser
 
 import org.parboiled2.*
 
-trait L3_Literals { self: Parser with L0_Basics with L1_KeywordsAndOperators with L2_Identifiers =>
+trait L3_Literals { self: Parser & L0_Basics & L1_KeywordsAndOperators & L2_Identifiers =>
   import CharacterClasses.*
 
   def Block: Rule0
