@@ -21,8 +21,10 @@ import scala.util.{Failure, Success}
 import scala.io.StdIn
 import org.parboiled2.*
 
-object Calculator1 extends App {
-  repl()
+object Calculator1 {
+  def main(args: Array[String]): Unit = {
+    repl()
+  }
 
   @tailrec
   def repl(): Unit = {
