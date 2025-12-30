@@ -26,7 +26,7 @@ val commonSettings = Seq(
     "-encoding",
     "UTF-8",
     "-feature",
-    "-language:_",
+    "-language:implicitConversions",
     "-unchecked"
     // "-Ywarn-numeric-widen",
   ),
@@ -34,6 +34,7 @@ val commonSettings = Seq(
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 12)) =>
         Seq(
+          "-language:higherKinds",
           "-Yno-adapted-args",
           "-Ywarn-inaccessible",
           "-Ywarn-infer-any",
