@@ -104,14 +104,14 @@ object ParserMacros {
             val parserExpr = rule.parser.asExprOf[pT]
             '{
               val p: pT = $parserExpr
-              p.asInstanceOf[Parser].__run[L](${ rule.ruleCall('p) })($schemeExpr).asInstanceOf[R]
+              p.asInstanceOf[Parser].__run[L](${ rule.ruleCall('p) })(using $schemeExpr).asInstanceOf[R]
             }
         }
       case Inlined(_, _, Inlined(Some(ruleMacro), List(ValDef(_, _, Some(parserThis))), rule))
           if rule.tpe <:< TypeRepr.of[RuleX] && isRuleMacro(ruleMacro.symbol) =>
         // The `Inlined` tree for the `rule` macro has a binding for the parser instance.
         // TODO: we re-use the rhs of that binding (parserThis), I didn't manage to create the right This() tree.
-        '{ ${ parserThis.asExprOf[Parser] }.__run[L]($ruleExpr)($schemeExpr).asInstanceOf[R] }
+        '{ ${ parserThis.asExprOf[Parser] }.__run[L]($ruleExpr)(using $schemeExpr).asInstanceOf[R] }
       case r =>
         report.error(s"""Cannot rewrite `myRule.run()` call for rule: ${ruleExpr.show}
                         |`myRule` needs to be either of the form `someParser.someRule[targs](args)`
