@@ -404,7 +404,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
   /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __matchMap(m: Map[String, Any], ignoreCase: Boolean): Boolean = {
-    val prioritizedKeys = new mutable.PriorityQueue[String]()(Ordering.by(_.length))
+    val prioritizedKeys = new mutable.PriorityQueue[String]()(using Ordering.by(_.length))
     prioritizedKeys ++= m.keysIterator
     while (prioritizedKeys.nonEmpty) {
       val mark        = __saveState
@@ -423,7 +423,7 @@ abstract class Parser(initialValueStackSize: Int = 16, maxValueStackSize: Int = 
   /** THIS IS NOT PUBLIC API and might become hidden in future. Use only if you know what you are doing!
     */
   def __matchMapWrapped(m: Map[String, Any], ignoreCase: Boolean): Boolean = {
-    val prioritizedKeys = new mutable.PriorityQueue[String]()(Ordering.by(_.length))
+    val prioritizedKeys = new mutable.PriorityQueue[String]()(using Ordering.by(_.length))
     prioritizedKeys ++= m.keysIterator
     val start = _cursor
     try {

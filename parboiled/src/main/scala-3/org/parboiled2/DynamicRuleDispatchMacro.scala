@@ -47,7 +47,7 @@ trait DynamicRuleDispatchMacro { self: DynamicRuleDispatch.type =>
       val runner = new RuleRunner[P, L] {
         def apply(handler: DynamicRuleHandler[P, L]): handler.Result = {
           val p = handler.parser
-          p.__run[L](${ Select.unique('{ handler.parser }.asTerm, name).asExprOf[RuleN[L]] })(handler)
+          p.__run[L](${ Select.unique('{ handler.parser }.asTerm, name).asExprOf[RuleN[L]] })(using handler)
         }
       }
       (${ Expr(name) }, runner)

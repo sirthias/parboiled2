@@ -800,26 +800,27 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       )
 
     lazy val rules0PF: PartialFunction[Expr[Rule[?, ?]], OpTree] = {
-      case '{ ($p: Parser).ch($c) }                                                        => CharMatch(c)
-      case '{ ($p: Parser).str($s) }                                                       => StringMatch(s)
-      case '{ ($p: Parser).valueMap($m: Map[String, Any]) }                                => MapMatch(m, '{ false })
-      case '{ ($p: Parser).valueMap($m: Map[String, Any], $ic) }                           => MapMatch(m, ic)
-      case '{ ($p: Parser).ignoreCase($c: Char) }                                          => IgnoreCaseChar(c)
-      case '{ ($p: Parser).ignoreCase($s: String) }                                        => IgnoreCaseString(s)
-      case '{ ($p: Parser).predicate($pr) }                                                => CharPredicateMatch(pr)
-      case '{ ($p: Parser).anyOf($s) }                                                     => AnyOf(s)
-      case '{ ($p: Parser).noneOf($s) }                                                    => NoneOf(s)
-      case '{ ($p: Parser).ANY }                                                           => ANY
-      case '{ ($p: Parser).str2CharRangeSupport($l).-($r) }                                => CharRange(l, r)
-      case '{ ($p: Parser).test($flag) }                                                   => SemanticPredicate(flag)
-      case '{ ($p: Parser).push[t]($value) }                                               => PushAction(value, Type.of[t])
-      case '{ ($p: Parser).drop[t] }                                                       => DropAction(Type.of[t])
-      case '{ type i <: HList; type o <: HList; ($p: Parser).capture[`i`, `o`]($arg)($l) } => Capture(rec(arg.asTerm))
-      case '{ type i <: HList; type o <: HList; ($p: Parser).runSubParser[`i`, `o`]($f) }  => RunSubParser(f)
+      case '{ ($p: Parser).ch($c) }                                                              => CharMatch(c)
+      case '{ ($p: Parser).str($s) }                                                             => StringMatch(s)
+      case '{ ($p: Parser).valueMap($m: Map[String, Any]) }                                      => MapMatch(m, '{ false })
+      case '{ ($p: Parser).valueMap($m: Map[String, Any], $ic) }                                 => MapMatch(m, ic)
+      case '{ ($p: Parser).ignoreCase($c: Char) }                                                => IgnoreCaseChar(c)
+      case '{ ($p: Parser).ignoreCase($s: String) }                                              => IgnoreCaseString(s)
+      case '{ ($p: Parser).predicate($pr) }                                                      => CharPredicateMatch(pr)
+      case '{ ($p: Parser).anyOf($s) }                                                           => AnyOf(s)
+      case '{ ($p: Parser).noneOf($s) }                                                          => NoneOf(s)
+      case '{ ($p: Parser).ANY }                                                                 => ANY
+      case '{ ($p: Parser).str2CharRangeSupport($l).-($r) }                                      => CharRange(l, r)
+      case '{ ($p: Parser).test($flag) }                                                         => SemanticPredicate(flag)
+      case '{ ($p: Parser).push[t]($value) }                                                     => PushAction(value, Type.of[t])
+      case '{ ($p: Parser).drop[t] }                                                             => DropAction(Type.of[t])
+      case '{ type i <: HList; type o <: HList; ($p: Parser).capture[`i`, `o`]($arg)(using $l) } =>
+        Capture(rec(arg.asTerm))
+      case '{ type i <: HList; type o <: HList; ($p: Parser).runSubParser[`i`, `o`]($f) } => RunSubParser(f)
       case '{
             type i1 <: HList; type o1 <: HList
             type i2 <: HList; type o2 <: HList
-            ($lhs: Rule[`i1`, `o1`]).~[`i2`, `o2`]($rhs)($_, $_)
+            ($lhs: Rule[`i1`, `o1`]).~[`i2`, `o2`]($rhs)(using $_, $_)
           } =>
         Sequence(Seq(rec(lhs.asTerm), rec(rhs.asTerm)))
 
@@ -833,39 +834,43 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       case '{
             type i1 <: HList; type o1 <: HList
             type i2 <: HList; type o2 <: HList
-            ($lhs: Rule[`i1`, `o1`]).~!~[`i2`, `o2`]($rhs)($_, $_)
+            ($lhs: Rule[`i1`, `o1`]).~!~[`i2`, `o2`]($rhs)(using $_, $_)
           } =>
         Cut(rec(lhs.asTerm), rec(rhs.asTerm))
 
-      case '{ type i <: HList; type o <: HList; ($p: Parser).zeroOrMore[`i`, `o`]($arg)($l) } =>
+      case '{ type i <: HList; type o <: HList; ($p: Parser).zeroOrMore[`i`, `o`]($arg)(using $l) } =>
         ZeroOrMore(rec(arg.asTerm), collector(l.asTerm))
 
-      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).*($l: support.Lifter[Seq, `i`, `o`]) } =>
+      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).*(using $l: support.Lifter[Seq, `i`, `o`]) } =>
         ZeroOrMore(rec(base.asTerm), collector(l.asTerm))
 
       case '{
-            type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).*($sep: Rule0)($l: support.Lifter[Seq, `i`, `o`])
+            type i <: HList; type o <: HList;
+            ($base: Rule[`i`, `o`]).*($sep: Rule0)(using $l: support.Lifter[Seq, `i`, `o`])
           } =>
         ZeroOrMore(rec(base.asTerm), collector(l.asTerm), Separator(rec(sep.asTerm)))
 
-      case '{ type i <: HList; type o <: HList; ($p: Parser).oneOrMore[`i`, `o`]($arg)($l) } =>
+      case '{ type i <: HList; type o <: HList; ($p: Parser).oneOrMore[`i`, `o`]($arg)(using $l) } =>
         OneOrMore(rec(arg.asTerm), collector(l.asTerm))
 
-      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).+($l: support.Lifter[Seq, `i`, `o`]) } =>
+      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).+(using $l: support.Lifter[Seq, `i`, `o`]) } =>
         OneOrMore(rec(base.asTerm), collector(l.asTerm))
 
       case '{
-            type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).+($sep: Rule0)($l: support.Lifter[Seq, `i`, `o`])
+            type i <: HList; type o <: HList;
+            ($base: Rule[`i`, `o`]).+($sep: Rule0)(using $l: support.Lifter[Seq, `i`, `o`])
           } =>
         OneOrMore(rec(base.asTerm), collector(l.asTerm), Separator(rec(sep.asTerm)))
 
-      case '{ type i <: HList; type o <: HList; ($p: Parser).optional[`i`, `o`]($arg)($l) } =>
+      case '{ type i <: HList; type o <: HList; ($p: Parser).optional[`i`, `o`]($arg)(using $l) } =>
         Optional(rec(arg.asTerm), collector(l.asTerm))
 
-      case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).?($l: support.Lifter[Option, `i`, `o`]) } =>
+      case '{
+            type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).?(using $l: support.Lifter[Option, `i`, `o`])
+          } =>
         Optional(rec(base.asTerm), collector(l.asTerm))
 
-      case '{ type i <: HList; type o <: HList; ($p: Parser).int2NTimes($n).times[`i`, `o`]($arg)($l) } =>
+      case '{ type i <: HList; type o <: HList; ($p: Parser).int2NTimes($n).times[`i`, `o`]($arg)(using $l) } =>
         Int2NTimes(
           n,
           rec(arg.asTerm),
@@ -873,7 +878,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           collector(l.asTerm),
           null
         )
-      case '{ type i <: HList; type o <: HList; ($p: Parser).range2NTimes($r).times[`i`, `o`]($arg)($l) } =>
+      case '{ type i <: HList; type o <: HList; ($p: Parser).range2NTimes($r).times[`i`, `o`]($arg)(using $l) } =>
         Range2NTimes(
           r,
           rec(arg.asTerm),
@@ -896,7 +901,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
           case _                 => reportError(s"Illegal `separatedBy` base: $base", base)
         }
 
-      case '{ ($p: Parser).run[t]($e)($l) }                                           => RunAction(e)
+      case '{ ($p: Parser).run[t]($e)(using $l) }                                     => RunAction(e)
       case '{ type i <: HList; type o <: HList; ($base: Rule[`i`, `o`]).named($str) } => Named(rec(base.asTerm), str)
       case '{ type i <: HList; type o <: HList; ($p: Parser).atomic[`i`, `o`]($r) }   => Atomic(rec(r.asTerm))
       case '{ type i <: HList; type o <: HList; ($p: Parser).quiet[`i`, `o`]($r) }    => Quiet(rec(r.asTerm))
