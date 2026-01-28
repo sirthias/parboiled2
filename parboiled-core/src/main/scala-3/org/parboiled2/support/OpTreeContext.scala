@@ -578,7 +578,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
                 case org.parboiled2.Parser.StartTracingException =>
                   import org.parboiled2.RuleTrace.*
                   $parser.__bubbleUp(
-                    NonTerminal(org.parboiled2.RuleTrace.StringMatch($stringTree), -${ Expr(ix) }) :: Nil,
+                    NonTerminal(org.parboiled2.RuleTrace.StringMatch($stringTree), - ${ Expr(ix) }) :: Nil,
                     org.parboiled2.RuleTrace.CharMatch($ch)
                   )
               }
@@ -643,7 +643,7 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
                 case org.parboiled2.Parser.StartTracingException =>
                   import org.parboiled2.RuleTrace.*
                   $parser.__bubbleUp(
-                    NonTerminal(org.parboiled2.RuleTrace.IgnoreCaseString($stringTree), -${ Expr(ix) }) :: Nil,
+                    NonTerminal(org.parboiled2.RuleTrace.IgnoreCaseString($stringTree), - ${ Expr(ix) }) :: Nil,
                     org.parboiled2.RuleTrace.IgnoreCaseChar($ch)
                   )
               }
