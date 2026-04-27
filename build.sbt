@@ -90,6 +90,7 @@ val commonSettings = Seq(
 )
 
 lazy val nativeSettings = Def.settings(
+  evictionErrorLevel := Level.Warn
 )
 
 lazy val scalajsSettings = Seq(
