@@ -1,4 +1,4 @@
-addSbtPlugin("org.scalameta"      % "sbt-scalafmt"                  % "2.6.0")
+addSbtPlugin("org.scalameta"      % "sbt-scalafmt"                  % "2.6.1")
 addSbtPlugin("com.github.sbt"     % "sbt-ci-release"                % "1.11.2")
 addSbtPlugin("com.github.sbt"     % "sbt-header"                    % "5.11.0")
 addSbtPlugin("com.github.sbt"     % "sbt-boilerplate"               % "0.8.0")
