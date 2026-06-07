@@ -93,8 +93,8 @@ object RealSourcesSpec extends TestSuite {
     val startTime = System.nanoTime()
     val fileChars =
       for {
-        fileName <- listFiles(new File(if (path startsWith "~") System.getProperty("user.home") + path.tail else path))
-        if fileName endsWith ".scala"
+        fileName <- listFiles(new File(if (path.startsWith("~")) System.getProperty("user.home") + path.tail else path))
+        if fileName.endsWith(".scala")
         if !blackList.exists(fileName.contains)
       } yield checkFile(fileName)
     val totalChars = fileChars.sum / 1000
