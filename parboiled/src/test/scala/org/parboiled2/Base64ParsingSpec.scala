@@ -65,7 +65,7 @@ object Base64ParsingSpec extends TestSuite {
   def test(ruleName: String, base64: Base64): Unit =
     (1 to 100).foreach { x =>
       val string  = randomChars(x)
-      val encoded = base64.encodeToString(string getBytes UTF8, lineSep = false)
+      val encoded = base64.encodeToString(string.getBytes(UTF8), lineSep = false)
       val parser  = testParser(encoded)
       dispatch(parser, ruleName) ==> string
     }
@@ -73,7 +73,7 @@ object Base64ParsingSpec extends TestSuite {
   def testTrailingGarbage(ruleName: String, base64: Base64): Unit =
     (1 to 100).foreach { x =>
       val string  = randomChars(x)
-      val encoded = base64.encodeToString(string getBytes UTF8, lineSep = false) + "!"
+      val encoded = base64.encodeToString(string.getBytes(UTF8), lineSep = false) + "!"
       val parser  = testParser(encoded)
       intercept[ParseError](dispatch(parser, ruleName))
     }

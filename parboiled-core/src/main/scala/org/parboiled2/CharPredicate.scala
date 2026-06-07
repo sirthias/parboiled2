@@ -55,38 +55,38 @@ sealed abstract class CharPredicate {
 
   def matchesAny(string: String): Boolean = {
     @tailrec def rec(ix: Int): Boolean =
-      if (ix == string.length) false else if (this(string charAt ix)) true else rec(ix + 1)
+      if (ix == string.length) false else if (this(string.charAt(ix))) true else rec(ix + 1)
     rec(0)
   }
 
   def matchesAll(string: String): Boolean = {
     @tailrec def rec(ix: Int): Boolean =
-      if (ix == string.length) true else if (!this(string charAt ix)) false else rec(ix + 1)
+      if (ix == string.length) true else if (!this(string.charAt(ix))) false else rec(ix + 1)
     rec(0)
   }
 
   def indexOfFirstMatch(string: String): Int = {
     @tailrec def rec(ix: Int): Int =
-      if (ix == string.length) -1 else if (this(string charAt ix)) ix else rec(ix + 1)
+      if (ix == string.length) -1 else if (this(string.charAt(ix))) ix else rec(ix + 1)
     rec(0)
   }
 
   def indexOfFirstMismatch(string: String): Int = {
     @tailrec def rec(ix: Int): Int =
-      if (ix == string.length) -1 else if (this(string charAt ix)) rec(ix + 1) else ix
+      if (ix == string.length) -1 else if (this(string.charAt(ix))) rec(ix + 1) else ix
     rec(0)
   }
 
   def firstMatch(string: String): Option[Char] =
     indexOfFirstMatch(string) match {
       case -1 => None
-      case ix => Some(string charAt ix)
+      case ix => Some(string.charAt(ix))
     }
 
   def firstMismatch(string: String): Option[Char] =
     indexOfFirstMismatch(string) match {
       case -1 => None
-      case ix => Some(string charAt ix)
+      case ix => Some(string.charAt(ix))
     }
 
   protected def or(that: CharPredicate): CharPredicate =

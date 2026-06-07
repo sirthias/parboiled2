@@ -71,7 +71,7 @@ class ErrorFormatter(
     val ix = error.position.index
     if (ix < input.length) {
       val chars = mismatchLength(error)
-      if (chars == 1) sb.append("Invalid input '").append(CharUtils.escape(input charAt ix)).append('\'')
+      if (chars == 1) sb.append("Invalid input '").append(CharUtils.escape(input.charAt(ix))).append('\'')
       else
         sb.append("Invalid input \"")
           .append(CharUtils.escape(input.sliceString(ix, math.min(ix + chars, input.length))))
@@ -147,7 +147,7 @@ class ErrorFormatter(
     */
   def formatErrorLine(sb: JStringBuilder, error: ParseError, input: ParserInput): JStringBuilder = {
     import error.position.*
-    val (expandedCol, expandedLine) = expandErrorLineTabs(input getLine line, column)
+    val (expandedCol, expandedLine) = expandErrorLineTabs(input.getLine(line), column)
     sb.append(expandedLine).append('\n')
     for (i <- 1 until expandedCol) sb.append(' ')
     sb.append('^')
