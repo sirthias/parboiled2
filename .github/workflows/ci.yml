@@ -41,7 +41,7 @@ jobs:
           disk-root: 'C:'
 
       - name: Checkout current branch (full)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -66,7 +66,7 @@ jobs:
 
       - name: Check that workflows are up to date
         shell: bash
-        run: sbt '++ ${{ matrix.scala }}' githubWorkflowCheck
+        run: sbt '++ ${{ matrix.scala }}; githubWorkflowCheck'
 
       - if: runner.os == 'Windows'
         uses: egor-tensin/setup-clang@v2
@@ -77,11 +77,11 @@ jobs:
       - name: Header check
         if: ${{ matrix.java=='temurin@8' && matrix.scala=='2.12.21' && matrix.os=='ubuntu-latest' }}
         shell: bash
-        run: sbt '++ ${{ matrix.scala }}' headerCheckAll scalaParser/headerCheckAll
+        run: sbt '++ ${{ matrix.scala }}; headerCheckAll; scalaParser/headerCheckAll'
 
       - name: Build project
         shell: bash
-        run: sbt '++ ${{ matrix.scala }}' Test/compile test 'scalaParser/testOnly scalaparser.SnippetSpec'
+        run: sbt '++ ${{ matrix.scala }}; Test/compile; test; scalaParser/testOnly scalaparser.SnippetSpec'
 
       - name: Compress target directories
         shell: bash
@@ -117,7 +117,7 @@ jobs:
           disk-root: 'C:'
 
       - name: Checkout current branch (full)
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
