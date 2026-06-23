@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        scala: [2.12.21, 2.13.18, 3.3.8]
+        scala: [2.12.21]
         java: [temurin@8, temurin@21]
     runs-on: ${{ matrix.os }}
     steps:
@@ -75,17 +75,17 @@ jobs:
           platform: x64
 
       - name: Header check
-        if: ${{ matrix.java=='temurin@8' && matrix.scala=='2.12.21' && matrix.os=='ubuntu-latest' }}
+        if: ${{ matrix.java=='temurin@8' && matrix.os=='ubuntu-latest' }}
         shell: bash
-        run: sbt '++ ${{ matrix.scala }}; headerCheckAll; scalaParser/headerCheckAll'
+        run: sbt '++ ${{ matrix.scala }}; headerCheckAll'
 
       - name: Build project
         shell: bash
-        run: sbt '++ ${{ matrix.scala }}; Test/compile; test; scalaParser/testOnly scalaparser.SnippetSpec'
+        run: sbt '++ ${{ matrix.scala }}; Test/compile; test; testOnly scalaparser.SnippetSpec'
 
       - name: Compress target directories
         shell: bash
-        run: tar cf targets.tar examples/target parboiled-core/.native/target target scalaParser/target jsonBenchmark/target parboiled/.js/target parboiled/.native/target parboiled/.jvm/target parboiled-core/.jvm/target parboiled-core/.js/target project/target
+        run: tar cf targets.tar scalaParser/target/jvm-3 scalaParser/target/jvm-2.13 parboiled/target/native-2.12 jsonBenchmark/target/jvm-2.13 parboiled/target/native-3 target parboiled-core/target/jvm-2.13 parboiled-core/target/jvm-2.12 parboiled-core/target/js-2.13 parboiled/target/native-2.13 parboiled-core/target/js-2.12 examples/target/jvm-2.13 parboiled-core/target/native-2.12 jsonBenchmark/target/jvm-2.12 parboiled/target/jvm-3 parboiled-core/target/native-2.13 examples/target/jvm-3 parboiled/target/jvm-2.13 parboiled/target/js-2.13 examples/target/jvm-2.12 parboiled-core/target/js-3 jsonBenchmark/target/jvm-3 scalaParser/target/jvm-2.12 parboiled/target/js-2.12 parboiled/target/jvm-2.12 parboiled-core/target/native-3 parboiled-core/target/jvm-3 parboiled/target/js-3 project/target
 
       - name: Upload target directories
         uses: actions/upload-artifact@v7
@@ -100,7 +100,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [3.3.8]
+        scala: [2.12.21]
         java: [temurin@8]
     runs-on: ${{ matrix.os }}
     steps:
@@ -146,26 +146,6 @@ jobs:
           name: target-${{ matrix.os }}-2.12.21-${{ matrix.java }}
 
       - name: Inflate target directories (2.12.21)
-        run: |
-          tar xf targets.tar
-          rm targets.tar
-
-      - name: Download target directories (2.13.18)
-        uses: actions/download-artifact@v8
-        with:
-          name: target-${{ matrix.os }}-2.13.18-${{ matrix.java }}
-
-      - name: Inflate target directories (2.13.18)
-        run: |
-          tar xf targets.tar
-          rm targets.tar
-
-      - name: Download target directories (3.3.8)
-        uses: actions/download-artifact@v8
-        with:
-          name: target-${{ matrix.os }}-3.3.8-${{ matrix.java }}
-
-      - name: Inflate target directories (3.3.8)
         run: |
           tar xf targets.tar
           rm targets.tar
