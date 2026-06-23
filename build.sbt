@@ -1,4 +1,3 @@
-import sbtcrossproject.CrossPlugin.autoImport._
 import sbtghactions.windows
 
 val Scala2_12 = "2.12.21"
@@ -7,9 +6,9 @@ val Scala3    = "3.3.8"
 
 val isScala3 = Def.setting(scalaBinaryVersion.value == "3")
 
-ThisBuild / versionScheme      := Some("early-semver")
-ThisBuild / scalaVersion       := Scala3
-ThisBuild / crossScalaVersions := Seq(Scala2_12, Scala2_13, Scala3)
+ThisBuild / versionScheme := Some("early-semver")
+
+val scalaVersions = Seq(Scala2_12, Scala2_13, Scala3)
 
 val commonSettings = Seq(
   organization := "org.parboiled",
@@ -133,18 +132,22 @@ val `spray-json`     = "io.spray"         %% "spray-json"     % "1.3.6"
 
 lazy val root = project
   .in(file("."))
-  .aggregate(examples, jsonBenchmark, scalaParser)
-  .aggregate(parboiledJVM, parboiledJS, parboiledNative)
-  .aggregate(parboiledCoreJVM, parboiledCoreJS, parboiledCoreNative)
+  .aggregate(examples.projectRefs *)
+  .aggregate(jsonBenchmark.projectRefs *)
+  .aggregate(scalaParser.projectRefs *)
+  .aggregate(parboiled.projectRefs *)
+  .aggregate(parboiledCore.projectRefs *)
   .settings(commonSettings)
   .settings(publish / skip := true)
   .settings(
     name := "parboiled2-root"
   )
 
-lazy val examples = project
+lazy val examples = projectMatrix
+  .defaultAxes(VirtualAxis.jvm)
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(parboiledJVM)
+  .dependsOn(parboiled)
+  .jvmPlatform(scalaVersions)
   .settings(commonSettings)
   .settings(utestSettings)
   .settings(
@@ -154,9 +157,11 @@ lazy val examples = project
 
 lazy val bench = inputKey[Unit]("Runs the JSON parser benchmark with a simple standard config")
 
-lazy val jsonBenchmark = project
+lazy val jsonBenchmark = projectMatrix
+  .defaultAxes(VirtualAxis.jvm)
   .enablePlugins(AutomateHeaderPlugin)
   .dependsOn(examples)
+  .jvmPlatform(scalaVersions)
   .enablePlugins(JmhPlugin)
   .settings(commonSettings)
   .settings(
@@ -165,9 +170,11 @@ lazy val jsonBenchmark = project
     bench := (Compile / run).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated
   )
 
-lazy val scalaParser = project
+lazy val scalaParser = projectMatrix
+  .defaultAxes(VirtualAxis.jvm)
   .enablePlugins(AutomateHeaderPlugin)
-  .dependsOn(parboiledJVM)
+  .dependsOn(parboiled)
+  .jvmPlatform(scalaVersions)
   .settings(commonSettings)
   .settings(utestSettings)
   .settings(
@@ -175,55 +182,55 @@ lazy val scalaParser = project
     libraryDependencies ++= Seq(utest.value)
   )
 
-lazy val parboiledJVM    = parboiled.jvm
-lazy val parboiledJS     = parboiled.js
-lazy val parboiledNative = parboiled.native
-
-lazy val parboiled = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .crossType(CrossType.Pure)
+lazy val parboiled = projectMatrix
+  .defaultAxes()
   .enablePlugins(AutomateHeaderPlugin, SbtOsgi)
   .dependsOn(parboiledCore)
   .settings(commonSettings)
   .settings(publishingSettings)
   .settings(parboiledOsgiSettings)
   .settings(utestSettings)
-  .jvmSettings(
-    (Compile / packageBin / mappings) ++= (parboiledCoreJVM.project / Compile / packageBin / mappings).value,
-    (Compile / packageSrc / mappings) ++= (parboiledCoreJVM.project / Compile / packageSrc / mappings).value,
-    (Compile / packageDoc / mappings) ++= (parboiledCoreJVM.project / Compile / packageDoc / mappings).value,
-    (Compile / packageBin / packageOptions) += Package.ManifestAttributes(
-      "Automatic-Module-Name" -> "org.parboiled2.parboiled"
+  .jvmPlatform(
+    scalaVersions,
+    Def.settings(
+      (Compile / packageBin / packageOptions) += Package.ManifestAttributes(
+        "Automatic-Module-Name" -> "org.parboiled2.parboiled"
+      )
     )
   )
-  .jsSettings(
-    (Compile / packageBin / mappings) ++= (parboiledCoreJS.project / Compile / packageBin / mappings).value,
-    (Compile / packageSrc / mappings) ++= (parboiledCoreJS.project / Compile / packageSrc / mappings).value,
-    (Compile / packageDoc / mappings) ++= (parboiledCoreJS.project / Compile / packageDoc / mappings).value
+  .jsPlatform(
+    scalaVersions,
+    Def.settings(
+    )
   )
-  .nativeSettings(
-    (Compile / packageBin / mappings) ++= (parboiledCoreNative.project / Compile / packageBin / mappings).value,
-    (Compile / packageSrc / mappings) ++= (parboiledCoreNative.project / Compile / packageSrc / mappings).value,
-    (Compile / packageDoc / mappings) ++= (parboiledCoreNative.project / Compile / packageDoc / mappings).value
+  .nativePlatform(
+    scalaVersions,
+    Def.settings(
+      nativeSettings
+    )
   )
   .settings(
     libraryDependencies ++= {
       if (isScala3.value) Seq(utest.value)
       else Seq(`scala-reflect`.value, utest.value)
     },
+    Seq(packageBin, packageSrc, packageDoc).map { packageTask =>
+      (Compile / packageTask / mappings) ++= Def.taskDyn {
+        val Seq(p) = parboiledCore.allProjects().filter(_._2 == virtualAxes.value).map(_._1)
+        Def.task {
+          (p / Compile / packageTask / mappings).value
+        }
+      }.value
+    },
     (Compile / packageBin / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     (Compile / packageDoc / mappings) ~= (_.groupBy(_._2).toSeq.map(_._2.head)), // filter duplicate outputs
     projectDependencies := projectDependencies.value.filterNot(_.name.equalsIgnoreCase("parboiledcore"))
   )
-  .nativeSettings(nativeSettings)
 
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
-lazy val parboiledCoreJVM    = parboiledCore.jvm
-lazy val parboiledCoreJS     = parboiledCore.js
-lazy val parboiledCoreNative = parboiledCore.native
-
-lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .crossType(CrossType.Pure)
+lazy val parboiledCore = projectMatrix
+  .defaultAxes()
   .in(file("parboiled-core"))
   .enablePlugins(AutomateHeaderPlugin)
   .settings(commonSettings)
@@ -238,7 +245,22 @@ lazy val parboiledCore = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     generateActionOps := ActionOpsBoilerplate((Compile / sourceManaged).value, streams.value),
     Compile / sourceGenerators += generateActionOps.taskValue
   )
-  .nativeSettings(nativeSettings)
+  .jvmPlatform(
+    scalaVersions,
+    Def.settings(
+    )
+  )
+  .jsPlatform(
+    scalaVersions,
+    Def.settings(
+    )
+  )
+  .nativePlatform(
+    scalaVersions,
+    Def.settings(
+      nativeSettings
+    )
+  )
 
 ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches :=
@@ -276,20 +298,19 @@ ThisBuild / githubWorkflowBuild := Seq(
     )
   ),
   WorkflowStep.Sbt(
-    List("headerCheckAll", "scalaParser/headerCheckAll"),
+    List("headerCheckAll"),
     name = Some("Header check"),
     cond = {
-      // Header check only needs to be run for one JVM, os along with one version of Scala
+      // Header check only needs to be run for one JVM
       val jVersion = (ThisBuild / githubWorkflowJavaVersions).value.head.render
-      val sVersion = (ThisBuild / crossScalaVersions).value.head
       val uOs      = (ThisBuild / githubWorkflowOSes).value.find(_.contains("ubuntu")).head
       Some(
-        "${{ matrix.java=='" + jVersion + "' && matrix.scala=='" + sVersion + "' && matrix.os=='" + uOs + "' }}"
+        "${{ matrix.java=='" + jVersion + "' && matrix.os=='" + uOs + "' }}"
       )
     }
   ),
   WorkflowStep.Sbt(
-    List("Test/compile", "test", "scalaParser/testOnly scalaparser.SnippetSpec"),
+    List("Test/compile", "test", "testOnly scalaparser.SnippetSpec"),
     name = Some("Build project")
   )
 )
