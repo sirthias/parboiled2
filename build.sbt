@@ -20,6 +20,7 @@ val commonSettings = Seq(
   scmInfo := Some(
     ScmInfo(url("https://github.com/sirthias/parboiled2"), "scm:git:git@github.com:sirthias/parboiled2.git")
   ),
+  exportJars := false,
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
@@ -29,7 +30,7 @@ val commonSettings = Seq(
     "-unchecked"
     // "-Ywarn-numeric-widen",
   ),
-  scalacOptions ++= {
+  scalacOptions ++= Def.uncached {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 12)) =>
         Seq(
@@ -64,7 +65,7 @@ val commonSettings = Seq(
       case x => sys.error(s"unsupported scala version: $x")
     }
   },
-  scalacOptions ++= {
+  scalacOptions ++= Def.uncached {
     scalaBinaryVersion.value match {
       case "2.12" | "2.13" =>
         Seq("-release:8")
@@ -133,8 +134,8 @@ lazy val parboiledOsgiSettings = osgiSettings ++ Seq(
 
 /////////////////////// DEPENDENCIES /////////////////////////
 
-val utest           = Def.setting("com.lihaoyi" %%% "utest" % "0.8.4" % Test)
-val scalaCheck      = Def.setting("org.scalacheck" %%% "scalacheck" % "1.19.0" % Test)
+val utest           = Def.setting("com.lihaoyi" %% "utest" % "0.8.4" % Test)
+val scalaCheck      = Def.setting("org.scalacheck" %% "scalacheck" % "1.19.0" % Test)
 val `scala-reflect` = Def.setting("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided)
 
 // benchmarks and examples only
@@ -144,17 +145,20 @@ val `spray-json`     = "io.spray"         %% "spray-json"     % "1.3.6"
 
 /////////////////////// PROJECTS /////////////////////////
 
-lazy val root = project
-  .in(file("."))
-  .aggregate(examples.projectRefs *)
-  .aggregate(jsonBenchmark.projectRefs *)
-  .aggregate(scalaParser.projectRefs *)
-  .aggregate(parboiled.projectRefs *)
-  .aggregate(parboiledCore.projectRefs *)
+lazy val root = rootProject.autoAggregate
   .settings(commonSettings)
   .settings(publish / skip := true)
   .settings(
-    name := "parboiled2-root"
+    name := "parboiled2-root",
+    Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1),
+    ThisBuild / githubWorkflowGeneratedCI ~= {
+      _.map {
+        case x if x.id == "publish" =>
+          x.copy(cond = x.cond.map(_ + " && (github.repository_owner == 'sirthias')"))
+        case x =>
+          x
+      }
+    }
   )
 
 lazy val examples = projectMatrix
@@ -181,7 +185,7 @@ lazy val jsonBenchmark = projectMatrix
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(`json4s-native`, `json4s-jackson`),
-    bench := (Compile / run).partialInput(" -i 10 -wi 10 -f1 -t1").evaluated
+    bench := (Compile / run).toTask(" -i 10 -wi 10 -f1 -t1").value
   )
 
 lazy val scalaParser = projectMatrix
@@ -241,6 +245,7 @@ lazy val parboiled = projectMatrix
     projectDependencies := projectDependencies.value.filterNot(_.name.equalsIgnoreCase("parboiledcore"))
   )
 
+@transient
 lazy val generateActionOps = taskKey[Seq[File]]("Generates the ActionOps boilerplate source file")
 
 lazy val parboiledCore = projectMatrix
@@ -276,7 +281,7 @@ lazy val parboiledCore = projectMatrix
     )
   )
 
-ThisBuild / githubWorkflowTargetTags ++= Seq("v*")
+ThisBuild / githubWorkflowTargetTags            := Seq("v*")
 ThisBuild / githubWorkflowPublishTargetBranches :=
   Seq(
     RefPredicate.StartsWith(Ref.Tag("v"))
@@ -295,8 +300,10 @@ ThisBuild / githubWorkflowPublish := Seq(
   )
 )
 
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"), JavaSpec.temurin("25"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"), JavaSpec.temurin("25"))
 ThisBuild / githubWorkflowOSes         := Seq("ubuntu-latest", "windows-latest")
+
+ThisBuild / githubWorkflowSbtCommand := "sbt --server -v"
 
 ThisBuild / githubWorkflowWindowsPagefileFix := Some(
   windows.PagefileFix("4GB", "16GB")
@@ -324,16 +331,7 @@ ThisBuild / githubWorkflowBuild := Seq(
     }
   ),
   WorkflowStep.Sbt(
-    List("Test/compile", "test", "testOnly scalaparser.SnippetSpec"),
+    List("Test/compile", "test"),
     name = Some("Build project")
   )
 )
-
-ThisBuild / githubWorkflowGeneratedCI ~= {
-  _.map {
-    case x if x.id == "publish" =>
-      x.copy(cond = x.cond.map(_ + " && (github.repository_owner == 'sirthias')"))
-    case x =>
-      x
-  }
-}
