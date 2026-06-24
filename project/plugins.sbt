@@ -1,7 +1,6 @@
 addSbtPlugin("org.scalameta"      % "sbt-scalafmt"       % "2.6.1")
 addSbtPlugin("com.github.sbt"     % "sbt-ci-release"     % "1.11.2")
 addSbtPlugin("com.github.sbt"     % "sbt-header"         % "5.11.0")
-addSbtPlugin("com.github.sbt"     % "sbt-boilerplate"    % "0.8.0")
 addSbtPlugin("org.scala-js"       % "sbt-scalajs"        % "1.22.0")
 addSbtPlugin("pl.project13.scala" % "sbt-jmh"            % "0.4.8")
 addSbtPlugin("com.github.sbt"     % "sbt-osgi"           % "0.9.9")
