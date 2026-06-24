@@ -64,6 +64,20 @@ val commonSettings = Seq(
       case x => sys.error(s"unsupported scala version: $x")
     }
   },
+  scalacOptions ++= {
+    scalaBinaryVersion.value match {
+      case "2.12" | "2.13" =>
+        Seq("-release:8")
+      case _
+          if scalaVersion.value.startsWith("3.3.") && virtualAxes.?.value.toSeq.flatten.exists(_ == VirtualAxis.jvm) =>
+        Seq(
+          "-Yfuture-lazy-vals",
+          "-release:11"
+        )
+      case _ =>
+        Nil
+    }
+  },
   Compile / scalacOptions ++= {
     if (insideCI.value) {
       val log = sLog.value
@@ -281,7 +295,7 @@ ThisBuild / githubWorkflowPublish := Seq(
   )
 )
 
-ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"), JavaSpec.temurin("21"))
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("11"), JavaSpec.temurin("25"))
 ThisBuild / githubWorkflowOSes         := Seq("ubuntu-latest", "windows-latest")
 
 ThisBuild / githubWorkflowWindowsPagefileFix := Some(
