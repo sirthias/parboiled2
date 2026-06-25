@@ -33,7 +33,7 @@ object ValueStackSpec extends TestSuite {
         push("yes")
         push(3.0)
         size ==> 3
-        toList ==> List(42, "yes", 3.0)
+        toList ==> List[Any](42, "yes", 3.0)
         intercept[ValueStackOverflowException] {
           push("overflow")
         }
@@ -112,9 +112,9 @@ object ValueStackSpec extends TestSuite {
       "poke" - new TestStack(stackSize = 8) {
         pushAll(1 :: 2 :: 3 :: HNil)
         poke(0, "3")
-        toList ==> List(1, 2, "3")
+        toList ==> List[Any](1, 2, "3")
         poke(1, "2")
-        toList ==> List(1, "2", "3")
+        toList ==> List[Any](1, "2", "3")
         poke(2, "1")
         toList ==> List("1", "2", "3")
         intercept[ValueStackUnderflowException] {
