@@ -271,27 +271,35 @@ class OpTreeContext(parser: Expr[Parser])(using Quotes) {
       collector: Collector,
       separator: Separator
   ): OpTree = {
-    range match {
+    val (mn, mx) = range match {
       case '{ scala.Predef.intWrapper($mn).to($mx) } =>
-        mn.asTerm match {
-          case Literal(IntConstant(min)) if min <= 0 =>
-            reportError("`min` in `(min to max).times` must be positive", mn)
-          case _ => ()
-        }
-        mx.asTerm match {
-          case Literal(IntConstant(max)) if max <= 0 =>
-            reportError("`max` in `(min to max).times` must be positive", mx)
-          case _ => ()
-        }
-        (mn.asTerm, mx.asTerm) match {
-          case (Literal(IntConstant(min)), Literal(IntConstant(max))) if max < min =>
-            reportError("`max` in `(min to max).times` must be >= `min`", mx)
-          case _ => ()
-        }
-        Times(op, withMinMax, collector, separator)
+        (mn.asTerm, mx.asTerm)
       case _ =>
-        reportError("Invalid base expression for `.times(...)`: " + range.show, range)
+        range.asTerm match {
+          case Apply(Apply(Select(obj, "to"), mn :: Nil), mx :: Nil) if obj.symbol.fullName == "scala.Int" =>
+            // https://github.com/scala/scala3/pull/23872
+            (mn, mx)
+          case _ =>
+            reportError("Invalid base expression for `.times(...)`: " + range.show, range)
+        }
     }
+
+    mn match {
+      case Literal(IntConstant(min)) if min <= 0 =>
+        quotes.reflect.report.errorAndAbort("`min` in `(min to max).times` must be positive", mn.pos)
+      case _ => ()
+    }
+    mx match {
+      case Literal(IntConstant(max)) if max <= 0 =>
+        quotes.reflect.report.errorAndAbort("`max` in `(min to max).times` must be positive", mx.pos)
+      case _ => ()
+    }
+    (mn, mx) match {
+      case (Literal(IntConstant(min)), Literal(IntConstant(max))) if max < min =>
+        quotes.reflect.report.errorAndAbort("`max` in `(min to max).times` must be >= `min`", mx.pos)
+      case _ => ()
+    }
+    Times(op, withMinMax, collector, separator)
   }
 
   case class Times(
