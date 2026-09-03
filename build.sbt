@@ -149,7 +149,8 @@ lazy val root = rootProject.autoAggregate
   .settings(commonSettings)
   .settings(publish / skip := true)
   .settings(
-    name := "parboiled2-root",
+    name                     := "parboiled2-root",
+    ThisBuild / scalaVersion := Scala3,
     Global / concurrentRestrictions += Tags.limit(NativeTags.Link, 1),
     ThisBuild / githubWorkflowGeneratedCI ~= {
       _.map {
