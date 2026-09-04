@@ -1,7 +1,7 @@
 import sbtghactions.windows
 
 val Scala2_12 = "2.12.21"
-val Scala2_13 = "2.13.18"
+val Scala2_13 = "3.9.0"
 val Scala3    = "3.9.0"
 
 val isScala3 = Def.setting(scalaBinaryVersion.value == "3")
