@@ -85,7 +85,7 @@ jobs:
 
       - name: Compress target directories
         shell: bash
-        run: tar cf targets.tar target/out/native0.5 target/out/jvm target/out/sjs1 project/target
+        run: tar chf targets.tar target/out/native0.5 target/out/jvm target/out/sjs1 project/target
 
       - name: Upload target directories
         uses: actions/upload-artifact@v7
